@@ -80,6 +80,47 @@ describe("SQLite prompt storage", () => {
     expect(storage.searchPromptIds('"unterminated OR email')).toEqual([]);
   });
 
+  it("keeps detected raw secrets out of Markdown, SQLite rows, redaction events, and FTS", async () => {
+    const dataDir = createTempDir();
+    initializePromptMemory({ dataDir });
+    const storage = createSqlitePromptStorage({
+      dataDir,
+      hmacSecret: "test-secret",
+      now: () => new Date("2026-05-01T10:30:00.000Z"),
+    });
+    const rawSecret = "sk-proj-1234567890abcdef";
+    const event = normalizeClaudeCodePayload(
+      {
+        session_id: "session-secret-regression",
+        transcript_path: "/Users/example/.claude/session.jsonl",
+        cwd: "/Users/example/project",
+        permission_mode: "default",
+        hook_event_name: "UserPromptSubmit",
+        prompt: `Please handle this token ${rawSecret}`,
+      },
+      new Date("2026-05-01T10:29:59.000Z"),
+    );
+
+    const stored = await storage.storePrompt({
+      event,
+      redaction: redactPrompt(event.prompt, "mask"),
+    });
+    const row = storage.listPromptRows()[0]!;
+    const markdown = readFileSync(row.markdown_path, "utf8");
+    const db = new Database(join(dataDir, "prompt-memory.sqlite"));
+    const promptRows = db.prepare("SELECT * FROM prompts").all();
+    const redactionRows = db.prepare("SELECT * FROM redaction_events").all();
+    db.close();
+
+    expect(markdown).toContain("[REDACTED:api_key]");
+    expect(markdown).not.toContain(rawSecret);
+    expect(JSON.stringify(promptRows)).not.toContain(rawSecret);
+    expect(JSON.stringify(redactionRows)).not.toContain(rawSecret);
+    expect(storage.searchPromptIds("sk-proj")).toEqual([]);
+    expect(storage.searchPromptIds(rawSecret)).toEqual([]);
+    expect(storage.searchPromptIds("REDACTED")).toEqual([stored.id]);
+  });
+
   it("connects Claude ingest to real Markdown, SQLite, and FTS storage", async () => {
     const dataDir = createTempDir();
     initializePromptMemory({ dataDir });
@@ -300,6 +341,38 @@ describe("SQLite prompt storage", () => {
     expect(storage.searchPrompts("beta", { limit: 10 }).items).toEqual([]);
     expect(existsSync(betaPath!)).toBe(false);
     expect(storage.deletePrompt(beta.id)).toEqual({ deleted: false });
+
+    const sensitive = await storeClaudePrompt(storage, {
+      prompt: "delete redaction event sk-proj-1234567890abcdef",
+      receivedAt: "2026-05-01T10:03:00.000Z",
+    });
+    const db = new Database(join(dataDir, "prompt-memory.sqlite"));
+    expect(
+      db
+        .prepare(
+          "SELECT COUNT(*) AS count FROM redaction_events WHERE prompt_id = ?",
+        )
+        .get(sensitive.id) as { count: number },
+    ).toEqual({ count: 1 });
+    expect(storage.deletePrompt(sensitive.id)).toEqual({ deleted: true });
+    expect(
+      db
+        .prepare("SELECT COUNT(*) AS count FROM prompts WHERE id = ?")
+        .get(sensitive.id) as { count: number },
+    ).toEqual({ count: 0 });
+    expect(
+      db
+        .prepare("SELECT COUNT(*) AS count FROM prompt_fts WHERE prompt_id = ?")
+        .get(sensitive.id) as { count: number },
+    ).toEqual({ count: 0 });
+    expect(
+      db
+        .prepare(
+          "SELECT COUNT(*) AS count FROM redaction_events WHERE prompt_id = ?",
+        )
+        .get(sensitive.id) as { count: number },
+    ).toEqual({ count: 0 });
+    db.close();
   });
 
   it("filters prompt lists and searches by tool, sensitivity, cwd, and date range", async () => {

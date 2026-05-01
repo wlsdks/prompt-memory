@@ -100,3 +100,18 @@
 
 - `pnpm format`, `pnpm test`, `pnpm lint`, `pnpm build`, `pnpm pack:dry-run`, `git diff --check`를 통과했다.
 - `pnpm pack:dry-run`에서 `README.md`, `SECURITY.md`, `docs/ADAPTERS.md`, `docs/RELEASE_CHECKLIST.md` 포함을 확인했다.
+
+## P8 Security Regression
+
+- [x] upstream OAuth/session token 미보존 테스트
+- [x] hook fail-open raw prompt 비노출 테스트
+- [x] `Sec-Fetch-Site: cross-site` 차단 테스트
+- [x] raw secret Markdown/SQLite/redaction_events/FTS 미저장 테스트
+- [x] delete 후 prompt/FTS/redaction_events 제거 테스트
+- [x] 전체 검증 명령 실행
+- [x] 커밋 및 푸시
+
+### P8 Security Regression 검토
+
+- 보안 회귀 범위는 새 기능 추가가 아니라 P0-P8에서 이미 설계한 로컬 우선/비밀정보 최소 저장/브라우저 경계 정책을 고정하는 테스트로 한정한다.
+- `pnpm test`, `pnpm lint`, `pnpm build`, `pnpm pack:dry-run`, `git diff --check`를 통과했다.

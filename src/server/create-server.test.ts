@@ -364,6 +364,16 @@ describe("createServer P2 ingest boundary", () => {
     });
     expect(crossOrigin.statusCode).toBe(403);
     expect(crossOrigin.headers["access-control-allow-origin"]).toBeUndefined();
+
+    const crossSiteFetch = await server.inject({
+      method: "GET",
+      url: "/api/v1/health",
+      headers: {
+        host: "127.0.0.1:17373",
+        "sec-fetch-site": "cross-site",
+      },
+    });
+    expect(crossSiteFetch.statusCode).toBe(403);
   });
 
   it("enforces prompt length limits before storage", async () => {

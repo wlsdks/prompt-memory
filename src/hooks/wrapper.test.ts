@@ -46,8 +46,9 @@ describe("runClaudeCodeHook", () => {
   });
 
   it("fails open with empty output when config/token/server handling fails", async () => {
+    const rawPrompt = "do not leak sk-proj-1234567890abcdef";
     const result = await runClaudeCodeHook({
-      stdin: JSON.stringify({ prompt: "do not leak this prompt" }),
+      stdin: JSON.stringify({ prompt: rawPrompt }),
       dataDir: createTempDir(),
       postPayload: async () => {
         throw new Error("server down");
@@ -57,6 +58,7 @@ describe("runClaudeCodeHook", () => {
     expect(result.exitCode).toBe(0);
     expect(result.stdout).toBe("");
     expect(result.stderr).toBe("");
+    expect(JSON.stringify(result)).not.toContain(rawPrompt);
   });
 });
 
@@ -84,6 +86,20 @@ describe("runCodexHook", () => {
       payload: { hook_event_name: "UserPromptSubmit", prompt: "codex prompt" },
       url: `http://127.0.0.1:${init.config.server.port}/api/v1/ingest/codex`,
     });
+  });
+
+  it("fails open with empty output without leaking Codex prompt text", async () => {
+    const rawPrompt = "do not leak codex prompt sk-proj-1234567890abcdef";
+    const result = await runCodexHook({
+      stdin: JSON.stringify({ prompt: rawPrompt }),
+      dataDir: createTempDir(),
+      postPayload: async () => {
+        throw new Error("server down");
+      },
+    });
+
+    expect(result).toEqual({ exitCode: 0, stdout: "", stderr: "" });
+    expect(JSON.stringify(result)).not.toContain(rawPrompt);
   });
 });
 
