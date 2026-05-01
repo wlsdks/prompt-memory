@@ -130,6 +130,25 @@ export function loadHookAuth(dataDir?: string): HookAuth {
   );
 }
 
+export function writeHookAuth(
+  dataDir: string | undefined,
+  hookAuth: HookAuth,
+): void {
+  const paths = getPromptMemoryPaths(dataDir);
+  writeOwnerOnlyJson(paths.hookAuthPath, HookAuthSchema.parse(hookAuth));
+}
+
+export function revokeIngestToken(dataDir?: string): HookAuth {
+  const hookAuth = loadHookAuth(dataDir);
+  const next = HookAuthSchema.parse({
+    ...hookAuth,
+    ingest_token: generateIngestToken(),
+  });
+
+  writeHookAuth(dataDir, next);
+  return next;
+}
+
 function readJsonIfExists<TSchema extends z.ZodType>(
   path: string,
   schema: TSchema,
