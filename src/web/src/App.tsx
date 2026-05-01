@@ -313,6 +313,24 @@ export function App() {
                 <option value="true">민감정보 포함</option>
                 <option value="false">민감정보 없음</option>
               </select>
+              <select
+                aria-label="포커스 필터"
+                name="focus-filter"
+                onChange={(event) =>
+                  updateFilters({
+                    focus:
+                      event.target.value === ""
+                        ? undefined
+                        : (event.target.value as PromptFilters["focus"]),
+                  })
+                }
+                value={filters.focus ?? ""}
+              >
+                <option value="">전체 Focus</option>
+                <option value="saved">저장됨</option>
+                <option value="duplicated">중복 후보</option>
+                <option value="quality-gap">품질 보강</option>
+              </select>
               <input
                 aria-label="경로 접두사 필터"
                 autoComplete="off"
@@ -351,6 +369,7 @@ export function App() {
         {error && <div className="error-line">{error}</div>}
         {view.name === "list" && (
           <PromptList
+            focus={filters.focus}
             loading={loading}
             nextCursor={filters.query?.trim() ? undefined : nextCursor}
             onLoadMore={() => void refreshList(filters, { cursor: nextCursor })}
@@ -401,12 +420,14 @@ export function App() {
 }
 
 function PromptList({
+  focus,
   loading,
   nextCursor,
   onLoadMore,
   onSelect,
   prompts,
 }: {
+  focus?: PromptFilters["focus"];
   loading: boolean;
   nextCursor?: string;
   onLoadMore(): void;
@@ -420,8 +441,8 @@ function PromptList({
   if (prompts.length === 0) {
     return (
       <div className="panel empty">
-        <h2>아직 저장된 프롬프트가 없습니다.</h2>
-        <code>prompt-memory install-hook claude-code</code>
+        <h2>{emptyPromptTitle(focus)}</h2>
+        <code>{emptyPromptHint(focus)}</code>
       </div>
     );
   }
@@ -893,11 +914,16 @@ function routeFromLocation(): View {
 function filtersFromLocation(): PromptFilters {
   const params = new URLSearchParams(window.location.search);
   const isSensitive = params.get("sensitive");
+  const focus = params.get("focus");
 
   return {
     query: params.get("q") ?? undefined,
     tool: params.get("tool") ?? undefined,
     tag: params.get("tag") ?? undefined,
+    focus:
+      focus === "saved" || focus === "duplicated" || focus === "quality-gap"
+        ? focus
+        : undefined,
     cwdPrefix: params.get("cwd") ?? undefined,
     receivedFrom: params.get("from") ?? undefined,
     receivedTo: params.get("to") ?? undefined,
@@ -911,6 +937,7 @@ function writeFiltersToLocation(filters: PromptFilters): void {
   if (filters.query?.trim()) params.set("q", filters.query.trim());
   if (filters.tool) params.set("tool", filters.tool);
   if (filters.tag) params.set("tag", filters.tag);
+  if (filters.focus) params.set("focus", filters.focus);
   if (filters.cwdPrefix?.trim()) params.set("cwd", filters.cwdPrefix.trim());
   if (filters.isSensitive && filters.isSensitive !== "all") {
     params.set("sensitive", filters.isSensitive);
@@ -987,4 +1014,20 @@ function formatDate(value: string): string {
 
 function projectLabel(path: string): string {
   return path.split("/").filter(Boolean).at(-1) ?? path;
+}
+
+function emptyPromptTitle(focus?: PromptFilters["focus"]): string {
+  if (focus === "saved") return "저장된 프롬프트가 없습니다.";
+  if (focus === "duplicated") return "중복 후보가 없습니다.";
+  if (focus === "quality-gap") return "품질 보강이 필요한 프롬프트가 없습니다.";
+  return "아직 저장된 프롬프트가 없습니다.";
+}
+
+function emptyPromptHint(focus?: PromptFilters["focus"]): string {
+  if (focus === "saved") return "상세 화면에서 다시 볼 프롬프트를 저장하세요.";
+  if (focus === "duplicated")
+    return "같은 저장 본문이 반복되면 여기에 표시됩니다.";
+  if (focus === "quality-gap")
+    return "검증 기준, 출력 형식, 범위를 명시해보세요.";
+  return "prompt-memory install-hook claude-code";
 }

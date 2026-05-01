@@ -389,3 +389,42 @@
 - 기준은 raw prompt가 아니라 redaction 이후 저장 본문 HMAC이다. 민감정보 원문이나 prompt body는 집계 API에 노출하지 않는다.
 - 중복 탐지는 "이 프롬프트를 정리하거나 더 좋은 버전을 남길 수 있다"는 운영 신호로 대시보드에 표시한다.
 - Playwright MCP로 list duplicate badge, detail duplicate signal, dashboard duplicate prompts, mobile dashboard를 확인했다. 콘솔 오류는 0개였고 관련 API는 200으로 응답했다.
+
+## P16 Focus Filters
+
+- [x] PRD 완료 범위와 P14/P15 사용성 결과 기준으로 다음 구현 단위 확정
+- [x] 실패 테스트 먼저 작성
+  - [x] SQLite focus filter: saved / duplicated / quality-gap
+  - [x] API query `focus` 계약 테스트
+  - [x] URL query와 UI 필터 동기화 기준 고정
+- [x] 저장소/API 구현
+  - [x] `ListPromptsOptions.focus` 추가
+  - [x] saved는 `prompt_bookmarks`, duplicated는 `stored_content_hash` group count 기준
+  - [x] quality-gap은 `prompt_analyses.checklist_json`의 weak/missing 존재 기준
+  - [x] search에서도 동일 focus 필터 적용
+- [x] 웹 UI 구현 전 `DESIGN.md` 재검토
+- [x] 웹 UI 연결
+  - [x] topbar에 Focus select 추가
+  - [x] URL query `focus`로 새로고침/공유 시 유지
+  - [x] empty state 문구가 선택한 focus에 맞게 표시
+- [x] Playwright MCP 사용성 점검
+  - [x] saved focus
+  - [x] duplicated focus
+  - [x] quality-gap focus
+  - [x] desktop/mobile overflow와 console/network 오류
+- [x] 기본 검증 명령 실행
+  - [x] `pnpm test`
+  - [x] `pnpm lint`
+  - [x] `pnpm format`
+  - [x] `pnpm build`
+  - [x] `pnpm pack:dry-run`
+  - [x] `pnpm smoke:release`
+  - [x] `git diff --check`
+- [x] 커밋 및 `git push origin main`
+
+### P16 설계 메모
+
+- Focus filter는 새 분석이 아니라 이미 저장된 local signal을 목록 탐색에 연결하는 기능이다.
+- 제품 효용은 "저장한 프롬프트만 다시 보기", "중복 정리 후보만 보기", "품질 보강이 필요한 프롬프트만 보기"를 빠르게 하는 데 있다.
+- URL state를 유지해 dashboard에서 발견한 운영 신호를 목록 필터로 이어서 볼 수 있게 한다.
+- Playwright MCP로 `?focus=saved`, `?focus=duplicated`, `?focus=quality-gap`, mobile quality-gap list를 확인했다. 콘솔 오류는 0개였고 관련 API는 200으로 응답했다.

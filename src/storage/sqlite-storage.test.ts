@@ -717,6 +717,57 @@ describe("SQLite prompt storage", () => {
     ).toEqual([sensitive.id]);
   });
 
+  it("filters prompt lists and searches by saved, duplicated, and quality-gap focus", async () => {
+    const dataDir = createTempDir();
+    initializePromptMemory({ dataDir });
+    const storage = createSqlitePromptStorage({
+      dataDir,
+      hmacSecret: "test-secret",
+      now: nextDate([
+        "2026-05-01T10:00:00.000Z",
+        "2026-05-01T10:01:00.000Z",
+        "2026-05-01T10:02:00.000Z",
+        "2026-05-01T10:03:00.000Z",
+      ]),
+    });
+    const duplicatePrompt =
+      "Refactor focus filter. 검증 기준: pnpm test. 출력 형식: 요약.";
+    const duplicateA = await storeClaudePrompt(storage, {
+      prompt: duplicatePrompt,
+      receivedAt: "2026-05-01T10:00:00.000Z",
+    });
+    const duplicateB = await storeClaudePrompt(storage, {
+      prompt: duplicatePrompt,
+      receivedAt: "2026-05-01T10:01:00.000Z",
+    });
+    const saved = await storeClaudePrompt(storage, {
+      prompt: "Saved prompt with 검증 기준: pnpm test.",
+      receivedAt: "2026-05-01T10:02:00.000Z",
+    });
+    const qualityGap = await storeClaudePrompt(storage, {
+      prompt: "vague request",
+      receivedAt: "2026-05-01T10:03:00.000Z",
+    });
+    storage.setPromptBookmark(saved.id, true);
+
+    expect(storage.listPrompts({ focus: "saved" }).items).toMatchObject([
+      { id: saved.id },
+    ]);
+    expect(
+      storage.listPrompts({ focus: "duplicated" }).items.map((item) => item.id),
+    ).toEqual([duplicateB.id, duplicateA.id]);
+    expect(
+      storage
+        .searchPrompts("Refactor", { focus: "duplicated" })
+        .items.map((item) => item.id),
+    ).toEqual(expect.arrayContaining([duplicateA.id, duplicateB.id]));
+    expect(
+      storage
+        .listPrompts({ focus: "quality-gap" })
+        .items.map((item) => item.id),
+    ).toContain(qualityGap.id);
+  });
+
   it("rebuilds missing database rows from Markdown files", async () => {
     const dataDir = createTempDir();
     initializePromptMemory({ dataDir });

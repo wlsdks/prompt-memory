@@ -565,6 +565,45 @@ function buildPromptFilters(
     values.push(options.tag);
   }
 
+  if (options.focus) {
+    const idExpression = tableAlias ? `${prefix}id` : "prompts.id";
+    const storedHashExpression = tableAlias
+      ? `${prefix}stored_content_hash`
+      : "prompts.stored_content_hash";
+
+    if (options.focus === "saved") {
+      clauses.push(
+        `EXISTS (
+          SELECT 1
+          FROM prompt_bookmarks pb
+          WHERE pb.prompt_id = ${idExpression}
+        )`,
+      );
+    } else if (options.focus === "duplicated") {
+      clauses.push(
+        `${storedHashExpression} IN (
+          SELECT stored_content_hash
+          FROM prompts
+          WHERE deleted_at IS NULL
+          GROUP BY stored_content_hash
+          HAVING COUNT(*) > 1
+        )`,
+      );
+    } else if (options.focus === "quality-gap") {
+      clauses.push(
+        `EXISTS (
+          SELECT 1
+          FROM prompt_analyses pa
+          WHERE pa.prompt_id = ${idExpression}
+            AND (
+              pa.checklist_json LIKE '%"status":"missing"%'
+              OR pa.checklist_json LIKE '%"status":"weak"%'
+            )
+        )`,
+      );
+    }
+  }
+
   return { clauses, values };
 }
 

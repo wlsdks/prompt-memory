@@ -55,6 +55,7 @@ export type PromptFilters = {
   cwdPrefix?: string;
   isSensitive?: "all" | "true" | "false";
   tag?: string;
+  focus?: "saved" | "duplicated" | "quality-gap";
   receivedFrom?: string;
   receivedTo?: string;
 };
@@ -179,6 +180,9 @@ export async function listPrompts(
   }
   if (filters.tag) {
     params.set("tag", filters.tag);
+  }
+  if (filters.focus) {
+    params.set("focus", filters.focus);
   }
   if (filters.receivedFrom) {
     params.set("from", `${filters.receivedFrom}T00:00:00.000Z`);

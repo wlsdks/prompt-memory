@@ -67,9 +67,12 @@ export type ListPromptsOptions = {
   receivedFrom?: string;
   receivedTo?: string;
   tag?: string;
+  focus?: PromptFocusFilter;
 };
 
 export type SearchPromptsOptions = Omit<ListPromptsOptions, "cursor">;
+
+export type PromptFocusFilter = "saved" | "duplicated" | "quality-gap";
 
 export type PromptListResult = {
   items: PromptSummary[];

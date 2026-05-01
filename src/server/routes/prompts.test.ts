@@ -346,6 +346,35 @@ describe("prompt read/delete API", () => {
         .data.items.find((item) => item.id === ids.alpha),
     ).toMatchObject({ duplicate_count: 2 });
   });
+
+  it("filters prompts by focus query", async () => {
+    const { server, ids } = await createDuplicatePromptApiFixture();
+
+    const duplicated = await server.inject({
+      method: "GET",
+      url: "/api/v1/prompts?focus=duplicated",
+      headers: {
+        host: "127.0.0.1:17373",
+        authorization: "Bearer app-token",
+      },
+    });
+    expect(duplicated.statusCode).toBe(200);
+    expect(
+      duplicated
+        .json<{ data: { items: Array<{ id: string }> } }>()
+        .data.items.map((item) => item.id),
+    ).toEqual([ids.beta, ids.alpha]);
+
+    const invalid = await server.inject({
+      method: "GET",
+      url: "/api/v1/prompts?focus=unknown",
+      headers: {
+        host: "127.0.0.1:17373",
+        authorization: "Bearer app-token",
+      },
+    });
+    expect(invalid.statusCode).toBe(422);
+  });
 });
 
 async function createPromptApiFixture() {
