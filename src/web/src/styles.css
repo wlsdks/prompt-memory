@@ -502,8 +502,13 @@ dd {
 .prompt-actions {
   display: flex;
   gap: 8px;
-  justify-content: flex-end;
+  justify-content: space-between;
   margin-bottom: 12px;
+}
+
+.prompt-action-group {
+  display: flex;
+  gap: 8px;
 }
 
 .prompt-actions button {
@@ -522,6 +527,10 @@ dd {
 
 .prompt-actions button:hover {
   background: var(--pm-surface-muted);
+}
+
+.prompt-actions .secondary-action {
+  color: var(--pm-text-muted);
 }
 
 .analysis-panel {
@@ -1291,8 +1300,14 @@ dd {
     flex-direction: column;
   }
 
+  .prompt-action-group {
+    display: grid;
+    gap: 8px;
+  }
+
   .load-more-button,
-  .prompt-actions button {
+  .prompt-actions button,
+  .prompt-action-group {
     min-height: 40px;
     width: 100%;
   }

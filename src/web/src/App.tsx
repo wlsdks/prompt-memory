@@ -1,5 +1,6 @@
 import {
   AlertTriangle,
+  ArrowLeft,
   BarChart3,
   Copy,
   Database,
@@ -414,6 +415,7 @@ export function App() {
           <PromptDetailView
             copied={selected?.id === copiedPromptId}
             onBookmark={toggleBookmark}
+            onBack={() => navigate({ name: "list" })}
             onCopy={copyPrompt}
             onDelete={setPendingDelete}
             prompt={selected}
@@ -602,12 +604,14 @@ function ActiveFilterBar({
 
 function PromptDetailView({
   copied,
+  onBack,
   onBookmark,
   onCopy,
   onDelete,
   prompt,
 }: {
   copied: boolean;
+  onBack(): void;
   onBookmark(prompt: PromptDetail): void;
   onCopy(prompt: PromptDetail): void;
   onDelete(prompt: PromptDetail): void;
@@ -651,16 +655,21 @@ function PromptDetailView({
       <article className="prompt-body">
         {prompt.analysis && <AnalysisPreview analysis={prompt.analysis} />}
         <div className="prompt-actions">
-          <button
-            aria-pressed={prompt.usefulness.bookmarked}
-            onClick={() => onBookmark(prompt)}
-          >
-            <Star size={16} />
-            {prompt.usefulness.bookmarked ? "저장됨" : "다시 볼 프롬프트"}
+          <button className="secondary-action" onClick={onBack}>
+            <ArrowLeft size={16} /> 목록으로
           </button>
-          <button onClick={() => onCopy(prompt)}>
-            <Copy size={16} /> {copied ? "복사됨" : "프롬프트 복사"}
-          </button>
+          <div className="prompt-action-group">
+            <button
+              aria-pressed={prompt.usefulness.bookmarked}
+              onClick={() => onBookmark(prompt)}
+            >
+              <Star size={16} />
+              {prompt.usefulness.bookmarked ? "저장됨" : "다시 볼 프롬프트"}
+            </button>
+            <button onClick={() => onCopy(prompt)}>
+              <Copy size={16} /> {copied ? "복사됨" : "프롬프트 복사"}
+            </button>
+          </div>
         </div>
         <SafeMarkdown markdown={prompt.markdown} />
       </article>
