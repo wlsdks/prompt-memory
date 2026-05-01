@@ -2,6 +2,8 @@ import {
   AlertTriangle,
   ArrowLeft,
   BarChart3,
+  ChevronLeft,
+  ChevronRight,
   Copy,
   Database,
   FileText,
@@ -118,6 +120,23 @@ export function App() {
     if (view.name === "dashboard") return "품질 대시보드";
     return "프롬프트 아카이브";
   }, [view]);
+  const queueNavigation = useMemo(() => {
+    if (view.name !== "detail") {
+      return { current: undefined, next: undefined, previous: undefined };
+    }
+
+    const index = prompts.findIndex((prompt) => prompt.id === view.id);
+    if (index === -1) {
+      return { current: undefined, next: undefined, previous: undefined };
+    }
+
+    return {
+      current: index + 1,
+      next: prompts[index + 1],
+      previous: prompts[index - 1],
+      total: prompts.length,
+    };
+  }, [prompts, view]);
 
   async function refreshList(
     nextFilters = filters,
@@ -418,7 +437,9 @@ export function App() {
             onBack={() => navigate({ name: "list" })}
             onCopy={copyPrompt}
             onDelete={setPendingDelete}
+            onNavigate={(id) => navigate({ name: "detail", id })}
             prompt={selected}
+            queueNavigation={queueNavigation}
           />
         )}
         {view.name === "dashboard" && (
@@ -608,14 +629,23 @@ function PromptDetailView({
   onBookmark,
   onCopy,
   onDelete,
+  onNavigate,
   prompt,
+  queueNavigation,
 }: {
   copied: boolean;
   onBack(): void;
   onBookmark(prompt: PromptDetail): void;
   onCopy(prompt: PromptDetail): void;
   onDelete(prompt: PromptDetail): void;
+  onNavigate(id: string): void;
   prompt?: PromptDetail;
+  queueNavigation: {
+    current?: number;
+    next?: PromptSummary;
+    previous?: PromptSummary;
+    total?: number;
+  };
 }) {
   if (!prompt) {
     return <div className="panel empty">상세 정보를 불러오는 중입니다.</div>;
@@ -658,6 +688,32 @@ function PromptDetailView({
           <button className="secondary-action" onClick={onBack}>
             <ArrowLeft size={16} /> 목록으로
           </button>
+          <div className="queue-actions" aria-label="현재 큐 탐색">
+            <button
+              aria-label="이전 프롬프트 보기"
+              disabled={!queueNavigation.previous}
+              onClick={() =>
+                queueNavigation.previous &&
+                onNavigate(queueNavigation.previous.id)
+              }
+            >
+              <ChevronLeft size={16} /> 이전
+            </button>
+            <span>
+              {queueNavigation.current && queueNavigation.total
+                ? `${queueNavigation.current} / ${queueNavigation.total}`
+                : "큐 없음"}
+            </span>
+            <button
+              aria-label="다음 프롬프트 보기"
+              disabled={!queueNavigation.next}
+              onClick={() =>
+                queueNavigation.next && onNavigate(queueNavigation.next.id)
+              }
+            >
+              다음 <ChevronRight size={16} />
+            </button>
+          </div>
           <div className="prompt-action-group">
             <button
               aria-pressed={prompt.usefulness.bookmarked}

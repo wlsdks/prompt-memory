@@ -728,3 +728,33 @@
 - 제품 효용은 대시보드 drilldown이나 품질 보강 큐에서 상세를 연 뒤 다시 같은 작업 큐로 돌아가 여러 프롬프트를 빠르게 훑는 데 있다.
 - 브라우저 back을 몰라도 보이는 action으로 흐름을 제공한다.
 - Playwright MCP로 `?focus=quality-gap` 목록에서 상세 진입 후 `목록으로` 클릭 시 같은 URL, 2개 결과, active filter 유지, 모바일 overflow 없음, 콘솔 경고/오류 0개를 확인했다.
+
+## P26 Detail Queue Navigation
+
+- [x] P25 이후 사용성 빈틈 기준으로 다음 구현 단위 확정
+- [x] 웹 UI 구현 전 `DESIGN.md`와 Web Interface Guidelines 재검토
+- [x] 웹 UI 연결
+  - [x] 현재 목록 queue 기준 이전/다음 프롬프트 계산
+  - [x] 상세 화면에 `이전` / `다음` action 추가
+  - [x] queue 밖 direct detail 진입 시 버튼 disabled 처리
+  - [x] desktop/mobile에서 action layout overflow 방지
+- [x] Playwright MCP 사용성 점검
+  - [x] 필터 큐에서 상세 진입 후 다음/이전 이동
+  - [x] queue 위치에 맞는 disabled 상태
+  - [x] desktop/mobile overflow와 console/network 오류
+- [x] 기본 검증 명령 실행
+  - [x] `pnpm test`
+  - [x] `pnpm lint`
+  - [x] `pnpm format`
+  - [x] `pnpm build`
+  - [x] `pnpm pack:dry-run`
+  - [x] `pnpm smoke:release`
+  - [x] `git diff --check`
+- [x] 커밋 및 `git push origin main`
+
+### P26 설계 메모
+
+- 새 API 없이 현재 로드된 list `prompts` 상태를 queue로 사용한다.
+- 제품 효용은 품질 보강 큐, 날짜 drilldown, 민감정보 큐를 상세 화면에서 연속 검토하는 데 있다.
+- direct URL로 상세에 진입해 queue가 없으면 이전/다음은 비활성화한다.
+- Playwright MCP로 `?focus=quality-gap` 큐에서 상세 다음/이전 이동, `1 / 2`와 `2 / 2` 표시, direct detail `큐 없음` disabled, 모바일 overflow 없음, 콘솔 경고/오류 0개를 확인했다.
