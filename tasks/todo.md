@@ -266,3 +266,44 @@
 - `awesome-design-md`의 목적은 특정 사이트 복제가 아니라 AI가 반복해서 따를 수 있는 명확한 디자인 문서다.
 - `prompt-memory`는 마케팅 사이트가 아니라 로컬 운영형 developer tool이므로 첫 화면은 계속 실제 archive/list로 둔다.
 - 시각 방향은 Linear의 정밀한 정보 밀도와 Cursor의 따뜻한 로컬 도구 톤을 참고하되, 자체 색상/컴포넌트 언어로 유지한다.
+
+## P13 Feature Discovery / Usability Review
+
+- [x] PRD/TECH_SPEC 대비 완료 범위 재점검
+- [x] 현재 UI를 Web Interface Guidelines 기준으로 1차 점검
+- [x] 기능 후보 우선순위 정리
+  - [x] PRD Phase 2 잔여 기능: transcript import, 프로젝트 설정 UI, 중복 감지, git/PR 연결, import/reconciliation 이벤트
+  - [x] PRD 이후 제품 기능: prompt reuse/copy, usefulness feedback, saved prompts, anonymized export, onboarding checklist
+  - [x] 비용/위험/효용 기준으로 다음 구현 단위 선정
+- [x] 사용성 개선 구현
+  - [x] detail에서 prompt body copy action 추가
+  - [x] list pagination의 `next_cursor`를 UI에서 사용할 수 있게 연결
+  - [x] 검색/필터 상태를 URL query와 동기화해 공유/새로고침 시 유지
+  - [x] loading 문구와 empty state 문구를 DESIGN.md 톤에 맞게 정리
+- [x] 유용성 측정 설계
+  - [x] 사용자가 prompt를 재사용했는지 추적할 로컬 이벤트 정의
+  - [x] copied/reused/bookmarked 같은 저위험 신호부터 시작
+  - [x] 외부 전송 없이 dashboard에서 useful prompt 후보를 볼 수 있게 설계
+- [x] Playwright MCP 사용성 점검
+  - [x] 검색/필터/URL 새로고침
+  - [x] load more
+  - [x] detail copy action
+  - [x] desktop/mobile overflow와 console/network 오류
+- [x] 기본 검증 명령 실행
+  - [x] `pnpm test`
+  - [x] `pnpm lint`
+  - [x] `pnpm build`
+  - [x] `pnpm pack:dry-run`
+  - [x] `git diff --check`
+- [x] 커밋 및 `git push origin main`
+
+### P13 발견 사항
+
+- MVP core는 자동 수집, 저장, 검색, 상세, 삭제, hook/doctor/rebuild, 보안 회귀 기준까지 대부분 완료된 상태다.
+- Phase 2 중 규칙 기반 분석 정식화, 자동 태그, instruction 후보 제안은 이미 구현됐다.
+- 아직 구현되지 않은 큰 기능은 과거 transcript import, 프로젝트별 설정 UI, 중복 프롬프트 감지, git branch/commit/PR 연결, import/reconciliation 이벤트 상세화다.
+- 현재 사용성 결함은 UI가 API pagination의 `next_cursor`를 쓰지 않고, 검색/필터 상태가 URL에 남지 않으며, 상세 화면에서 좋은 프롬프트를 바로 복사해 재사용할 수 없다는 점이다.
+- 이번 작업에서는 "찾기 -> 열기 -> 재사용" 루프를 줄이는 기능을 우선 구현했다. 상세 프롬프트 복사, list load more, URL query 기반 필터 유지가 해당한다.
+- 다음 기능 후보 우선순위는 중복 프롬프트 감지, 프로젝트 설정 UI, usefulness feedback/bookmark, git branch/commit/PR 연결, transcript import 순서가 적절하다.
+- usefulness 측정은 외부 전송 없이 로컬 이벤트로 시작한다. 1차 이벤트는 `prompt_copied`, `prompt_bookmarked`, `prompt_reused_hint` 정도가 적합하고, dashboard에서는 "재사용 후보"로만 보여준다.
+- Playwright MCP로 `/`, `/?tag=docs`, `/?q=P13`, prompt detail, mobile list/detail을 확인했다. 첫 페이지 50개에서 `더 보기` 후 62개로 확장됐고, 상세 복사 버튼은 실제 클릭 후 `복사됨` 상태를 표시했다.

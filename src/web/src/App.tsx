@@ -35,10 +35,11 @@ type View =
 
 export function App() {
   const [view, setView] = useState<View>({ name: "list" });
-  const [filters, setFilters] = useState<PromptFilters>({
-    isSensitive: "all",
-  });
+  const [filters, setFilters] = useState<PromptFilters>(() =>
+    filtersFromLocation(),
+  );
   const [prompts, setPrompts] = useState<PromptSummary[]>([]);
+  const [nextCursor, setNextCursor] = useState<string | undefined>();
   const [selected, setSelected] = useState<PromptDetail | undefined>();
   const [health, setHealth] = useState<
     { ok: boolean; version: string; data_dir: string } | undefined
@@ -50,21 +51,37 @@ export function App() {
   const [pendingDelete, setPendingDelete] = useState<
     PromptDetail | undefined
   >();
+  const [copiedPromptId, setCopiedPromptId] = useState<string | undefined>();
 
   useEffect(() => {
-    const handlePop = () => setView(routeFromLocation());
-    setView(routeFromLocation());
+    const handlePop = () => {
+      const nextView = routeFromLocation();
+      setView(nextView);
+      if (nextView.name === "list") {
+        setFilters(filtersFromLocation());
+      }
+    };
+    const initialView = routeFromLocation();
+    setView(initialView);
+    if (initialView.name === "list") {
+      setFilters(filtersFromLocation());
+    }
     window.addEventListener("popstate", handlePop);
     return () => window.removeEventListener("popstate", handlePop);
   }, []);
 
   useEffect(() => {
+    if (view.name !== "list") {
+      return;
+    }
+
     const timer = window.setTimeout(() => {
-      void refreshList(filters);
+      writeFiltersToLocation(filters);
+      void refreshList(filters, { replace: true });
     }, 180);
 
     return () => window.clearTimeout(timer);
-  }, [filters]);
+  }, [filters, view.name]);
 
   useEffect(() => {
     void getHealth()
@@ -96,12 +113,20 @@ export function App() {
     return "프롬프트 아카이브";
   }, [view]);
 
-  async function refreshList(nextFilters = filters): Promise<void> {
+  async function refreshList(
+    nextFilters = filters,
+    options: { cursor?: string; replace?: boolean } = {},
+  ): Promise<void> {
     setLoading(true);
     setError(undefined);
     try {
-      const result = await listPrompts(nextFilters);
-      setPrompts(result.items);
+      const result = await listPrompts(nextFilters, options.cursor);
+      setPrompts((current) =>
+        options.cursor && !options.replace
+          ? [...current, ...result.items]
+          : result.items,
+      );
+      setNextCursor(result.next_cursor);
     } catch {
       setError("프롬프트 목록을 불러오지 못했습니다.");
     } finally {
@@ -117,7 +142,7 @@ export function App() {
     await deletePrompt(pendingDelete.id);
     setPendingDelete(undefined);
     navigate({ name: "list" });
-    await refreshList();
+    await refreshList(filters, { replace: true });
     void getQualityDashboard()
       .then(setDashboard)
       .catch(() => undefined);
@@ -125,6 +150,17 @@ export function App() {
 
   function updateFilters(next: Partial<PromptFilters>): void {
     setFilters((current) => ({ ...current, ...next }));
+  }
+
+  async function copyPrompt(prompt: PromptDetail): Promise<void> {
+    const copied = await copyTextToClipboard(prompt.markdown);
+    if (copied) {
+      setCopiedPromptId(prompt.id);
+      window.setTimeout(() => setCopiedPromptId(undefined), 3000);
+      return;
+    }
+
+    setError("프롬프트를 복사하지 못했습니다.");
   }
 
   function navigate(next: View): void {
@@ -142,6 +178,9 @@ export function App() {
 
   return (
     <main className="app-shell">
+      <a className="skip-link" href="#workspace">
+        본문으로 건너뛰기
+      </a>
       <aside className="sidebar" aria-label="주요 탐색">
         <div className="brand">
           <Database size={18} />
@@ -171,7 +210,7 @@ export function App() {
         </div>
       </aside>
 
-      <section className="workspace">
+      <section className="workspace" id="workspace">
         <header className="topbar">
           <div>
             <p className="eyebrow">Local prompt archive</p>
@@ -183,11 +222,12 @@ export function App() {
                 <Search size={16} />
                 <input
                   aria-label="프롬프트 검색"
+                  autoComplete="off"
                   name="prompt-search"
                   onChange={(event) =>
                     updateFilters({ query: event.target.value })
                   }
-                  placeholder="프롬프트 검색"
+                  placeholder="프롬프트 검색…"
                   value={filters.query ?? ""}
                 />
               </label>
@@ -233,16 +273,18 @@ export function App() {
               </select>
               <input
                 aria-label="경로 접두사 필터"
+                autoComplete="off"
                 className="path-filter"
                 name="cwd-prefix-filter"
                 onChange={(event) =>
                   updateFilters({ cwdPrefix: event.target.value })
                 }
-                placeholder="cwd prefix"
+                placeholder="cwd prefix…"
                 value={filters.cwdPrefix ?? ""}
               />
               <input
                 aria-label="시작일 필터"
+                autoComplete="off"
                 name="received-from-filter"
                 onChange={(event) =>
                   updateFilters({ receivedFrom: event.target.value })
@@ -252,6 +294,7 @@ export function App() {
               />
               <input
                 aria-label="종료일 필터"
+                autoComplete="off"
                 name="received-to-filter"
                 onChange={(event) =>
                   updateFilters({ receivedTo: event.target.value })
@@ -267,12 +310,19 @@ export function App() {
         {view.name === "list" && (
           <PromptList
             loading={loading}
+            nextCursor={filters.query?.trim() ? undefined : nextCursor}
+            onLoadMore={() => void refreshList(filters, { cursor: nextCursor })}
             onSelect={(id) => navigate({ name: "detail", id })}
             prompts={prompts}
           />
         )}
         {view.name === "detail" && (
-          <PromptDetailView onDelete={setPendingDelete} prompt={selected} />
+          <PromptDetailView
+            copied={selected?.id === copiedPromptId}
+            onCopy={copyPrompt}
+            onDelete={setPendingDelete}
+            prompt={selected}
+          />
         )}
         {view.name === "dashboard" && (
           <DashboardView dashboard={dashboard} loading={!dashboard} />
@@ -305,14 +355,18 @@ export function App() {
 
 function PromptList({
   loading,
+  nextCursor,
+  onLoadMore,
   onSelect,
   prompts,
 }: {
   loading: boolean;
+  nextCursor?: string;
+  onLoadMore(): void;
   onSelect(id: string): void;
   prompts: PromptSummary[];
 }) {
-  if (loading) {
+  if (loading && prompts.length === 0) {
     return <div className="panel empty">목록을 불러오는 중입니다.</div>;
   }
 
@@ -326,48 +380,63 @@ function PromptList({
   }
 
   return (
-    <div className="prompt-table" role="table">
-      <div className="table-row table-head" role="row">
-        <span>받은 시간</span>
-        <span>도구</span>
-        <span>경로</span>
-        <span>태그/상태</span>
-        <span>길이</span>
+    <>
+      <div className="prompt-table" role="table">
+        <div className="table-row table-head" role="row">
+          <span>받은 시간</span>
+          <span>도구</span>
+          <span>경로</span>
+          <span>태그/상태</span>
+          <span>길이</span>
+        </div>
+        {prompts.map((prompt) => (
+          <button
+            className="table-row"
+            key={prompt.id}
+            onClick={() => onSelect(prompt.id)}
+            role="row"
+          >
+            <span>{formatDate(prompt.received_at)}</span>
+            <span>{prompt.tool}</span>
+            <span className="truncate">{prompt.cwd}</span>
+            <span className="status-cell">
+              <StatusBadge prompt={prompt} />
+              {prompt.tags.slice(0, 2).map((tag) => (
+                <span className="badge tag-badge" key={tag}>
+                  {tag}
+                </span>
+              ))}
+              {prompt.quality_gaps.slice(0, 1).map((gap) => (
+                <span className="badge gap-badge" key={gap}>
+                  {gap}
+                </span>
+              ))}
+            </span>
+            <span>{prompt.prompt_length}</span>
+          </button>
+        ))}
       </div>
-      {prompts.map((prompt) => (
+      {nextCursor && (
         <button
-          className="table-row"
-          key={prompt.id}
-          onClick={() => onSelect(prompt.id)}
-          role="row"
+          className="load-more-button"
+          disabled={loading}
+          onClick={onLoadMore}
         >
-          <span>{formatDate(prompt.received_at)}</span>
-          <span>{prompt.tool}</span>
-          <span className="truncate">{prompt.cwd}</span>
-          <span className="status-cell">
-            <StatusBadge prompt={prompt} />
-            {prompt.tags.slice(0, 2).map((tag) => (
-              <span className="badge tag-badge" key={tag}>
-                {tag}
-              </span>
-            ))}
-            {prompt.quality_gaps.slice(0, 1).map((gap) => (
-              <span className="badge gap-badge" key={gap}>
-                {gap}
-              </span>
-            ))}
-          </span>
-          <span>{prompt.prompt_length}</span>
+          {loading ? "불러오는 중…" : "더 보기"}
         </button>
-      ))}
-    </div>
+      )}
+    </>
   );
 }
 
 function PromptDetailView({
+  copied,
+  onCopy,
   onDelete,
   prompt,
 }: {
+  copied: boolean;
+  onCopy(prompt: PromptDetail): void;
   onDelete(prompt: PromptDetail): void;
   prompt?: PromptDetail;
 }) {
@@ -396,6 +465,11 @@ function PromptDetailView({
       </aside>
       <article className="prompt-body">
         {prompt.analysis && <AnalysisPreview analysis={prompt.analysis} />}
+        <div className="prompt-actions">
+          <button onClick={() => onCopy(prompt)}>
+            <Copy size={16} /> {copied ? "복사됨" : "프롬프트 복사"}
+          </button>
+        </div>
         <SafeMarkdown markdown={prompt.markdown} />
       </article>
     </div>
@@ -668,6 +742,81 @@ function routeFromLocation(): View {
   }
 
   return { name: "list" };
+}
+
+function filtersFromLocation(): PromptFilters {
+  const params = new URLSearchParams(window.location.search);
+  const isSensitive = params.get("sensitive");
+
+  return {
+    query: params.get("q") ?? undefined,
+    tool: params.get("tool") ?? undefined,
+    tag: params.get("tag") ?? undefined,
+    cwdPrefix: params.get("cwd") ?? undefined,
+    receivedFrom: params.get("from") ?? undefined,
+    receivedTo: params.get("to") ?? undefined,
+    isSensitive:
+      isSensitive === "true" || isSensitive === "false" ? isSensitive : "all",
+  };
+}
+
+function writeFiltersToLocation(filters: PromptFilters): void {
+  const params = new URLSearchParams();
+  if (filters.query?.trim()) params.set("q", filters.query.trim());
+  if (filters.tool) params.set("tool", filters.tool);
+  if (filters.tag) params.set("tag", filters.tag);
+  if (filters.cwdPrefix?.trim()) params.set("cwd", filters.cwdPrefix.trim());
+  if (filters.isSensitive && filters.isSensitive !== "all") {
+    params.set("sensitive", filters.isSensitive);
+  }
+  if (filters.receivedFrom) params.set("from", filters.receivedFrom);
+  if (filters.receivedTo) params.set("to", filters.receivedTo);
+
+  const query = params.toString();
+  const next = query ? `/?${query}` : "/";
+  if (
+    window.location.pathname === "/" &&
+    `${window.location.pathname}${window.location.search}` !== next
+  ) {
+    window.history.replaceState({}, "", next);
+  }
+}
+
+async function copyTextToClipboard(text: string): Promise<boolean> {
+  const copiedWithSelection = copyTextWithSelection(text);
+  if (copiedWithSelection) return true;
+
+  if (navigator.clipboard?.writeText) {
+    const copied = await Promise.race([
+      navigator.clipboard.writeText(text).then(
+        () => true,
+        () => false,
+      ),
+      new Promise<boolean>((resolve) =>
+        window.setTimeout(() => resolve(false), 250),
+      ),
+    ]);
+    if (copied) return true;
+  }
+
+  return false;
+}
+
+function copyTextWithSelection(text: string): boolean {
+  const textarea = document.createElement("textarea");
+  textarea.value = text;
+  textarea.setAttribute("readonly", "");
+  textarea.style.position = "fixed";
+  textarea.style.left = "-9999px";
+  textarea.style.top = "0";
+  document.body.appendChild(textarea);
+  textarea.select();
+
+  try {
+    return document.execCommand("copy");
+  } finally {
+    document.body.removeChild(textarea);
+  }
 }
 
 const PROMPT_TAGS = [

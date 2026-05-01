@@ -65,6 +65,25 @@ pre {
   min-height: 100vh;
 }
 
+.skip-link {
+  background: var(--pm-surface);
+  border: 1px solid var(--pm-border-strong);
+  border-radius: 6px;
+  color: var(--pm-accent-strong);
+  font-size: 13px;
+  font-weight: 650;
+  left: 12px;
+  padding: 8px 10px;
+  position: fixed;
+  top: 12px;
+  transform: translateY(-160%);
+  z-index: 20;
+}
+
+.skip-link:focus-visible {
+  transform: translateY(0);
+}
+
 .sidebar {
   border-right: 1px solid var(--pm-border);
   padding: 18px 14px;
@@ -216,6 +235,27 @@ h2 {
   overflow: hidden;
 }
 
+.load-more-button {
+  background: var(--pm-surface-raised);
+  border: 1px solid var(--pm-border);
+  border-radius: 6px;
+  color: var(--pm-text);
+  font-size: 13px;
+  font-weight: 650;
+  margin-top: 12px;
+  min-height: 36px;
+  padding: 0 14px;
+}
+
+.load-more-button:hover {
+  border-color: var(--pm-border-strong);
+}
+
+.load-more-button:disabled {
+  color: var(--pm-text-subtle);
+  cursor: progress;
+}
+
 .table-row {
   align-items: center;
   border: 0;
@@ -346,6 +386,30 @@ dd {
 
 .prompt-body {
   min-width: 0;
+}
+
+.prompt-actions {
+  display: flex;
+  justify-content: flex-end;
+  margin-bottom: 12px;
+}
+
+.prompt-actions button {
+  align-items: center;
+  background: var(--pm-surface);
+  border: 1px solid var(--pm-border);
+  border-radius: 6px;
+  color: var(--pm-text);
+  display: inline-flex;
+  font-size: 13px;
+  font-weight: 650;
+  gap: 6px;
+  min-height: 32px;
+  padding: 0 12px;
+}
+
+.prompt-actions button:hover {
+  background: var(--pm-surface-muted);
 }
 
 .analysis-panel {
@@ -758,6 +822,12 @@ dd {
 
   .metadata-panel {
     margin-bottom: 12px;
+  }
+
+  .load-more-button,
+  .prompt-actions button {
+    min-height: 40px;
+    width: 100%;
   }
 
   .metric,

@@ -123,9 +123,13 @@ export async function ensureSession(): Promise<void> {
 
 export async function listPrompts(
   filters: PromptFilters,
+  cursor?: string,
 ): Promise<PromptListResponse> {
   await ensureSession();
   const params = new URLSearchParams({ limit: "50" });
+  if (cursor && !filters.query?.trim()) {
+    params.set("cursor", cursor);
+  }
   if (filters.query?.trim()) {
     params.set("q", filters.query.trim());
   }
