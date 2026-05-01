@@ -690,13 +690,38 @@ function DashboardView({
   return (
     <div className="dashboard-layout">
       <section className="metric-strip" aria-label="프롬프트 품질 지표">
-        <Metric label="전체 프롬프트" value={dashboard.total_prompts} />
+        <Metric
+          label="전체 프롬프트"
+          onSelect={() => onOpenFilteredList({})}
+          value={dashboard.total_prompts}
+        />
         <Metric
           label="민감정보 포함"
+          onSelect={() =>
+            onOpenFilteredList({
+              isSensitive: "true",
+            })
+          }
           value={`${Math.round(dashboard.sensitive_ratio * 100)}%`}
         />
-        <Metric label="최근 7일" value={dashboard.recent.last_7_days} />
-        <Metric label="최근 30일" value={dashboard.recent.last_30_days} />
+        <Metric
+          label="최근 7일"
+          onSelect={() =>
+            onOpenFilteredList({
+              receivedFrom: daysAgoDateInput(7),
+            })
+          }
+          value={dashboard.recent.last_7_days}
+        />
+        <Metric
+          label="최근 30일"
+          onSelect={() =>
+            onOpenFilteredList({
+              receivedFrom: daysAgoDateInput(30),
+            })
+          }
+          value={dashboard.recent.last_30_days}
+        />
       </section>
 
       <section className="dashboard-grid">
@@ -858,12 +883,25 @@ function DashboardView({
   );
 }
 
-function Metric({ label, value }: { label: string; value: number | string }) {
+function Metric({
+  label,
+  onSelect,
+  value,
+}: {
+  label: string;
+  onSelect?(): void;
+  value: number | string;
+}) {
   return (
-    <div className="metric">
+    <button
+      aria-label={`${label} ${value} 보기`}
+      className="metric metric-action"
+      onClick={onSelect}
+      type="button"
+    >
       <span>{label}</span>
       <strong>{value}</strong>
-    </div>
+    </button>
   );
 }
 
@@ -1081,6 +1119,12 @@ function formatDate(value: string): string {
     dateStyle: "short",
     timeStyle: "short",
   }).format(new Date(value));
+}
+
+function daysAgoDateInput(days: number): string {
+  const date = new Date();
+  date.setDate(date.getDate() - days);
+  return date.toISOString().slice(0, 10);
 }
 
 function projectLabel(path: string): string {

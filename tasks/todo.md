@@ -496,3 +496,33 @@
 - 제품 효용은 "어느 프로젝트/도구가 많은가"를 본 뒤 바로 해당 프롬프트 목록을 확인하는 데 있다.
 - 분포 row는 통계 표시이면서 동작 가능한 탐색 항목이므로 button으로 구현하고 접근 가능한 이름을 유지한다.
 - Playwright MCP로 `claude-code` 분포 drilldown이 `?tool=claude-code`에서 2행만 표시하고, `project-a` 분포 drilldown이 `?cwd=/Users/example/project-a`에서 2행만 표시하는 것을 확인했다. 모바일 목록 렌더링과 현재 페이지 콘솔 오류 0개도 확인했다.
+
+## P19 Dashboard Metric Drilldown
+
+- [x] PRD 완료 범위와 P18 이후 사용성 빈틈 기준으로 다음 구현 단위 확정
+- [x] 웹 UI 구현 전 `DESIGN.md`와 Web Interface Guidelines 재검토
+- [x] 웹 UI 연결
+  - [x] 전체 프롬프트 metric 클릭 시 전체 목록으로 이동
+  - [x] 민감정보 포함 metric 클릭 시 `isSensitive=true` 목록으로 이동
+  - [x] 최근 7일/30일 metric 클릭 시 `receivedFrom` 필터 목록으로 이동
+  - [x] metric이 버튼처럼 접근 가능한 이름과 hover/focus 상태를 갖도록 정리
+- [x] Playwright MCP 사용성 점검
+  - [x] sensitive metric drilldown
+  - [x] recent 7/30 metric drilldown
+  - [x] desktop/mobile overflow와 console/network 오류
+- [x] 기본 검증 명령 실행
+  - [x] `pnpm test`
+  - [x] `pnpm lint`
+  - [x] `pnpm format`
+  - [x] `pnpm build`
+  - [x] `pnpm pack:dry-run`
+  - [x] `pnpm smoke:release`
+  - [x] `git diff --check`
+- [x] 커밋 및 `git push origin main`
+
+### P19 설계 메모
+
+- 새 API 없이 기존 `isSensitive`, `receivedFrom` 필터를 대시보드 metric과 연결한다.
+- 제품 효용은 "민감정보 비율이 높다" 또는 "최근 입력량이 늘었다"를 본 뒤 바로 해당 프롬프트 목록을 확인하는 데 있다.
+- metric은 통계 카드이면서 동작 가능한 탐색 항목이므로 `button`으로 구현하고 URL query 상태를 유지한다.
+- Playwright MCP로 민감정보 metric drilldown이 `?sensitive=true`에서 1행만 표시하고, 최근 7일 metric drilldown이 `?from=2026-04-24`에서 3행, 최근 30일 metric drilldown이 `?from=2026-04-01`에서 3행을 표시하는 것을 확인했다. 모바일 목록 렌더링과 현재 페이지 콘솔 오류 0개도 확인했다.
