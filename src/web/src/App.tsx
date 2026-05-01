@@ -161,6 +161,7 @@ export function App() {
                 <Search size={16} />
                 <input
                   aria-label="프롬프트 검색"
+                  name="prompt-search"
                   onChange={(event) =>
                     updateFilters({ query: event.target.value })
                   }
@@ -170,6 +171,7 @@ export function App() {
               </label>
               <select
                 aria-label="도구 필터"
+                name="tool-filter"
                 onChange={(event) =>
                   updateFilters({ tool: event.target.value })
                 }
@@ -181,6 +183,7 @@ export function App() {
               </select>
               <select
                 aria-label="민감정보 필터"
+                name="sensitivity-filter"
                 onChange={(event) =>
                   updateFilters({
                     isSensitive: event.target
@@ -196,6 +199,7 @@ export function App() {
               <input
                 aria-label="경로 접두사 필터"
                 className="path-filter"
+                name="cwd-prefix-filter"
                 onChange={(event) =>
                   updateFilters({ cwdPrefix: event.target.value })
                 }
@@ -204,6 +208,7 @@ export function App() {
               />
               <input
                 aria-label="시작일 필터"
+                name="received-from-filter"
                 onChange={(event) =>
                   updateFilters({ receivedFrom: event.target.value })
                 }
@@ -212,6 +217,7 @@ export function App() {
               />
               <input
                 aria-label="종료일 필터"
+                name="received-to-filter"
                 onChange={(event) =>
                   updateFilters({ receivedTo: event.target.value })
                 }
