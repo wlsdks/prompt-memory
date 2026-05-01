@@ -86,6 +86,10 @@ export function createServer(options: CreateServerOptions): FastifyInstance {
     );
   });
 
+  server.get("/favicon.ico", async (_request, reply) => {
+    reply.status(204).send();
+  });
+
   registerHealthRoutes(server, options.dataDir);
   registerIngestRoutes(server, {
     auth: options.auth,

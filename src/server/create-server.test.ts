@@ -31,6 +31,18 @@ describe("createServer P2 ingest boundary", () => {
     expect(response.json()).toMatchObject({ ok: true, version: "0.0.0" });
   });
 
+  it("returns an empty favicon response for browser probes", async () => {
+    const server = createTestServer();
+
+    const response = await server.inject({
+      method: "GET",
+      url: "/favicon.ico",
+      headers: { host: "127.0.0.1:17373" },
+    });
+
+    expect(response.statusCode).toBe(204);
+  });
+
   it("rejects unauthenticated ingest with RFC 7807 problem response", async () => {
     const server = createTestServer();
 

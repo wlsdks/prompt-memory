@@ -28,6 +28,12 @@ yarn-debug.log*
 yarn-error.log*
 pnpm-debug.log*
 
+# Browser verification artifacts
+.playwright-mcp/
+playwright-report/
+test-results/
+prompt-memory-health-*.png
+
 # OS and editor files
 .DS_Store
 Thumbs.db
