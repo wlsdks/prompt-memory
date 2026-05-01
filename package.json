@@ -1,0 +1,53 @@
+{
+  "name": "prompt-memory",
+  "version": "0.0.0",
+  "description": "Local-first prompt archive for AI coding tools.",
+  "type": "module",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/wlsdks/prompt-memory.git"
+  },
+  "packageManager": "pnpm@10.18.0",
+  "engines": {
+    "node": ">=22 <25"
+  },
+  "bin": {
+    "prompt-memory": "./dist/cli/index.js"
+  },
+  "files": [
+    "dist",
+    "README.md",
+    "docs/PRD.md",
+    "docs/TECH_SPEC.md",
+    "docs/IMPLEMENTATION_PLAN.md"
+  ],
+  "scripts": {
+    "build": "tsc -p tsconfig.json",
+    "clean": "rm -rf dist coverage",
+    "format": "prettier --check package.json tsconfig.json vitest.config.ts \"src/**/*.ts\" \".github/**/*.yml\"",
+    "format:write": "prettier --write package.json tsconfig.json vitest.config.ts \"src/**/*.ts\" \".github/**/*.yml\"",
+    "lint": "tsc -p tsconfig.json --noEmit",
+    "pack:dry-run": "npm pack --dry-run",
+    "prepack": "pnpm build",
+    "prompt-memory": "node dist/cli/index.js",
+    "test": "vitest run"
+  },
+  "dependencies": {
+    "better-sqlite3": "^11.10.0",
+    "commander": "^13.1.0"
+  },
+  "devDependencies": {
+    "@types/better-sqlite3": "^7.6.13",
+    "@types/node": "^22.15.3",
+    "prettier": "^3.5.3",
+    "typescript": "^5.8.3",
+    "vitest": "^3.1.2"
+  },
+  "pnpm": {
+    "onlyBuiltDependencies": [
+      "better-sqlite3",
+      "esbuild"
+    ]
+  }
+}

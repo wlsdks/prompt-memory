@@ -73,7 +73,7 @@ pnpm install
 pnpm test
 pnpm build
 pnpm prompt-memory --help
-pnpm pack --dry-run
+pnpm pack:dry-run
 ```
 
 ### Acceptance
@@ -83,7 +83,7 @@ pnpm pack --dry-run
 - CLI help prints without crashing.
 - `better-sqlite3` can open an in-memory database.
 - `better-sqlite3` smoke test verifies WAL and FTS5 on the current machine.
-- `pnpm pack --dry-run` shows built CLI files and excludes irrelevant source/test artifacts according to package policy.
+- `pnpm pack:dry-run` shows built CLI files and excludes irrelevant source/test artifacts according to package policy.
 
 ## 5. P1: Core Contracts And Bootstrap
 
