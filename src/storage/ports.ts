@@ -154,6 +154,15 @@ export type PromptQualityDashboard = {
     last_7_days: number;
     last_30_days: number;
   };
+  trend: {
+    daily: Array<{
+      date: string;
+      prompt_count: number;
+      quality_gap_count: number;
+      quality_gap_rate: number;
+      sensitive_count: number;
+    }>;
+  };
   distribution: {
     by_tool: DistributionBucket[];
     by_project: DistributionBucket[];

@@ -784,6 +784,8 @@ function DashboardView({
         />
       </section>
 
+      <TrendPanel daily={dashboard.trend.daily} />
+
       <section className="dashboard-grid">
         <DistributionPanel
           buckets={dashboard.distribution.by_tool}
@@ -940,6 +942,50 @@ function DashboardView({
         </div>
       </section>
     </div>
+  );
+}
+
+function TrendPanel({ daily }: { daily: QualityDashboard["trend"]["daily"] }) {
+  const maxPromptCount = Math.max(1, ...daily.map((item) => item.prompt_count));
+
+  return (
+    <section className="panel trend-panel" aria-label="최근 품질 트렌드">
+      <div className="panel-heading-row">
+        <h2>최근 품질 트렌드</h2>
+        <span>7일</span>
+      </div>
+      <div className="trend-list">
+        {daily.length === 0 && (
+          <p className="muted">트렌드 데이터가 없습니다.</p>
+        )}
+        {daily.map((day) => (
+          <div className="trend-row" key={day.date}>
+            <span>{formatTrendDate(day.date)}</span>
+            <div className="trend-bars" aria-hidden="true">
+              <span
+                className="trend-bar prompts"
+                style={{
+                  width: `${Math.max((day.prompt_count / maxPromptCount) * 100, day.prompt_count > 0 ? 8 : 0)}%`,
+                }}
+              />
+              <span
+                className="trend-bar gaps"
+                style={{
+                  width: `${Math.max(day.quality_gap_rate * 100, day.quality_gap_count > 0 ? 8 : 0)}%`,
+                }}
+              />
+            </div>
+            <span className="trend-meta">
+              <strong>{day.prompt_count}</strong>
+              <small>{Math.round(day.quality_gap_rate * 100)}% gap</small>
+              {day.sensitive_count > 0 && (
+                <small>{day.sensitive_count} redacted</small>
+              )}
+            </span>
+          </div>
+        ))}
+      </div>
+    </section>
   );
 }
 
@@ -1309,6 +1355,13 @@ function formatDate(value: string): string {
     dateStyle: "short",
     timeStyle: "short",
   }).format(new Date(value));
+}
+
+function formatTrendDate(value: string): string {
+  return new Intl.DateTimeFormat("ko-KR", {
+    day: "2-digit",
+    month: "2-digit",
+  }).format(new Date(`${value}T00:00:00.000Z`));
 }
 
 function daysAgoDateInput(days: number): string {

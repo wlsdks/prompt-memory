@@ -81,6 +81,8 @@ type PromptAnalysisRow = {
 
 type PromptQualityRow = {
   prompt_id: string;
+  received_at: string;
+  is_sensitive: number;
   cwd: string;
   project_root: string | null;
   checklist_json: string | null;
@@ -1329,8 +1331,8 @@ function getQualityDashboard(
   const qualityRows = db
     .prepare(
       `
-      SELECT p.id AS prompt_id, p.cwd, p.project_root, pa.checklist_json,
-        pa.tags_json
+      SELECT p.id AS prompt_id, p.received_at, p.is_sensitive, p.cwd,
+        p.project_root, pa.checklist_json, pa.tags_json
       FROM prompts p
       LEFT JOIN prompt_analyses pa ON pa.prompt_id = p.id
       WHERE p.deleted_at IS NULL
@@ -1344,6 +1346,9 @@ function getQualityDashboard(
     sensitive_prompts: sensitivePrompts,
     sensitive_ratio: ratio(sensitivePrompts, totalPrompts),
     recent,
+    trend: {
+      daily: buildDailyTrend(qualityRows, now),
+    },
     distribution: {
       by_tool: readDistribution(
         db,
@@ -1361,6 +1366,73 @@ function getQualityDashboard(
     useful_prompts: readUsefulPrompts(db),
     duplicate_prompt_groups: readDuplicatePromptGroups(db),
   };
+}
+
+function buildDailyTrend(
+  rows: PromptQualityRow[],
+  now: Date,
+): PromptQualityDashboard["trend"]["daily"] {
+  const dates = lastDayKeys(now, 7);
+  const buckets = new Map<
+    string,
+    {
+      date: string;
+      prompt_count: number;
+      quality_gap_count: number;
+      sensitive_count: number;
+    }
+  >(
+    dates.map((date) => [
+      date,
+      {
+        date,
+        prompt_count: 0,
+        quality_gap_count: 0,
+        sensitive_count: 0,
+      },
+    ]),
+  );
+  const firstDate = dates[0];
+
+  for (const row of rows) {
+    const date = row.received_at.slice(0, 10);
+    if (!firstDate || date < firstDate || !buckets.has(date)) {
+      continue;
+    }
+
+    const bucket = buckets.get(date);
+    if (!bucket) {
+      continue;
+    }
+
+    bucket.prompt_count += 1;
+    if (row.is_sensitive === 1) {
+      bucket.sensitive_count += 1;
+    }
+    if (hasQualityGap(row.checklist_json)) {
+      bucket.quality_gap_count += 1;
+    }
+  }
+
+  return dates.map((date) => {
+    const bucket = buckets.get(date) ?? {
+      date,
+      prompt_count: 0,
+      quality_gap_count: 0,
+      sensitive_count: 0,
+    };
+
+    return {
+      ...bucket,
+      quality_gap_rate: ratio(bucket.quality_gap_count, bucket.prompt_count),
+    };
+  });
+}
+
+function hasQualityGap(checklistJson: string | null): boolean {
+  return readChecklist(checklistJson).some(
+    (item) => item.status === "missing" || item.status === "weak",
+  );
 }
 
 function readDuplicatePromptGroups(
@@ -1683,6 +1755,18 @@ function patternMessage(
 
 function daysAgo(now: Date, days: number): string {
   return new Date(now.getTime() - days * 24 * 60 * 60 * 1000).toISOString();
+}
+
+function lastDayKeys(now: Date, days: number): string[] {
+  const today = new Date(
+    Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate()),
+  );
+
+  return Array.from({ length: days }, (_, index) => {
+    const day = new Date(today);
+    day.setUTCDate(today.getUTCDate() - (days - index - 1));
+    return day.toISOString().slice(0, 10);
+  });
 }
 
 function ratio(count: number, total: number): number {

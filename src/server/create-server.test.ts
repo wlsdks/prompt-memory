@@ -563,6 +563,7 @@ function createMemoryStorage() {
         sensitive_prompts: 0,
         sensitive_ratio: 0,
         recent: { last_7_days: 0, last_30_days: 0 },
+        trend: { daily: [] },
         distribution: { by_tool: [], by_project: [] },
         missing_items: [],
         patterns: [],

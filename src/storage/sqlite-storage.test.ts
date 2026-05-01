@@ -236,7 +236,7 @@ describe("SQLite prompt storage", () => {
     });
     await storeClaudePrompt(storage, {
       prompt:
-        "Update docs/README.md. Return Markdown summary and run pnpm test.",
+        "현재 README 온보딩 설명이 부족합니다. Update docs/README.md only, return Markdown summary, and run pnpm test expecting pass.",
       receivedAt: "2026-05-03T10:00:00.000Z",
       cwd: "/Users/example/project-b",
     });
@@ -246,6 +246,57 @@ describe("SQLite prompt storage", () => {
 
     expect(dashboard.total_prompts).toBe(3);
     expect(dashboard.recent.last_7_days).toBe(3);
+    expect(dashboard.trend.daily).toEqual([
+      {
+        date: "2026-04-27",
+        prompt_count: 0,
+        quality_gap_count: 0,
+        quality_gap_rate: 0,
+        sensitive_count: 0,
+      },
+      {
+        date: "2026-04-28",
+        prompt_count: 0,
+        quality_gap_count: 0,
+        quality_gap_rate: 0,
+        sensitive_count: 0,
+      },
+      {
+        date: "2026-04-29",
+        prompt_count: 0,
+        quality_gap_count: 0,
+        quality_gap_rate: 0,
+        sensitive_count: 0,
+      },
+      {
+        date: "2026-04-30",
+        prompt_count: 0,
+        quality_gap_count: 0,
+        quality_gap_rate: 0,
+        sensitive_count: 0,
+      },
+      {
+        date: "2026-05-01",
+        prompt_count: 1,
+        quality_gap_count: 1,
+        quality_gap_rate: 1,
+        sensitive_count: 0,
+      },
+      {
+        date: "2026-05-02",
+        prompt_count: 1,
+        quality_gap_count: 1,
+        quality_gap_rate: 1,
+        sensitive_count: 0,
+      },
+      {
+        date: "2026-05-03",
+        prompt_count: 1,
+        quality_gap_count: 0,
+        quality_gap_rate: 0,
+        sensitive_count: 0,
+      },
+    ]);
     expect(dashboard.distribution.by_tool).toMatchObject([
       { key: "claude-code", count: 3 },
     ]);
@@ -268,6 +319,7 @@ describe("SQLite prompt storage", () => {
     expect(dashboard.instruction_suggestions.length).toBeGreaterThan(0);
     expect(serialized).not.toContain("이거 고쳐줘");
     expect(serialized).not.toContain("저거 고쳐줘");
+    expect(serialized).not.toContain("현재 README 온보딩 설명이 부족합니다.");
   });
 
   it("connects Claude ingest to real Markdown, SQLite, and FTS storage", async () => {
