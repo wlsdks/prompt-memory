@@ -81,3 +81,22 @@
 - `config.toml`에는 `[features].codex_hooks = true`를 구조적으로 보강하고, uninstall 시에는 feature flag를 제거하지 않는다.
 - doctor는 user/project hook source 중복 설치를 경고 상태로 본다.
 - `pnpm test`, `pnpm lint`, `pnpm build`, `pnpm pack:dry-run`, `git diff --check`를 통과했다.
+
+## P8 Release Docs
+
+- [x] README 설치/초기화/서버/CLI 사용법 작성
+- [x] Claude Code와 Codex beta hook 연결/해제 문서화
+- [x] 저장 위치, 삭제, 로컬 우선, 외부 전송 없음 문서화
+- [x] OpenAI/Anthropic 비제휴 고지 작성
+- [x] 보안 정책 문서 작성
+- [x] 어댑터 기여 가이드 작성
+- [x] 릴리스 체크리스트 작성
+- [x] GitHub issue template 추가
+- [x] npm package files 목록에 공개 문서 포함
+- [x] 검증 명령 실행
+- [x] 커밋 및 푸시
+
+### P8 Release Docs 검토
+
+- `pnpm format`, `pnpm test`, `pnpm lint`, `pnpm build`, `pnpm pack:dry-run`, `git diff --check`를 통과했다.
+- `pnpm pack:dry-run`에서 `README.md`, `SECURITY.md`, `docs/ADAPTERS.md`, `docs/RELEASE_CHECKLIST.md` 포함을 확인했다.

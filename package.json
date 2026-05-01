@@ -18,9 +18,12 @@
   "files": [
     "dist",
     "README.md",
+    "SECURITY.md",
     "docs/PRD.md",
     "docs/TECH_SPEC.md",
-    "docs/IMPLEMENTATION_PLAN.md"
+    "docs/IMPLEMENTATION_PLAN.md",
+    "docs/ADAPTERS.md",
+    "docs/RELEASE_CHECKLIST.md"
   ],
   "scripts": {
     "build": "pnpm build:server && pnpm build:web",
