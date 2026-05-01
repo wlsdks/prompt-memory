@@ -23,11 +23,14 @@
     "docs/IMPLEMENTATION_PLAN.md"
   ],
   "scripts": {
-    "build": "tsc -p tsconfig.json",
+    "build": "pnpm build:server && pnpm build:web",
+    "build:server": "tsc -p tsconfig.json",
+    "build:web": "vite build --config vite.web.config.ts",
     "clean": "rm -rf dist coverage",
-    "format": "prettier --check package.json tsconfig.json vitest.config.ts \"src/**/*.ts\" \".github/**/*.yml\"",
-    "format:write": "prettier --write package.json tsconfig.json vitest.config.ts \"src/**/*.ts\" \".github/**/*.yml\"",
-    "lint": "tsc -p tsconfig.json --noEmit",
+    "format": "prettier --check package.json tsconfig.json tsconfig.web.json vite.web.config.ts vitest.config.ts \"src/**/*.{ts,tsx,css}\" \".github/**/*.yml\"",
+    "format:write": "prettier --write package.json tsconfig.json tsconfig.web.json vite.web.config.ts vitest.config.ts \"src/**/*.{ts,tsx,css}\" \".github/**/*.yml\"",
+    "dev:web": "vite --config vite.web.config.ts",
+    "lint": "tsc -p tsconfig.json --noEmit && tsc -p tsconfig.web.json --noEmit",
     "pack:dry-run": "npm pack --dry-run",
     "prepack": "pnpm build",
     "prompt-memory": "node dist/cli/index.js",
@@ -43,8 +46,15 @@
   "devDependencies": {
     "@types/better-sqlite3": "^7.6.13",
     "@types/node": "^22.15.3",
+    "@types/react": "^19.2.14",
+    "@types/react-dom": "^19.2.3",
+    "@vitejs/plugin-react": "^6.0.1",
+    "lucide-react": "^1.14.0",
     "prettier": "^3.5.3",
+    "react": "^19.2.5",
+    "react-dom": "^19.2.5",
     "typescript": "^5.8.3",
+    "vite": "^8.0.10",
     "vitest": "^3.1.2"
   },
   "pnpm": {

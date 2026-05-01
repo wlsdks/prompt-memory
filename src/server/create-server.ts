@@ -9,6 +9,8 @@ import { HttpProblem, problem } from "./errors.js";
 import { registerHealthRoutes } from "./routes/health.js";
 import { registerIngestRoutes } from "./routes/ingest.js";
 import { registerPromptRoutes } from "./routes/prompts.js";
+import { registerSessionRoutes } from "./routes/session.js";
+import { registerStaticRoutes, type WebAssets } from "./routes/static.js";
 
 export type CreateServerOptions = {
   dataDir: string;
@@ -19,6 +21,8 @@ export type CreateServerOptions = {
   maxBodyBytes?: number;
   maxQueryLength?: number;
   maxPromptLength?: number;
+  webRoot?: string;
+  webAssets?: WebAssets;
   rateLimit?: {
     max: number;
     windowMs: number;
@@ -91,6 +95,7 @@ export function createServer(options: CreateServerOptions): FastifyInstance {
   });
 
   registerHealthRoutes(server, options.dataDir);
+  registerSessionRoutes(server, options.auth);
   registerIngestRoutes(server, {
     auth: options.auth,
     storage: options.storage,
@@ -101,6 +106,10 @@ export function createServer(options: CreateServerOptions): FastifyInstance {
   registerPromptRoutes(server, {
     auth: options.auth,
     storage: options.storage,
+  });
+  registerStaticRoutes(server, {
+    webRoot: options.webRoot,
+    webAssets: options.webAssets,
   });
 
   return server;

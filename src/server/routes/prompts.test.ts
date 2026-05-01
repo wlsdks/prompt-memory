@@ -163,6 +163,7 @@ async function createPromptApiFixture() {
     auth: {
       appToken: "app-token",
       ingestToken: "ingest-token",
+      webSessionSecret: "web-session-secret",
     },
     storage,
     redactionMode: "mask",

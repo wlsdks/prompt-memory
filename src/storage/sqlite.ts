@@ -389,7 +389,7 @@ function getPrompt(
 
   return {
     ...toPromptSummary(row),
-    markdown: readPromptMarkdown(row.markdown_path),
+    markdown: parsePromptMarkdown(row.markdown_path).body,
   };
 }
 

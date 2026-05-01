@@ -43,6 +43,83 @@ describe("createServer P2 ingest boundary", () => {
     expect(response.statusCode).toBe(204);
   });
 
+  it("issues local web sessions and requires csrf for cookie delete", async () => {
+    const storage = createMemoryStorage();
+    const server = createTestServer({ storage });
+
+    const session = await server.inject({
+      method: "GET",
+      url: "/api/v1/session",
+      headers: { host: "127.0.0.1:17373" },
+    });
+    const cookie = session.headers["set-cookie"];
+    const csrfToken = session.json<{ data: { csrf_token: string } }>().data
+      .csrf_token;
+
+    expect(session.statusCode).toBe(200);
+    expect(cookie).toContain("prompt_memory_session=");
+    expect(csrfToken).toBeTypeOf("string");
+
+    const noCsrf = await server.inject({
+      method: "DELETE",
+      url: "/api/v1/prompts/prmt_20260501_100000_abcdefabcdef",
+      headers: {
+        host: "127.0.0.1:17373",
+        cookie: String(cookie),
+      },
+    });
+    expect(noCsrf.statusCode).toBe(403);
+
+    const deleted = await server.inject({
+      method: "DELETE",
+      url: "/api/v1/prompts/prmt_20260501_100000_abcdefabcdef",
+      headers: {
+        host: "127.0.0.1:17373",
+        cookie: String(cookie),
+        "x-csrf-token": csrfToken,
+      },
+    });
+    expect(deleted.statusCode).toBe(200);
+  });
+
+  it("serves built web assets with csp and spa fallback", async () => {
+    const server = createTestServer({
+      webAssets: {
+        "index.html":
+          '<html><head><script type="module" src="/assets/app.js"></script></head><body><div id="root"></div></body></html>',
+        "assets/app.js": "console.log('web')",
+      },
+    });
+
+    const root = await server.inject({
+      method: "GET",
+      url: "/",
+      headers: { host: "127.0.0.1:17373" },
+    });
+    expect(root.statusCode).toBe(200);
+    expect(root.headers["content-security-policy"]).toContain(
+      "default-src 'self'",
+    );
+    expect(root.body).toContain('<div id="root"></div>');
+
+    const fallback = await server.inject({
+      method: "GET",
+      url: "/prompts/prmt_20260501_100000_abcdefabcdef",
+      headers: { host: "127.0.0.1:17373" },
+    });
+    expect(fallback.statusCode).toBe(200);
+    expect(fallback.body).toContain('<div id="root"></div>');
+
+    const asset = await server.inject({
+      method: "GET",
+      url: "/assets/app.js",
+      headers: { host: "127.0.0.1:17373" },
+    });
+    expect(asset.statusCode).toBe(200);
+    expect(asset.headers["content-type"]).toContain("text/javascript");
+    expect(asset.body).toContain("console.log");
+  });
+
   it("rejects unauthenticated ingest with RFC 7807 problem response", async () => {
     const server = createTestServer();
 
@@ -329,6 +406,7 @@ type TestServerOptions = {
   maxBodyBytes?: number;
   maxQueryLength?: number;
   rateLimit?: { max: number; windowMs: number };
+  webAssets?: Record<string, string>;
 };
 
 function createTestServer(options: TestServerOptions = {}) {
@@ -337,6 +415,7 @@ function createTestServer(options: TestServerOptions = {}) {
     auth: {
       appToken: "app-token",
       ingestToken: "ingest-token",
+      webSessionSecret: "web-session-secret",
     },
     redactionMode: options.redactionMode ?? "mask",
     excludedProjectRoots: options.excludedProjectRoots ?? [],
@@ -344,6 +423,7 @@ function createTestServer(options: TestServerOptions = {}) {
     maxBodyBytes: options.maxBodyBytes,
     maxQueryLength: options.maxQueryLength,
     rateLimit: options.rateLimit,
+    webAssets: options.webAssets,
     storage: options.storage ?? createMemoryStorage(),
   });
 }
@@ -359,6 +439,18 @@ function createMemoryStorage() {
         id: "stored-1",
         duplicate: false,
       };
+    },
+    listPrompts() {
+      return { items: [] };
+    },
+    searchPrompts() {
+      return { items: [] };
+    },
+    getPrompt() {
+      return undefined;
+    },
+    deletePrompt() {
+      return { deleted: true };
     },
   } satisfies PromptStoragePort & {
     events: Array<Parameters<PromptStoragePort["storePrompt"]>[0]>;

@@ -93,6 +93,7 @@ describe("SQLite prompt storage", () => {
       auth: {
         appToken: "app-token",
         ingestToken: "ingest-token",
+        webSessionSecret: "web-session-secret",
       },
       storage,
       redactionMode: "mask",
@@ -234,6 +235,7 @@ describe("SQLite prompt storage", () => {
 
     const detail = storage.getPrompt(beta.id);
     expect(detail?.markdown).toContain("beta prompt");
+    expect(detail?.markdown).not.toContain("schema_version");
     expect(detail?.cwd).toBe("/Users/example/project");
 
     const betaPath = storage

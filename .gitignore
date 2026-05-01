@@ -32,7 +32,7 @@ pnpm-debug.log*
 .playwright-mcp/
 playwright-report/
 test-results/
-prompt-memory-health-*.png
+prompt-memory-*.png
 
 # OS and editor files
 .DS_Store

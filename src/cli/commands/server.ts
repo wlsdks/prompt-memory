@@ -1,5 +1,6 @@
 import type { FastifyInstance } from "fastify";
 import type { Command } from "commander";
+import { fileURLToPath } from "node:url";
 
 import { loadHookAuth, loadPromptMemoryConfig } from "../../config/config.js";
 import { createServer } from "../../server/create-server.js";
@@ -39,9 +40,11 @@ export async function startPromptMemoryServer(
     auth: {
       appToken: hookAuth.app_token,
       ingestToken: hookAuth.ingest_token,
+      webSessionSecret: hookAuth.web_session_secret,
     },
     storage,
     redactionMode: config.redaction_mode,
+    webRoot: fileURLToPath(new URL("../../web", import.meta.url)),
   });
   const url = await server.listen({
     host: config.server.host,

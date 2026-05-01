@@ -5,7 +5,7 @@ import type {
   PromptReadStoragePort,
   PromptStoragePort,
 } from "../../storage/ports.js";
-import { requireBearerToken, type ServerAuthConfig } from "../auth.js";
+import { requireAppAccess, type ServerAuthConfig } from "../auth.js";
 import { problem } from "../errors.js";
 
 export type PromptRouteOptions = {
@@ -28,7 +28,7 @@ export function registerPromptRoutes(
   options: PromptRouteOptions,
 ): void {
   server.get("/api/v1/prompts", async (request) => {
-    requireBearerToken(request, options.auth.appToken);
+    requireAppAccess(request, options.auth);
     const storage = requireReadStorage(options.storage, request.url);
     const query = ListQuerySchema.parse(request.query);
 
@@ -54,7 +54,7 @@ export function registerPromptRoutes(
   });
 
   server.get("/api/v1/prompts/:id", async (request) => {
-    requireBearerToken(request, options.auth.appToken);
+    requireAppAccess(request, options.auth);
     const storage = requireReadStorage(options.storage, request.url);
     const params = PromptParamsSchema.parse(request.params);
     const prompt = storage.getPrompt(params.id);
@@ -67,7 +67,7 @@ export function registerPromptRoutes(
   });
 
   server.delete("/api/v1/prompts/:id", async (request) => {
-    requireBearerToken(request, options.auth.appToken);
+    requireAppAccess(request, options.auth, { csrf: true });
     const storage = requireReadStorage(options.storage, request.url);
     const params = PromptParamsSchema.parse(request.params);
     const result = storage.deletePrompt(params.id);
