@@ -1,5 +1,6 @@
 import type {
   NormalizedPromptEvent,
+  PromptAnalysisPreview,
   RedactionResult,
 } from "../shared/schema.js";
 
@@ -31,6 +32,7 @@ export type PromptSummary = {
 
 export type PromptDetail = PromptSummary & {
   markdown: string;
+  analysis?: PromptAnalysisPreview;
 };
 
 export type ListPromptsOptions = {

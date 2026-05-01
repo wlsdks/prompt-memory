@@ -341,9 +341,49 @@ function PromptDetailView({
         </button>
       </aside>
       <article className="prompt-body">
+        {prompt.analysis && <AnalysisPreview analysis={prompt.analysis} />}
         <SafeMarkdown markdown={prompt.markdown} />
       </article>
     </div>
+  );
+}
+
+function AnalysisPreview({
+  analysis,
+}: {
+  analysis: NonNullable<PromptDetail["analysis"]>;
+}) {
+  return (
+    <section className="analysis-panel" aria-label="분석 preview">
+      <div className="analysis-header">
+        <div>
+          <p className="eyebrow">Local analysis</p>
+          <h2>분석 preview</h2>
+        </div>
+        <span className="badge">{analysis.analyzer}</span>
+      </div>
+      <p className="analysis-summary">{analysis.summary}</p>
+      {analysis.warnings.length > 0 && (
+        <div className="analysis-list">
+          <h3>주의할 점</h3>
+          <ul>
+            {analysis.warnings.map((warning) => (
+              <li key={warning}>{warning}</li>
+            ))}
+          </ul>
+        </div>
+      )}
+      {analysis.suggestions.length > 0 && (
+        <div className="analysis-list">
+          <h3>개선 힌트</h3>
+          <ul>
+            {analysis.suggestions.map((suggestion) => (
+              <li key={suggestion}>{suggestion}</li>
+            ))}
+          </ul>
+        </div>
+      )}
+    </section>
   );
 }
 

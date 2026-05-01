@@ -8,10 +8,14 @@ import {
 } from "node:fs";
 import { join } from "node:path";
 
+import { analyzePrompt } from "../analysis/analyze.js";
 import { redactPrompt } from "../redaction/redact.js";
 import { createPromptId } from "../shared/ids.js";
 import { createStoredContentHash } from "../shared/hashing.js";
-import type { RedactionPolicy } from "../shared/schema.js";
+import type {
+  PromptAnalysisPreview,
+  RedactionPolicy,
+} from "../shared/schema.js";
 import { getPromptMemoryPaths } from "./paths.js";
 import type {
   DeletePromptResult,
@@ -55,6 +59,20 @@ export type PromptRow = {
   redaction_policy: string;
   adapter_version: string;
   index_status: string;
+};
+
+type PromptAnalysisRow = {
+  summary: string | null;
+  warnings_json: string | null;
+  suggestions_json: string | null;
+  analyzer: string;
+  created_at: string;
+};
+
+type RebuildPromptRow = {
+  id: string;
+  markdown_path: string;
+  received_at: string;
 };
 
 export type AppliedMigration = {
@@ -212,6 +230,10 @@ function storePrompt(
     frontmatter,
     input.redaction.stored_text,
   );
+  const analysis = analyzePrompt({
+    prompt: input.redaction.stored_text,
+    createdAt: now.toISOString(),
+  });
 
   const transaction = db.transaction(() => {
     db.prepare(
@@ -304,6 +326,8 @@ function storePrompt(
       "",
       "",
     );
+
+    upsertPromptAnalysis(db, id, analysis);
   });
 
   transaction();
@@ -424,6 +448,7 @@ function getPrompt(
   return {
     ...toPromptSummary(row),
     markdown: parsePromptMarkdown(row.markdown_path).body,
+    analysis: readPromptAnalysis(db, id),
   };
 }
 
@@ -556,10 +581,14 @@ function rebuildIndex(
     db.prepare("DELETE FROM prompt_fts").run();
 
     const rows = db
-      .prepare("SELECT id, markdown_path FROM prompts WHERE deleted_at IS NULL")
-      .all() as Array<{ id: string; markdown_path: string }>;
+      .prepare(
+        "SELECT id, markdown_path, received_at FROM prompts WHERE deleted_at IS NULL",
+      )
+      .all() as RebuildPromptRow[];
 
     for (const row of rows) {
+      db.prepare("DELETE FROM prompt_analyses WHERE prompt_id = ?").run(row.id);
+
       if (!existsSync(row.markdown_path)) {
         db.prepare("UPDATE prompts SET index_status = ? WHERE id = ?").run(
           "missing_file",
@@ -595,6 +624,14 @@ function rebuildIndex(
       db.prepare("UPDATE prompts SET index_status = ? WHERE id = ?").run(
         "indexed",
         row.id,
+      );
+      upsertPromptAnalysis(
+        db,
+        row.id,
+        analyzePrompt({
+          prompt: redaction.stored_text,
+          createdAt: row.received_at,
+        }),
       );
       rebuilt.push(row.id);
     }
@@ -768,6 +805,74 @@ function extractMarkdownBody(markdown: string): string {
   }
 
   return markdown.slice(delimiter + "\n---\n".length).trimStart();
+}
+
+function upsertPromptAnalysis(
+  db: Database.Database,
+  promptId: string,
+  analysis: PromptAnalysisPreview,
+): void {
+  db.prepare("DELETE FROM prompt_analyses WHERE prompt_id = ?").run(promptId);
+  db.prepare(
+    `
+    INSERT INTO prompt_analyses(
+      id, prompt_id, summary, warnings_json, suggestions_json, analyzer, created_at
+    )
+    VALUES (?, ?, ?, ?, ?, ?, ?)
+    `,
+  ).run(
+    `${promptId}:${analysis.analyzer}`,
+    promptId,
+    analysis.summary,
+    JSON.stringify(analysis.warnings),
+    JSON.stringify(analysis.suggestions),
+    analysis.analyzer,
+    analysis.created_at,
+  );
+}
+
+function readPromptAnalysis(
+  db: Database.Database,
+  promptId: string,
+): PromptAnalysisPreview | undefined {
+  const row = db
+    .prepare(
+      `
+      SELECT summary, warnings_json, suggestions_json, analyzer, created_at
+      FROM prompt_analyses
+      WHERE prompt_id = ?
+      ORDER BY created_at DESC, id DESC
+      LIMIT 1
+      `,
+    )
+    .get(promptId) as PromptAnalysisRow | undefined;
+
+  if (!row) {
+    return undefined;
+  }
+
+  return {
+    summary: row.summary ?? "",
+    warnings: readStringArray(row.warnings_json),
+    suggestions: readStringArray(row.suggestions_json),
+    analyzer: row.analyzer,
+    created_at: row.created_at,
+  };
+}
+
+function readStringArray(value: string | null): string[] {
+  if (!value) {
+    return [];
+  }
+
+  try {
+    const parsed = JSON.parse(value) as unknown;
+    return Array.isArray(parsed)
+      ? parsed.filter((item): item is string => typeof item === "string")
+      : [];
+  } catch {
+    return [];
+  }
 }
 
 const INITIAL_DDL = `

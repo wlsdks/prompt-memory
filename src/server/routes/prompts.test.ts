@@ -91,10 +91,22 @@ describe("prompt read/delete API", () => {
     });
     expect(detail.statusCode).toBe(200);
     expect(
-      detail.json<{ data: { id: string; markdown: string } }>().data,
+      detail.json<{
+        data: {
+          id: string;
+          markdown: string;
+          analysis: { analyzer: string; warnings: string[] };
+        };
+      }>().data,
     ).toMatchObject({
       id: ids.beta,
       markdown: expect.stringContaining("beta prompt"),
+      analysis: {
+        analyzer: "local-rules-v1",
+        warnings: expect.arrayContaining([
+          "작업 대상이나 배경 맥락이 부족합니다.",
+        ]),
+      },
     });
 
     const crossOriginDelete = await server.inject({

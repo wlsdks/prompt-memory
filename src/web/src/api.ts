@@ -16,6 +16,13 @@ export type PromptSummary = {
 
 export type PromptDetail = PromptSummary & {
   markdown: string;
+  analysis?: {
+    summary: string;
+    warnings: string[];
+    suggestions: string[];
+    analyzer: string;
+    created_at: string;
+  };
 };
 
 export type PromptListResponse = {

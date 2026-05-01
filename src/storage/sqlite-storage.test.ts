@@ -119,6 +119,37 @@ describe("SQLite prompt storage", () => {
     expect(storage.searchPromptIds("sk-proj")).toEqual([]);
     expect(storage.searchPromptIds(rawSecret)).toEqual([]);
     expect(storage.searchPromptIds("REDACTED")).toEqual([stored.id]);
+    expect(
+      JSON.stringify(storage.getPrompt(stored.id)?.analysis),
+    ).not.toContain(rawSecret);
+    expect(
+      JSON.stringify(storage.getPrompt(stored.id)?.analysis),
+    ).not.toContain("[REDACTED:api_key]");
+  });
+
+  it("stores local rule-based analysis preview with prompt details", async () => {
+    const dataDir = createTempDir();
+    initializePromptMemory({ dataDir });
+    const storage = createSqlitePromptStorage({
+      dataDir,
+      hmacSecret: "test-secret",
+      now: () => new Date("2026-05-01T10:30:00.000Z"),
+    });
+
+    const stored = await storeClaudePrompt(storage, {
+      prompt:
+        "Update src/storage/sqlite.ts to persist analysis. Add tests and run pnpm test. Return a concise Markdown summary.",
+      receivedAt: "2026-05-01T10:30:00.000Z",
+    });
+    const detail = storage.getPrompt(stored.id);
+
+    expect(detail?.analysis).toMatchObject({
+      analyzer: "local-rules-v1",
+      summary: expect.stringContaining("구체적인"),
+      warnings: [],
+      suggestions: [],
+      created_at: "2026-05-01T10:30:00.000Z",
+    });
   });
 
   it("connects Claude ingest to real Markdown, SQLite, and FTS storage", async () => {
@@ -369,6 +400,13 @@ describe("SQLite prompt storage", () => {
       db
         .prepare(
           "SELECT COUNT(*) AS count FROM redaction_events WHERE prompt_id = ?",
+        )
+        .get(sensitive.id) as { count: number },
+    ).toEqual({ count: 0 });
+    expect(
+      db
+        .prepare(
+          "SELECT COUNT(*) AS count FROM prompt_analyses WHERE prompt_id = ?",
         )
         .get(sensitive.id) as { count: number },
     ).toEqual({ count: 0 });

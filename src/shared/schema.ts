@@ -81,6 +81,14 @@ export const RedactionResultSchema = z.object({
   ),
 });
 
+export const PromptAnalysisPreviewSchema = z.object({
+  summary: z.string(),
+  warnings: z.array(z.string()),
+  suggestions: z.array(z.string()),
+  analyzer: z.string().min(1),
+  created_at: z.string().min(1),
+});
+
 export const ClaudeCodeUserPromptSubmitPayloadSchema = z.object({
   session_id: z.string().min(1),
   transcript_path: z.string().min(1).optional(),
@@ -105,3 +113,4 @@ export type RedactionPolicy = z.infer<typeof RedactionPolicySchema>;
 export type NormalizedPromptEvent = z.infer<typeof NormalizedPromptEventSchema>;
 export type StoredPrompt = z.infer<typeof StoredPromptSchema>;
 export type RedactionResult = z.infer<typeof RedactionResultSchema>;
+export type PromptAnalysisPreview = z.infer<typeof PromptAnalysisPreviewSchema>;

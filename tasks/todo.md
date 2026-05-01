@@ -115,3 +115,24 @@
 
 - 보안 회귀 범위는 새 기능 추가가 아니라 P0-P8에서 이미 설계한 로컬 우선/비밀정보 최소 저장/브라우저 경계 정책을 고정하는 테스트로 한정한다.
 - `pnpm test`, `pnpm lint`, `pnpm build`, `pnpm pack:dry-run`, `git diff --check`를 통과했다.
+
+## P9 Rule-Based Analysis Preview
+
+- [x] 현재 storage/API/UI 계약 파악
+- [x] 로컬 규칙 기반 analyzer 테스트 작성
+- [x] 저장/조회 시 analysis preview 저장 및 반환 테스트 작성
+- [x] raw secret이 analysis 결과에 남지 않는 회귀 테스트 작성
+- [x] analyzer 구현
+- [x] SQLite `prompt_analyses` 연결
+- [x] prompt detail API/UI에 analysis preview 표시
+- [x] Playwright로 실제 상세 화면 확인
+- [x] 전체 검증 명령 실행
+- [x] 커밋 및 푸시
+
+### P9 범위
+
+- PRD의 MVP 분석 범위인 단일 프롬프트 요약/주의점 preview만 구현한다.
+- 점수, 트렌드, 자동 태그, instruction 파일 후보 제안, 외부 LLM 분석은 Phase 2 이후 범위로 유지한다.
+- 분석 입력은 저장 정책이 적용된 본문만 사용해서 `redactionMode=mask`에서 raw secret이 분석 결과에 남지 않도록 한다.
+- Playwright CLI로 로컬 서버 상세 화면에서 `분석 preview`와 `local-rules-v1` 요약 표시를 확인했다.
+- `pnpm format`, `pnpm test`, `pnpm lint`, `pnpm build`, `pnpm pack:dry-run`, `git diff --check`를 통과했다.
