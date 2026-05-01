@@ -249,6 +249,59 @@ describe("SQLite prompt storage", () => {
     expect(storage.deletePrompt(beta.id)).toEqual({ deleted: false });
   });
 
+  it("filters prompt lists and searches by tool, sensitivity, cwd, and date range", async () => {
+    const dataDir = createTempDir();
+    initializePromptMemory({ dataDir });
+    const storage = createSqlitePromptStorage({
+      dataDir,
+      hmacSecret: "test-secret",
+      now: nextDate([
+        "2026-05-01T10:00:00.000Z",
+        "2026-05-01T10:01:00.000Z",
+        "2026-05-01T10:02:00.000Z",
+      ]),
+    });
+
+    await storeClaudePrompt(storage, {
+      prompt: "safe alpha",
+      receivedAt: "2026-05-01T10:00:00.000Z",
+      cwd: "/Users/example/project-a",
+    });
+    const sensitive = await storeClaudePrompt(storage, {
+      prompt: "secret token sk-proj-1234567890abcdef",
+      receivedAt: "2026-05-01T10:01:00.000Z",
+      cwd: "/Users/example/project-b",
+    });
+    await storeClaudePrompt(storage, {
+      prompt: "safe gamma",
+      receivedAt: "2026-05-01T10:02:00.000Z",
+      cwd: "/Users/example/project-a",
+    });
+
+    expect(
+      storage
+        .listPrompts({ cwdPrefix: "/Users/example/project-a" })
+        .items.map((item) => item.cwd),
+    ).toEqual(["/Users/example/project-a", "/Users/example/project-a"]);
+    expect(
+      storage.listPrompts({ isSensitive: true }).items.map((item) => item.id),
+    ).toEqual([sensitive.id]);
+    expect(
+      storage
+        .listPrompts({
+          tool: "claude-code",
+          receivedFrom: "2026-05-01T10:01:00.000Z",
+          receivedTo: "2026-05-01T10:01:00.000Z",
+        })
+        .items.map((item) => item.id),
+    ).toEqual([sensitive.id]);
+    expect(
+      storage
+        .searchPrompts("secret", { isSensitive: true })
+        .items.map((item) => item.id),
+    ).toEqual([sensitive.id]);
+  });
+
   it("rebuilds missing database rows from Markdown files", async () => {
     const dataDir = createTempDir();
     initializePromptMemory({ dataDir });
@@ -293,13 +346,13 @@ type StoredPrompt = Awaited<ReturnType<typeof storeClaudePrompt>>;
 
 async function storeClaudePrompt(
   storage: ReturnType<typeof createSqlitePromptStorage>,
-  options: { prompt: string; receivedAt: string },
+  options: { prompt: string; receivedAt: string; cwd?: string },
 ): Promise<{ id: string; duplicate: boolean }> {
   const event = normalizeClaudeCodePayload(
     {
       session_id: `session-${options.receivedAt}`,
       transcript_path: "/Users/example/.claude/session.jsonl",
-      cwd: "/Users/example/project",
+      cwd: options.cwd ?? "/Users/example/project",
       permission_mode: "default",
       hook_event_name: "UserPromptSubmit",
       prompt: options.prompt,

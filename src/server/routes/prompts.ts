@@ -17,6 +17,11 @@ const ListQuerySchema = z.object({
   limit: z.coerce.number().int().positive().max(100).optional(),
   cursor: z.string().min(1).optional(),
   q: z.string().trim().max(500).optional(),
+  tool: z.string().trim().min(1).max(80).optional(),
+  cwd_prefix: z.string().trim().min(1).max(1000).optional(),
+  is_sensitive: z.coerce.boolean().optional(),
+  from: z.string().trim().min(1).optional(),
+  to: z.string().trim().min(1).optional(),
 });
 
 const PromptParamsSchema = z.object({
@@ -34,8 +39,23 @@ export function registerPromptRoutes(
 
     try {
       const result = query.q
-        ? storage.searchPrompts(query.q, { limit: query.limit })
-        : storage.listPrompts({ limit: query.limit, cursor: query.cursor });
+        ? storage.searchPrompts(query.q, {
+            limit: query.limit,
+            tool: query.tool,
+            cwdPrefix: query.cwd_prefix,
+            isSensitive: query.is_sensitive,
+            receivedFrom: query.from,
+            receivedTo: query.to,
+          })
+        : storage.listPrompts({
+            limit: query.limit,
+            cursor: query.cursor,
+            tool: query.tool,
+            cwdPrefix: query.cwd_prefix,
+            isSensitive: query.is_sensitive,
+            receivedFrom: query.from,
+            receivedTo: query.to,
+          });
 
       return {
         data: {

@@ -23,6 +23,29 @@ export type PromptListResponse = {
   next_cursor?: string;
 };
 
+export type PromptFilters = {
+  query?: string;
+  tool?: string;
+  cwdPrefix?: string;
+  isSensitive?: "all" | "true" | "false";
+  receivedFrom?: string;
+  receivedTo?: string;
+};
+
+export type SettingsResponse = {
+  data_dir: string;
+  redaction_mode: string;
+  server: {
+    host: string;
+    port: number;
+  };
+  last_ingest_status?: {
+    ok: boolean;
+    status?: number;
+    checked_at: string;
+  };
+};
+
 let csrfToken: string | undefined;
 
 export async function ensureSession(): Promise<void> {
@@ -37,17 +60,43 @@ export async function ensureSession(): Promise<void> {
   csrfToken = body.data.csrf_token;
 }
 
-export async function listPrompts(query: string): Promise<PromptListResponse> {
+export async function listPrompts(
+  filters: PromptFilters,
+): Promise<PromptListResponse> {
   await ensureSession();
   const params = new URLSearchParams({ limit: "50" });
-  if (query.trim()) {
-    params.set("q", query.trim());
+  if (filters.query?.trim()) {
+    params.set("q", filters.query.trim());
+  }
+  if (filters.tool) {
+    params.set("tool", filters.tool);
+  }
+  if (filters.cwdPrefix?.trim()) {
+    params.set("cwd_prefix", filters.cwdPrefix.trim());
+  }
+  if (filters.isSensitive && filters.isSensitive !== "all") {
+    params.set("is_sensitive", filters.isSensitive);
+  }
+  if (filters.receivedFrom) {
+    params.set("from", `${filters.receivedFrom}T00:00:00.000Z`);
+  }
+  if (filters.receivedTo) {
+    params.set("to", `${filters.receivedTo}T23:59:59.999Z`);
   }
 
   const response = await fetch(`/api/v1/prompts?${params}`, {
     credentials: "same-origin",
   });
   const body = (await response.json()) as { data: PromptListResponse };
+  return body.data;
+}
+
+export async function getSettings(): Promise<SettingsResponse> {
+  await ensureSession();
+  const response = await fetch("/api/v1/settings", {
+    credentials: "same-origin",
+  });
+  const body = (await response.json()) as { data: SettingsResponse };
   return body.data;
 }
 

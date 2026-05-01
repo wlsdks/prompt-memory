@@ -10,6 +10,7 @@ import { registerHealthRoutes } from "./routes/health.js";
 import { registerIngestRoutes } from "./routes/ingest.js";
 import { registerPromptRoutes } from "./routes/prompts.js";
 import { registerSessionRoutes } from "./routes/session.js";
+import { registerSettingsRoutes } from "./routes/settings.js";
 import { registerStaticRoutes, type WebAssets } from "./routes/static.js";
 
 export type CreateServerOptions = {
@@ -21,6 +22,10 @@ export type CreateServerOptions = {
   maxBodyBytes?: number;
   maxQueryLength?: number;
   maxPromptLength?: number;
+  serverConfig?: {
+    host: string;
+    port: number;
+  };
   webRoot?: string;
   webAssets?: WebAssets;
   rateLimit?: {
@@ -106,6 +111,15 @@ export function createServer(options: CreateServerOptions): FastifyInstance {
   registerPromptRoutes(server, {
     auth: options.auth,
     storage: options.storage,
+  });
+  registerSettingsRoutes(server, {
+    auth: options.auth,
+    dataDir: options.dataDir,
+    redactionMode: options.redactionMode,
+    server: options.serverConfig ?? {
+      host: "127.0.0.1",
+      port: 17373,
+    },
   });
   registerStaticRoutes(server, {
     webRoot: options.webRoot,

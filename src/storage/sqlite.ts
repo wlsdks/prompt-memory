@@ -317,33 +317,23 @@ function listPrompts(
 ): PromptListResult {
   const limit = normalizeLimit(options.limit);
   const cursor = options.cursor ? decodeCursor(options.cursor) : undefined;
-  const rows = cursor
-    ? (db
-        .prepare(
-          `
-          SELECT * FROM prompts
-          WHERE deleted_at IS NULL
-            AND (received_at < ? OR (received_at = ? AND id < ?))
-          ORDER BY received_at DESC, id DESC
-          LIMIT ?
-          `,
-        )
-        .all(
-          cursor.received_at,
-          cursor.received_at,
-          cursor.id,
-          limit + 1,
-        ) as PromptRow[])
-    : (db
-        .prepare(
-          `
-          SELECT * FROM prompts
-          WHERE deleted_at IS NULL
-          ORDER BY received_at DESC, id DESC
-          LIMIT ?
-          `,
-        )
-        .all(limit + 1) as PromptRow[]);
+  const filters = buildPromptFilters(options);
+
+  if (cursor) {
+    filters.clauses.push("(received_at < ? OR (received_at = ? AND id < ?))");
+    filters.values.push(cursor.received_at, cursor.received_at, cursor.id);
+  }
+
+  const rows = db
+    .prepare(
+      `
+      SELECT * FROM prompts
+      WHERE ${filters.clauses.join(" AND ")}
+      ORDER BY received_at DESC, id DESC
+      LIMIT ?
+      `,
+    )
+    .all(...filters.values, limit + 1) as PromptRow[];
 
   return toListResult(rows, limit);
 }
@@ -359,20 +349,64 @@ function searchPrompts(
   }
 
   const limit = normalizeLimit(options.limit);
+  const filters = buildPromptFilters(options, "p");
   const rows = db
     .prepare(
       `
       SELECT p.*
       FROM prompt_fts
       JOIN prompts p ON p.id = prompt_fts.prompt_id
-      WHERE prompt_fts MATCH ? AND p.deleted_at IS NULL
+      WHERE prompt_fts MATCH ? AND ${filters.clauses.join(" AND ")}
       ORDER BY rank
       LIMIT ?
       `,
     )
-    .all(match, limit + 1) as PromptRow[];
+    .all(match, ...filters.values, limit + 1) as PromptRow[];
 
   return toListResult(rows, limit);
+}
+
+function buildPromptFilters(
+  options: Omit<ListPromptsOptions, "cursor">,
+  tableAlias?: string,
+): { clauses: string[]; values: unknown[] } {
+  const prefix = tableAlias ? `${tableAlias}.` : "";
+  const clauses = [`${prefix}deleted_at IS NULL`];
+  const values: unknown[] = [];
+
+  if (options.tool) {
+    clauses.push(`${prefix}tool = ?`);
+    values.push(options.tool);
+  }
+
+  if (options.cwdPrefix) {
+    clauses.push(`(${prefix}cwd = ? OR ${prefix}cwd LIKE ? ESCAPE '\\')`);
+    values.push(options.cwdPrefix, `${escapeLike(options.cwdPrefix)}/%`);
+  }
+
+  if (options.isSensitive !== undefined) {
+    clauses.push(`${prefix}is_sensitive = ?`);
+    values.push(options.isSensitive ? 1 : 0);
+  }
+
+  if (options.receivedFrom) {
+    clauses.push(`${prefix}received_at >= ?`);
+    values.push(options.receivedFrom);
+  }
+
+  if (options.receivedTo) {
+    clauses.push(`${prefix}received_at <= ?`);
+    values.push(options.receivedTo);
+  }
+
+  return { clauses, values };
+}
+
+function escapeLike(value: string): string {
+  return value
+    .replaceAll("\\", "\\\\")
+    .replaceAll("%", "\\%")
+    .replaceAll("_", "\\_");
 }
 
 function getPrompt(

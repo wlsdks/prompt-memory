@@ -30,7 +30,8 @@ body {
 }
 
 button,
-input {
+input,
+select {
   font: inherit;
 }
 
@@ -105,6 +106,10 @@ pre {
   margin-bottom: 20px;
 }
 
+.topbar > div:first-child {
+  min-width: 180px;
+}
+
 .eyebrow {
   color: var(--pm-text-subtle);
   font-size: 12px;
@@ -115,6 +120,7 @@ h1 {
   font-size: 24px;
   line-height: 32px;
   margin: 0;
+  white-space: nowrap;
 }
 
 h2 {
@@ -123,17 +129,46 @@ h2 {
   margin: 0 0 12px;
 }
 
-.search-box {
+.filter-bar {
+  align-items: center;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  justify-content: flex-end;
+}
+
+.search-box,
+.filter-bar select,
+.filter-bar input[type="date"],
+.path-filter {
   align-items: center;
   background: var(--pm-surface);
   border: 1px solid var(--pm-border);
   border-radius: 6px;
+  height: 36px;
+}
+
+.search-box {
   display: flex;
   gap: 8px;
-  height: 36px;
-  max-width: 360px;
-  min-width: 260px;
+  max-width: 280px;
+  min-width: 220px;
   padding: 0 10px;
+}
+
+.filter-bar select,
+.filter-bar input[type="date"],
+.path-filter {
+  color: var(--pm-text);
+  padding: 0 10px;
+}
+
+.filter-bar input[type="date"] {
+  width: 126px;
+}
+
+.path-filter {
+  width: 150px;
 }
 
 .search-box:focus-within {
@@ -365,10 +400,28 @@ dd {
     display: block;
   }
 
+  .topbar > div:first-child {
+    min-width: 0;
+  }
+
+  h1 {
+    white-space: normal;
+  }
+
   .search-box {
     margin-top: 12px;
     max-width: none;
     min-width: 0;
+    width: 100%;
+  }
+
+  .filter-bar {
+    justify-content: stretch;
+  }
+
+  .filter-bar select,
+  .filter-bar input[type="date"],
+  .path-filter {
     width: 100%;
   }
 

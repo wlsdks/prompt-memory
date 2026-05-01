@@ -36,11 +36,14 @@ export type PromptDetail = PromptSummary & {
 export type ListPromptsOptions = {
   limit?: number;
   cursor?: string;
+  tool?: string;
+  cwdPrefix?: string;
+  isSensitive?: boolean;
+  receivedFrom?: string;
+  receivedTo?: string;
 };
 
-export type SearchPromptsOptions = {
-  limit?: number;
-};
+export type SearchPromptsOptions = Omit<ListPromptsOptions, "cursor">;
 
 export type PromptListResult = {
   items: PromptSummary[];

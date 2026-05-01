@@ -13,9 +13,12 @@ import {
   deletePrompt,
   getHealth,
   getPrompt,
+  getSettings,
   listPrompts,
+  type PromptFilters,
   type PromptDetail,
   type PromptSummary,
+  type SettingsResponse,
 } from "./api.js";
 import { SafeMarkdown } from "./markdown.js";
 
@@ -26,12 +29,15 @@ type View =
 
 export function App() {
   const [view, setView] = useState<View>({ name: "list" });
-  const [query, setQuery] = useState("");
+  const [filters, setFilters] = useState<PromptFilters>({
+    isSensitive: "all",
+  });
   const [prompts, setPrompts] = useState<PromptSummary[]>([]);
   const [selected, setSelected] = useState<PromptDetail | undefined>();
   const [health, setHealth] = useState<
     { ok: boolean; version: string; data_dir: string } | undefined
   >();
+  const [settings, setSettings] = useState<SettingsResponse | undefined>();
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | undefined>();
   const [pendingDelete, setPendingDelete] = useState<
@@ -46,12 +52,19 @@ export function App() {
   }, []);
 
   useEffect(() => {
-    void refreshList(query);
-  }, [query]);
+    const timer = window.setTimeout(() => {
+      void refreshList(filters);
+    }, 180);
+
+    return () => window.clearTimeout(timer);
+  }, [filters]);
 
   useEffect(() => {
     void getHealth()
       .then(setHealth)
+      .catch(() => undefined);
+    void getSettings()
+      .then(setSettings)
       .catch(() => undefined);
   }, []);
 
@@ -72,11 +85,11 @@ export function App() {
     return "프롬프트 아카이브";
   }, [view]);
 
-  async function refreshList(nextQuery = query): Promise<void> {
+  async function refreshList(nextFilters = filters): Promise<void> {
     setLoading(true);
     setError(undefined);
     try {
-      const result = await listPrompts(nextQuery);
+      const result = await listPrompts(nextFilters);
       setPrompts(result.items);
     } catch {
       setError("프롬프트 목록을 불러오지 못했습니다.");
@@ -94,6 +107,10 @@ export function App() {
     setPendingDelete(undefined);
     navigate({ name: "list" });
     await refreshList();
+  }
+
+  function updateFilters(next: Partial<PromptFilters>): void {
+    setFilters((current) => ({ ...current, ...next }));
   }
 
   function navigate(next: View): void {
@@ -139,15 +156,69 @@ export function App() {
             <h1>{visibleTitle}</h1>
           </div>
           {view.name === "list" && (
-            <label className="search-box">
-              <Search size={16} />
+            <div className="filter-bar">
+              <label className="search-box">
+                <Search size={16} />
+                <input
+                  aria-label="프롬프트 검색"
+                  onChange={(event) =>
+                    updateFilters({ query: event.target.value })
+                  }
+                  placeholder="프롬프트 검색"
+                  value={filters.query ?? ""}
+                />
+              </label>
+              <select
+                aria-label="도구 필터"
+                onChange={(event) =>
+                  updateFilters({ tool: event.target.value })
+                }
+                value={filters.tool ?? ""}
+              >
+                <option value="">전체 도구</option>
+                <option value="claude-code">Claude Code</option>
+                <option value="codex">Codex</option>
+              </select>
+              <select
+                aria-label="민감정보 필터"
+                onChange={(event) =>
+                  updateFilters({
+                    isSensitive: event.target
+                      .value as PromptFilters["isSensitive"],
+                  })
+                }
+                value={filters.isSensitive ?? "all"}
+              >
+                <option value="all">전체 민감도</option>
+                <option value="true">민감정보 포함</option>
+                <option value="false">민감정보 없음</option>
+              </select>
               <input
-                aria-label="프롬프트 검색"
-                onChange={(event) => setQuery(event.target.value)}
-                placeholder="프롬프트 검색"
-                value={query}
+                aria-label="경로 접두사 필터"
+                className="path-filter"
+                onChange={(event) =>
+                  updateFilters({ cwdPrefix: event.target.value })
+                }
+                placeholder="cwd prefix"
+                value={filters.cwdPrefix ?? ""}
               />
-            </label>
+              <input
+                aria-label="시작일 필터"
+                onChange={(event) =>
+                  updateFilters({ receivedFrom: event.target.value })
+                }
+                type="date"
+                value={filters.receivedFrom ?? ""}
+              />
+              <input
+                aria-label="종료일 필터"
+                onChange={(event) =>
+                  updateFilters({ receivedTo: event.target.value })
+                }
+                type="date"
+                value={filters.receivedTo ?? ""}
+              />
+            </div>
           )}
         </header>
 
@@ -162,7 +233,9 @@ export function App() {
         {view.name === "detail" && (
           <PromptDetailView onDelete={setPendingDelete} prompt={selected} />
         )}
-        {view.name === "settings" && <SettingsView health={health} />}
+        {view.name === "settings" && (
+          <SettingsView health={health} settings={settings} />
+        )}
       </section>
 
       {pendingDelete && (
@@ -276,8 +349,10 @@ function PromptDetailView({
 
 function SettingsView({
   health,
+  settings,
 }: {
   health?: { ok: boolean; version: string; data_dir: string };
+  settings?: SettingsResponse;
 }) {
   return (
     <div className="settings-grid">
@@ -289,14 +364,28 @@ function SettingsView({
           <dt>버전</dt>
           <dd>{health?.version ?? "-"}</dd>
           <dt>데이터 디렉터리</dt>
-          <dd>{health?.data_dir ?? "-"}</dd>
+          <dd>{settings?.data_dir ?? health?.data_dir ?? "-"}</dd>
+          <dt>주소</dt>
+          <dd>
+            {settings ? `${settings.server.host}:${settings.server.port}` : "-"}
+          </dd>
         </dl>
       </section>
       <section className="panel">
         <h2>수집</h2>
-        <p className="muted">
-          Claude Code hook 상태는 doctor 명령으로 확인합니다.
-        </p>
+        <dl>
+          <dt>Redaction</dt>
+          <dd>{settings?.redaction_mode ?? "-"}</dd>
+          <dt>마지막 hook 전송</dt>
+          <dd>
+            {settings?.last_ingest_status
+              ? `${settings.last_ingest_status.ok ? "정상" : "실패"} ${
+                  settings.last_ingest_status.status ?? ""
+                }`
+              : "기록 없음"}
+          </dd>
+        </dl>
+        <p className="muted">상세 진단은 CLI doctor 명령으로 확인합니다.</p>
         <code>prompt-memory doctor claude-code</code>
       </section>
     </div>

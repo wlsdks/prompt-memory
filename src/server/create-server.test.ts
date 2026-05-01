@@ -82,6 +82,39 @@ describe("createServer P2 ingest boundary", () => {
     expect(deleted.statusCode).toBe(200);
   });
 
+  it("returns browser-safe settings without exposing secrets", async () => {
+    const server = createTestServer();
+    const session = await server.inject({
+      method: "GET",
+      url: "/api/v1/session",
+      headers: { host: "127.0.0.1:17373" },
+    });
+
+    const response = await server.inject({
+      method: "GET",
+      url: "/api/v1/settings",
+      headers: {
+        host: "127.0.0.1:17373",
+        cookie: String(session.headers["set-cookie"]),
+      },
+    });
+
+    expect(response.statusCode).toBe(200);
+    expect(response.json()).toMatchObject({
+      data: {
+        data_dir: "/tmp/prompt-memory-test",
+        redaction_mode: "mask",
+        server: {
+          host: "127.0.0.1",
+          port: 17373,
+        },
+      },
+    });
+    expect(response.body).not.toContain("app-token");
+    expect(response.body).not.toContain("ingest-token");
+    expect(response.body).not.toContain("web-session-secret");
+  });
+
   it("serves built web assets with csp and spa fallback", async () => {
     const server = createTestServer({
       webAssets: {

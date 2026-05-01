@@ -29,3 +29,20 @@
 - 정적 파일은 Vite build 결과물만 Fastify가 서빙하고, CSP를 기본 응답에 적용한다.
 - Playwright MCP 점검에서 desktop 목록/상세/설정, delete modal/confirm, mobile list를 확인했다.
 - 상세 화면에서 frontmatter가 보이는 문제와 mobile table header/side shell 레이아웃 문제를 발견해 수정했다.
+
+## P6 Web UI 보강
+
+- [x] prompt list/search 필터 API 테스트 작성
+- [x] browser-safe settings API 테스트 작성
+- [x] SQLite/API 필터 구현
+- [x] Settings API 구현
+- [x] 웹 UI 필터 컨트롤, date range, debounce, settings API 연결
+- [x] 서버 실행 후 Playwright MCP로 필터/settings 재점검
+- [x] 검증 명령 실행
+- [x] 커밋 및 푸시
+
+### P6 보강 검토
+
+- Playwright MCP로 desktop 필터 조합, date range 빈 결과/복귀, settings 화면을 확인했다.
+- Playwright MCP로 mobile 폭에서 필터 컨트롤이 세로로 안정적으로 쌓이고 목록이 깨지지 않는지 확인했다.
+- `pnpm test`, `pnpm lint`, `pnpm build`, `pnpm pack:dry-run`, `git diff --check`를 통과했다.
