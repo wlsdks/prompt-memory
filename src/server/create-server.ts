@@ -16,10 +16,16 @@ export type CreateServerOptions = {
   redactionMode: RedactionPolicy;
   excludedProjectRoots?: string[];
   maxBodyBytes?: number;
+  maxQueryLength?: number;
   maxPromptLength?: number;
+  rateLimit?: {
+    max: number;
+    windowMs: number;
+  };
 };
 
 export function createServer(options: CreateServerOptions): FastifyInstance {
+  const rateLimiter = createRateLimiter(options.rateLimit);
   const server = Fastify({
     bodyLimit: options.maxBodyBytes ?? 256 * 1024,
     logger: false,
@@ -28,6 +34,8 @@ export function createServer(options: CreateServerOptions): FastifyInstance {
   server.addHook("onRequest", async (request) => {
     validateHost(request);
     validateBrowserOrigin(request);
+    validateQueryLength(request, options.maxQueryLength);
+    rateLimiter(request);
   });
 
   server.setErrorHandler((error, request, reply) => {
@@ -87,6 +95,62 @@ export function createServer(options: CreateServerOptions): FastifyInstance {
   });
 
   return server;
+}
+
+function validateQueryLength(
+  request: FastifyRequest,
+  maxQueryLength: number | undefined,
+): void {
+  if (!maxQueryLength) {
+    return;
+  }
+
+  const query = request.url.split("?", 2)[1] ?? "";
+
+  if (query.length > maxQueryLength) {
+    throw problem(
+      414,
+      "URI Too Long",
+      "Query length limit exceeded.",
+      request.url,
+    );
+  }
+}
+
+function createRateLimiter(
+  options: CreateServerOptions["rateLimit"],
+): (request: FastifyRequest) => void {
+  if (!options) {
+    return () => undefined;
+  }
+
+  const buckets = new Map<string, { count: number; resetAt: number }>();
+
+  return (request) => {
+    if (!request.url.startsWith("/api/v1/ingest/")) {
+      return;
+    }
+
+    const key = `${request.ip}:${request.method}:${request.url.split("?", 1)[0]}`;
+    const now = Date.now();
+    const current = buckets.get(key);
+
+    if (!current || current.resetAt <= now) {
+      buckets.set(key, { count: 1, resetAt: now + options.windowMs });
+      return;
+    }
+
+    current.count += 1;
+
+    if (current.count > options.max) {
+      throw problem(
+        429,
+        "Too Many Requests",
+        "Rate limit exceeded.",
+        request.url,
+      );
+    }
+  };
 }
 
 function hasStatusCode(error: unknown, statusCode: number): boolean {

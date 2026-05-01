@@ -210,6 +210,103 @@ describe("createServer P2 ingest boundary", () => {
     expect(response.statusCode).toBe(413);
     expect(storage.events).toHaveLength(0);
   });
+
+  it("enforces body size and query length limits", async () => {
+    const server = createTestServer({
+      maxBodyBytes: 80,
+      maxQueryLength: 5,
+    });
+
+    const oversizedBody = await server.inject({
+      method: "POST",
+      url: "/api/v1/ingest/claude-code",
+      headers: {
+        host: "127.0.0.1:17373",
+        authorization: "Bearer ingest-token",
+        "content-type": "application/json",
+      },
+      payload: JSON.stringify({
+        ...claudeFixture,
+        prompt: "this payload is intentionally too large",
+      }),
+    });
+
+    expect(oversizedBody.statusCode).toBe(413);
+
+    const oversizedQuery = await server.inject({
+      method: "GET",
+      url: "/api/v1/health?abcdef",
+      headers: { host: "127.0.0.1:17373" },
+    });
+
+    expect(oversizedQuery.statusCode).toBe(414);
+  });
+
+  it("rate limits ingest before storing repeated requests", async () => {
+    const storage = createMemoryStorage();
+    const server = createTestServer({
+      storage,
+      rateLimit: { max: 1, windowMs: 60_000 },
+    });
+
+    const request = {
+      method: "POST" as const,
+      url: "/api/v1/ingest/claude-code",
+      headers: {
+        host: "127.0.0.1:17373",
+        authorization: "Bearer ingest-token",
+      },
+      payload: claudeFixture,
+    };
+
+    const first = await server.inject(request);
+    const second = await server.inject(request);
+
+    expect(first.statusCode).toBe(200);
+    expect(second.statusCode).toBe(429);
+    expect(storage.events).toHaveLength(1);
+  });
+
+  it("normalizes safe control characters and rejected values are not echoed", async () => {
+    const storage = createMemoryStorage();
+    const server = createTestServer({ storage });
+
+    const response = await server.inject({
+      method: "POST",
+      url: "/api/v1/ingest/claude-code",
+      headers: {
+        host: "127.0.0.1:17373",
+        authorization: "Bearer ingest-token",
+      },
+      payload: {
+        ...claudeFixture,
+        session_id: " session-with-null\u0000 ",
+        prompt: "hello\u0000world",
+      },
+    });
+
+    expect(response.statusCode).toBe(200);
+    expect(storage.events[0]?.event.session_id).toBe("session-with-null");
+    expect(storage.events[0]?.event.prompt).toBe("helloworld");
+
+    const invalid = await server.inject({
+      method: "POST",
+      url: "/api/v1/ingest/claude-code",
+      headers: {
+        host: "127.0.0.1:17373",
+        authorization: "Bearer ingest-token",
+      },
+      payload: {
+        ...claudeFixture,
+        cwd: "../secret-project",
+        prompt: "do not echo sk-proj-1234567890abcdef",
+      },
+    });
+
+    expect(invalid.statusCode).toBe(422);
+    expect(invalid.body).not.toContain("sk-proj-1234567890abcdef");
+    expect(invalid.body).not.toContain("../secret-project");
+  });
 });
 
 type TestServerOptions = {
@@ -217,6 +314,9 @@ type TestServerOptions = {
   redactionMode?: "mask" | "raw" | "reject";
   excludedProjectRoots?: string[];
   maxPromptLength?: number;
+  maxBodyBytes?: number;
+  maxQueryLength?: number;
+  rateLimit?: { max: number; windowMs: number };
 };
 
 function createTestServer(options: TestServerOptions = {}) {
@@ -229,6 +329,9 @@ function createTestServer(options: TestServerOptions = {}) {
     redactionMode: options.redactionMode ?? "mask",
     excludedProjectRoots: options.excludedProjectRoots ?? [],
     maxPromptLength: options.maxPromptLength ?? 10_000,
+    maxBodyBytes: options.maxBodyBytes,
+    maxQueryLength: options.maxQueryLength,
+    rateLimit: options.rateLimit,
     storage: options.storage ?? createMemoryStorage(),
   });
 }

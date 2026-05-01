@@ -1,4 +1,5 @@
 import { createHash } from "node:crypto";
+import { isAbsolute } from "node:path";
 
 import type { ClaudeCodeUserPromptSubmitPayload } from "./types.js";
 import { ClaudeCodeUserPromptSubmitPayloadSchema } from "../shared/schema.js";
@@ -51,7 +52,13 @@ export function canonicalizePath(path: string): string {
     throw new Error("Path cannot be empty.");
   }
 
-  return resolveHomePath(normalized);
+  const resolved = resolveHomePath(normalized);
+
+  if (!isAbsolute(normalized) && !normalized.startsWith("~")) {
+    throw new Error("Path must be absolute.");
+  }
+
+  return resolved;
 }
 
 function createIdempotencyKey(
