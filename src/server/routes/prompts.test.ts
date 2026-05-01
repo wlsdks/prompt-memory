@@ -375,6 +375,50 @@ describe("prompt read/delete API", () => {
     });
     expect(invalid.statusCode).toBe(422);
   });
+
+  it("filters prompts by quality gap query", async () => {
+    const { server, ids } = await createPromptApiFixture();
+
+    const verificationGap = await server.inject({
+      method: "GET",
+      url: "/api/v1/prompts?quality_gap=verification_criteria",
+      headers: {
+        host: "127.0.0.1:17373",
+        authorization: "Bearer app-token",
+      },
+    });
+    expect(verificationGap.statusCode).toBe(200);
+    expect(
+      verificationGap
+        .json<{ data: { items: Array<{ id: string }> } }>()
+        .data.items.map((item) => item.id),
+    ).toEqual([ids.beta, ids.alpha]);
+
+    const searchWithGap = await server.inject({
+      method: "GET",
+      url: "/api/v1/prompts?q=alpha&quality_gap=verification_criteria",
+      headers: {
+        host: "127.0.0.1:17373",
+        authorization: "Bearer app-token",
+      },
+    });
+    expect(searchWithGap.statusCode).toBe(200);
+    expect(
+      searchWithGap
+        .json<{ data: { items: Array<{ id: string }> } }>()
+        .data.items.map((item) => item.id),
+    ).toEqual([ids.alpha]);
+
+    const invalid = await server.inject({
+      method: "GET",
+      url: "/api/v1/prompts?quality_gap=unknown",
+      headers: {
+        host: "127.0.0.1:17373",
+        authorization: "Bearer app-token",
+      },
+    });
+    expect(invalid.statusCode).toBe(422);
+  });
 });
 
 async function createPromptApiFixture() {

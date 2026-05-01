@@ -766,6 +766,26 @@ describe("SQLite prompt storage", () => {
         .listPrompts({ focus: "quality-gap" })
         .items.map((item) => item.id),
     ).toContain(qualityGap.id);
+    expect(
+      storage
+        .listPrompts({ qualityGap: "verification_criteria" })
+        .items.map((item) => item.id),
+    ).toContain(qualityGap.id);
+    expect(
+      storage
+        .listPrompts({ qualityGap: "output_format" })
+        .items.map((item) => item.id),
+    ).toEqual([qualityGap.id, saved.id]);
+    expect(
+      storage
+        .searchPrompts("vague", { qualityGap: "verification_criteria" })
+        .items.map((item) => item.id),
+    ).toEqual([qualityGap.id]);
+    expect(
+      storage
+        .searchPrompts("Refactor", { qualityGap: "verification_criteria" })
+        .items.map((item) => item.id),
+    ).toEqual([]);
   });
 
   it("rebuilds missing database rows from Markdown files", async () => {

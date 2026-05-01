@@ -26,6 +26,7 @@ import {
   type QualityDashboard,
   type PromptFilters,
   type PromptDetail,
+  type PromptQualityGap,
   type PromptSummary,
   type SettingsResponse,
 } from "./api.js";
@@ -331,6 +332,26 @@ export function App() {
                 <option value="duplicated">중복 후보</option>
                 <option value="quality-gap">품질 보강</option>
               </select>
+              <select
+                aria-label="부족 항목 필터"
+                name="quality-gap-filter"
+                onChange={(event) =>
+                  updateFilters({
+                    qualityGap:
+                      event.target.value === ""
+                        ? undefined
+                        : (event.target.value as PromptFilters["qualityGap"]),
+                  })
+                }
+                value={filters.qualityGap ?? ""}
+              >
+                <option value="">전체 부족 항목</option>
+                {QUALITY_GAP_OPTIONS.map((item) => (
+                  <option key={item.key} value={item.key}>
+                    {item.label}
+                  </option>
+                ))}
+              </select>
               <input
                 aria-label="경로 접두사 필터"
                 autoComplete="off"
@@ -370,6 +391,7 @@ export function App() {
         {view.name === "list" && (
           <PromptList
             focus={filters.focus}
+            qualityGap={filters.qualityGap}
             loading={loading}
             nextCursor={filters.query?.trim() ? undefined : nextCursor}
             onLoadMore={() => void refreshList(filters, { cursor: nextCursor })}
@@ -390,6 +412,10 @@ export function App() {
           <DashboardView
             dashboard={dashboard}
             loading={!dashboard}
+            onOpenFilteredList={(nextFilters) => {
+              setFilters({ isSensitive: "all", ...nextFilters });
+              navigate({ name: "list" });
+            }}
             onSelect={(id) => navigate({ name: "detail", id })}
           />
         )}
@@ -421,6 +447,7 @@ export function App() {
 
 function PromptList({
   focus,
+  qualityGap,
   loading,
   nextCursor,
   onLoadMore,
@@ -428,6 +455,7 @@ function PromptList({
   prompts,
 }: {
   focus?: PromptFilters["focus"];
+  qualityGap?: PromptFilters["qualityGap"];
   loading: boolean;
   nextCursor?: string;
   onLoadMore(): void;
@@ -441,8 +469,8 @@ function PromptList({
   if (prompts.length === 0) {
     return (
       <div className="panel empty">
-        <h2>{emptyPromptTitle(focus)}</h2>
-        <code>{emptyPromptHint(focus)}</code>
+        <h2>{emptyPromptTitle(focus, qualityGap)}</h2>
+        <code>{emptyPromptHint(focus, qualityGap)}</code>
       </div>
     );
   }
@@ -645,10 +673,12 @@ function AnalysisPreview({
 function DashboardView({
   dashboard,
   loading,
+  onOpenFilteredList,
   onSelect,
 }: {
   dashboard?: QualityDashboard;
   loading: boolean;
+  onOpenFilteredList(filters: PromptFilters): void;
   onSelect(id: string): void;
 }) {
   if (loading || !dashboard) {
@@ -749,7 +779,16 @@ function DashboardView({
               <p className="muted">아직 반복적으로 부족한 항목이 없습니다.</p>
             )}
             {dashboard.missing_items.map((item) => (
-              <div className="gap-row" key={item.key}>
+              <button
+                className="gap-row gap-action"
+                key={item.key}
+                onClick={() =>
+                  onOpenFilteredList({
+                    focus: "quality-gap",
+                    qualityGap: item.key as PromptQualityGap,
+                  })
+                }
+              >
                 <div>
                   <strong>{item.label}</strong>
                   <p>
@@ -757,7 +796,7 @@ function DashboardView({
                   </p>
                 </div>
                 <span>{Math.round(item.rate * 100)}%</span>
-              </div>
+              </button>
             ))}
           </div>
         </div>
@@ -915,6 +954,7 @@ function filtersFromLocation(): PromptFilters {
   const params = new URLSearchParams(window.location.search);
   const isSensitive = params.get("sensitive");
   const focus = params.get("focus");
+  const qualityGap = params.get("gap");
 
   return {
     query: params.get("q") ?? undefined,
@@ -924,6 +964,7 @@ function filtersFromLocation(): PromptFilters {
       focus === "saved" || focus === "duplicated" || focus === "quality-gap"
         ? focus
         : undefined,
+    qualityGap: isQualityGapKey(qualityGap) ? qualityGap : undefined,
     cwdPrefix: params.get("cwd") ?? undefined,
     receivedFrom: params.get("from") ?? undefined,
     receivedTo: params.get("to") ?? undefined,
@@ -938,6 +979,7 @@ function writeFiltersToLocation(filters: PromptFilters): void {
   if (filters.tool) params.set("tool", filters.tool);
   if (filters.tag) params.set("tag", filters.tag);
   if (filters.focus) params.set("focus", filters.focus);
+  if (filters.qualityGap) params.set("gap", filters.qualityGap);
   if (filters.cwdPrefix?.trim()) params.set("cwd", filters.cwdPrefix.trim());
   if (filters.isSensitive && filters.isSensitive !== "all") {
     params.set("sensitive", filters.isSensitive);
@@ -1005,6 +1047,14 @@ const PROMPT_TAGS = [
   "ops",
 ];
 
+const QUALITY_GAP_OPTIONS: Array<{ key: PromptQualityGap; label: string }> = [
+  { key: "goal_clarity", label: "목표 명확성" },
+  { key: "background_context", label: "배경 맥락" },
+  { key: "scope_limits", label: "범위 제한" },
+  { key: "output_format", label: "출력 형식" },
+  { key: "verification_criteria", label: "검증 기준" },
+];
+
 function formatDate(value: string): string {
   return new Intl.DateTimeFormat("ko-KR", {
     dateStyle: "short",
@@ -1016,14 +1066,32 @@ function projectLabel(path: string): string {
   return path.split("/").filter(Boolean).at(-1) ?? path;
 }
 
-function emptyPromptTitle(focus?: PromptFilters["focus"]): string {
+function isQualityGapKey(value: string | null): value is PromptQualityGap {
+  return QUALITY_GAP_OPTIONS.some((item) => item.key === value);
+}
+
+function qualityGapLabel(key?: PromptQualityGap): string | undefined {
+  return QUALITY_GAP_OPTIONS.find((item) => item.key === key)?.label;
+}
+
+function emptyPromptTitle(
+  focus?: PromptFilters["focus"],
+  qualityGap?: PromptQualityGap,
+): string {
+  const gapLabel = qualityGapLabel(qualityGap);
+  if (gapLabel) return `${gapLabel} 보강 큐가 비어 있습니다.`;
   if (focus === "saved") return "저장된 프롬프트가 없습니다.";
   if (focus === "duplicated") return "중복 후보가 없습니다.";
   if (focus === "quality-gap") return "품질 보강이 필요한 프롬프트가 없습니다.";
   return "아직 저장된 프롬프트가 없습니다.";
 }
 
-function emptyPromptHint(focus?: PromptFilters["focus"]): string {
+function emptyPromptHint(
+  focus?: PromptFilters["focus"],
+  qualityGap?: PromptQualityGap,
+): string {
+  const gapLabel = qualityGapLabel(qualityGap);
+  if (gapLabel) return `${gapLabel}이 weak/missing인 프롬프트가 없습니다.`;
   if (focus === "saved") return "상세 화면에서 다시 볼 프롬프트를 저장하세요.";
   if (focus === "duplicated")
     return "같은 저장 본문이 반복되면 여기에 표시됩니다.";

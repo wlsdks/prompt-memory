@@ -22,6 +22,15 @@ const ListQuerySchema = z.object({
   is_sensitive: z.coerce.boolean().optional(),
   tag: z.string().trim().min(1).max(80).optional(),
   focus: z.enum(["saved", "duplicated", "quality-gap"]).optional(),
+  quality_gap: z
+    .enum([
+      "goal_clarity",
+      "background_context",
+      "scope_limits",
+      "output_format",
+      "verification_criteria",
+    ])
+    .optional(),
   from: z.string().trim().min(1).optional(),
   to: z.string().trim().min(1).optional(),
 });
@@ -58,6 +67,7 @@ export function registerPromptRoutes(
             receivedTo: query.to,
             tag: query.tag,
             focus: query.focus,
+            qualityGap: query.quality_gap,
           })
         : storage.listPrompts({
             limit: query.limit,
@@ -69,6 +79,7 @@ export function registerPromptRoutes(
             receivedTo: query.to,
             tag: query.tag,
             focus: query.focus,
+            qualityGap: query.quality_gap,
           });
 
       return {

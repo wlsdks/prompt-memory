@@ -56,9 +56,17 @@ export type PromptFilters = {
   isSensitive?: "all" | "true" | "false";
   tag?: string;
   focus?: "saved" | "duplicated" | "quality-gap";
+  qualityGap?: PromptQualityGap;
   receivedFrom?: string;
   receivedTo?: string;
 };
+
+export type PromptQualityGap =
+  | "goal_clarity"
+  | "background_context"
+  | "scope_limits"
+  | "output_format"
+  | "verification_criteria";
 
 export type QualityDashboard = {
   total_prompts: number;
@@ -183,6 +191,9 @@ export async function listPrompts(
   }
   if (filters.focus) {
     params.set("focus", filters.focus);
+  }
+  if (filters.qualityGap) {
+    params.set("quality_gap", filters.qualityGap);
   }
   if (filters.receivedFrom) {
     params.set("from", `${filters.receivedFrom}T00:00:00.000Z`);

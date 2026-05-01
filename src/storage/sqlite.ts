@@ -604,7 +604,33 @@ function buildPromptFilters(
     }
   }
 
+  if (options.qualityGap) {
+    const idExpression = tableAlias ? `${prefix}id` : "prompts.id";
+    clauses.push(
+      `EXISTS (
+        SELECT 1
+        FROM prompt_analyses pa
+        WHERE pa.prompt_id = ${idExpression}
+          AND (
+            pa.checklist_json LIKE ?
+            OR pa.checklist_json LIKE ?
+          )
+      )`,
+    );
+    values.push(
+      qualityGapLikePattern(options.qualityGap, "missing"),
+      qualityGapLikePattern(options.qualityGap, "weak"),
+    );
+  }
+
   return { clauses, values };
+}
+
+function qualityGapLikePattern(
+  key: string,
+  status: "missing" | "weak",
+): string {
+  return `%"key":"${key}","label":%,"status":"${status}"%`;
 }
 
 function escapeLike(value: string): string {

@@ -1,6 +1,7 @@
 import type {
   NormalizedPromptEvent,
   PromptAnalysisPreview,
+  PromptQualityCriterion,
   RedactionResult,
 } from "../shared/schema.js";
 
@@ -68,6 +69,7 @@ export type ListPromptsOptions = {
   receivedTo?: string;
   tag?: string;
   focus?: PromptFocusFilter;
+  qualityGap?: PromptQualityCriterion;
 };
 
 export type SearchPromptsOptions = Omit<ListPromptsOptions, "cursor">;

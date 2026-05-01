@@ -428,3 +428,41 @@
 - 제품 효용은 "저장한 프롬프트만 다시 보기", "중복 정리 후보만 보기", "품질 보강이 필요한 프롬프트만 보기"를 빠르게 하는 데 있다.
 - URL state를 유지해 dashboard에서 발견한 운영 신호를 목록 필터로 이어서 볼 수 있게 한다.
 - Playwright MCP로 `?focus=saved`, `?focus=duplicated`, `?focus=quality-gap`, mobile quality-gap list를 확인했다. 콘솔 오류는 0개였고 관련 API는 200으로 응답했다.
+
+## P17 Quality Gap Drilldown
+
+- [x] PRD 완료 범위와 P16 이후 사용성 빈틈 기준으로 다음 구현 단위 확정
+- [x] 실패 테스트 먼저 작성
+  - [x] SQLite `qualityGap` 필터가 특정 체크리스트 항목의 weak/missing만 반환
+  - [x] search에서도 `qualityGap` 필터가 동일하게 적용
+  - [x] API query `quality_gap` 계약과 invalid value 검증
+- [x] 저장소/API 구현
+  - [x] `ListPromptsOptions.qualityGap` 추가
+  - [x] `prompt_analyses.checklist_json` 기준 항목별 weak/missing 필터 적용
+  - [x] `focus=quality-gap`과 함께 조합 가능하게 유지
+- [x] 웹 UI 구현 전 `DESIGN.md` 재검토
+- [x] 웹 UI 연결
+  - [x] topbar에 부족 항목 select 추가
+  - [x] URL query `gap`으로 새로고침/공유 시 유지
+  - [x] dashboard의 "자주 부족한 항목" row에서 해당 큐로 이동
+  - [x] empty state 문구가 선택한 부족 항목에 맞게 표시
+- [x] Playwright MCP 사용성 점검
+  - [x] dashboard gap row drilldown
+  - [x] list quality gap item filter
+  - [x] desktop/mobile overflow와 console/network 오류
+- [x] 기본 검증 명령 실행
+  - [x] `pnpm test`
+  - [x] `pnpm lint`
+  - [x] `pnpm format`
+  - [x] `pnpm build`
+  - [x] `pnpm pack:dry-run`
+  - [x] `pnpm smoke:release`
+  - [x] `git diff --check`
+- [ ] 커밋 및 `git push origin main`
+
+### P17 설계 메모
+
+- PRD의 주요 기능은 구현되어 있으므로 이번 단위는 새 분석이 아니라 기존 분석 결과를 더 행동 가능한 큐로 바꾸는 작업이다.
+- `quality_gap`은 원문 prompt를 노출하지 않고 체크리스트 key만 받는다.
+- 대시보드에서 발견한 반복 문제를 목록의 실제 프롬프트 집합으로 바로 좁혀, "무엇을 고쳐야 하는지"에서 "어떤 프롬프트를 고칠지"까지 연결한다.
+- Playwright MCP로 dashboard `검증 기준` row drilldown, `?focus=quality-gap&gap=verification_criteria` URL 유지, desktop/mobile list 렌더링을 확인했다. 현재 페이지 콘솔 오류는 0개였고 관련 API는 200으로 응답했다.

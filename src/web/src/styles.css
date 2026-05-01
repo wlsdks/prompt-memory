@@ -53,6 +53,14 @@ button {
   cursor: pointer;
 }
 
+button:focus-visible,
+a:focus-visible,
+input:focus-visible,
+select:focus-visible {
+  outline: 2px solid var(--pm-accent);
+  outline-offset: 2px;
+}
+
 code,
 pre {
   font-family:
@@ -222,7 +230,6 @@ h2 {
 
 .search-box input {
   border: 0;
-  outline: 0;
   min-width: 0;
   width: 100%;
 }
@@ -646,6 +653,23 @@ dd {
   border-bottom: 1px solid var(--pm-border);
   min-height: 44px;
   padding-bottom: 8px;
+}
+
+.gap-action {
+  background: transparent;
+  border-left: 0;
+  border-right: 0;
+  border-top: 0;
+  color: var(--pm-text);
+  text-align: left;
+  width: 100%;
+}
+
+.gap-action:hover {
+  background: var(--pm-accent-weak);
+  border-radius: 6px;
+  padding-left: 8px;
+  padding-right: 8px;
 }
 
 .gap-row:last-child {
