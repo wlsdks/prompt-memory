@@ -23,20 +23,22 @@
     "docs/TECH_SPEC.md",
     "docs/IMPLEMENTATION_PLAN.md",
     "docs/ADAPTERS.md",
-    "docs/RELEASE_CHECKLIST.md"
+    "docs/RELEASE_CHECKLIST.md",
+    "scripts/release-smoke.mjs"
   ],
   "scripts": {
     "build": "pnpm build:server && pnpm build:web",
     "build:server": "tsc -p tsconfig.json",
     "build:web": "vite build --config vite.web.config.ts",
     "clean": "rm -rf dist coverage",
-    "format": "prettier --check package.json tsconfig.json tsconfig.web.json vite.web.config.ts vitest.config.ts \"src/**/*.{ts,tsx,css}\" \".github/**/*.yml\"",
-    "format:write": "prettier --write package.json tsconfig.json tsconfig.web.json vite.web.config.ts vitest.config.ts \"src/**/*.{ts,tsx,css}\" \".github/**/*.yml\"",
+    "format": "prettier --check package.json tsconfig.json tsconfig.web.json vite.web.config.ts vitest.config.ts \"scripts/**/*.mjs\" \"src/**/*.{ts,tsx,css}\" \".github/**/*.yml\"",
+    "format:write": "prettier --write package.json tsconfig.json tsconfig.web.json vite.web.config.ts vitest.config.ts \"scripts/**/*.mjs\" \"src/**/*.{ts,tsx,css}\" \".github/**/*.yml\"",
     "dev:web": "vite --config vite.web.config.ts",
     "lint": "tsc -p tsconfig.json --noEmit && tsc -p tsconfig.web.json --noEmit",
     "pack:dry-run": "npm pack --dry-run",
     "prepack": "pnpm build",
     "prompt-memory": "node dist/cli/index.js",
+    "smoke:release": "pnpm build && node scripts/release-smoke.mjs",
     "test": "vitest run"
   },
   "dependencies": {

@@ -6,6 +6,7 @@ Use this checklist before publishing a public beta or npm package.
 
 - [ ] README describes install, init, server, hook install, doctor, uninstall, and delete flows.
 - [ ] README states the default storage path.
+- [ ] README states that local rule-based analysis preview is implemented.
 - [ ] README states that external LLM analysis is not implemented and external prompt transmission is disabled by default.
 - [ ] README includes a non-affiliation notice for Anthropic and OpenAI.
 - [ ] Codex is clearly labeled beta.
@@ -19,6 +20,7 @@ Use this checklist before publishing a public beta or npm package.
 - [ ] `pnpm lint`
 - [ ] `pnpm build`
 - [ ] `pnpm pack:dry-run`
+- [ ] `pnpm smoke:release`
 - [ ] `git diff --check`
 
 ## Package Contents
@@ -35,6 +37,7 @@ Confirm `pnpm pack:dry-run` includes:
 - [ ] `docs/IMPLEMENTATION_PLAN.md`
 - [ ] `docs/ADAPTERS.md`
 - [ ] `docs/RELEASE_CHECKLIST.md`
+- [ ] `scripts/release-smoke.mjs`
 
 ## Security Regression
 
@@ -56,6 +59,8 @@ Confirm `pnpm pack:dry-run` includes:
 
 ## Manual Smoke
 
+`pnpm smoke:release` automates the core local smoke path below with an isolated temporary data directory and HOME.
+
 - [ ] `prompt-memory init`
 - [ ] `prompt-memory server`
 - [ ] `prompt-memory install-hook claude-code --dry-run`
@@ -65,3 +70,10 @@ Confirm `pnpm pack:dry-run` includes:
 - [ ] Confirm both prompts appear in CLI.
 - [ ] Confirm both prompts appear in the web UI.
 - [ ] Delete a prompt and confirm it disappears from CLI and web UI.
+
+## Deferred For Non-CI Local Beta
+
+These items are recommended before a broader public release, but can be deferred for a local-only beta when explicitly documented in release notes:
+
+- [ ] Cross-platform GitHub Actions matrix for macOS, Linux, and Windows.
+- [ ] `better-sqlite3` install/open/WAL/FTS5 smoke on each supported release platform.

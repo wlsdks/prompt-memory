@@ -12,6 +12,7 @@ This repository is pre-release software.
 
 - Claude Code support: MVP path
 - Codex support: beta adapter
+- Local rule-based analysis preview: implemented
 - External LLM analysis: not implemented
 - Default data handling: local only
 
@@ -182,6 +183,22 @@ Rebuild SQLite/FTS from Markdown:
 ```sh
 pnpm prompt-memory rebuild-index
 ```
+
+## Local Analysis Preview
+
+Prompt detail views include a local rule-based analysis preview. It summarizes whether a prompt includes clear targets, context, constraints, output format, and verification criteria.
+
+This preview runs locally against the stored, redacted prompt body. It does not call an external LLM provider.
+
+## Release Smoke
+
+Run the local release smoke before publishing or tagging a beta:
+
+```sh
+pnpm smoke:release
+```
+
+The smoke script builds the package, creates an isolated temporary data directory and HOME, starts the local server, captures fixture-like Claude Code and Codex prompts, verifies CLI list/search/show/delete/rebuild-index, checks SQLite WAL/FTS5, and confirms deleted prompt metadata is removed.
 
 ## Storage
 

@@ -136,3 +136,23 @@
 - 분석 입력은 저장 정책이 적용된 본문만 사용해서 `redactionMode=mask`에서 raw secret이 분석 결과에 남지 않도록 한다.
 - Playwright CLI로 로컬 서버 상세 화면에서 `분석 preview`와 `local-rules-v1` 요약 표시를 확인했다.
 - `pnpm format`, `pnpm test`, `pnpm lint`, `pnpm build`, `pnpm pack:dry-run`, `git diff --check`를 통과했다.
+
+## P10 Release Smoke Harness
+
+- [x] CI 제외 범위로 릴리스 전 로컬 검증 항목 재정의
+- [x] 기존 CLI/server 계약 확인
+- [x] 임시 data dir/HOME 기반 release smoke 스크립트 추가
+- [x] `init/server/ingest/list/search/show/delete/rebuild-index` 흐름 검증
+- [x] Claude/Codex fixture-like ingest 검증
+- [x] Markdown/SQLite/FTS/delete 정리 검증
+- [x] README와 release checklist에 smoke 사용법 반영
+- [x] smoke 및 전체 검증 명령 실행
+- [x] 커밋 및 푸시
+
+### P10 범위
+
+- CI matrix는 이번 작업에서 제외한다.
+- 스모크는 배포 산출물인 `dist/cli/index.js`를 직접 실행해서 사용자가 받을 CLI 흐름을 검증한다.
+- 실제 사용자 `~/.claude`, `~/.codex`, `~/.prompt-memory`를 건드리지 않도록 임시 HOME과 임시 data dir만 사용한다.
+- 샌드박스에서는 로컬 포트 listen이 `EPERM`으로 막혀 `pnpm smoke:release`를 권한 상승으로 실행했고 통과했다.
+- `pnpm format`, `pnpm test`, `pnpm lint`, `pnpm build`, `pnpm pack:dry-run`, `pnpm smoke:release`, `git diff --check`를 통과했다.
