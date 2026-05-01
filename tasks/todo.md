@@ -343,7 +343,7 @@
   - [x] `pnpm pack:dry-run`
   - [x] `pnpm smoke:release`
   - [x] `git diff --check`
-- [ ] 커밋 및 `git push origin main`
+- [x] 커밋 및 `git push origin main`
 
 ### P14 설계 메모
 
@@ -458,7 +458,7 @@
   - [x] `pnpm pack:dry-run`
   - [x] `pnpm smoke:release`
   - [x] `git diff --check`
-- [ ] 커밋 및 `git push origin main`
+- [x] 커밋 및 `git push origin main`
 
 ### P17 설계 메모
 
@@ -466,3 +466,33 @@
 - `quality_gap`은 원문 prompt를 노출하지 않고 체크리스트 key만 받는다.
 - 대시보드에서 발견한 반복 문제를 목록의 실제 프롬프트 집합으로 바로 좁혀, "무엇을 고쳐야 하는지"에서 "어떤 프롬프트를 고칠지"까지 연결한다.
 - Playwright MCP로 dashboard `검증 기준` row drilldown, `?focus=quality-gap&gap=verification_criteria` URL 유지, desktop/mobile list 렌더링을 확인했다. 현재 페이지 콘솔 오류는 0개였고 관련 API는 200으로 응답했다.
+
+## P18 Dashboard Distribution Drilldown
+
+- [x] PRD 완료 범위와 P17 이후 사용성 빈틈 기준으로 다음 구현 단위 확정
+- [x] 웹 UI 구현 전 `DESIGN.md`와 Web Interface Guidelines 재검토
+- [x] 웹 UI 연결
+  - [x] 도구별 분포 bucket 클릭 시 `tool` 필터 목록으로 이동
+  - [x] 프로젝트별 분포 bucket 클릭 시 `cwdPrefix` 필터 목록으로 이동
+  - [x] URL query가 필터 상태를 유지하는지 확인
+  - [x] distribution row가 버튼처럼 접근 가능한 이름과 hover/focus 상태를 갖도록 정리
+- [x] Playwright MCP 사용성 점검
+  - [x] tool distribution drilldown
+  - [x] project distribution drilldown
+  - [x] desktop/mobile overflow와 console/network 오류
+- [x] 기본 검증 명령 실행
+  - [x] `pnpm test`
+  - [x] `pnpm lint`
+  - [x] `pnpm format`
+  - [x] `pnpm build`
+  - [x] `pnpm pack:dry-run`
+  - [x] `pnpm smoke:release`
+  - [x] `git diff --check`
+- [x] 커밋 및 `git push origin main`
+
+### P18 설계 메모
+
+- 새 저장 구조나 분석 규칙을 만들지 않고, 이미 있는 `tool`/`cwdPrefix` 필터를 대시보드 분포와 연결한다.
+- 제품 효용은 "어느 프로젝트/도구가 많은가"를 본 뒤 바로 해당 프롬프트 목록을 확인하는 데 있다.
+- 분포 row는 통계 표시이면서 동작 가능한 탐색 항목이므로 button으로 구현하고 접근 가능한 이름을 유지한다.
+- Playwright MCP로 `claude-code` 분포 drilldown이 `?tool=claude-code`에서 2행만 표시하고, `project-a` 분포 drilldown이 `?cwd=/Users/example/project-a`에서 2행만 표시하는 것을 확인했다. 모바일 목록 렌더링과 현재 페이지 콘솔 오류 0개도 확인했다.

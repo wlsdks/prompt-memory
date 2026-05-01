@@ -629,6 +629,21 @@ dd {
   gap: 6px;
 }
 
+.distribution-action {
+  background: transparent;
+  border: 1px solid transparent;
+  border-radius: 6px;
+  color: var(--pm-text);
+  padding: 6px;
+  text-align: left;
+  width: 100%;
+}
+
+.distribution-action:hover {
+  background: var(--pm-accent-weak);
+  border-color: var(--pm-border);
+}
+
 .distribution-row > div:first-child,
 .gap-row {
   align-items: center;

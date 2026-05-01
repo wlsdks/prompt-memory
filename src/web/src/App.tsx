@@ -285,6 +285,8 @@ export function App() {
                 <option value="">전체 도구</option>
                 <option value="claude-code">Claude Code</option>
                 <option value="codex">Codex</option>
+                <option value="manual">Manual</option>
+                <option value="unknown">Unknown</option>
               </select>
               <select
                 aria-label="태그 필터"
@@ -700,10 +702,20 @@ function DashboardView({
       <section className="dashboard-grid">
         <DistributionPanel
           buckets={dashboard.distribution.by_tool}
+          onBucketSelect={(bucket) =>
+            onOpenFilteredList({
+              tool: bucket.key,
+            })
+          }
           title="도구별 분포"
         />
         <DistributionPanel
           buckets={dashboard.distribution.by_project}
+          onBucketSelect={(bucket) =>
+            onOpenFilteredList({
+              cwdPrefix: bucket.key,
+            })
+          }
           title="프로젝트별 분포"
         />
       </section>
@@ -857,9 +869,13 @@ function Metric({ label, value }: { label: string; value: number | string }) {
 
 function DistributionPanel({
   buckets,
+  onBucketSelect,
   title,
 }: {
   buckets: QualityDashboard["distribution"]["by_tool"];
+  onBucketSelect(
+    bucket: QualityDashboard["distribution"]["by_tool"][number],
+  ): void;
   title: string;
 }) {
   return (
@@ -868,7 +884,12 @@ function DistributionPanel({
       <div className="distribution-list">
         {buckets.length === 0 && <p className="muted">데이터가 없습니다.</p>}
         {buckets.map((bucket) => (
-          <div className="distribution-row" key={bucket.key}>
+          <button
+            aria-label={`${title}: ${bucket.label} ${bucket.count}개 보기`}
+            className="distribution-row distribution-action"
+            key={bucket.key}
+            onClick={() => onBucketSelect(bucket)}
+          >
             <div>
               <strong>{bucket.label}</strong>
               <span>{bucket.count}</span>
@@ -876,7 +897,7 @@ function DistributionPanel({
             <div className="bar-track">
               <span style={{ width: `${Math.max(bucket.ratio * 100, 4)}%` }} />
             </div>
-          </div>
+          </button>
         ))}
       </div>
     </div>
