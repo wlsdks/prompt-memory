@@ -21,7 +21,7 @@ const ListQuerySchema = z.object({
   cwd_prefix: z.string().trim().min(1).max(1000).optional(),
   is_sensitive: z.coerce.boolean().optional(),
   tag: z.string().trim().min(1).max(80).optional(),
-  focus: z.enum(["saved", "duplicated", "quality-gap"]).optional(),
+  focus: z.enum(["saved", "reused", "duplicated", "quality-gap"]).optional(),
   quality_gap: z
     .enum([
       "goal_clarity",

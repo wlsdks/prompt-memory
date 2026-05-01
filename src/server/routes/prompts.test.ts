@@ -431,6 +431,40 @@ describe("prompt read/delete API", () => {
     });
     expect(invalid.statusCode).toBe(422);
   });
+
+  it("filters prompts by reused focus query", async () => {
+    const { server, ids } = await createReusedPromptApiFixture();
+
+    const reused = await server.inject({
+      method: "GET",
+      url: "/api/v1/prompts?focus=reused",
+      headers: {
+        host: "127.0.0.1:17373",
+        authorization: "Bearer app-token",
+      },
+    });
+    expect(reused.statusCode).toBe(200);
+    expect(
+      reused
+        .json<{ data: { items: Array<{ id: string }> } }>()
+        .data.items.map((item) => item.id),
+    ).toEqual([ids.gamma, ids.beta]);
+
+    const searched = await server.inject({
+      method: "GET",
+      url: "/api/v1/prompts?q=beta&focus=reused",
+      headers: {
+        host: "127.0.0.1:17373",
+        authorization: "Bearer app-token",
+      },
+    });
+    expect(searched.statusCode).toBe(200);
+    expect(
+      searched
+        .json<{ data: { items: Array<{ id: string }> } }>()
+        .data.items.map((item) => item.id),
+    ).toEqual([ids.beta]);
+  });
 });
 
 async function createPromptApiFixture() {
@@ -513,6 +547,56 @@ async function createDuplicatePromptApiFixture() {
     "2026-05-01T10:02:00.000Z",
     "/Users/example/project-c",
   );
+  const server = createServer({
+    dataDir,
+    auth: {
+      appToken: "app-token",
+      ingestToken: "ingest-token",
+      webSessionSecret: "web-session-secret",
+    },
+    storage,
+    redactionMode: "mask",
+  });
+
+  return {
+    server,
+    ids: {
+      alpha: alpha.id,
+      beta: beta.id,
+      gamma: gamma.id,
+    },
+  };
+}
+
+async function createReusedPromptApiFixture() {
+  const dataDir = createTempDir();
+  initializePromptMemory({ dataDir });
+  const storage = createSqlitePromptStorage({
+    dataDir,
+    hmacSecret: "test-secret",
+    now: nextDate([
+      "2026-05-01T10:00:00.000Z",
+      "2026-05-01T10:01:00.000Z",
+      "2026-05-01T10:02:00.000Z",
+    ]),
+  });
+  const alpha = await storeClaudePrompt(
+    storage,
+    "alpha prompt",
+    "2026-05-01T10:00:00.000Z",
+  );
+  const beta = await storeClaudePrompt(
+    storage,
+    "beta prompt",
+    "2026-05-01T10:01:00.000Z",
+  );
+  const gamma = await storeClaudePrompt(
+    storage,
+    "gamma prompt",
+    "2026-05-01T10:02:00.000Z",
+  );
+  storage.recordPromptUsage(beta.id, "prompt_copied");
+  storage.setPromptBookmark(gamma.id, true);
   const server = createServer({
     dataDir,
     auth: {

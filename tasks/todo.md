@@ -824,3 +824,40 @@
 - 제품 효용은 어느 프로젝트에서 프롬프트 품질 보강/민감정보/재사용 신호가 집중되는지 한눈에 보고 바로 목록으로 이동하는 데 있다.
 - 프로젝트 프로필 API에는 count/rate/checklist key만 반환하고 prompt body, snippet, raw secret은 반환하지 않는다.
 - Playwright MCP로 프로젝트 프로필 렌더링, project-a 품질 보강 drilldown, project-a 민감정보 drilldown, mobile 390px 렌더링, 콘솔 경고/오류 0개를 확인했다.
+
+## P29 Reused Focus Filter
+
+- [x] P28 이후 사용성 빈틈 기준으로 다음 구현 단위 확정
+- [x] 웹 UI 구현 전 `DESIGN.md`와 Web Interface Guidelines 재검토
+- [x] 실패 테스트 먼저 작성
+  - [x] `focus=reused`가 복사 또는 저장된 프롬프트만 반환
+  - [x] search에서도 `focus=reused`가 동일하게 적용
+  - [x] API query `focus=reused` 계약 검증
+- [x] 저장소/API 구현
+  - [x] `PromptFocusFilter`에 `reused` 추가
+  - [x] copied event 또는 bookmark가 있는 prompt를 reused로 분류
+  - [x] 기존 saved/duplicated/quality-gap 동작 유지
+- [x] 웹 UI 연결
+  - [x] Focus select에 `재사용됨` 추가
+  - [x] Dashboard 재사용 후보와 Project profile reuse에서 reused 목록으로 이동
+  - [x] empty state와 active filter label 정리
+- [x] Playwright MCP 사용성 점검
+  - [x] reused focus rendering
+  - [x] project profile reuse drilldown
+  - [x] desktop/mobile overflow와 console/network 오류
+- [x] 기본 검증 명령 실행
+  - [x] `pnpm test`
+  - [x] `pnpm lint`
+  - [x] `pnpm format`
+  - [x] `pnpm build`
+  - [x] `pnpm pack:dry-run`
+  - [x] `pnpm smoke:release`
+  - [x] `git diff --check`
+- [x] 커밋 및 `git push origin main`
+
+### P29 설계 메모
+
+- `reused`는 외부 판단이 아니라 로컬에서 사용자가 복사했거나 저장한 명시적/약한 사용 신호만 본다.
+- 제품 효용은 “좋았던 프롬프트를 다시 찾기”를 dashboard뿐 아니라 목록 필터와 프로젝트별 큐에서도 일관되게 지원하는 데 있다.
+- URL에는 `focus=reused`와 선택적 `cwd`만 들어가며 raw prompt, snippet, secret은 포함하지 않는다.
+- Playwright MCP로 `?focus=reused` 목록, 프로젝트 프로필 `재사용됨` drilldown, `?focus=reused&cwd=/Users/example/project-a` active filter, mobile 390px 렌더링, 콘솔 경고/오류 0개를 확인했다.

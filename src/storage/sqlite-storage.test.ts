@@ -823,7 +823,7 @@ describe("SQLite prompt storage", () => {
     ).toEqual([sensitive.id]);
   });
 
-  it("filters prompt lists and searches by saved, duplicated, and quality-gap focus", async () => {
+  it("filters prompt lists and searches by saved, reused, duplicated, and quality-gap focus", async () => {
     const dataDir = createTempDir();
     initializePromptMemory({ dataDir });
     const storage = createSqlitePromptStorage({
@@ -834,6 +834,7 @@ describe("SQLite prompt storage", () => {
         "2026-05-01T10:01:00.000Z",
         "2026-05-01T10:02:00.000Z",
         "2026-05-01T10:03:00.000Z",
+        "2026-05-01T10:04:00.000Z",
       ]),
     });
     const duplicatePrompt =
@@ -854,11 +855,24 @@ describe("SQLite prompt storage", () => {
       prompt: "vague request",
       receivedAt: "2026-05-01T10:03:00.000Z",
     });
+    const copied = await storeClaudePrompt(storage, {
+      prompt: "Copied prompt with 검증 기준: pnpm test.",
+      receivedAt: "2026-05-01T10:04:00.000Z",
+    });
     storage.setPromptBookmark(saved.id, true);
+    storage.recordPromptUsage(copied.id, "prompt_copied");
 
     expect(storage.listPrompts({ focus: "saved" }).items).toMatchObject([
       { id: saved.id },
     ]);
+    expect(
+      storage.listPrompts({ focus: "reused" }).items.map((item) => item.id),
+    ).toEqual([copied.id, saved.id]);
+    expect(
+      storage
+        .searchPrompts("Copied", { focus: "reused" })
+        .items.map((item) => item.id),
+    ).toEqual([copied.id]);
     expect(
       storage.listPrompts({ focus: "duplicated" }).items.map((item) => item.id),
     ).toEqual([duplicateB.id, duplicateA.id]);
@@ -881,7 +895,7 @@ describe("SQLite prompt storage", () => {
       storage
         .listPrompts({ qualityGap: "output_format" })
         .items.map((item) => item.id),
-    ).toEqual([qualityGap.id, saved.id]);
+    ).toEqual([copied.id, qualityGap.id, saved.id]);
     expect(
       storage
         .searchPrompts("vague", { qualityGap: "verification_criteria" })

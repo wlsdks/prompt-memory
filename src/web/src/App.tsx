@@ -351,6 +351,7 @@ export function App() {
               >
                 <option value="">전체 Focus</option>
                 <option value="saved">저장됨</option>
+                <option value="reused">재사용됨</option>
                 <option value="duplicated">중복 후보</option>
                 <option value="quality-gap">품질 보강</option>
               </select>
@@ -917,7 +918,18 @@ function DashboardView({
 
       <section className="dashboard-grid wide">
         <div className="panel">
-          <h2>재사용 후보</h2>
+          <div className="panel-heading-row">
+            <h2>재사용 후보</h2>
+            {dashboard.useful_prompts.length > 0 && (
+              <button
+                className="panel-link-button"
+                onClick={() => onOpenFilteredList({ focus: "reused" })}
+                type="button"
+              >
+                목록 보기
+              </button>
+            )}
+          </div>
           <div className="useful-list">
             {dashboard.useful_prompts.length === 0 && (
               <p className="muted">
@@ -1148,6 +1160,18 @@ function ProjectProfilesPanel({
                 type="button"
               >
                 민감정보
+              </button>
+              <button
+                disabled={profile.copied_count + profile.bookmarked_count === 0}
+                onClick={() =>
+                  onOpenFilteredList({
+                    cwdPrefix: profile.key,
+                    focus: "reused",
+                  })
+                }
+                type="button"
+              >
+                재사용됨
               </button>
             </div>
           </article>
@@ -1462,7 +1486,10 @@ function filtersFromLocation(): PromptFilters {
     tool: params.get("tool") ?? undefined,
     tag: params.get("tag") ?? undefined,
     focus:
-      focus === "saved" || focus === "duplicated" || focus === "quality-gap"
+      focus === "saved" ||
+      focus === "reused" ||
+      focus === "duplicated" ||
+      focus === "quality-gap"
         ? focus
         : undefined,
     qualityGap: isQualityGapKey(qualityGap) ? qualityGap : undefined,
@@ -1570,6 +1597,7 @@ const SENSITIVITY_LABELS: Record<string, string> = {
 
 const FOCUS_LABELS: Record<NonNullable<PromptFilters["focus"]>, string> = {
   saved: "저장됨",
+  reused: "재사용됨",
   duplicated: "중복 후보",
   "quality-gap": "품질 보강",
 };
@@ -1697,6 +1725,7 @@ function emptyPromptTitle(
   const gapLabel = qualityGapLabel(qualityGap);
   if (gapLabel) return `${gapLabel} 보강 큐가 비어 있습니다.`;
   if (focus === "saved") return "저장된 프롬프트가 없습니다.";
+  if (focus === "reused") return "재사용한 프롬프트가 없습니다.";
   if (focus === "duplicated") return "중복 후보가 없습니다.";
   if (focus === "quality-gap") return "품질 보강이 필요한 프롬프트가 없습니다.";
   return "아직 저장된 프롬프트가 없습니다.";
@@ -1709,6 +1738,8 @@ function emptyPromptHint(
   const gapLabel = qualityGapLabel(qualityGap);
   if (gapLabel) return `${gapLabel}이 weak/missing인 프롬프트가 없습니다.`;
   if (focus === "saved") return "상세 화면에서 다시 볼 프롬프트를 저장하세요.";
+  if (focus === "reused")
+    return "복사하거나 저장한 프롬프트가 여기에 표시됩니다.";
   if (focus === "duplicated")
     return "같은 저장 본문이 반복되면 여기에 표시됩니다.";
   if (focus === "quality-gap")

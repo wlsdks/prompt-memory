@@ -56,7 +56,7 @@ export type PromptFilters = {
   cwdPrefix?: string;
   isSensitive?: "all" | "true" | "false";
   tag?: string;
-  focus?: "saved" | "duplicated" | "quality-gap";
+  focus?: "saved" | "reused" | "duplicated" | "quality-gap";
   qualityGap?: PromptQualityGap;
   receivedFrom?: string;
   receivedTo?: string;

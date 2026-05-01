@@ -764,6 +764,22 @@ dd {
   font-weight: 650;
 }
 
+.panel-link-button {
+  background: var(--pm-surface-raised);
+  border: 1px solid var(--pm-border);
+  border-radius: 6px;
+  color: var(--pm-text);
+  font-size: 12px;
+  font-weight: 650;
+  min-height: 32px;
+  padding: 0 10px;
+}
+
+.panel-link-button:hover {
+  background: var(--pm-accent-weak);
+  border-color: var(--pm-border-strong);
+}
+
 .trend-list {
   display: grid;
   gap: 8px;

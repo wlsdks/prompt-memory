@@ -581,6 +581,22 @@ function buildPromptFilters(
           WHERE pb.prompt_id = ${idExpression}
         )`,
       );
+    } else if (options.focus === "reused") {
+      clauses.push(
+        `(
+          EXISTS (
+            SELECT 1
+            FROM prompt_bookmarks pb
+            WHERE pb.prompt_id = ${idExpression}
+          )
+          OR EXISTS (
+            SELECT 1
+            FROM prompt_usage_events pue
+            WHERE pue.prompt_id = ${idExpression}
+              AND pue.event_type = 'prompt_copied'
+          )
+        )`,
+      );
     } else if (options.focus === "duplicated") {
       clauses.push(
         `${storedHashExpression} IN (
