@@ -149,6 +149,14 @@ describe("createServer P2 ingest boundary", () => {
     expect(fallback.statusCode).toBe(200);
     expect(fallback.body).toContain('<div id="root"></div>');
 
+    const dashboard = await server.inject({
+      method: "GET",
+      url: "/dashboard",
+      headers: { host: "127.0.0.1:17373" },
+    });
+    expect(dashboard.statusCode).toBe(200);
+    expect(dashboard.body).toContain('<div id="root"></div>');
+
     const asset = await server.inject({
       method: "GET",
       url: "/assets/app.js",
@@ -545,6 +553,18 @@ function createMemoryStorage() {
     },
     deletePrompt() {
       return { deleted: true };
+    },
+    getQualityDashboard() {
+      return {
+        total_prompts: 0,
+        sensitive_prompts: 0,
+        sensitive_ratio: 0,
+        recent: { last_7_days: 0, last_30_days: 0 },
+        distribution: { by_tool: [], by_project: [] },
+        missing_items: [],
+        patterns: [],
+        instruction_suggestions: [],
+      };
     },
   } satisfies PromptStoragePort & {
     events: Array<Parameters<PromptStoragePort["storePrompt"]>[0]>;

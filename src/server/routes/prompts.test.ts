@@ -95,7 +95,12 @@ describe("prompt read/delete API", () => {
         data: {
           id: string;
           markdown: string;
-          analysis: { analyzer: string; warnings: string[] };
+          analysis: {
+            analyzer: string;
+            warnings: string[];
+            checklist: Array<{ key: string; status: string }>;
+            tags: string[];
+          };
         };
       }>().data,
     ).toMatchObject({
@@ -106,6 +111,13 @@ describe("prompt read/delete API", () => {
         warnings: expect.arrayContaining([
           "작업 대상이나 배경 맥락이 부족합니다.",
         ]),
+        checklist: expect.arrayContaining([
+          expect.objectContaining({
+            key: "verification_criteria",
+            status: "missing",
+          }),
+        ]),
+        tags: [],
       },
     });
 
@@ -141,6 +153,54 @@ describe("prompt read/delete API", () => {
     });
     expect(missing.statusCode).toBe(404);
   });
+
+  it("returns the prompt quality dashboard and supports tag filters", async () => {
+    const { server, ids } = await createPromptApiFixture();
+
+    const dashboard = await server.inject({
+      method: "GET",
+      url: "/api/v1/quality",
+      headers: {
+        host: "127.0.0.1:17373",
+        authorization: "Bearer app-token",
+      },
+    });
+    expect(dashboard.statusCode).toBe(200);
+    expect(
+      dashboard.json<{
+        data: {
+          total_prompts: number;
+          missing_items: Array<{ key: string; missing: number }>;
+          instruction_suggestions: Array<{ text: string }>;
+        };
+      }>().data,
+    ).toMatchObject({
+      total_prompts: 3,
+      missing_items: expect.arrayContaining([
+        expect.objectContaining({ key: "verification_criteria" }),
+      ]),
+      instruction_suggestions: expect.any(Array),
+    });
+
+    const tagged = await server.inject({
+      method: "GET",
+      url: "/api/v1/prompts?tag=test",
+      headers: {
+        host: "127.0.0.1:17373",
+        authorization: "Bearer app-token",
+      },
+    });
+    expect(tagged.statusCode).toBe(200);
+    expect(
+      tagged.json<{ data: { items: Array<{ id: string; tags: string[] }> } }>()
+        .data.items,
+    ).toEqual([
+      expect.objectContaining({
+        id: ids.gamma,
+        tags: expect.arrayContaining(["test"]),
+      }),
+    ]);
+  });
 });
 
 async function createPromptApiFixture() {
@@ -167,7 +227,7 @@ async function createPromptApiFixture() {
   );
   const gamma = await storeClaudePrompt(
     storage,
-    "gamma prompt",
+    "Update src/server/routes/prompts.ts and run pnpm test.",
     "2026-05-01T10:02:00.000Z",
   );
   const server = createServer({

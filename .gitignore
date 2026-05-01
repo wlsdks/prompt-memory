@@ -30,6 +30,7 @@ pnpm-debug.log*
 
 # Browser verification artifacts
 .playwright-mcp/
+output/playwright/
 playwright-report/
 test-results/
 prompt-memory-*.png

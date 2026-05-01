@@ -12,6 +12,8 @@ export type PromptSummary = {
   redaction_policy: string;
   adapter_version: string;
   index_status: string;
+  tags: string[];
+  quality_gaps: string[];
 };
 
 export type PromptDetail = PromptSummary & {
@@ -20,6 +22,14 @@ export type PromptDetail = PromptSummary & {
     summary: string;
     warnings: string[];
     suggestions: string[];
+    checklist: Array<{
+      key: string;
+      label: string;
+      status: "good" | "weak" | "missing";
+      reason: string;
+      suggestion?: string;
+    }>;
+    tags: string[];
     analyzer: string;
     created_at: string;
   };
@@ -35,8 +45,52 @@ export type PromptFilters = {
   tool?: string;
   cwdPrefix?: string;
   isSensitive?: "all" | "true" | "false";
+  tag?: string;
   receivedFrom?: string;
   receivedTo?: string;
+};
+
+export type QualityDashboard = {
+  total_prompts: number;
+  sensitive_prompts: number;
+  sensitive_ratio: number;
+  recent: {
+    last_7_days: number;
+    last_30_days: number;
+  };
+  distribution: {
+    by_tool: DistributionBucket[];
+    by_project: DistributionBucket[];
+  };
+  missing_items: Array<{
+    key: string;
+    label: string;
+    missing: number;
+    weak: number;
+    total: number;
+    rate: number;
+  }>;
+  patterns: Array<{
+    project: string;
+    item_key: string;
+    label: string;
+    count: number;
+    total: number;
+    message: string;
+  }>;
+  instruction_suggestions: Array<{
+    scope: "global" | "project";
+    project?: string;
+    text: string;
+    reason: string;
+  }>;
+};
+
+export type DistributionBucket = {
+  key: string;
+  label: string;
+  count: number;
+  ratio: number;
 };
 
 export type SettingsResponse = {
@@ -84,6 +138,9 @@ export async function listPrompts(
   if (filters.isSensitive && filters.isSensitive !== "all") {
     params.set("is_sensitive", filters.isSensitive);
   }
+  if (filters.tag) {
+    params.set("tag", filters.tag);
+  }
   if (filters.receivedFrom) {
     params.set("from", `${filters.receivedFrom}T00:00:00.000Z`);
   }
@@ -95,6 +152,15 @@ export async function listPrompts(
     credentials: "same-origin",
   });
   const body = (await response.json()) as { data: PromptListResponse };
+  return body.data;
+}
+
+export async function getQualityDashboard(): Promise<QualityDashboard> {
+  await ensureSession();
+  const response = await fetch("/api/v1/quality", {
+    credentials: "same-origin",
+  });
+  const body = (await response.json()) as { data: QualityDashboard };
   return body.data;
 }
 

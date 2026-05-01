@@ -20,6 +20,7 @@ const ListQuerySchema = z.object({
   tool: z.string().trim().min(1).max(80).optional(),
   cwd_prefix: z.string().trim().min(1).max(1000).optional(),
   is_sensitive: z.coerce.boolean().optional(),
+  tag: z.string().trim().min(1).max(80).optional(),
   from: z.string().trim().min(1).optional(),
   to: z.string().trim().min(1).optional(),
 });
@@ -46,6 +47,7 @@ export function registerPromptRoutes(
             isSensitive: query.is_sensitive,
             receivedFrom: query.from,
             receivedTo: query.to,
+            tag: query.tag,
           })
         : storage.listPrompts({
             limit: query.limit,
@@ -55,6 +57,7 @@ export function registerPromptRoutes(
             isSensitive: query.is_sensitive,
             receivedFrom: query.from,
             receivedTo: query.to,
+            tag: query.tag,
           });
 
       return {
@@ -86,6 +89,13 @@ export function registerPromptRoutes(
     return { data: prompt };
   });
 
+  server.get("/api/v1/quality", async (request) => {
+    requireAppAccess(request, options.auth);
+    const storage = requireReadStorage(options.storage, request.url);
+
+    return { data: storage.getQualityDashboard() };
+  });
+
   server.delete("/api/v1/prompts/:id", async (request) => {
     requireAppAccess(request, options.auth, { csrf: true });
     const storage = requireReadStorage(options.storage, request.url);
@@ -108,7 +118,8 @@ function requireReadStorage(
     !storage.listPrompts ||
     !storage.searchPrompts ||
     !storage.getPrompt ||
-    !storage.deletePrompt
+    !storage.deletePrompt ||
+    !storage.getQualityDashboard
   ) {
     throw problem(
       500,

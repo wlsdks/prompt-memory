@@ -156,3 +156,76 @@
 - 실제 사용자 `~/.claude`, `~/.codex`, `~/.prompt-memory`를 건드리지 않도록 임시 HOME과 임시 data dir만 사용한다.
 - 샌드박스에서는 로컬 포트 listen이 `EPERM`으로 막혀 `pnpm smoke:release`를 권한 상승으로 실행했고 통과했다.
 - `pnpm format`, `pnpm test`, `pnpm lint`, `pnpm build`, `pnpm pack:dry-run`, `pnpm smoke:release`, `git diff --check`를 통과했다.
+
+## P11 Prompt Quality Dashboard / Advanced Analysis
+
+- [x] 현재 `local-rules-v1` 분석 결과와 SQLite/API/UI 계약 재확인
+- [x] 분석 상세 스키마 설계
+  - [x] `goal_clarity`, `background_context`, `scope_limits`, `output_format`, `verification_criteria` 항목 정의
+  - [x] 각 항목 상태를 `good` / `weak` / `missing`으로 제한
+  - [x] 항목별 reason과 rule-based suggestion 문구 정의
+  - [x] raw prompt나 redacted placeholder가 분석 결과에 그대로 남지 않는 보안 기준 고정
+- [x] 자동 태그 규칙 설계
+  - [x] `bugfix`, `refactor`, `docs`, `test`, `ui`, `backend`, `security`, `db`, `release`, `ops` 1차 태그 세트 정의
+  - [x] 태그는 검색/필터용 메타데이터로 저장하고, Markdown 원문은 사람이 읽는 archive로 유지
+  - [x] 오탐 가능성이 큰 태그는 보수적으로 붙이고 UI에서 근거를 함께 노출
+- [x] 실패 테스트 먼저 작성
+  - [x] analyzer 체크리스트 상태/제안/태그 단위 테스트
+  - [x] 민감정보가 analysis/tag/suggestion/API 응답에 노출되지 않는 회귀 테스트
+  - [x] SQLite 저장, 삭제, rebuild-index 시 analysis/tag 정합성 테스트
+  - [x] dashboard/pattern API 계약 테스트
+- [x] 분석 저장 구조 확장
+  - [x] `prompt_analyses`에 checklist/tags JSON을 추가하거나 새 테이블로 분리할지 결정
+  - [x] 기존 DB와 호환되는 migration 적용
+  - [x] `rebuild-index`가 Markdown archive를 기준으로 분석과 태그를 재생성하도록 연결
+  - [x] 삭제 시 Markdown, DB row, FTS, redaction_events, prompt_analyses, prompt_tags 정리 유지
+- [x] Prompt Quality Dashboard API 추가
+  - [x] 전체 프롬프트 수
+  - [x] 민감정보 포함 비율
+  - [x] 도구별 분포
+  - [x] 프로젝트/cwd별 분포
+  - [x] 최근 7일/30일 입력량
+  - [x] 부족 항목 상위 목록: 검증 기준 없음, 출력 형식 없음, 맥락 부족 등
+- [x] 반복 패턴 분석 API 추가
+  - [x] 프로젝트/cwd별 자주 빠지는 체크리스트 항목 집계
+  - [x] "테스트 명령을 자주 빼먹음", "파일 범위를 명시하지 않음" 같은 copyable 문장 생성
+  - [x] 최소 표본 수를 두어 데이터가 적을 때 과도한 결론을 내지 않도록 처리
+- [x] AGENTS.md / CLAUDE.md 후보 제안 API 추가
+  - [x] 반복 패턴을 instruction 후보로 변환
+  - [x] 자동 파일 수정은 하지 않고 UI에서 copyable suggestion만 제공
+  - [x] 프로젝트별 후보와 전체 후보를 구분
+- [x] 기존 prompts API 확장
+  - [x] prompt detail에 checklist, suggestions, tags 반환
+  - [x] prompt list에 tags와 주요 부족 항목 summary 반환
+  - [x] tag 필터 쿼리 추가
+  - [x] FTS `tags` 컬럼과 `prompt_tags` 정합성 유지
+- [x] 웹 UI 구현 전 `DESIGN.md` 재검토
+- [x] 웹 UI 정보 구조 변경
+  - [x] 좌측 nav에 Dashboard 추가
+  - [x] Dashboard에 수치, 분포, 최근 입력량, 부족 항목, 반복 패턴을 조용한 운영형 레이아웃으로 배치
+  - [x] Prompt Detail의 분석 preview를 항목별 체크리스트로 확장
+  - [x] 개선 프롬프트 제안과 instruction 후보를 copyable block으로 표시
+  - [x] Prompt List에 태그 badge와 tag 필터 추가
+  - [x] 빈 데이터/표본 부족/분석 없음 상태 처리
+- [x] Playwright MCP 실제 브라우저 점검
+  - [x] desktop 1440x900 dashboard/list/detail/settings screenshot
+  - [x] mobile 390x844 dashboard/list/detail screenshot
+  - [x] accessibility snapshot에서 주요 버튼, 필터, copy action 이름 확인
+  - [x] 콘솔/네트워크 오류, 텍스트 overflow, 중첩 카드 여부 확인
+- [x] 기본 검증 명령 실행
+  - [x] `pnpm test`
+  - [x] `pnpm lint`
+  - [x] `pnpm build`
+  - [x] `pnpm pack:dry-run`
+  - [x] `git diff --check`
+- [ ] 커밋 및 `git push origin main`
+
+### P11 설계 메모
+
+- 이번 범위는 외부 LLM 없이 deterministic local rules만 사용한다.
+- 분석 항목은 저장된 redacted prompt만 입력으로 사용한다.
+- dashboard 집계는 원문을 반환하지 않고 count/rate/top bucket만 반환한다.
+- 프로젝트 분포는 우선 `project_root`가 있으면 사용하고, 없으면 `cwd` prefix/name 기반으로 표시한다.
+- 태그와 체크리스트는 이후 규칙 개선을 위해 analyzer version을 함께 저장한다.
+- `AGENTS.md` / `CLAUDE.md` 후보는 자동 반영하지 않는다. 사용자가 직접 복사할 수 있는 제안으로 시작한다.
+- UI는 기존 developer tool 톤을 유지하고, landing/hero/장식형 그래픽은 만들지 않는다.

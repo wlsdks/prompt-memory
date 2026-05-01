@@ -86,6 +86,11 @@ pre {
   background: var(--pm-surface-muted);
 }
 
+.nav-button.active {
+  background: var(--pm-accent-weak);
+  color: var(--pm-accent);
+}
+
 .capture-status {
   margin-top: 24px;
   color: var(--pm-text-muted);
@@ -233,7 +238,13 @@ h2 {
   display: inline-flex;
   font-size: 12px;
   line-height: 18px;
+  margin-right: 4px;
   padding: 2px 8px;
+}
+
+.tag-badge {
+  background: var(--pm-surface-muted);
+  color: var(--pm-text-muted);
 }
 
 .panel {
@@ -334,6 +345,207 @@ dd {
   font-size: 13px;
   line-height: 20px;
   margin: 4px 0;
+}
+
+.checklist-grid {
+  display: grid;
+  gap: 8px;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  margin-top: 12px;
+}
+
+.checklist-item {
+  border: 1px solid var(--pm-border);
+  border-radius: 6px;
+  padding: 10px;
+}
+
+.checklist-title,
+.tag-row {
+  align-items: center;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.checklist-title strong {
+  font-size: 13px;
+}
+
+.checklist-item p {
+  color: var(--pm-text-muted);
+  font-size: 12px;
+  line-height: 18px;
+  margin: 6px 0;
+}
+
+.checklist-item code,
+.suggestion-box code {
+  background: var(--pm-code-bg);
+  border-radius: 6px;
+  display: block;
+  font-size: 12px;
+  line-height: 18px;
+  padding: 8px;
+  white-space: normal;
+}
+
+.quality-dot {
+  border-radius: 999px;
+  display: inline-block;
+  height: 8px;
+  width: 8px;
+}
+
+.quality-dot.good {
+  background: var(--pm-accent);
+}
+
+.quality-dot.weak {
+  background: var(--pm-warning);
+}
+
+.quality-dot.missing {
+  background: var(--pm-danger);
+}
+
+.quality-status {
+  color: var(--pm-text-subtle);
+  font-size: 12px;
+  margin-left: auto;
+}
+
+.tag-row {
+  border-top: 1px solid var(--pm-border);
+  margin-top: 12px;
+  padding-top: 12px;
+}
+
+.dashboard-layout {
+  display: grid;
+  gap: 16px;
+}
+
+.metric-strip,
+.dashboard-grid {
+  display: grid;
+  gap: 12px;
+}
+
+.metric-strip {
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+}
+
+.dashboard-grid {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.metric {
+  background: var(--pm-surface);
+  border: 1px solid var(--pm-border);
+  border-radius: 8px;
+  padding: 14px;
+}
+
+.metric span,
+.gap-row p,
+.suggestion-box p,
+.distribution-row span {
+  color: var(--pm-text-muted);
+  font-size: 12px;
+}
+
+.metric strong {
+  display: block;
+  font-size: 24px;
+  line-height: 32px;
+  margin-top: 8px;
+}
+
+.distribution-list,
+.gap-list,
+.pattern-list,
+.suggestion-grid {
+  display: grid;
+  gap: 10px;
+}
+
+.distribution-row {
+  display: grid;
+  gap: 6px;
+}
+
+.distribution-row > div:first-child,
+.gap-row {
+  align-items: center;
+  display: flex;
+  justify-content: space-between;
+}
+
+.bar-track {
+  background: var(--pm-surface-muted);
+  border-radius: 999px;
+  height: 8px;
+  overflow: hidden;
+}
+
+.bar-track span {
+  background: var(--pm-accent);
+  display: block;
+  height: 100%;
+}
+
+.gap-row {
+  border-bottom: 1px solid var(--pm-border);
+  min-height: 44px;
+  padding-bottom: 8px;
+}
+
+.gap-row:last-child {
+  border-bottom: 0;
+  padding-bottom: 0;
+}
+
+.gap-row p,
+.pattern-list p,
+.suggestion-box p {
+  margin: 2px 0 0;
+}
+
+.pattern-list p {
+  border-left: 3px solid var(--pm-border-strong);
+  color: var(--pm-text-muted);
+  font-size: 13px;
+  line-height: 20px;
+  padding-left: 10px;
+}
+
+.suggestion-box {
+  border: 1px solid var(--pm-border);
+  border-radius: 6px;
+  display: grid;
+  gap: 8px;
+  grid-template-columns: minmax(0, 1fr) 36px;
+  padding: 10px;
+}
+
+.suggestion-box p,
+.suggestion-box code {
+  grid-column: 1 / 2;
+}
+
+.icon-button {
+  align-items: center;
+  align-self: center;
+  background: var(--pm-surface);
+  border: 1px solid var(--pm-border);
+  border-radius: 6px;
+  color: var(--pm-text);
+  display: inline-flex;
+  height: 32px;
+  justify-content: center;
+  padding: 0;
+  width: 32px;
 }
 
 .markdown {
@@ -441,7 +653,10 @@ dd {
 
   .topbar,
   .detail-layout,
-  .settings-grid {
+  .settings-grid,
+  .metric-strip,
+  .dashboard-grid,
+  .checklist-grid {
     display: block;
   }
 
@@ -492,5 +707,11 @@ dd {
 
   .metadata-panel {
     margin-bottom: 12px;
+  }
+
+  .metric,
+  .dashboard-grid .panel,
+  .checklist-item {
+    margin-bottom: 8px;
   }
 }

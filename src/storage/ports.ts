@@ -28,6 +28,8 @@ export type PromptSummary = {
   redaction_policy: string;
   adapter_version: string;
   index_status: string;
+  tags: string[];
+  quality_gaps: string[];
 };
 
 export type PromptDetail = PromptSummary & {
@@ -43,6 +45,7 @@ export type ListPromptsOptions = {
   isSensitive?: boolean;
   receivedFrom?: string;
   receivedTo?: string;
+  tag?: string;
 };
 
 export type SearchPromptsOptions = Omit<ListPromptsOptions, "cursor">;
@@ -54,6 +57,55 @@ export type PromptListResult = {
 
 export type DeletePromptResult = {
   deleted: boolean;
+};
+
+export type DistributionBucket = {
+  key: string;
+  label: string;
+  count: number;
+  ratio: number;
+};
+
+export type MissingQualityItem = {
+  key: string;
+  label: string;
+  missing: number;
+  weak: number;
+  total: number;
+  rate: number;
+};
+
+export type QualityPattern = {
+  project: string;
+  item_key: string;
+  label: string;
+  count: number;
+  total: number;
+  message: string;
+};
+
+export type InstructionSuggestion = {
+  scope: "global" | "project";
+  project?: string;
+  text: string;
+  reason: string;
+};
+
+export type PromptQualityDashboard = {
+  total_prompts: number;
+  sensitive_prompts: number;
+  sensitive_ratio: number;
+  recent: {
+    last_7_days: number;
+    last_30_days: number;
+  };
+  distribution: {
+    by_tool: DistributionBucket[];
+    by_project: DistributionBucket[];
+  };
+  missing_items: MissingQualityItem[];
+  patterns: QualityPattern[];
+  instruction_suggestions: InstructionSuggestion[];
 };
 
 export type PromptStoragePort = {
@@ -68,4 +120,5 @@ export type PromptReadStoragePort = {
   ): PromptListResult;
   getPrompt(id: string): PromptDetail | undefined;
   deletePrompt(id: string): DeletePromptResult;
+  getQualityDashboard(): PromptQualityDashboard;
 };

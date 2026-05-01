@@ -14,6 +14,8 @@ import { createPromptId } from "../shared/ids.js";
 import { createStoredContentHash } from "../shared/hashing.js";
 import type {
   PromptAnalysisPreview,
+  PromptQualityChecklistItem,
+  PromptTag,
   RedactionPolicy,
 } from "../shared/schema.js";
 import { getPromptMemoryPaths } from "./paths.js";
@@ -22,6 +24,7 @@ import type {
   ListPromptsOptions,
   PromptDetail,
   PromptListResult,
+  PromptQualityDashboard,
   PromptReadStoragePort,
   PromptSummary,
   PromptStoragePort,
@@ -65,8 +68,18 @@ type PromptAnalysisRow = {
   summary: string | null;
   warnings_json: string | null;
   suggestions_json: string | null;
+  checklist_json: string | null;
+  tags_json: string | null;
   analyzer: string;
   created_at: string;
+};
+
+type PromptQualityRow = {
+  prompt_id: string;
+  cwd: string;
+  project_root: string | null;
+  checklist_json: string | null;
+  tags_json: string | null;
 };
 
 type RebuildPromptRow = {
@@ -138,6 +151,9 @@ export function createSqlitePromptStorage(
     deletePrompt(id) {
       return deletePrompt(db, id);
     },
+    getQualityDashboard() {
+      return getQualityDashboard(db, options.now?.() ?? new Date());
+    },
     searchPromptIds(query) {
       const match = toSafeFtsQuery(query);
       if (!match) {
@@ -173,6 +189,42 @@ function applyMigrations(db: Database.Database): void {
       "INSERT INTO schema_migrations(version, name, applied_at) VALUES (?, ?, ?)",
     ).run(1, "001_initial", new Date().toISOString());
   }
+
+  applyAnalysisChecklistTagsMigration(db);
+}
+
+function applyAnalysisChecklistTagsMigration(db: Database.Database): void {
+  const applied = db
+    .prepare("SELECT 1 FROM schema_migrations WHERE version = ?")
+    .get(2);
+
+  if (!hasColumn(db, "prompt_analyses", "checklist_json")) {
+    db.prepare(
+      "ALTER TABLE prompt_analyses ADD COLUMN checklist_json TEXT",
+    ).run();
+  }
+
+  if (!hasColumn(db, "prompt_analyses", "tags_json")) {
+    db.prepare("ALTER TABLE prompt_analyses ADD COLUMN tags_json TEXT").run();
+  }
+
+  if (!applied) {
+    db.prepare(
+      "INSERT INTO schema_migrations(version, name, applied_at) VALUES (?, ?, ?)",
+    ).run(2, "002_analysis_checklist_tags", new Date().toISOString());
+  }
+}
+
+function hasColumn(
+  db: Database.Database,
+  tableName: string,
+  columnName: string,
+): boolean {
+  const columns = db.prepare(`PRAGMA table_info(${tableName})`).all() as Array<{
+    name: string;
+  }>;
+
+  return columns.some((column) => column.name === columnName);
 }
 
 function storePrompt(
@@ -324,10 +376,11 @@ function storePrompt(
       input.redaction.stored_text,
       input.redaction.stored_text.slice(0, 240),
       "",
-      "",
+      analysis.tags.join(" "),
     );
 
     upsertPromptAnalysis(db, id, analysis);
+    upsertPromptTags(db, id, analysis.tags, analysis.created_at);
   });
 
   transaction();
@@ -359,7 +412,7 @@ function listPrompts(
     )
     .all(...filters.values, limit + 1) as PromptRow[];
 
-  return toListResult(rows, limit);
+  return toListResult(db, rows, limit);
 }
 
 function searchPrompts(
@@ -387,7 +440,7 @@ function searchPrompts(
     )
     .all(match, ...filters.values, limit + 1) as PromptRow[];
 
-  return toListResult(rows, limit);
+  return toListResult(db, rows, limit);
 }
 
 function buildPromptFilters(
@@ -423,6 +476,19 @@ function buildPromptFilters(
     values.push(options.receivedTo);
   }
 
+  if (options.tag) {
+    const idExpression = tableAlias ? `${prefix}id` : "prompts.id";
+    clauses.push(
+      `EXISTS (
+        SELECT 1
+        FROM prompt_tags pt
+        JOIN tags t ON t.id = pt.tag_id
+        WHERE pt.prompt_id = ${idExpression} AND t.name = ?
+      )`,
+    );
+    values.push(options.tag);
+  }
+
   return { clauses, values };
 }
 
@@ -446,7 +512,7 @@ function getPrompt(
   }
 
   return {
-    ...toPromptSummary(row),
+    ...toPromptSummary(db, row),
     markdown: parsePromptMarkdown(row.markdown_path).body,
     analysis: readPromptAnalysis(db, id),
   };
@@ -486,12 +552,16 @@ function normalizeLimit(limit: number | undefined): number {
   return Math.min(Math.max(limit, 1), 100);
 }
 
-function toListResult(rows: PromptRow[], limit: number): PromptListResult {
+function toListResult(
+  db: Database.Database,
+  rows: PromptRow[],
+  limit: number,
+): PromptListResult {
   const pageRows = rows.slice(0, limit);
   const last = pageRows.at(-1);
 
   return {
-    items: pageRows.map(toPromptSummary),
+    items: pageRows.map((row) => toPromptSummary(db, row)),
     nextCursor:
       rows.length > limit && last
         ? encodeCursor({ received_at: last.received_at, id: last.id })
@@ -499,7 +569,8 @@ function toListResult(rows: PromptRow[], limit: number): PromptListResult {
   };
 }
 
-function toPromptSummary(row: PromptRow): PromptSummary {
+function toPromptSummary(db: Database.Database, row: PromptRow): PromptSummary {
+  const analysis = readPromptAnalysis(db, row.id);
   return {
     id: row.id,
     tool: row.tool,
@@ -514,6 +585,11 @@ function toPromptSummary(row: PromptRow): PromptSummary {
     redaction_policy: row.redaction_policy,
     adapter_version: row.adapter_version,
     index_status: row.index_status,
+    tags: analysis?.tags ?? [],
+    quality_gaps:
+      analysis?.checklist
+        .filter((item) => item.status !== "good")
+        .map((item) => item.label) ?? [],
   };
 }
 
@@ -588,6 +664,7 @@ function rebuildIndex(
 
     for (const row of rows) {
       db.prepare("DELETE FROM prompt_analyses WHERE prompt_id = ?").run(row.id);
+      db.prepare("DELETE FROM prompt_tags WHERE prompt_id = ?").run(row.id);
 
       if (!existsSync(row.markdown_path)) {
         db.prepare("UPDATE prompts SET index_status = ? WHERE id = ?").run(
@@ -609,6 +686,11 @@ function rebuildIndex(
         continue;
       }
 
+      const analysis = analyzePrompt({
+        prompt: redaction.stored_text,
+        createdAt: row.received_at,
+      });
+
       db.prepare(
         `
         INSERT INTO prompt_fts(prompt_id, body, snippet, project_name, tags)
@@ -619,20 +701,14 @@ function rebuildIndex(
         redaction.stored_text,
         redaction.stored_text.slice(0, 240),
         "",
-        "",
+        analysis.tags.join(" "),
       );
       db.prepare("UPDATE prompts SET index_status = ? WHERE id = ?").run(
         "indexed",
         row.id,
       );
-      upsertPromptAnalysis(
-        db,
-        row.id,
-        analyzePrompt({
-          prompt: redaction.stored_text,
-          createdAt: row.received_at,
-        }),
-      );
+      upsertPromptAnalysis(db, row.id, analysis);
+      upsertPromptTags(db, row.id, analysis.tags, analysis.created_at);
       rebuilt.push(row.id);
     }
   });
@@ -816,9 +892,10 @@ function upsertPromptAnalysis(
   db.prepare(
     `
     INSERT INTO prompt_analyses(
-      id, prompt_id, summary, warnings_json, suggestions_json, analyzer, created_at
+      id, prompt_id, summary, warnings_json, suggestions_json,
+      checklist_json, tags_json, analyzer, created_at
     )
-    VALUES (?, ?, ?, ?, ?, ?, ?)
+    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
     `,
   ).run(
     `${promptId}:${analysis.analyzer}`,
@@ -826,9 +903,36 @@ function upsertPromptAnalysis(
     analysis.summary,
     JSON.stringify(analysis.warnings),
     JSON.stringify(analysis.suggestions),
+    JSON.stringify(analysis.checklist),
+    JSON.stringify(analysis.tags),
     analysis.analyzer,
     analysis.created_at,
   );
+}
+
+function upsertPromptTags(
+  db: Database.Database,
+  promptId: string,
+  tags: PromptTag[],
+  createdAt: string,
+): void {
+  db.prepare("DELETE FROM prompt_tags WHERE prompt_id = ?").run(promptId);
+
+  for (const tag of tags) {
+    const tagId = `tag:${tag}`;
+    db.prepare(
+      `
+      INSERT OR IGNORE INTO tags(id, name, created_at)
+      VALUES (?, ?, ?)
+      `,
+    ).run(tagId, tag, createdAt);
+    db.prepare(
+      `
+      INSERT OR IGNORE INTO prompt_tags(prompt_id, tag_id)
+      VALUES (?, ?)
+      `,
+    ).run(promptId, tagId);
+  }
 }
 
 function readPromptAnalysis(
@@ -838,7 +942,8 @@ function readPromptAnalysis(
   const row = db
     .prepare(
       `
-      SELECT summary, warnings_json, suggestions_json, analyzer, created_at
+      SELECT summary, warnings_json, suggestions_json, checklist_json,
+        tags_json, analyzer, created_at
       FROM prompt_analyses
       WHERE prompt_id = ?
       ORDER BY created_at DESC, id DESC
@@ -855,9 +960,53 @@ function readPromptAnalysis(
     summary: row.summary ?? "",
     warnings: readStringArray(row.warnings_json),
     suggestions: readStringArray(row.suggestions_json),
+    checklist: readChecklist(row.checklist_json),
+    tags: readPromptTags(row.tags_json),
     analyzer: row.analyzer,
     created_at: row.created_at,
   };
+}
+
+function readChecklist(value: string | null): PromptQualityChecklistItem[] {
+  if (!value) {
+    return [];
+  }
+
+  try {
+    const parsed = JSON.parse(value) as unknown;
+    if (!Array.isArray(parsed)) {
+      return [];
+    }
+
+    return parsed.filter(
+      (item): item is PromptQualityChecklistItem =>
+        typeof item === "object" &&
+        item !== null &&
+        typeof (item as PromptQualityChecklistItem).key === "string" &&
+        typeof (item as PromptQualityChecklistItem).label === "string" &&
+        typeof (item as PromptQualityChecklistItem).status === "string" &&
+        typeof (item as PromptQualityChecklistItem).reason === "string",
+    );
+  } catch {
+    return [];
+  }
+}
+
+function readPromptTags(value: string | null): PromptTag[] {
+  return readStringArray(value).filter((tag): tag is PromptTag =>
+    [
+      "bugfix",
+      "refactor",
+      "docs",
+      "test",
+      "ui",
+      "backend",
+      "security",
+      "db",
+      "release",
+      "ops",
+    ].includes(tag),
+  );
 }
 
 function readStringArray(value: string | null): string[] {
@@ -873,6 +1022,294 @@ function readStringArray(value: string | null): string[] {
   } catch {
     return [];
   }
+}
+
+function getQualityDashboard(
+  db: Database.Database,
+  now: Date,
+): PromptQualityDashboard {
+  const totalPrompts = readCount(
+    db,
+    "SELECT COUNT(*) AS count FROM prompts WHERE deleted_at IS NULL",
+  );
+  const sensitivePrompts = readCount(
+    db,
+    "SELECT COUNT(*) AS count FROM prompts WHERE deleted_at IS NULL AND is_sensitive = 1",
+  );
+  const recent = {
+    last_7_days: readCount(
+      db,
+      "SELECT COUNT(*) AS count FROM prompts WHERE deleted_at IS NULL AND received_at >= ?",
+      [daysAgo(now, 7)],
+    ),
+    last_30_days: readCount(
+      db,
+      "SELECT COUNT(*) AS count FROM prompts WHERE deleted_at IS NULL AND received_at >= ?",
+      [daysAgo(now, 30)],
+    ),
+  };
+
+  const qualityRows = db
+    .prepare(
+      `
+      SELECT p.id AS prompt_id, p.cwd, p.project_root, pa.checklist_json,
+        pa.tags_json
+      FROM prompts p
+      LEFT JOIN prompt_analyses pa ON pa.prompt_id = p.id
+      WHERE p.deleted_at IS NULL
+      `,
+    )
+    .all() as PromptQualityRow[];
+  const missingItems = buildMissingItems(qualityRows);
+
+  return {
+    total_prompts: totalPrompts,
+    sensitive_prompts: sensitivePrompts,
+    sensitive_ratio: ratio(sensitivePrompts, totalPrompts),
+    recent,
+    distribution: {
+      by_tool: readDistribution(
+        db,
+        "SELECT tool AS key, tool AS label, COUNT(*) AS count FROM prompts WHERE deleted_at IS NULL GROUP BY tool ORDER BY count DESC, tool ASC",
+        totalPrompts,
+      ),
+      by_project: readProjectDistribution(db, totalPrompts),
+    },
+    missing_items: missingItems,
+    patterns: buildQualityPatterns(qualityRows),
+    instruction_suggestions: buildInstructionSuggestions(
+      missingItems,
+      buildQualityPatterns(qualityRows),
+    ),
+  };
+}
+
+function readCount(
+  db: Database.Database,
+  sql: string,
+  params: unknown[] = [],
+): number {
+  return (
+    (
+      db.prepare(sql).get(...params) as
+        | {
+            count: number;
+          }
+        | undefined
+    )?.count ?? 0
+  );
+}
+
+function readDistribution(
+  db: Database.Database,
+  sql: string,
+  total: number,
+): Array<{ key: string; label: string; count: number; ratio: number }> {
+  const rows = db.prepare(sql).all() as Array<{
+    key: string;
+    label: string;
+    count: number;
+  }>;
+
+  return rows.map((row) => ({
+    key: row.key,
+    label: row.label,
+    count: row.count,
+    ratio: ratio(row.count, total),
+  }));
+}
+
+function readProjectDistribution(
+  db: Database.Database,
+  total: number,
+): Array<{ key: string; label: string; count: number; ratio: number }> {
+  const rows = db
+    .prepare(
+      `
+      SELECT COALESCE(NULLIF(project_root, ''), cwd) AS key, COUNT(*) AS count
+      FROM prompts
+      WHERE deleted_at IS NULL
+      GROUP BY COALESCE(NULLIF(project_root, ''), cwd)
+      ORDER BY count DESC, key ASC
+      LIMIT 10
+      `,
+    )
+    .all() as Array<{ key: string; count: number }>;
+
+  return rows.map((row) => ({
+    key: row.key,
+    label: projectLabel(row.key),
+    count: row.count,
+    ratio: ratio(row.count, total),
+  }));
+}
+
+function buildMissingItems(
+  rows: PromptQualityRow[],
+): PromptQualityDashboard["missing_items"] {
+  const items = new Map<
+    string,
+    { key: string; label: string; missing: number; weak: number; total: number }
+  >();
+
+  for (const row of rows) {
+    for (const item of readChecklist(row.checklist_json)) {
+      const current =
+        items.get(item.key) ??
+        ({
+          key: item.key,
+          label: item.label,
+          missing: 0,
+          weak: 0,
+          total: 0,
+        } satisfies {
+          key: string;
+          label: string;
+          missing: number;
+          weak: number;
+          total: number;
+        });
+      current.total += 1;
+      if (item.status === "missing") {
+        current.missing += 1;
+      } else if (item.status === "weak") {
+        current.weak += 1;
+      }
+      items.set(item.key, current);
+    }
+  }
+
+  return [...items.values()]
+    .map((item) => ({
+      ...item,
+      rate: ratio(item.missing + item.weak, item.total),
+    }))
+    .filter((item) => item.missing > 0 || item.weak > 0)
+    .sort(
+      (a, b) =>
+        b.missing + b.weak - (a.missing + a.weak) ||
+        a.label.localeCompare(b.label),
+    );
+}
+
+function buildQualityPatterns(
+  rows: PromptQualityRow[],
+): PromptQualityDashboard["patterns"] {
+  const projectTotals = new Map<string, number>();
+  const gaps = new Map<
+    string,
+    { project: string; item_key: string; label: string; count: number }
+  >();
+
+  for (const row of rows) {
+    const project = row.project_root || row.cwd;
+    projectTotals.set(project, (projectTotals.get(project) ?? 0) + 1);
+
+    for (const item of readChecklist(row.checklist_json)) {
+      if (item.status !== "missing") {
+        continue;
+      }
+
+      const key = `${project}:${item.key}`;
+      const current =
+        gaps.get(key) ??
+        ({
+          project,
+          item_key: item.key,
+          label: item.label,
+          count: 0,
+        } satisfies {
+          project: string;
+          item_key: string;
+          label: string;
+          count: number;
+        });
+      current.count += 1;
+      gaps.set(key, current);
+    }
+  }
+
+  return [...gaps.values()]
+    .map((gap) => ({
+      ...gap,
+      total: projectTotals.get(gap.project) ?? 0,
+      message: patternMessage(gap.project, gap.item_key, gap.count),
+    }))
+    .filter((gap) => gap.total >= 2 && gap.count >= 2)
+    .sort((a, b) => b.count - a.count || a.project.localeCompare(b.project))
+    .slice(0, 8);
+}
+
+function buildInstructionSuggestions(
+  missingItems: PromptQualityDashboard["missing_items"],
+  patterns: PromptQualityDashboard["patterns"],
+): PromptQualityDashboard["instruction_suggestions"] {
+  const suggestions: PromptQualityDashboard["instruction_suggestions"] = [];
+
+  for (const item of missingItems.slice(0, 3)) {
+    suggestions.push({
+      scope: "global",
+      text: instructionText(item.key),
+      reason: `${item.label} 항목이 ${item.missing + item.weak}건 부족합니다.`,
+    });
+  }
+
+  for (const pattern of patterns.slice(0, 3)) {
+    suggestions.push({
+      scope: "project",
+      project: pattern.project,
+      text: instructionText(pattern.item_key),
+      reason: `${projectLabel(pattern.project)}에서 ${pattern.label} 누락이 반복됩니다.`,
+    });
+  }
+
+  return suggestions;
+}
+
+function instructionText(itemKey: string): string {
+  const instructions: Record<string, string> = {
+    goal_clarity: "요청에는 바꿀 대상과 기대 동작을 한 문장 이상으로 명시한다.",
+    background_context:
+      "작업 요청에는 현재 상태, 관련 로그, 문제가 발생한 배경을 함께 포함한다.",
+    scope_limits:
+      "작업 요청에는 수정해도 되는 파일/영역과 제외할 영역을 구분해 적는다.",
+    output_format:
+      "응답 형식이 중요할 때는 요약, 목록, 표, JSON 등 원하는 구조를 명시한다.",
+    verification_criteria:
+      "작업 요청에는 실행할 테스트 명령과 기대 결과를 검증 기준으로 포함한다.",
+  };
+
+  return instructions[itemKey] ?? "반복적으로 빠지는 요청 조건을 명시한다.";
+}
+
+function patternMessage(
+  project: string,
+  itemKey: string,
+  count: number,
+): string {
+  const projectName = projectLabel(project);
+  const messages: Record<string, string> = {
+    goal_clarity: `${projectName}에서는 목표와 대상이 모호한 요청이 ${count}건 반복됩니다.`,
+    background_context: `${projectName}에서는 배경 맥락이 빠진 요청이 ${count}건 반복됩니다.`,
+    scope_limits: `${projectName}에서는 파일 범위나 제외 범위를 명시하지 않은 요청이 ${count}건 반복됩니다.`,
+    output_format: `${projectName}에서는 출력 형식이 빠진 요청이 ${count}건 반복됩니다.`,
+    verification_criteria: `${projectName}에서는 테스트 명령이나 검증 기준을 자주 빼먹습니다.`,
+  };
+
+  return messages[itemKey] ?? `${projectName}에서 같은 누락이 반복됩니다.`;
+}
+
+function daysAgo(now: Date, days: number): string {
+  return new Date(now.getTime() - days * 24 * 60 * 60 * 1000).toISOString();
+}
+
+function ratio(count: number, total: number): number {
+  return total > 0 ? Number((count / total).toFixed(4)) : 0;
+}
+
+function projectLabel(value: string): string {
+  const trimmed = value.replace(/\/+$/, "");
+  return trimmed.split("/").at(-1) || trimmed || "unknown";
 }
 
 const INITIAL_DDL = `
@@ -942,6 +1379,8 @@ CREATE TABLE IF NOT EXISTS prompt_analyses (
   summary TEXT,
   warnings_json TEXT,
   suggestions_json TEXT,
+  checklist_json TEXT,
+  tags_json TEXT,
   analyzer TEXT NOT NULL,
   created_at TEXT NOT NULL,
   FOREIGN KEY(prompt_id) REFERENCES prompts(id) ON DELETE CASCADE

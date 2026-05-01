@@ -81,10 +81,43 @@ export const RedactionResultSchema = z.object({
   ),
 });
 
+export const PromptQualityCriterionSchema = z.enum([
+  "goal_clarity",
+  "background_context",
+  "scope_limits",
+  "output_format",
+  "verification_criteria",
+]);
+
+export const PromptQualityStatusSchema = z.enum(["good", "weak", "missing"]);
+
+export const PromptTagSchema = z.enum([
+  "bugfix",
+  "refactor",
+  "docs",
+  "test",
+  "ui",
+  "backend",
+  "security",
+  "db",
+  "release",
+  "ops",
+]);
+
+export const PromptQualityChecklistItemSchema = z.object({
+  key: PromptQualityCriterionSchema,
+  label: z.string().min(1),
+  status: PromptQualityStatusSchema,
+  reason: z.string().min(1),
+  suggestion: z.string().min(1).optional(),
+});
+
 export const PromptAnalysisPreviewSchema = z.object({
   summary: z.string(),
   warnings: z.array(z.string()),
   suggestions: z.array(z.string()),
+  checklist: z.array(PromptQualityChecklistItemSchema),
+  tags: z.array(PromptTagSchema),
   analyzer: z.string().min(1),
   created_at: z.string().min(1),
 });
@@ -113,4 +146,12 @@ export type RedactionPolicy = z.infer<typeof RedactionPolicySchema>;
 export type NormalizedPromptEvent = z.infer<typeof NormalizedPromptEventSchema>;
 export type StoredPrompt = z.infer<typeof StoredPromptSchema>;
 export type RedactionResult = z.infer<typeof RedactionResultSchema>;
+export type PromptQualityCriterion = z.infer<
+  typeof PromptQualityCriterionSchema
+>;
+export type PromptQualityStatus = z.infer<typeof PromptQualityStatusSchema>;
+export type PromptTag = z.infer<typeof PromptTagSchema>;
+export type PromptQualityChecklistItem = z.infer<
+  typeof PromptQualityChecklistItemSchema
+>;
 export type PromptAnalysisPreview = z.infer<typeof PromptAnalysisPreviewSchema>;

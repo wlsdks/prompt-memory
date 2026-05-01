@@ -59,6 +59,7 @@ describe("SQLite prompt storage", () => {
     expect(duplicate).toEqual({ id: first.id, duplicate: true });
     expect(storage.getAppliedMigrations()).toEqual([
       { version: 1, name: "001_initial" },
+      { version: 2, name: "002_analysis_checklist_tags" },
     ]);
 
     const prompts = storage.listPromptRows();
@@ -148,8 +149,116 @@ describe("SQLite prompt storage", () => {
       summary: expect.stringContaining("구체적인"),
       warnings: [],
       suggestions: [],
+      checklist: expect.arrayContaining([
+        expect.objectContaining({
+          key: "verification_criteria",
+          status: "good",
+        }),
+      ]),
+      tags: expect.arrayContaining(["backend", "test"]),
       created_at: "2026-05-01T10:30:00.000Z",
     });
+  });
+
+  it("stores prompt tags, exposes quality gaps, filters by tag, and deletes tag links", async () => {
+    const dataDir = createTempDir();
+    initializePromptMemory({ dataDir });
+    const storage = createSqlitePromptStorage({
+      dataDir,
+      hmacSecret: "test-secret",
+      now: nextDate(["2026-05-01T10:00:00.000Z", "2026-05-01T10:01:00.000Z"]),
+    });
+
+    const ui = await storeClaudePrompt(storage, {
+      prompt:
+        "Fix UI list overflow in src/web/src/App.tsx. Add Playwright verification and return Markdown summary.",
+      receivedAt: "2026-05-01T10:00:00.000Z",
+    });
+    const vague = await storeClaudePrompt(storage, {
+      prompt: "이거 좀 고쳐줘",
+      receivedAt: "2026-05-01T10:01:00.000Z",
+    });
+
+    expect(storage.getPrompt(ui.id)?.analysis?.tags).toEqual(
+      expect.arrayContaining(["bugfix", "ui", "test"]),
+    );
+    expect(
+      storage.listPrompts({ tag: "ui" }).items.map((item) => item.id),
+    ).toEqual([ui.id]);
+    expect(
+      storage.listPrompts().items.find((item) => item.id === vague.id)
+        ?.quality_gaps,
+    ).toEqual(expect.arrayContaining(["목표 명확성", "검증 기준"]));
+
+    expect(storage.deletePrompt(ui.id)).toEqual({ deleted: true });
+    const db = new Database(join(dataDir, "prompt-memory.sqlite"));
+    expect(
+      db
+        .prepare(
+          "SELECT COUNT(*) AS count FROM prompt_tags WHERE prompt_id = ?",
+        )
+        .get(ui.id) as { count: number },
+    ).toEqual({ count: 0 });
+    db.close();
+  });
+
+  it("builds a prompt quality dashboard without returning prompt bodies", async () => {
+    const dataDir = createTempDir();
+    initializePromptMemory({ dataDir });
+    const storage = createSqlitePromptStorage({
+      dataDir,
+      hmacSecret: "test-secret",
+      now: nextDate([
+        "2026-05-01T10:00:00.000Z",
+        "2026-05-02T10:00:00.000Z",
+        "2026-05-03T10:00:00.000Z",
+      ]),
+    });
+
+    await storeClaudePrompt(storage, {
+      prompt: "이거 고쳐줘",
+      receivedAt: "2026-05-01T10:00:00.000Z",
+      cwd: "/Users/example/project-a",
+    });
+    await storeClaudePrompt(storage, {
+      prompt: "저거 고쳐줘",
+      receivedAt: "2026-05-02T10:00:00.000Z",
+      cwd: "/Users/example/project-a",
+    });
+    await storeClaudePrompt(storage, {
+      prompt:
+        "Update docs/README.md. Return Markdown summary and run pnpm test.",
+      receivedAt: "2026-05-03T10:00:00.000Z",
+      cwd: "/Users/example/project-b",
+    });
+
+    const dashboard = storage.getQualityDashboard();
+    const serialized = JSON.stringify(dashboard);
+
+    expect(dashboard.total_prompts).toBe(3);
+    expect(dashboard.recent.last_7_days).toBe(3);
+    expect(dashboard.distribution.by_tool).toMatchObject([
+      { key: "claude-code", count: 3 },
+    ]);
+    expect(dashboard.missing_items).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({
+          key: "verification_criteria",
+          missing: 2,
+        }),
+      ]),
+    );
+    expect(dashboard.patterns).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({
+          project: "/Users/example/project-a",
+          item_key: "verification_criteria",
+        }),
+      ]),
+    );
+    expect(dashboard.instruction_suggestions.length).toBeGreaterThan(0);
+    expect(serialized).not.toContain("이거 고쳐줘");
+    expect(serialized).not.toContain("저거 고쳐줘");
   });
 
   it("connects Claude ingest to real Markdown, SQLite, and FTS storage", async () => {
