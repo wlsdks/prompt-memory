@@ -505,7 +505,10 @@ function PromptList({
           >
             <span>{formatDate(prompt.received_at)}</span>
             <span>{prompt.tool}</span>
-            <span className="truncate">{prompt.cwd}</span>
+            <span className="path-cell">
+              <span className="truncate">{prompt.cwd}</span>
+              {prompt.snippet && <small>{prompt.snippet}</small>}
+            </span>
             <span className="status-cell">
               <StatusBadge prompt={prompt} />
               {prompt.tags.slice(0, 2).map((tag) => (

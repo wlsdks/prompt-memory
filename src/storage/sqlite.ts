@@ -722,6 +722,7 @@ function toPromptSummary(db: Database.Database, row: PromptRow): PromptSummary {
     cwd: row.cwd,
     created_at: row.created_at,
     received_at: row.received_at,
+    snippet: readPromptSnippet(db, row.id),
     prompt_length: row.prompt_length,
     is_sensitive: row.is_sensitive === 1,
     excluded_from_analysis: row.excluded_from_analysis === 1,
@@ -736,6 +737,14 @@ function toPromptSummary(db: Database.Database, row: PromptRow): PromptSummary {
     usefulness: readPromptUsefulness(db, row.id),
     duplicate_count: readPromptDuplicateCount(db, row.stored_content_hash),
   };
+}
+
+function readPromptSnippet(db: Database.Database, id: string): string {
+  const row = db
+    .prepare("SELECT snippet FROM prompt_fts WHERE prompt_id = ? LIMIT 1")
+    .get(id) as { snippet: string | null } | undefined;
+
+  return row?.snippet ?? "";
 }
 
 function readPromptDuplicateCount(

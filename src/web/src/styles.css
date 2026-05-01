@@ -330,8 +330,8 @@ h2 {
   grid-template-columns:
     174px 112px minmax(220px, 1fr) minmax(180px, 260px)
     72px;
-  min-height: 48px;
-  padding: 0 12px;
+  min-height: 56px;
+  padding: 8px 12px;
   text-align: left;
   width: 100%;
   background: var(--pm-surface);
@@ -356,6 +356,22 @@ h2 {
 }
 
 .truncate {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.path-cell {
+  display: grid;
+  gap: 2px;
+  min-width: 0;
+}
+
+.path-cell small {
+  color: var(--pm-text-subtle);
+  display: block;
+  font-size: 12px;
+  line-height: 18px;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
@@ -1075,6 +1091,10 @@ dd {
     margin-bottom: 8px;
     min-height: 0;
     padding: 12px;
+  }
+
+  .path-cell small {
+    white-space: normal;
   }
 
   .table-row.table-head {

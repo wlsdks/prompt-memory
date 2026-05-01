@@ -6,6 +6,7 @@ export type PromptSummary = {
   cwd: string;
   created_at: string;
   received_at: string;
+  snippet: string;
   prompt_length: number;
   is_sensitive: boolean;
   excluded_from_analysis: boolean;

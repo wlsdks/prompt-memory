@@ -79,7 +79,7 @@ describe("prompt read/delete API", () => {
     expect(search.statusCode).toBe(200);
     expect(
       search.json<{ data: { items: Array<{ id: string }> } }>().data.items,
-    ).toMatchObject([{ id: ids.beta }]);
+    ).toMatchObject([{ id: ids.beta, snippet: "beta prompt" }]);
 
     const detail = await server.inject({
       method: "GET",

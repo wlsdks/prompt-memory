@@ -122,6 +122,13 @@ describe("SQLite prompt storage", () => {
     expect(storage.searchPromptIds("sk-proj")).toEqual([]);
     expect(storage.searchPromptIds(rawSecret)).toEqual([]);
     expect(storage.searchPromptIds("REDACTED")).toEqual([stored.id]);
+    expect(storage.listPrompts().items[0]).toMatchObject({
+      id: stored.id,
+      snippet: expect.stringContaining("[REDACTED:api_key]"),
+    });
+    expect(JSON.stringify(storage.listPrompts().items)).not.toContain(
+      rawSecret,
+    );
     expect(
       JSON.stringify(storage.getPrompt(stored.id)?.analysis),
     ).not.toContain(rawSecret);
@@ -466,7 +473,11 @@ describe("SQLite prompt storage", () => {
     expect(secondPage.nextCursor).toBeUndefined();
 
     expect(storage.searchPrompts("beta", { limit: 10 }).items).toMatchObject([
-      { id: beta.id, prompt_length: "beta prompt".length },
+      {
+        id: beta.id,
+        prompt_length: "beta prompt".length,
+        snippet: "beta prompt",
+      },
     ]);
 
     const detail = storage.getPrompt(beta.id);

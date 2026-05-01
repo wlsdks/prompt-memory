@@ -557,3 +557,39 @@
 - 제품 효용은 drilldown과 복합 필터 사용 후 현재 조건을 이해하고 빠르게 해제하는 데 있다.
 - 칩은 좁은 화면에서도 줄바꿈되는 낮은 대비 컨트롤로 두고, 필터 값이 raw prompt나 민감정보를 포함하지 않도록 기존 query param 값만 표시한다.
 - Playwright MCP로 복합 필터 URL에서 활성 필터 칩 표시, `도구` 칩 단일 제거, 전체 필터 초기화, 모바일 줄바꿈 렌더링을 확인했다. 현재 페이지 콘솔 오류는 0개였다.
+
+## P21 Prompt List Snippets
+
+- [x] PRD 완료 범위와 P20 이후 사용성 빈틈 기준으로 다음 구현 단위 확정
+- [x] 실패 테스트 먼저 작성
+  - [x] list/search summary가 redacted snippet을 반환
+  - [x] raw secret이 snippet/API 응답에 노출되지 않는 회귀 테스트
+- [x] 저장소/API 구현
+  - [x] `PromptSummary.snippet` 추가
+  - [x] `prompt_fts.snippet`을 summary에 연결
+  - [x] snippet 누락 시 빈 문자열로 안전하게 fallback
+- [x] 웹 UI 구현 전 `DESIGN.md`와 Web Interface Guidelines 재검토
+- [x] 웹 UI 연결
+  - [x] 목록 경로 아래에 한 줄 snippet 표시
+  - [x] desktop/mobile에서 긴 snippet overflow 방지
+  - [x] redacted placeholder만 표시되고 raw secret은 표시하지 않음
+- [x] Playwright MCP 사용성 점검
+  - [x] list snippet rendering
+  - [x] sensitive prompt redacted snippet
+  - [x] desktop/mobile overflow와 console/network 오류
+- [x] 기본 검증 명령 실행
+  - [x] `pnpm test`
+  - [x] `pnpm lint`
+  - [x] `pnpm format`
+  - [x] `pnpm build`
+  - [x] `pnpm pack:dry-run`
+  - [x] `pnpm smoke:release`
+  - [x] `git diff --check`
+- [x] 커밋 및 `git push origin main`
+
+### P21 설계 메모
+
+- 새 분석을 만들지 않고 저장 시 이미 생성한 FTS snippet을 목록 summary로 노출한다.
+- 제품 효용은 날짜/경로만으로 구분하기 어려운 프롬프트를 상세 화면 진입 전 목록에서 식별하는 데 있다.
+- snippet은 저장 정책이 적용된 redacted text에서 생성된 값만 사용하며, raw prompt나 raw secret을 새로 읽거나 노출하지 않는다.
+- Playwright MCP로 일반 snippet과 `[REDACTED:api_key]` snippet이 목록에 표시되고 raw token은 표시되지 않는 것을 확인했다. 모바일에서는 snippet이 카드 안에서 줄바꿈됐고 현재 페이지 콘솔 오류는 0개였다.
