@@ -140,6 +140,7 @@ export type DistributionBucket = {
 
 export type SettingsResponse = {
   data_dir: string;
+  excluded_project_roots: string[];
   redaction_mode: string;
   server: {
     host: string;

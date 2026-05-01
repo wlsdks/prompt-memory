@@ -7,6 +7,7 @@ import { requireAppAccess, type ServerAuthConfig } from "../auth.js";
 export type SettingsRouteOptions = {
   auth: ServerAuthConfig;
   dataDir: string;
+  excludedProjectRoots: string[];
   redactionMode: RedactionPolicy;
   server: {
     host: string;
@@ -24,6 +25,7 @@ export function registerSettingsRoutes(
     return {
       data: {
         data_dir: options.dataDir,
+        excluded_project_roots: options.excludedProjectRoots,
         redaction_mode: options.redactionMode,
         server: options.server,
         last_ingest_status: readLastHookStatus(options.dataDir),

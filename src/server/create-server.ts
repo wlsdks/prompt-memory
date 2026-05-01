@@ -115,6 +115,7 @@ export function createServer(options: CreateServerOptions): FastifyInstance {
   registerSettingsRoutes(server, {
     auth: options.auth,
     dataDir: options.dataDir,
+    excludedProjectRoots: options.excludedProjectRoots ?? [],
     redactionMode: options.redactionMode,
     server: options.serverConfig ?? {
       host: "127.0.0.1",

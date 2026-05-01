@@ -431,7 +431,11 @@ export function App() {
           />
         )}
         {view.name === "settings" && (
-          <SettingsView health={health} settings={settings} />
+          <SettingsView
+            dashboard={dashboard}
+            health={health}
+            settings={settings}
+          />
         )}
       </section>
 
@@ -999,14 +1003,33 @@ function DistributionPanel({
 }
 
 function SettingsView({
+  dashboard,
   health,
   settings,
 }: {
+  dashboard?: QualityDashboard;
   health?: { ok: boolean; version: string; data_dir: string };
   settings?: SettingsResponse;
 }) {
+  const setupChecks = buildSetupChecks({ dashboard, health, settings });
+
   return (
     <div className="settings-grid">
+      <section className="panel setup-panel">
+        <h2>온보딩 점검</h2>
+        <div className="setup-check-list">
+          {setupChecks.map((check) => (
+            <div className="setup-check" key={check.label}>
+              <span className={`setup-dot ${check.status}`} />
+              <span>
+                <strong>{check.label}</strong>
+                <small>{check.detail}</small>
+              </span>
+              <em>{setupStatusLabel(check.status)}</em>
+            </div>
+          ))}
+        </div>
+      </section>
       <section className="panel">
         <h2>서버</h2>
         <dl>
@@ -1027,6 +1050,18 @@ function SettingsView({
         <dl>
           <dt>Redaction</dt>
           <dd>{settings?.redaction_mode ?? "-"}</dd>
+          <dt>수집 제외 프로젝트</dt>
+          <dd>
+            {settings?.excluded_project_roots.length ? (
+              <ul className="path-list">
+                {settings.excluded_project_roots.map((path) => (
+                  <li key={path}>{path}</li>
+                ))}
+              </ul>
+            ) : (
+              "없음"
+            )}
+          </dd>
           <dt>마지막 hook 전송</dt>
           <dd>
             {settings?.last_ingest_status
@@ -1041,6 +1076,87 @@ function SettingsView({
       </section>
     </div>
   );
+}
+
+type SetupCheckStatus = "good" | "attention" | "pending";
+
+type SetupCheck = {
+  detail: string;
+  label: string;
+  status: SetupCheckStatus;
+};
+
+function buildSetupChecks({
+  dashboard,
+  health,
+  settings,
+}: {
+  dashboard?: QualityDashboard;
+  health?: { ok: boolean; version: string; data_dir: string };
+  settings?: SettingsResponse;
+}): SetupCheck[] {
+  const redactionMode = settings?.redaction_mode;
+  const lastIngest = settings?.last_ingest_status;
+  const promptCount = dashboard?.total_prompts ?? 0;
+  const usefulCount = dashboard?.useful_prompts.length ?? 0;
+
+  return [
+    {
+      label: "로컬 서버",
+      status: health?.ok ? "good" : "pending",
+      detail: health?.ok
+        ? `version ${health.version}`
+        : "서버 상태를 확인하는 중입니다.",
+    },
+    {
+      label: "로컬 저장소",
+      status: settings?.data_dir ? "good" : "pending",
+      detail: settings?.data_dir ?? "데이터 디렉터리를 확인하는 중입니다.",
+    },
+    {
+      label: "Redaction",
+      status:
+        redactionMode && redactionMode !== "raw"
+          ? "good"
+          : redactionMode === "raw"
+            ? "attention"
+            : "pending",
+      detail: redactionMode
+        ? `${redactionMode} 모드`
+        : "저장 정책을 확인하는 중입니다.",
+    },
+    {
+      label: "Hook 수집",
+      status: lastIngest?.ok ? "good" : lastIngest ? "attention" : "pending",
+      detail: lastIngest
+        ? `${lastIngest.ok ? "마지막 전송 성공" : "마지막 전송 실패"} ${
+            lastIngest.status ?? ""
+          }`.trim()
+        : "아직 hook 전송 기록이 없습니다.",
+    },
+    {
+      label: "첫 프롬프트 저장",
+      status: promptCount > 0 ? "good" : "pending",
+      detail:
+        promptCount > 0
+          ? `${promptCount}개 저장됨`
+          : "테스트 프롬프트를 전송하면 완료됩니다.",
+    },
+    {
+      label: "재사용 루프",
+      status: usefulCount > 0 ? "good" : "pending",
+      detail:
+        usefulCount > 0
+          ? `${usefulCount}개 재사용 후보`
+          : "복사하거나 저장한 프롬프트가 아직 없습니다.",
+    },
+  ];
+}
+
+function setupStatusLabel(status: SetupCheckStatus): string {
+  if (status === "good") return "정상";
+  if (status === "attention") return "확인 필요";
+  return "대기";
 }
 
 function StatusBadge({ prompt }: { prompt: PromptSummary }) {

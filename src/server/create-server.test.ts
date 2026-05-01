@@ -89,7 +89,9 @@ describe("createServer P2 ingest boundary", () => {
   });
 
   it("returns browser-safe settings without exposing secrets", async () => {
-    const server = createTestServer();
+    const server = createTestServer({
+      excludedProjectRoots: ["/Users/example/private-project"],
+    });
     const session = await server.inject({
       method: "GET",
       url: "/api/v1/session",
@@ -114,6 +116,7 @@ describe("createServer P2 ingest boundary", () => {
           host: "127.0.0.1",
           port: 17373,
         },
+        excluded_project_roots: ["/Users/example/private-project"],
       },
     });
     expect(response.body).not.toContain("app-token");

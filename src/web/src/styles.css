@@ -967,6 +967,91 @@ dd {
   grid-template-columns: repeat(2, minmax(0, 1fr));
 }
 
+.setup-panel {
+  grid-column: 1 / -1;
+}
+
+.setup-check-list {
+  display: grid;
+  gap: 8px;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.setup-check {
+  align-items: center;
+  background: var(--pm-surface);
+  border: 1px solid var(--pm-border);
+  border-radius: 6px;
+  display: grid;
+  gap: 10px;
+  grid-template-columns: 10px minmax(0, 1fr) auto;
+  min-height: 54px;
+  padding: 10px;
+}
+
+.setup-check span:nth-child(2) {
+  display: grid;
+  gap: 2px;
+  min-width: 0;
+}
+
+.setup-check strong,
+.setup-check small,
+.setup-check em {
+  overflow-wrap: anywhere;
+}
+
+.setup-check small {
+  color: var(--pm-text-muted);
+  font-size: 12px;
+  line-height: 18px;
+}
+
+.setup-check em {
+  color: var(--pm-text-subtle);
+  font-size: 12px;
+  font-style: normal;
+  font-weight: 650;
+}
+
+.setup-dot {
+  border-radius: 999px;
+  display: inline-block;
+  height: 8px;
+  width: 8px;
+}
+
+.setup-dot.good {
+  background: var(--pm-accent);
+}
+
+.setup-dot.attention {
+  background: var(--pm-warning);
+}
+
+.setup-dot.pending {
+  background: var(--pm-border-strong);
+}
+
+.path-list {
+  display: grid;
+  gap: 4px;
+  list-style: none;
+  margin: 4px 0 0;
+  padding: 0;
+}
+
+.path-list li {
+  background: var(--pm-code-bg);
+  border-radius: 6px;
+  font-family:
+    "JetBrains Mono", SFMono-Regular, ui-monospace, Menlo, Consolas, monospace;
+  font-size: 12px;
+  line-height: 18px;
+  overflow-wrap: anywhere;
+  padding: 6px 8px;
+}
+
 .muted,
 .error-line {
   color: var(--pm-text-muted);
@@ -1117,7 +1202,12 @@ dd {
 
   .metric,
   .dashboard-grid .panel,
-  .checklist-item {
+  .checklist-item,
+  .setup-check {
     margin-bottom: 8px;
+  }
+
+  .setup-check-list {
+    display: block;
   }
 }

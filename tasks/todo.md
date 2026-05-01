@@ -593,3 +593,39 @@
 - 제품 효용은 날짜/경로만으로 구분하기 어려운 프롬프트를 상세 화면 진입 전 목록에서 식별하는 데 있다.
 - snippet은 저장 정책이 적용된 redacted text에서 생성된 값만 사용하며, raw prompt나 raw secret을 새로 읽거나 노출하지 않는다.
 - Playwright MCP로 일반 snippet과 `[REDACTED:api_key]` snippet이 목록에 표시되고 raw token은 표시되지 않는 것을 확인했다. 모바일에서는 snippet이 카드 안에서 줄바꿈됐고 현재 페이지 콘솔 오류는 0개였다.
+
+## P22 Setup & Safety Checklist
+
+- [x] PRD 완료 범위와 현재 제품 사용성 빈틈 기준으로 다음 구현 단위 확정
+- [x] 실패 테스트 먼저 작성
+  - [x] settings API가 브라우저 안전한 제외 프로젝트 목록을 반환
+  - [x] settings API가 인증 토큰과 raw prompt를 노출하지 않음
+- [x] 설정 API 구현
+  - [x] `excluded_project_roots`를 settings 응답에 추가
+  - [x] 기존 secret 비노출 계약 유지
+- [x] 웹 UI 구현 전 `DESIGN.md`와 Web Interface Guidelines 재검토
+- [x] 웹 UI 연결
+  - [x] 설정 화면에 온보딩/안전 체크리스트 추가
+  - [x] 서버, 로컬 저장소, redaction, hook 수집, 첫 프롬프트 저장 상태 표시
+  - [x] 수집 제외 프로젝트 목록 표시
+  - [x] desktop/mobile에서 긴 경로 overflow 방지
+- [x] Playwright MCP 사용성 점검
+  - [x] settings checklist rendering
+  - [x] excluded project roots rendering
+  - [x] desktop/mobile overflow와 console/network 오류
+- [x] 기본 검증 명령 실행
+  - [x] `pnpm test`
+  - [x] `pnpm lint`
+  - [x] `pnpm format`
+  - [x] `pnpm build`
+  - [x] `pnpm pack:dry-run`
+  - [x] `pnpm smoke:release`
+  - [x] `git diff --check`
+- [x] 커밋 및 `git push origin main`
+
+### P22 설계 메모
+
+- 새 저장 구조를 만들지 않고 기존 health/settings/dashboard 신호를 설정 화면에서 행동 가능한 체크리스트로 묶는다.
+- 제품 효용은 첫 설치 사용자가 "서버가 살아 있는지, hook 수집이 성공했는지, redaction이 안전한지, 실제 프롬프트가 들어왔는지"를 한 화면에서 판단하게 하는 데 있다.
+- 수집 제외 프로젝트는 브라우저에 보여줘도 되는 설정 값만 반환하고, 인증 토큰과 raw prompt는 계속 응답에 포함하지 않는다.
+- Playwright MCP로 설정 화면 desktop/mobile 렌더링, 체크리스트 텍스트, 수평 overflow 없음, 콘솔 경고/오류 0개를 확인했다.
