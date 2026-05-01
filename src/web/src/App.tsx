@@ -4,6 +4,7 @@ import {
   Copy,
   Database,
   FileText,
+  GitCompare,
   Search,
   Settings,
   ShieldCheck,
@@ -465,6 +466,11 @@ function PromptList({
                   copy {prompt.usefulness.copied_count}
                 </span>
               )}
+              {prompt.duplicate_count > 0 && (
+                <span className="badge duplicate-badge">
+                  dup {prompt.duplicate_count}
+                </span>
+              )}
             </span>
             <span>{prompt.prompt_length}</span>
           </button>
@@ -515,13 +521,16 @@ function PromptDetailView({
           <dt>Redaction</dt>
           <dd>{prompt.redaction_policy}</dd>
         </dl>
-        <div className="metadata-stats" aria-label="유용성 신호">
+        <div className="metadata-stats" aria-label="유용성 및 중복 신호">
           <span>
             <Copy size={14} /> {prompt.usefulness.copied_count}
           </span>
           <span>
             <Star size={14} />{" "}
             {prompt.usefulness.bookmarked ? "saved" : "unsaved"}
+          </span>
+          <span>
+            <GitCompare size={14} /> dup {prompt.duplicate_count || 0}
           </span>
         </div>
         <button className="danger full-width" onClick={() => onDelete(prompt)}>
@@ -676,6 +685,38 @@ function DashboardView({
                   </span>
                 </span>
               </button>
+            ))}
+          </div>
+        </div>
+
+        <div className="panel">
+          <h2>중복 후보</h2>
+          <div className="duplicate-list">
+            {dashboard.duplicate_prompt_groups.length === 0 && (
+              <p className="muted">
+                같은 저장 본문을 가진 프롬프트가 없습니다.
+              </p>
+            )}
+            {dashboard.duplicate_prompt_groups.map((group) => (
+              <div className="duplicate-group" key={group.group_id}>
+                <div className="duplicate-group-header">
+                  <strong>{group.count} prompts</strong>
+                  <span>{formatDate(group.latest_received_at)}</span>
+                </div>
+                <div className="duplicate-projects">
+                  {group.projects.slice(0, 2).map((project) => (
+                    <span key={project}>{projectLabel(project)}</span>
+                  ))}
+                </div>
+                <div className="duplicate-prompts">
+                  {group.prompts.slice(0, 3).map((prompt) => (
+                    <button key={prompt.id} onClick={() => onSelect(prompt.id)}>
+                      <span>{projectLabel(prompt.cwd)}</span>
+                      <small>{formatDate(prompt.received_at)}</small>
+                    </button>
+                  ))}
+                </div>
+              </div>
             ))}
           </div>
         </div>

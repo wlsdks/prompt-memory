@@ -22,6 +22,7 @@ import type {
 import { getPromptMemoryPaths } from "./paths.js";
 import type {
   DeletePromptResult,
+  DuplicatePromptGroup,
   ListPromptsOptions,
   PromptDetail,
   PromptListResult,
@@ -215,6 +216,7 @@ function applyMigrations(db: Database.Database): void {
 
   applyAnalysisChecklistTagsMigration(db);
   applyPromptUsefulnessMigration(db);
+  applyDuplicatePromptIndexMigration(db);
 }
 
 function applyAnalysisChecklistTagsMigration(db: Database.Database): void {
@@ -269,6 +271,23 @@ function applyPromptUsefulnessMigration(db: Database.Database): void {
     db.prepare(
       "INSERT INTO schema_migrations(version, name, applied_at) VALUES (?, ?, ?)",
     ).run(3, "003_prompt_usefulness", new Date().toISOString());
+  }
+}
+
+function applyDuplicatePromptIndexMigration(db: Database.Database): void {
+  const applied = db
+    .prepare("SELECT 1 FROM schema_migrations WHERE version = ?")
+    .get(4);
+
+  db.exec(`
+    CREATE INDEX IF NOT EXISTS idx_prompts_stored_content_hash
+      ON prompts(stored_content_hash);
+  `);
+
+  if (!applied) {
+    db.prepare(
+      "INSERT INTO schema_migrations(version, name, applied_at) VALUES (?, ?, ?)",
+    ).run(4, "004_duplicate_prompt_index", new Date().toISOString());
   }
 }
 
@@ -650,7 +669,21 @@ function toPromptSummary(db: Database.Database, row: PromptRow): PromptSummary {
         .filter((item) => item.status !== "good")
         .map((item) => item.label) ?? [],
     usefulness: readPromptUsefulness(db, row.id),
+    duplicate_count: readPromptDuplicateCount(db, row.stored_content_hash),
   };
+}
+
+function readPromptDuplicateCount(
+  db: Database.Database,
+  storedContentHash: string,
+): number {
+  const count = readCount(
+    db,
+    "SELECT COUNT(*) AS count FROM prompts WHERE deleted_at IS NULL AND stored_content_hash = ?",
+    [storedContentHash],
+  );
+
+  return count > 1 ? count : 0;
 }
 
 function recordPromptUsage(
@@ -1252,7 +1285,68 @@ function getQualityDashboard(
       buildQualityPatterns(qualityRows),
     ),
     useful_prompts: readUsefulPrompts(db),
+    duplicate_prompt_groups: readDuplicatePromptGroups(db),
   };
+}
+
+function readDuplicatePromptGroups(
+  db: Database.Database,
+): DuplicatePromptGroup[] {
+  const groups = db
+    .prepare(
+      `
+      SELECT
+        stored_content_hash,
+        COUNT(*) AS count,
+        MAX(received_at) AS latest_received_at
+      FROM prompts
+      WHERE deleted_at IS NULL
+      GROUP BY stored_content_hash
+      HAVING count > 1
+      ORDER BY count DESC, latest_received_at DESC
+      LIMIT 8
+      `,
+    )
+    .all() as Array<{
+    stored_content_hash: string;
+    count: number;
+    latest_received_at: string;
+  }>;
+
+  return groups.map((group) => {
+    const rows = db
+      .prepare(
+        `
+        SELECT *
+        FROM prompts
+        WHERE deleted_at IS NULL AND stored_content_hash = ?
+        ORDER BY received_at DESC, id DESC
+        LIMIT 6
+        `,
+      )
+      .all(group.stored_content_hash) as PromptRow[];
+    const projects = [
+      ...new Set(rows.map((row) => row.cwd).sort((a, b) => a.localeCompare(b))),
+    ];
+
+    return {
+      group_id: `dup_${group.stored_content_hash.slice(0, 16)}`,
+      count: group.count,
+      latest_received_at: group.latest_received_at,
+      projects,
+      prompts: rows.map((row) => {
+        const summary = toPromptSummary(db, row);
+        return {
+          id: row.id,
+          tool: row.tool,
+          cwd: row.cwd,
+          received_at: row.received_at,
+          tags: summary.tags,
+          quality_gaps: summary.quality_gaps,
+        };
+      }),
+    };
+  });
 }
 
 function readUsefulPrompts(db: Database.Database): UsefulPrompt[] {
@@ -1658,6 +1752,8 @@ CREATE INDEX IF NOT EXISTS idx_prompts_tool ON prompts(tool);
 CREATE INDEX IF NOT EXISTS idx_prompts_project_id ON prompts(project_id);
 CREATE INDEX IF NOT EXISTS idx_prompts_session_id ON prompts(session_id);
 CREATE INDEX IF NOT EXISTS idx_prompts_index_status ON prompts(index_status);
+CREATE INDEX IF NOT EXISTS idx_prompts_stored_content_hash
+  ON prompts(stored_content_hash);
 CREATE INDEX IF NOT EXISTS idx_prompt_usage_events_prompt_id
   ON prompt_usage_events(prompt_id);
 CREATE INDEX IF NOT EXISTS idx_prompt_usage_events_type_created_at

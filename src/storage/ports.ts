@@ -31,6 +31,7 @@ export type PromptSummary = {
   tags: string[];
   quality_gaps: string[];
   usefulness: PromptUsefulness;
+  duplicate_count: number;
 };
 
 export type PromptDetail = PromptSummary & {
@@ -124,6 +125,21 @@ export type UsefulPrompt = {
   quality_gaps: string[];
 };
 
+export type DuplicatePromptGroup = {
+  group_id: string;
+  count: number;
+  latest_received_at: string;
+  projects: string[];
+  prompts: Array<{
+    id: string;
+    tool: string;
+    cwd: string;
+    received_at: string;
+    tags: string[];
+    quality_gaps: string[];
+  }>;
+};
+
 export type PromptQualityDashboard = {
   total_prompts: number;
   sensitive_prompts: number;
@@ -140,6 +156,7 @@ export type PromptQualityDashboard = {
   patterns: QualityPattern[];
   instruction_suggestions: InstructionSuggestion[];
   useful_prompts: UsefulPrompt[];
+  duplicate_prompt_groups: DuplicatePromptGroup[];
 };
 
 export type PromptStoragePort = {

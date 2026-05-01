@@ -15,6 +15,7 @@ export type PromptSummary = {
   tags: string[];
   quality_gaps: string[];
   usefulness: PromptUsefulness;
+  duplicate_count: number;
 };
 
 export type PromptDetail = PromptSummary & {
@@ -103,6 +104,20 @@ export type QualityDashboard = {
     bookmarked_at?: string;
     tags: string[];
     quality_gaps: string[];
+  }>;
+  duplicate_prompt_groups: Array<{
+    group_id: string;
+    count: number;
+    latest_received_at: string;
+    projects: string[];
+    prompts: Array<{
+      id: string;
+      tool: string;
+      cwd: string;
+      received_at: string;
+      tags: string[];
+      quality_gaps: string[];
+    }>;
   }>;
 };
 

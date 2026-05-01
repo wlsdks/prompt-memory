@@ -340,6 +340,11 @@ h2 {
   color: var(--pm-text-muted);
 }
 
+.duplicate-badge {
+  background: var(--pm-warning-weak);
+  color: var(--pm-warning);
+}
+
 .panel {
   background: var(--pm-surface-raised);
   border: 1px solid var(--pm-border);
@@ -606,6 +611,7 @@ dd {
 .gap-list,
 .pattern-list,
 .useful-list,
+.duplicate-list,
 .suggestion-grid {
   display: grid;
   gap: 10px;
@@ -681,6 +687,78 @@ dd {
 .useful-row small {
   color: var(--pm-text-muted);
   font-size: 12px;
+}
+
+.duplicate-group {
+  background: var(--pm-surface);
+  border: 1px solid var(--pm-border);
+  border-radius: 6px;
+  display: grid;
+  gap: 8px;
+  padding: 10px;
+}
+
+.duplicate-group-header,
+.duplicate-projects,
+.duplicate-prompts {
+  min-width: 0;
+}
+
+.duplicate-group-header {
+  align-items: center;
+  display: flex;
+  justify-content: space-between;
+}
+
+.duplicate-group-header span,
+.duplicate-prompts small {
+  color: var(--pm-text-muted);
+  font-size: 12px;
+}
+
+.duplicate-projects {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+}
+
+.duplicate-projects span {
+  background: var(--pm-surface-muted);
+  border-radius: 999px;
+  color: var(--pm-text-muted);
+  font-size: 12px;
+  padding: 2px 8px;
+}
+
+.duplicate-prompts {
+  display: grid;
+  gap: 6px;
+}
+
+.duplicate-prompts button {
+  align-items: center;
+  background: var(--pm-surface-raised);
+  border: 1px solid var(--pm-border);
+  border-radius: 6px;
+  color: var(--pm-text);
+  display: grid;
+  gap: 2px;
+  justify-items: start;
+  min-height: 40px;
+  padding: 8px;
+  text-align: left;
+}
+
+.duplicate-prompts button:hover {
+  background: var(--pm-accent-weak);
+}
+
+.duplicate-prompts span,
+.duplicate-prompts small {
+  max-width: 100%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .gap-row p,

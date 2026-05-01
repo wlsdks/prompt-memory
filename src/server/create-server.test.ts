@@ -565,6 +565,7 @@ function createMemoryStorage() {
         patterns: [],
         instruction_suggestions: [],
         useful_prompts: [],
+        duplicate_prompt_groups: [],
       };
     },
     recordPromptUsage() {

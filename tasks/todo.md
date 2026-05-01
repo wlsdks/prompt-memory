@@ -352,3 +352,40 @@
 - bookmark는 사용자가 명시적으로 저장한 강한 신호로 본다.
 - dashboard의 "재사용 후보"는 자동 판단이 아니라 copy count/bookmark 기반 정렬 목록으로 표시한다.
 - Playwright MCP로 detail bookmark, copy event, dashboard useful prompts, mobile dashboard를 확인했다. 콘솔 오류는 0개였고 관련 API는 200으로 응답했다.
+
+## P15 Duplicate Prompt Detection
+
+- [x] PRD 잔여 기능과 P14 이후 제품 가치 기준으로 다음 구현 단위 확정
+- [x] 실패 테스트 먼저 작성
+  - [x] SQLite exact duplicate group 집계 테스트
+  - [x] prompt summary/detail duplicate count 반환 테스트
+  - [x] quality dashboard duplicate prompt group API 계약 테스트
+- [x] 로컬 중복 탐지 구현
+  - [x] redaction 이후 저장 본문 HMAC인 `stored_content_hash` 기준으로 exact duplicate group 탐지
+  - [x] 원문 prompt body를 dashboard/API에 반환하지 않음
+  - [x] 삭제 후 duplicate group count가 자동으로 줄어드는지 확인
+- [x] 웹 UI 구현 전 `DESIGN.md` 재검토
+- [x] 웹 UI 연결
+  - [x] list/detail에 중복 그룹 크기 badge 표시
+  - [x] dashboard에 "중복 후보" 패널 추가
+  - [x] 중복 후보에서 상세로 이동 가능하게 연결
+- [x] Playwright MCP 사용성 점검
+  - [x] duplicate badge
+  - [x] dashboard duplicate prompts
+  - [x] desktop/mobile overflow와 console/network 오류
+- [x] 기본 검증 명령 실행
+  - [x] `pnpm test`
+  - [x] `pnpm lint`
+  - [x] `pnpm format`
+  - [x] `pnpm build`
+  - [x] `pnpm pack:dry-run`
+  - [x] `pnpm smoke:release`
+  - [x] `git diff --check`
+- [x] 커밋 및 `git push origin main`
+
+### P15 설계 메모
+
+- 이번 단위는 semantic similarity가 아니라 exact duplicate detection만 다룬다.
+- 기준은 raw prompt가 아니라 redaction 이후 저장 본문 HMAC이다. 민감정보 원문이나 prompt body는 집계 API에 노출하지 않는다.
+- 중복 탐지는 "이 프롬프트를 정리하거나 더 좋은 버전을 남길 수 있다"는 운영 신호로 대시보드에 표시한다.
+- Playwright MCP로 list duplicate badge, detail duplicate signal, dashboard duplicate prompts, mobile dashboard를 확인했다. 콘솔 오류는 0개였고 관련 API는 200으로 응답했다.

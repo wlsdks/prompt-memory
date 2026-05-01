@@ -172,6 +172,10 @@ describe("prompt read/delete API", () => {
           total_prompts: number;
           missing_items: Array<{ key: string; missing: number }>;
           instruction_suggestions: Array<{ text: string }>;
+          duplicate_prompt_groups: Array<{
+            count: number;
+            prompts: Array<{ id: string }>;
+          }>;
         };
       }>().data,
     ).toMatchObject({
@@ -180,6 +184,7 @@ describe("prompt read/delete API", () => {
         expect.objectContaining({ key: "verification_criteria" }),
       ]),
       instruction_suggestions: expect.any(Array),
+      duplicate_prompt_groups: expect.any(Array),
     });
 
     const tagged = await server.inject({
@@ -293,6 +298,54 @@ describe("prompt read/delete API", () => {
       }),
     ]);
   });
+
+  it("returns exact duplicate prompt groups without prompt bodies", async () => {
+    const { server, ids } = await createDuplicatePromptApiFixture();
+
+    const dashboard = await server.inject({
+      method: "GET",
+      url: "/api/v1/quality",
+      headers: {
+        host: "127.0.0.1:17373",
+        authorization: "Bearer app-token",
+      },
+    });
+    expect(dashboard.statusCode).toBe(200);
+    const body = dashboard.json<{
+      data: {
+        duplicate_prompt_groups: Array<{
+          count: number;
+          prompts: Array<{ id: string }>;
+        }>;
+      };
+    }>().data;
+    expect(body.duplicate_prompt_groups).toEqual([
+      expect.objectContaining({
+        count: 2,
+        prompts: expect.arrayContaining([
+          expect.objectContaining({ id: ids.alpha }),
+          expect.objectContaining({ id: ids.beta }),
+        ]),
+      }),
+    ]);
+    expect(JSON.stringify(body)).not.toContain("alpha prompt");
+
+    const list = await server.inject({
+      method: "GET",
+      url: "/api/v1/prompts",
+      headers: {
+        host: "127.0.0.1:17373",
+        authorization: "Bearer app-token",
+      },
+    });
+    expect(
+      list
+        .json<{
+          data: { items: Array<{ id: string; duplicate_count: number }> };
+        }>()
+        .data.items.find((item) => item.id === ids.alpha),
+    ).toMatchObject({ duplicate_count: 2 });
+  });
 });
 
 async function createPromptApiFixture() {
@@ -343,16 +396,70 @@ async function createPromptApiFixture() {
   };
 }
 
+async function createDuplicatePromptApiFixture() {
+  const dataDir = createTempDir();
+  initializePromptMemory({ dataDir });
+  const storage = createSqlitePromptStorage({
+    dataDir,
+    hmacSecret: "test-secret",
+    now: nextDate([
+      "2026-05-01T10:00:00.000Z",
+      "2026-05-01T10:01:00.000Z",
+      "2026-05-01T10:02:00.000Z",
+    ]),
+  });
+  const duplicatePrompt =
+    "Refactor duplicate prompt flow. 검증 기준: pnpm test. 출력 형식: 요약.";
+  const alpha = await storeClaudePrompt(
+    storage,
+    duplicatePrompt,
+    "2026-05-01T10:00:00.000Z",
+    "/Users/example/project-a",
+  );
+  const beta = await storeClaudePrompt(
+    storage,
+    duplicatePrompt,
+    "2026-05-01T10:01:00.000Z",
+    "/Users/example/project-b",
+  );
+  const gamma = await storeClaudePrompt(
+    storage,
+    "Unique prompt",
+    "2026-05-01T10:02:00.000Z",
+    "/Users/example/project-c",
+  );
+  const server = createServer({
+    dataDir,
+    auth: {
+      appToken: "app-token",
+      ingestToken: "ingest-token",
+      webSessionSecret: "web-session-secret",
+    },
+    storage,
+    redactionMode: "mask",
+  });
+
+  return {
+    server,
+    ids: {
+      alpha: alpha.id,
+      beta: beta.id,
+      gamma: gamma.id,
+    },
+  };
+}
+
 async function storeClaudePrompt(
   storage: ReturnType<typeof createSqlitePromptStorage>,
   prompt: string,
   receivedAt: string,
+  cwd = "/Users/example/project",
 ) {
   const event = normalizeClaudeCodePayload(
     {
       session_id: `session-${receivedAt}`,
       transcript_path: "/Users/example/.claude/session.jsonl",
-      cwd: "/Users/example/project",
+      cwd,
       permission_mode: "default",
       hook_event_name: "UserPromptSubmit",
       prompt,

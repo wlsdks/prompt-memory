@@ -61,6 +61,7 @@ describe("SQLite prompt storage", () => {
       { version: 1, name: "001_initial" },
       { version: 2, name: "002_analysis_checklist_tags" },
       { version: 3, name: "003_prompt_usefulness" },
+      { version: 4, name: "004_duplicate_prompt_index" },
     ]);
 
     const prompts = storage.listPromptRows();
@@ -607,6 +608,60 @@ describe("SQLite prompt storage", () => {
         .get(alpha.id) as { count: number },
     ).toEqual({ count: 0 });
     db.close();
+  });
+
+  it("detects exact duplicate prompt groups without returning prompt bodies", async () => {
+    const dataDir = createTempDir();
+    initializePromptMemory({ dataDir });
+    const storage = createSqlitePromptStorage({
+      dataDir,
+      hmacSecret: "test-secret",
+      now: nextDate([
+        "2026-05-01T10:00:00.000Z",
+        "2026-05-01T10:01:00.000Z",
+        "2026-05-01T10:02:00.000Z",
+      ]),
+    });
+    const repeatedPrompt =
+      "Refactor duplicate prompt flow. 검증 기준: pnpm test. 출력 형식: 요약.";
+    const first = await storeClaudePrompt(storage, {
+      prompt: repeatedPrompt,
+      receivedAt: "2026-05-01T10:00:00.000Z",
+      cwd: "/Users/example/project-a",
+    });
+    const second = await storeClaudePrompt(storage, {
+      prompt: repeatedPrompt,
+      receivedAt: "2026-05-01T10:01:00.000Z",
+      cwd: "/Users/example/project-b",
+    });
+    await storeClaudePrompt(storage, {
+      prompt: "A unique prompt",
+      receivedAt: "2026-05-01T10:02:00.000Z",
+      cwd: "/Users/example/project-c",
+    });
+
+    expect(storage.getPrompt(first.id)?.duplicate_count).toBe(2);
+    expect(
+      storage.listPrompts().items.find((item) => item.id === second.id),
+    ).toMatchObject({ duplicate_count: 2 });
+
+    const groups = storage.getQualityDashboard().duplicate_prompt_groups;
+    expect(groups).toEqual([
+      expect.objectContaining({
+        count: 2,
+        latest_received_at: "2026-05-01T10:01:00.000Z",
+        projects: ["/Users/example/project-a", "/Users/example/project-b"],
+        prompts: expect.arrayContaining([
+          expect.objectContaining({ id: first.id }),
+          expect.objectContaining({ id: second.id }),
+        ]),
+      }),
+    ]);
+    expect(JSON.stringify(groups)).not.toContain(repeatedPrompt);
+
+    expect(storage.deletePrompt(first.id)).toEqual({ deleted: true });
+    expect(storage.getPrompt(second.id)?.duplicate_count).toBe(0);
+    expect(storage.getQualityDashboard().duplicate_prompt_groups).toEqual([]);
   });
 
   it("filters prompt lists and searches by tool, sensitivity, cwd, and date range", async () => {
