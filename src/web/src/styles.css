@@ -1,21 +1,34 @@
 :root {
-  --pm-bg: #f7f7f4;
+  --pm-bg: #f6f4ef;
+  --pm-rail: #fbfaf6;
   --pm-surface: #ffffff;
-  --pm-surface-muted: #efefed;
-  --pm-border: #d8d8d2;
-  --pm-border-strong: #b8b8ae;
-  --pm-text: #181a1b;
-  --pm-text-muted: #626663;
-  --pm-text-subtle: #8a8e89;
-  --pm-accent: #256b5f;
-  --pm-accent-weak: #dcebe7;
+  --pm-surface-muted: #eeece6;
+  --pm-surface-raised: #fffefa;
+  --pm-border: #d8d4ca;
+  --pm-border-strong: #b9b2a5;
+  --pm-text: #171816;
+  --pm-text-muted: #64665f;
+  --pm-text-subtle: #8a887f;
+  --pm-accent: #1f6f64;
+  --pm-accent-strong: #154f48;
+  --pm-accent-weak: #ddece7;
+  --pm-info: #315f8c;
   --pm-danger: #b42318;
   --pm-danger-weak: #fde7e4;
-  --pm-code-bg: #ecede8;
+  --pm-warning: #9a5b00;
+  --pm-warning-weak: #f5e6c8;
+  --pm-code-bg: #e9e8e1;
+  --pm-shadow: 0 1px 2px rgb(27 25 20 / 0.06);
   color: var(--pm-text);
   background: var(--pm-bg);
   font-family:
-    Inter, ui-sans-serif, system-ui, "Apple SD Gothic Neo", Pretendard,
+    ui-sans-serif,
+    system-ui,
+    -apple-system,
+    BlinkMacSystemFont,
+    "Apple SD Gothic Neo",
+    Pretendard,
+    "Segoe UI",
     sans-serif;
   letter-spacing: 0;
 }
@@ -27,6 +40,7 @@
 body {
   margin: 0;
   background: var(--pm-bg);
+  color: var(--pm-text);
 }
 
 button,
@@ -47,14 +61,14 @@ pre {
 
 .app-shell {
   display: grid;
-  grid-template-columns: 240px minmax(0, 1fr);
+  grid-template-columns: 232px minmax(0, 1fr);
   min-height: 100vh;
 }
 
 .sidebar {
   border-right: 1px solid var(--pm-border);
-  padding: 20px 16px;
-  background: var(--pm-surface);
+  padding: 18px 14px;
+  background: var(--pm-rail);
 }
 
 .brand,
@@ -67,7 +81,7 @@ pre {
 
 .brand {
   font-size: 15px;
-  font-weight: 650;
+  font-weight: 700;
   margin-bottom: 24px;
 }
 
@@ -78,6 +92,8 @@ pre {
   border-radius: 6px;
   color: var(--pm-text);
   background: transparent;
+  font-size: 13px;
+  font-weight: 650;
   padding: 0 10px;
   text-align: left;
 }
@@ -88,7 +104,7 @@ pre {
 
 .nav-button.active {
   background: var(--pm-accent-weak);
-  color: var(--pm-accent);
+  color: var(--pm-accent-strong);
 }
 
 .capture-status {
@@ -98,7 +114,7 @@ pre {
 }
 
 .workspace {
-  max-width: 1440px;
+  max-width: 1240px;
   width: 100%;
   padding: 24px;
 }
@@ -117,20 +133,23 @@ pre {
 
 .eyebrow {
   color: var(--pm-text-subtle);
-  font-size: 12px;
+  font-size: 11px;
+  font-weight: 650;
   margin: 0 0 4px;
 }
 
 h1 {
   font-size: 24px;
   line-height: 32px;
+  font-weight: 700;
   margin: 0;
   white-space: nowrap;
 }
 
 h2 {
-  font-size: 18px;
-  line-height: 26px;
+  font-size: 16px;
+  font-weight: 700;
+  line-height: 24px;
   margin: 0 0 12px;
 }
 
@@ -151,6 +170,7 @@ h2 {
   border: 1px solid var(--pm-border);
   border-radius: 6px;
   height: 36px;
+  box-shadow: var(--pm-shadow);
 }
 
 .search-box {
@@ -165,6 +185,7 @@ h2 {
 .filter-bar input[type="date"],
 .path-filter {
   color: var(--pm-text);
+  font-size: 13px;
   padding: 0 10px;
 }
 
@@ -191,6 +212,7 @@ h2 {
   background: var(--pm-surface);
   border: 1px solid var(--pm-border);
   border-radius: 8px;
+  box-shadow: var(--pm-shadow);
   overflow: hidden;
 }
 
@@ -200,7 +222,10 @@ h2 {
   border-bottom: 1px solid var(--pm-border);
   color: var(--pm-text);
   display: grid;
-  grid-template-columns: 180px 120px minmax(200px, 1fr) 120px 80px;
+  font-size: 14px;
+  grid-template-columns:
+    174px 112px minmax(220px, 1fr) minmax(180px, 260px)
+    72px;
   min-height: 48px;
   padding: 0 12px;
   text-align: left;
@@ -209,7 +234,7 @@ h2 {
 }
 
 .table-row:hover {
-  background: var(--pm-accent-weak);
+  background: #f8fbf8;
 }
 
 .table-row:last-child {
@@ -222,6 +247,7 @@ h2 {
   color: var(--pm-text-muted);
   cursor: default;
   font-size: 12px;
+  font-weight: 500;
   min-height: 40px;
 }
 
@@ -234,12 +260,24 @@ h2 {
 .badge {
   background: var(--pm-accent-weak);
   border-radius: 999px;
-  color: var(--pm-accent);
+  color: var(--pm-accent-strong);
   display: inline-flex;
+  font-weight: 500;
   font-size: 12px;
   line-height: 18px;
   margin-right: 4px;
   padding: 2px 8px;
+}
+
+.status-cell {
+  align-items: center;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+}
+
+.status-cell .badge {
+  margin-right: 0;
 }
 
 .tag-badge {
@@ -247,10 +285,16 @@ h2 {
   color: var(--pm-text-muted);
 }
 
+.gap-badge {
+  background: var(--pm-warning-weak);
+  color: var(--pm-warning);
+}
+
 .panel {
-  background: var(--pm-surface);
+  background: var(--pm-surface-raised);
   border: 1px solid var(--pm-border);
   border-radius: 8px;
+  box-shadow: var(--pm-shadow);
   padding: 16px;
 }
 
@@ -277,9 +321,10 @@ h2 {
 
 .metadata-panel,
 .prompt-body {
-  background: var(--pm-surface);
+  background: var(--pm-surface-raised);
   border: 1px solid var(--pm-border);
   border-radius: 8px;
+  box-shadow: var(--pm-shadow);
   padding: 16px;
 }
 
@@ -290,6 +335,7 @@ dl {
 dt {
   color: var(--pm-text-subtle);
   font-size: 12px;
+  font-weight: 500;
   margin-top: 12px;
 }
 
@@ -303,7 +349,7 @@ dd {
 }
 
 .analysis-panel {
-  background: #fbfbf8;
+  background: var(--pm-surface);
   border: 1px solid var(--pm-border);
   border-radius: 8px;
   margin-bottom: 16px;
@@ -355,6 +401,7 @@ dd {
 }
 
 .checklist-item {
+  background: var(--pm-surface-raised);
   border: 1px solid var(--pm-border);
   border-radius: 6px;
   padding: 10px;
@@ -441,9 +488,10 @@ dd {
 }
 
 .metric {
-  background: var(--pm-surface);
+  background: var(--pm-surface-raised);
   border: 1px solid var(--pm-border);
   border-radius: 8px;
+  box-shadow: var(--pm-shadow);
   padding: 14px;
 }
 
@@ -458,6 +506,7 @@ dd {
 .metric strong {
   display: block;
   font-size: 24px;
+  font-weight: 700;
   line-height: 32px;
   margin-top: 8px;
 }
@@ -485,7 +534,7 @@ dd {
 .bar-track {
   background: var(--pm-surface-muted);
   border-radius: 999px;
-  height: 8px;
+  height: 7px;
   overflow: hidden;
 }
 
@@ -521,6 +570,7 @@ dd {
 }
 
 .suggestion-box {
+  background: var(--pm-surface);
   border: 1px solid var(--pm-border);
   border-radius: 6px;
   display: grid;
@@ -553,6 +603,7 @@ dd {
     "JetBrains Mono", SFMono-Regular, ui-monospace, Menlo, Consolas, monospace;
   font-size: 13px;
   line-height: 21px;
+  overflow-wrap: anywhere;
 }
 
 .markdown pre {

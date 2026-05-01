@@ -344,11 +344,16 @@ function PromptList({
           <span>{formatDate(prompt.received_at)}</span>
           <span>{prompt.tool}</span>
           <span className="truncate">{prompt.cwd}</span>
-          <span>
+          <span className="status-cell">
             <StatusBadge prompt={prompt} />
             {prompt.tags.slice(0, 2).map((tag) => (
               <span className="badge tag-badge" key={tag}>
                 {tag}
+              </span>
+            ))}
+            {prompt.quality_gaps.slice(0, 1).map((gap) => (
+              <span className="badge gap-badge" key={gap}>
+                {gap}
               </span>
             ))}
           </span>
@@ -544,6 +549,7 @@ function DashboardView({
               <p className="muted">{suggestion.reason}</p>
               <code>{suggestion.text}</code>
               <button
+                aria-label="제안 복사"
                 className="icon-button"
                 onClick={() =>
                   void navigator.clipboard.writeText(suggestion.text)

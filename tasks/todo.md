@@ -229,3 +229,40 @@
 - 태그와 체크리스트는 이후 규칙 개선을 위해 analyzer version을 함께 저장한다.
 - `AGENTS.md` / `CLAUDE.md` 후보는 자동 반영하지 않는다. 사용자가 직접 복사할 수 있는 제안으로 시작한다.
 - UI는 기존 developer tool 톤을 유지하고, landing/hero/장식형 그래픽은 만들지 않는다.
+
+## P12 Design System Refresh / Regression QA
+
+- [x] P11 이후 전체 회귀 검증
+  - [x] `pnpm test`
+  - [x] `pnpm lint`
+  - [x] `pnpm build`
+  - [x] `pnpm pack:dry-run`
+  - [x] `git diff --check`
+- [x] `/Users/jinan/ai/awesome-design-md` 구조와 관련 예시 확인
+- [x] `prompt-memory` 전용 `DESIGN.md` 재작성
+  - [x] Visual Theme & Atmosphere
+  - [x] Color Palette & Roles
+  - [x] Typography Rules
+  - [x] Component Stylings
+  - [x] Layout Principles
+  - [x] Depth & Elevation
+  - [x] Do's and Don'ts
+  - [x] Responsive Behavior
+  - [x] Agent Prompt Guide
+- [x] UI 토큰과 레이아웃 리프레시
+  - [x] sidebar/topbar 상태와 정보 위계 정리
+  - [x] list/dashboard/detail/settings 화면의 panel/table 밀도 개선
+  - [x] quality checklist/tag/copy 영역 overflow 방지
+  - [x] empty/loading 상태가 새 디자인 톤과 맞는지 확인
+- [x] Playwright MCP 실제 브라우저 재점검
+  - [x] desktop 1440x900 list/dashboard/detail/settings screenshot
+  - [x] mobile 390x844 list/dashboard/detail screenshot
+  - [x] accessibility snapshot에서 nav/filter/copy/delete 이름 확인
+  - [x] 콘솔/네트워크 오류, 텍스트 overflow, 직접 URL 진입 확인
+- [ ] 커밋 및 `git push origin main`
+
+### P12 설계 메모
+
+- `awesome-design-md`의 목적은 특정 사이트 복제가 아니라 AI가 반복해서 따를 수 있는 명확한 디자인 문서다.
+- `prompt-memory`는 마케팅 사이트가 아니라 로컬 운영형 developer tool이므로 첫 화면은 계속 실제 archive/list로 둔다.
+- 시각 방향은 Linear의 정밀한 정보 밀도와 Cursor의 따뜻한 로컬 도구 톤을 참고하되, 자체 색상/컴포넌트 언어로 유지한다.

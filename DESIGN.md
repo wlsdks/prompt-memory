@@ -1,122 +1,210 @@
 # DESIGN.md
 
-이 문서는 `prompt-memory` 웹 UI의 기준 디자인 시스템이다. AI 에이전트는 UI 작업 전에 이 파일을 먼저 읽고, 특정 브랜드를 복제하지 않는 독자적인 developer tool UI를 만든다.
+`prompt-memory`의 전용 웹 UI 디자인 시스템이다. AI 에이전트는 UI 작업 전에 이 문서를 읽고, 로컬 우선 프롬프트 아카이브에 맞는 조용하고 정밀한 developer tool UI를 만든다.
 
-초기 형식은 MIT 라이선스의 `awesome-design-md` 컬렉션이 제안하는 DESIGN.md 구조를 참고했다. 색상, 타이포그래피, 컴포넌트 토큰은 이 제품의 목적에 맞게 새로 정의한다.
+이 문서는 `/Users/jinan/ai/awesome-design-md` 컬렉션의 DESIGN.md 구성 방식을 참고했다. 특정 브랜드를 복제하지 않는다. 참고한 방향은 Linear 계열의 정밀한 정보 밀도와 Cursor 계열의 따뜻한 로컬 도구 톤이며, 색상과 컴포넌트 언어는 `prompt-memory` 전용이다.
 
-## 1. 제품 분위기
+## 1. Visual Theme & Atmosphere
 
-- 로컬 우선 프롬프트 아카이브이므로 신뢰감, 차분함, 검색 가능성, 데이터 밀도를 우선한다.
-- 운영형 SaaS와 개발자 도구의 중간 톤을 사용한다.
-- 화면은 "프롬프트를 모으고 다시 읽는 작업대"처럼 느껴져야 한다.
-- 랜딩 페이지식 hero, 장식용 gradient orb, 과한 그림, 카드 안의 카드 구조를 피한다.
-- 첫 화면은 실제 prompt list 또는 빈 archive 상태여야 한다.
+### Product Feeling
 
-## 2. 색상 토큰
+- 로컬 저장소를 열어 프롬프트 기록, 품질 신호, 민감정보 상태를 점검하는 "developer workbench"처럼 보여야 한다.
+- 첫 화면은 항상 실제 archive/list다. 마케팅 hero, 소개 랜딩, 장식용 illustration을 만들지 않는다.
+- 전체 분위기는 차분하고 촘촘하다. 화면을 예쁘게 비우는 것보다 빠르게 스캔하고 조작하는 밀도를 우선한다.
+- 밝은 warm-neutral canvas 위에 ink text, mineral teal accent, amber warning을 제한적으로 사용한다.
+- 카드형 대시보드가 필요할 때도 "floating marketing card"처럼 보이면 안 된다. 경계선, 낮은 대비, 안정적인 grid로 운영 도구처럼 보이게 한다.
 
-기본은 밝은 테마이며, 이후 dark mode를 확장할 수 있게 의미 토큰으로 작성한다.
+### Visual Keywords
 
-| Token | Hex | 용도 |
+- warm local
+- precise archive
+- quiet diagnostics
+- code-native
+- dense but readable
+
+### Surface Hierarchy
+
+1. **Workbench background**: 앱 전체 배경. 아주 미세한 warm tint.
+2. **Rail surface**: 좌측 nav. 본문보다 약간 밝고 고정된 도구 영역.
+3. **Data surface**: table, panels, detail reader. 흰색에 가까운 작업 표면.
+4. **Inset surface**: prompt body, code, copyable suggestions. 낮은 대비의 recessed block.
+5. **Active surface**: selected nav, selected filter, hover row. teal tint를 얇게 사용.
+
+## 2. Color Palette & Roles
+
+| Token | Hex | Role |
 | --- | --- | --- |
-| `--pm-bg` | `#F7F7F4` | 앱 배경 |
-| `--pm-surface` | `#FFFFFF` | 테이블, 패널, 모달 |
-| `--pm-surface-muted` | `#EFEFED` | 보조 영역, 비활성 배경 |
-| `--pm-border` | `#D8D8D2` | 경계선 |
-| `--pm-border-strong` | `#B8B8AE` | 선택/포커스 경계 |
-| `--pm-text` | `#181A1B` | 본문 |
-| `--pm-text-muted` | `#626663` | 보조 텍스트 |
-| `--pm-text-subtle` | `#8A8E89` | 메타데이터 |
-| `--pm-accent` | `#256B5F` | 주요 액션, 선택 상태 |
-| `--pm-accent-weak` | `#DCEBE7` | 선택 행 배경 |
-| `--pm-danger` | `#B42318` | 삭제, 위험 |
-| `--pm-danger-weak` | `#FDE7E4` | 위험 배경 |
-| `--pm-warning` | `#9A5B00` | 진단 경고 |
-| `--pm-code-bg` | `#ECEDE8` | 코드/프롬프트 블록 배경 |
+| `--pm-bg` | `#F6F4EF` | Workbench page background |
+| `--pm-rail` | `#FBFAF6` | Sidebar and fixed chrome |
+| `--pm-surface` | `#FFFFFF` | Primary data surfaces |
+| `--pm-surface-muted` | `#EEECE6` | Inset blocks, inactive controls |
+| `--pm-surface-raised` | `#FFFEFA` | Slightly raised panels |
+| `--pm-border` | `#D8D4CA` | Default separators |
+| `--pm-border-strong` | `#B9B2A5` | Active/focus borders |
+| `--pm-text` | `#171816` | Primary body text |
+| `--pm-text-muted` | `#64665F` | Secondary copy |
+| `--pm-text-subtle` | `#8A887F` | Metadata, labels |
+| `--pm-accent` | `#1F6F64` | Primary selection/action |
+| `--pm-accent-strong` | `#154F48` | Strong active text |
+| `--pm-accent-weak` | `#DDECE7` | Selected rows/nav |
+| `--pm-info` | `#315F8C` | Informational diagnostics |
+| `--pm-warning` | `#9A5B00` | Weak quality signal |
+| `--pm-warning-weak` | `#F5E6C8` | Warning background |
+| `--pm-danger` | `#B42318` | Delete/destructive state |
+| `--pm-danger-weak` | `#FDE7E4` | Danger background |
+| `--pm-code-bg` | `#E9E8E1` | Prompt/code/suggestion blocks |
+| `--pm-shadow` | `0 1px 2px rgb(27 25 20 / 0.06)` | Minimal elevation |
 
-## 3. 타이포그래피
+### Color Rules
 
-- 시스템 폰트를 사용한다: `Inter`, `ui-sans-serif`, `system-ui`, `Apple SD Gothic Neo`, `Pretendard`, `sans-serif`.
-- 코드와 prompt body는 `JetBrains Mono`, `SFMono-Regular`, `ui-monospace`, `monospace`.
-- 글자 간격은 기본 `0`을 유지한다.
-- viewport width에 따라 폰트 크기를 직접 스케일하지 않는다.
+- Teal is for current location, selected state, successful indexed state, and primary focus.
+- Amber is only for weak/missing quality states or diagnostic warnings.
+- Red is only for destructive actions and security-sensitive warnings.
+- Tags use muted neutral pills by default. A tag must not look like a primary button.
+- Do not create purple/blue gradient-heavy UI.
 
-| 역할 | 크기 | 굵기 | 줄높이 |
-| --- | --- | --- | --- |
-| Page title | 24px | 650 | 32px |
-| Section title | 18px | 650 | 26px |
-| Table/body | 14px | 400 | 22px |
-| Metadata | 12px | 450 | 18px |
-| Code/prompt | 13px | 400 | 21px |
-| Button | 13px | 600 | 18px |
+## 3. Typography Rules
 
-## 4. 레이아웃
+Use system fonts for UI and monospace for prompt content. The UI must work on Korean and English mixed text without custom font loading.
 
-- 앱 shell은 좌측 navigation 240px, 본문 fluid layout을 기본으로 한다.
-- 본문 최대 폭은 목록 화면에서 1440px, 상세 읽기 화면에서 1080px.
-- spacing scale: `4, 8, 12, 16, 20, 24, 32, 40`.
-- border radius는 기본 6px, 모달과 큰 패널은 8px까지 허용한다.
-- 반복 item card는 허용하지만 page section 자체를 floating card로 만들지 않는다.
-- 데이터 테이블은 행 높이 44-52px를 기준으로 하고 hover/selection에서 높이가 변하지 않아야 한다.
+```css
+font-family: ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont,
+  "Apple SD Gothic Neo", Pretendard, "Segoe UI", sans-serif;
+```
 
-## 5. 주요 화면
+For prompt bodies and code:
 
-### Prompt List
+```css
+font-family: "JetBrains Mono", SFMono-Regular, ui-monospace, Menlo, Consolas,
+  monospace;
+```
 
-- 첫 화면이다.
-- 상단에는 검색 input, tool filter, sensitivity filter, date range, doctor status indicator를 둔다.
-- 목록은 newest-first이며 id, tool, cwd/project, received time, redaction/index status, prompt length를 보여준다.
-- 긴 cwd와 prompt preview는 한 줄 말줄임 처리한다.
-- 빈 상태는 짧은 문장과 `install-hook claude-code` 안내 명령만 보여준다.
+| Role | Size | Weight | Line height | Use |
+| --- | --- | --- | --- | --- |
+| Page title | 24px | 700 | 32px | Current view title |
+| Panel title | 16px | 700 | 24px | Dashboard/detail section title |
+| Table body | 14px | 450 | 22px | List row data |
+| Body | 14px | 400 | 22px | UI copy |
+| Metadata | 12px | 500 | 18px | Labels, timestamps |
+| Tiny label | 11px | 650 | 16px | Compact status, metric label |
+| Prompt/code | 13px | 400 | 21px | Captured prompt content |
+| Button | 13px | 650 | 18px | Commands |
 
-### Prompt Detail
+### Typography Rules
 
-- 좌측은 metadata, 우측은 Markdown/prompt body를 읽는 구조를 우선한다.
-- prompt body는 monospace, line wrap, copy button, redaction badge를 제공한다.
-- 삭제 버튼은 danger style이며 확인 모달을 거친다.
+- Letter spacing stays `0`. Do not scale type by viewport width.
+- Avoid huge display type inside panels. Dense operational screens use compact headings.
+- Prompt body wraps lines and never creates horizontal page scroll.
+- Metadata labels are readable but visually secondary.
 
-### Settings / Doctor
+## 4. Component Stylings
 
-- 설정은 capture status, data directory, hook install status, last ingest status, redaction mode를 보여준다.
-- 정상/경고/실패 상태를 색상만으로 구분하지 말고 텍스트와 아이콘을 함께 쓴다.
+### Navigation
 
-## 6. 컴포넌트
+- Left rail width: 232-240px desktop.
+- Active nav uses `--pm-accent-weak` background and `--pm-accent-strong` text.
+- Nav buttons are 36px tall on desktop, at least 40px touch target on mobile.
+- Icons from lucide are preferred. Do not draw custom SVG icons when lucide has one.
 
-- Button: 높이 32px, padding 10-12px, radius 6px. 아이콘이 있으면 lucide 계열 아이콘을 우선한다.
-- Input: 높이 36px, 배경 `--pm-surface`, border `--pm-border`, focus border `--pm-accent`.
-- Table: header는 12px uppercase를 피하고 일반 metadata style로 간결하게 둔다.
-- Badge: radius 999px는 status badge에만 허용한다.
-- Modal: 배경 dim은 낮게, danger confirmation은 삭제 대상 id를 명확히 보여준다.
-- Toast: 오른쪽 하단, 4초 후 사라짐, 에러는 사용자가 닫을 수 있어야 한다.
+### Data Table / Prompt List
 
-## 7. 상호작용
+- Header row uses muted surface and 12px metadata text.
+- Rows are 48px minimum height desktop; mobile rows become compact stacked blocks.
+- Rows must not change height on hover.
+- Show tags/status in a wrap-safe container. Badges must not push length or path columns out of view.
+- Newest prompts stay first.
 
-- 모든 destructive action은 대상과 결과를 명확히 확인한다.
-- 검색은 입력 중 debounce를 적용하고, 빈 query는 기본 목록으로 돌아간다.
-- 로딩 상태는 skeleton보다 작은 progress row 또는 inline spinner를 우선한다.
-- keyboard navigation을 고려해 focus outline을 숨기지 않는다.
+### Panels
 
-## 8. 반응형
+- Border radius is 6px for compact panels, 8px maximum for larger panels.
+- Panels use a single border and minimal shadow. Do not nest card inside card unless it is a repeated item or copyable suggestion.
+- Dashboard metric cards are allowed, but keep them compact and aligned.
 
-- 1024px 이상: 좌측 nav + 본문 2열 가능.
-- 768-1023px: nav 축소, detail metadata는 상단 summary로 이동.
-- 767px 이하: 단일 column, table은 list row 형태로 전환.
-- touch target은 최소 40px.
-- 모바일에서 텍스트가 버튼/배지 밖으로 넘치면 줄바꿈하거나 축약한다.
+### Badges
 
-## 9. 금지 사항
+- Status badges may use pill radius.
+- Tag badges are neutral and lower contrast.
+- `missing`/`weak` quality states use dot + text, not color alone.
 
-- 프롬프트 원문을 로그, 오류, URL query에 노출하지 않는다.
-- UI에 "이 기능은..." 같은 설명문을 과하게 넣지 않는다.
-- 보라/남색 gradient 중심의 한 가지 색감으로 전체를 덮지 않는다.
-- 장식용 orb, bokeh, 불필요한 hero, 카드 중첩을 만들지 않는다.
-- 외부 이미지를 prompt preview 안에서 자동 로드하지 않는다.
+### Buttons
 
-## 10. 구현 후 검증
+- Primary/danger commands include an icon when it improves recognition.
+- Copy buttons are square icon buttons with accessible names.
+- Destructive commands are red and require confirmation.
 
-UI 변경 후 다음을 확인한다.
+### Inputs
 
-- Playwright MCP desktop 1440x900 screenshot.
-- Playwright MCP mobile 390x844 screenshot.
-- accessibility snapshot에서 주요 버튼과 링크 이름 확인.
-- 목록, 검색, 상세, 삭제 확인 모달, 빈 상태가 실제로 동작하는지 확인.
-- 텍스트 겹침, 버튼 overflow, 빈 canvas, hydration 오류가 없는지 확인.
+- Height: 36px desktop, 40px mobile.
+- Focus border uses `--pm-accent`.
+- Date inputs and selects must have enough width for Korean placeholder text.
+
+### Prompt Reader
+
+- Prompt content uses monospace and inset background only when needed for code blocks.
+- Redacted placeholders can be visible in stored prompt body, but raw secrets must never appear.
+- Copy controls may be added later, but must not log prompt content.
+
+## 5. Layout Principles
+
+- Desktop shell: left rail + fluid workspace.
+- Workspace max width: 1240px for operational screens, 1080px for detail reader.
+- Use 8px grid: `4, 8, 12, 16, 20, 24, 32, 40`.
+- Topbar is compact: title left, filters right. Filters wrap before they overflow.
+- Dashboard uses 4 metric columns on desktop, 2 columns on tablet, 1 column on mobile.
+- Detail page uses metadata sidebar + prompt reader on desktop, single column on mobile.
+
+## 6. Depth & Elevation
+
+- Default elevation is border-only.
+- Use `--pm-shadow` only on active surfaces, modals, and table/panel containers.
+- Avoid blurred background effects, decorative orbs, bokeh, and gradient blobs.
+- Separators should be visible enough for scanability but never heavy black.
+
+## 7. Do's and Don'ts
+
+### Do
+
+- Build actual archive, search, detail, dashboard, settings, and diagnostic screens.
+- Prefer dense tables, compact panels, and precise labels.
+- Keep raw prompt text out of logs, errors, URL query, and analytics.
+- Use copyable suggestions for AGENTS.md / CLAUDE.md candidates; do not auto-edit instruction files.
+- Validate desktop and mobile rendering with Playwright.
+
+### Don't
+
+- Do not create a landing page.
+- Do not use one-note purple/blue gradients.
+- Do not put page sections inside decorative nested cards.
+- Do not use color alone for status.
+- Do not allow buttons, badges, paths, or Korean labels to overflow their containers.
+- Do not fetch or render external media inside prompt previews.
+
+## 8. Responsive Behavior
+
+| Breakpoint | Behavior |
+| --- | --- |
+| `>= 1024px` | Full left rail, compact topbar filters, table layout |
+| `768-1023px` | Rail stays visible, dashboard uses 2 columns, detail may narrow |
+| `< 768px` | Single column, rail becomes top block, filters stack, table rows become list rows |
+
+Mobile rules:
+
+- Touch targets are at least 40px.
+- Badges wrap.
+- Long IDs, paths, and prompts use `overflow-wrap: anywhere`.
+- No horizontal page scroll.
+
+## 9. Agent Prompt Guide
+
+When implementing UI in this repo:
+
+1. Read `DESIGN.md` before editing UI.
+2. Keep the first screen as the prompt archive or a functional empty archive.
+3. Use the warm workbench palette and compact data surfaces.
+4. Prefer lucide icons for commands and navigation.
+5. Confirm with Playwright desktop and mobile screenshots.
+6. If a design choice conflicts with data density or local-first safety, choose safety and density.
+
+Useful quick prompt:
+
+> Restyle this screen as a warm, precise local developer workbench. Keep the real archive/dashboard workflow first, avoid hero layouts, use compact bordered data surfaces, and make every status/tag/filter wrap safely on mobile.
