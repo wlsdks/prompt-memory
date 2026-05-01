@@ -3,6 +3,7 @@ import { pathToFileURL } from "node:url";
 
 import { Command } from "commander";
 
+import { registerHookCommand } from "./commands/hook.js";
 import { registerInitCommand } from "./commands/init.js";
 import { VERSION } from "../shared/version.js";
 
@@ -15,6 +16,7 @@ export function createProgram(): Command {
     .version(VERSION);
 
   registerInitCommand(program);
+  registerHookCommand(program);
 
   return program;
 }
