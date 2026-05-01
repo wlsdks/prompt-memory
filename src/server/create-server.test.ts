@@ -570,6 +570,7 @@ function createMemoryStorage() {
         instruction_suggestions: [],
         useful_prompts: [],
         duplicate_prompt_groups: [],
+        project_profiles: [],
       };
     },
     recordPromptUsage() {

@@ -1377,6 +1377,7 @@ function getQualityDashboard(
     ),
     useful_prompts: readUsefulPrompts(db),
     duplicate_prompt_groups: readDuplicatePromptGroups(db),
+    project_profiles: readProjectQualityProfiles(db, qualityRows),
   };
 }
 
@@ -1608,6 +1609,159 @@ function readProjectDistribution(
     count: row.count,
     ratio: ratio(row.count, total),
   }));
+}
+
+function readProjectQualityProfiles(
+  db: Database.Database,
+  rows: PromptQualityRow[],
+): PromptQualityDashboard["project_profiles"] {
+  const projects = new Map<
+    string,
+    {
+      key: string;
+      label: string;
+      prompt_count: number;
+      quality_gap_count: number;
+      sensitive_count: number;
+      latest_received_at: string;
+      gapCounts: Map<string, { key: string; label: string; count: number }>;
+    }
+  >();
+
+  for (const row of rows) {
+    const key = row.project_root || row.cwd;
+    const current =
+      projects.get(key) ??
+      ({
+        key,
+        label: projectLabel(key),
+        prompt_count: 0,
+        quality_gap_count: 0,
+        sensitive_count: 0,
+        latest_received_at: row.received_at,
+        gapCounts: new Map(),
+      } satisfies {
+        key: string;
+        label: string;
+        prompt_count: number;
+        quality_gap_count: number;
+        sensitive_count: number;
+        latest_received_at: string;
+        gapCounts: Map<string, { key: string; label: string; count: number }>;
+      });
+    const checklist = readChecklist(row.checklist_json);
+
+    current.prompt_count += 1;
+    if (row.is_sensitive === 1) {
+      current.sensitive_count += 1;
+    }
+    if (row.received_at > current.latest_received_at) {
+      current.latest_received_at = row.received_at;
+    }
+    if (
+      checklist.some(
+        (item) => item.status === "missing" || item.status === "weak",
+      )
+    ) {
+      current.quality_gap_count += 1;
+    }
+
+    for (const item of checklist) {
+      if (item.status !== "missing" && item.status !== "weak") {
+        continue;
+      }
+      const gap =
+        current.gapCounts.get(item.key) ??
+        ({ key: item.key, label: item.label, count: 0 } satisfies {
+          key: string;
+          label: string;
+          count: number;
+        });
+      gap.count += 1;
+      current.gapCounts.set(item.key, gap);
+    }
+
+    projects.set(key, current);
+  }
+
+  const usefulness = readProjectUsefulness(db);
+
+  return [...projects.values()]
+    .map((project) => {
+      const topGap = [...project.gapCounts.values()].sort(
+        (a, b) => b.count - a.count || a.label.localeCompare(b.label),
+      )[0];
+      const projectUsefulness = usefulness.get(project.key) ?? {
+        copied_count: 0,
+        bookmarked_count: 0,
+      };
+
+      return {
+        key: project.key,
+        label: project.label,
+        prompt_count: project.prompt_count,
+        quality_gap_count: project.quality_gap_count,
+        quality_gap_rate: ratio(
+          project.quality_gap_count,
+          project.prompt_count,
+        ),
+        sensitive_count: project.sensitive_count,
+        copied_count: projectUsefulness.copied_count,
+        bookmarked_count: projectUsefulness.bookmarked_count,
+        latest_received_at: project.latest_received_at,
+        top_gap: topGap
+          ? {
+              key: topGap.key,
+              label: topGap.label,
+              count: topGap.count,
+            }
+          : undefined,
+      };
+    })
+    .sort(
+      (a, b) =>
+        b.quality_gap_count - a.quality_gap_count ||
+        b.sensitive_count - a.sensitive_count ||
+        b.prompt_count - a.prompt_count ||
+        b.latest_received_at.localeCompare(a.latest_received_at) ||
+        a.key.localeCompare(b.key),
+    )
+    .slice(0, 8);
+}
+
+function readProjectUsefulness(
+  db: Database.Database,
+): Map<string, { copied_count: number; bookmarked_count: number }> {
+  const rows = db
+    .prepare(
+      `
+      SELECT
+        COALESCE(NULLIF(p.project_root, ''), p.cwd) AS project,
+        COUNT(pue.id) AS copied_count,
+        COUNT(pb.prompt_id) AS bookmarked_count
+      FROM prompts p
+      LEFT JOIN prompt_usage_events pue
+        ON pue.prompt_id = p.id AND pue.event_type = 'prompt_copied'
+      LEFT JOIN prompt_bookmarks pb ON pb.prompt_id = p.id
+      WHERE p.deleted_at IS NULL
+      GROUP BY COALESCE(NULLIF(p.project_root, ''), p.cwd)
+      `,
+    )
+    .all() as Array<{
+    project: string;
+    copied_count: number;
+    bookmarked_count: number;
+  }>;
+
+  return new Map(
+    rows.map((row) => [
+      row.project,
+      {
+        copied_count: row.copied_count,
+        bookmarked_count: row.bookmarked_count,
+      },
+    ]),
+  );
 }
 
 function buildMissingItems(

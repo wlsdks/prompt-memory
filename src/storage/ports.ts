@@ -146,6 +146,23 @@ export type DuplicatePromptGroup = {
   }>;
 };
 
+export type ProjectQualityProfile = {
+  key: string;
+  label: string;
+  prompt_count: number;
+  quality_gap_count: number;
+  quality_gap_rate: number;
+  sensitive_count: number;
+  copied_count: number;
+  bookmarked_count: number;
+  latest_received_at: string;
+  top_gap?: {
+    key: string;
+    label: string;
+    count: number;
+  };
+};
+
 export type PromptQualityDashboard = {
   total_prompts: number;
   sensitive_prompts: number;
@@ -172,6 +189,7 @@ export type PromptQualityDashboard = {
   instruction_suggestions: InstructionSuggestion[];
   useful_prompts: UsefulPrompt[];
   duplicate_prompt_groups: DuplicatePromptGroup[];
+  project_profiles: ProjectQualityProfile[];
 };
 
 export type PromptStoragePort = {

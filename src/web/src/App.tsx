@@ -910,6 +910,11 @@ function DashboardView({
         />
       </section>
 
+      <ProjectProfilesPanel
+        onOpenFilteredList={onOpenFilteredList}
+        profiles={dashboard.project_profiles}
+      />
+
       <section className="dashboard-grid wide">
         <div className="panel">
           <h2>재사용 후보</h2>
@@ -1045,6 +1050,110 @@ function DashboardView({
         </div>
       </section>
     </div>
+  );
+}
+
+function ProjectProfilesPanel({
+  onOpenFilteredList,
+  profiles,
+}: {
+  onOpenFilteredList(filters: PromptFilters): void;
+  profiles: QualityDashboard["project_profiles"];
+}) {
+  return (
+    <section className="panel project-profile-panel">
+      <div className="panel-heading-row">
+        <h2>프로젝트 품질 프로필</h2>
+        <span>{profiles.length} projects</span>
+      </div>
+      <div className="project-profile-list">
+        {profiles.length === 0 && (
+          <p className="muted">프로젝트별 품질 신호가 아직 없습니다.</p>
+        )}
+        {profiles.map((profile) => (
+          <article className="project-profile-row" key={profile.key}>
+            <div className="project-profile-main">
+              <div>
+                <strong>{profile.label}</strong>
+                <small>{profile.key}</small>
+              </div>
+              <span>{formatDate(profile.latest_received_at)}</span>
+            </div>
+            <div className="project-profile-metrics">
+              <span>
+                <strong>{profile.prompt_count}</strong>
+                prompts
+              </span>
+              <span>
+                <strong>{Math.round(profile.quality_gap_rate * 100)}%</strong>
+                gap
+              </span>
+              <span>
+                <strong>{profile.sensitive_count}</strong>
+                redacted
+              </span>
+              <span>
+                <strong>
+                  {profile.copied_count + profile.bookmarked_count}
+                </strong>
+                reuse
+              </span>
+            </div>
+            {profile.top_gap && (
+              <div className="project-profile-gap">
+                <span className="badge gap-badge">top gap</span>
+                <strong>{profile.top_gap.label}</strong>
+                <small>{profile.top_gap.count}</small>
+              </div>
+            )}
+            <div className="project-profile-actions">
+              <button
+                onClick={() =>
+                  onOpenFilteredList({
+                    cwdPrefix: profile.key,
+                  })
+                }
+                type="button"
+              >
+                전체 보기
+              </button>
+              <button
+                disabled={!profile.top_gap || profile.quality_gap_count === 0}
+                onClick={() => {
+                  if (
+                    !profile.top_gap ||
+                    !isQualityGapKey(profile.top_gap.key)
+                  ) {
+                    return;
+                  }
+
+                  onOpenFilteredList({
+                    cwdPrefix: profile.key,
+                    focus: "quality-gap",
+                    qualityGap: profile.top_gap.key,
+                  });
+                }}
+                type="button"
+              >
+                품질 보강
+              </button>
+              <button
+                disabled={profile.sensitive_count === 0}
+                onClick={() =>
+                  onOpenFilteredList({
+                    cwdPrefix: profile.key,
+                    isSensitive: "true",
+                  })
+                }
+                type="button"
+              >
+                민감정보
+              </button>
+            </div>
+          </article>
+        ))}
+      </div>
+    </section>
   );
 }
 

@@ -172,6 +172,11 @@ describe("prompt read/delete API", () => {
           total_prompts: number;
           missing_items: Array<{ key: string; missing: number }>;
           instruction_suggestions: Array<{ text: string }>;
+          project_profiles: Array<{
+            key: string;
+            prompt_count: number;
+            quality_gap_rate: number;
+          }>;
           duplicate_prompt_groups: Array<{
             count: number;
             prompts: Array<{ id: string }>;
@@ -184,8 +189,15 @@ describe("prompt read/delete API", () => {
         expect.objectContaining({ key: "verification_criteria" }),
       ]),
       instruction_suggestions: expect.any(Array),
+      project_profiles: expect.arrayContaining([
+        expect.objectContaining({
+          key: "/Users/example/project",
+          prompt_count: 3,
+        }),
+      ]),
       duplicate_prompt_groups: expect.any(Array),
     });
+    expect(JSON.stringify(dashboard.json())).not.toContain("alpha prompt");
 
     const tagged = await server.inject({
       method: "GET",

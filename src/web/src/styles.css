@@ -845,9 +845,114 @@ dd {
 .pattern-list,
 .useful-list,
 .duplicate-list,
-.suggestion-grid {
+.suggestion-grid,
+.project-profile-list {
   display: grid;
   gap: 10px;
+}
+
+.project-profile-panel {
+  display: grid;
+  gap: 12px;
+}
+
+.project-profile-row {
+  background: var(--pm-surface);
+  border: 1px solid var(--pm-border);
+  border-radius: 6px;
+  display: grid;
+  gap: 10px;
+  padding: 10px;
+}
+
+.project-profile-main {
+  align-items: start;
+  display: grid;
+  gap: 10px;
+  grid-template-columns: minmax(0, 1fr) auto;
+}
+
+.project-profile-main > div {
+  display: grid;
+  gap: 2px;
+  min-width: 0;
+}
+
+.project-profile-main strong,
+.project-profile-main small {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.project-profile-main small,
+.project-profile-main > span,
+.project-profile-metrics,
+.project-profile-gap small {
+  color: var(--pm-text-muted);
+  font-size: 12px;
+}
+
+.project-profile-metrics {
+  display: grid;
+  gap: 8px;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+}
+
+.project-profile-metrics span {
+  background: var(--pm-surface-muted);
+  border-radius: 6px;
+  display: grid;
+  gap: 2px;
+  min-width: 0;
+  padding: 8px;
+}
+
+.project-profile-metrics strong {
+  color: var(--pm-text);
+  font-size: 15px;
+  font-variant-numeric: tabular-nums;
+  line-height: 20px;
+}
+
+.project-profile-gap {
+  align-items: center;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  min-width: 0;
+}
+
+.project-profile-gap strong {
+  font-size: 13px;
+}
+
+.project-profile-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.project-profile-actions button {
+  background: var(--pm-surface-raised);
+  border: 1px solid var(--pm-border);
+  border-radius: 6px;
+  color: var(--pm-text);
+  font-size: 12px;
+  font-weight: 650;
+  min-height: 32px;
+  padding: 0 10px;
+}
+
+.project-profile-actions button:hover {
+  background: var(--pm-accent-weak);
+  border-color: var(--pm-border-strong);
+}
+
+.project-profile-actions button:disabled {
+  color: var(--pm-text-subtle);
+  cursor: not-allowed;
+  opacity: 0.62;
 }
 
 .distribution-row {
@@ -1377,6 +1482,20 @@ dd {
 
   .trend-meta {
     justify-content: flex-start;
+  }
+
+  .project-profile-main,
+  .project-profile-metrics {
+    grid-template-columns: 1fr;
+  }
+
+  .project-profile-actions {
+    display: grid;
+  }
+
+  .project-profile-actions button {
+    min-height: 40px;
+    width: 100%;
   }
 
   .setup-check-list {

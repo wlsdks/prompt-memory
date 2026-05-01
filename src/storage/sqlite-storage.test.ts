@@ -229,17 +229,19 @@ describe("SQLite prompt storage", () => {
       receivedAt: "2026-05-01T10:00:00.000Z",
       cwd: "/Users/example/project-a",
     });
-    await storeClaudePrompt(storage, {
-      prompt: "저거 고쳐줘",
+    const sensitive = await storeClaudePrompt(storage, {
+      prompt: "저거 고쳐줘 token sk-proj-1234567890abcdef",
       receivedAt: "2026-05-02T10:00:00.000Z",
       cwd: "/Users/example/project-a",
     });
-    await storeClaudePrompt(storage, {
+    const docs = await storeClaudePrompt(storage, {
       prompt:
         "현재 README 온보딩 설명이 부족합니다. Update docs/README.md only, return Markdown summary, and run pnpm test expecting pass.",
       receivedAt: "2026-05-03T10:00:00.000Z",
       cwd: "/Users/example/project-b",
     });
+    storage.recordPromptUsage(docs.id, "prompt_copied");
+    storage.setPromptBookmark(docs.id, true);
 
     const dashboard = storage.getQualityDashboard();
     const serialized = JSON.stringify(dashboard);
@@ -287,7 +289,7 @@ describe("SQLite prompt storage", () => {
         prompt_count: 1,
         quality_gap_count: 1,
         quality_gap_rate: 1,
-        sensitive_count: 0,
+        sensitive_count: 1,
       },
       {
         date: "2026-05-03",
@@ -316,10 +318,39 @@ describe("SQLite prompt storage", () => {
         }),
       ]),
     );
+    expect(dashboard.project_profiles).toEqual([
+      expect.objectContaining({
+        key: "/Users/example/project-a",
+        label: "project-a",
+        prompt_count: 2,
+        quality_gap_count: 2,
+        quality_gap_rate: 1,
+        sensitive_count: 1,
+        copied_count: 0,
+        bookmarked_count: 0,
+        top_gap: expect.objectContaining({
+          key: "verification_criteria",
+          count: 2,
+        }),
+      }),
+      expect.objectContaining({
+        key: "/Users/example/project-b",
+        label: "project-b",
+        prompt_count: 1,
+        quality_gap_count: 0,
+        quality_gap_rate: 0,
+        sensitive_count: 0,
+        copied_count: 1,
+        bookmarked_count: 1,
+        top_gap: undefined,
+      }),
+    ]);
     expect(dashboard.instruction_suggestions.length).toBeGreaterThan(0);
     expect(serialized).not.toContain("이거 고쳐줘");
     expect(serialized).not.toContain("저거 고쳐줘");
+    expect(serialized).not.toContain("sk-proj-1234567890abcdef");
     expect(serialized).not.toContain("현재 README 온보딩 설명이 부족합니다.");
+    expect(storage.getPrompt(sensitive.id)?.is_sensitive).toBe(true);
   });
 
   it("connects Claude ingest to real Markdown, SQLite, and FTS storage", async () => {

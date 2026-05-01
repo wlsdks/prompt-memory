@@ -788,3 +788,39 @@
 - 제품 효용은 개별 프롬프트 상세에서 발견한 부족 항목을 같은 문제를 가진 전체 큐로 바로 확장하는 데 있다.
 - URL과 API에는 안전한 checklist key만 사용하고, raw prompt나 snippet을 경로/쿼리에 넣지 않는다.
 - Playwright MCP로 상세 `배경 맥락` action 클릭 후 `?focus=quality-gap&gap=background_context` 이동, active filter 2개, 목록 2개, 모바일 390px 수평 overflow 없음, 콘솔 경고/오류 0개를 확인했다.
+
+## P28 Project Quality Profiles
+
+- [x] PRD Phase 2 잔여 범위와 현재 제품 사용성 빈틈 기준으로 다음 구현 단위 확정
+- [x] 웹 UI 구현 전 `DESIGN.md`와 Web Interface Guidelines 재검토
+- [x] 실패 테스트 먼저 작성
+  - [x] dashboard가 프로젝트별 입력량, 품질 보강률, 민감정보 수, 재사용 신호를 반환
+  - [x] project profile 응답에 raw prompt/snippet이 포함되지 않음
+- [x] 저장소/API 구현
+  - [x] `PromptQualityDashboard.project_profiles` 타입 추가
+  - [x] SQLite dashboard 집계에 프로젝트별 품질 프로필 추가
+  - [x] 프로젝트별 top gap을 checklist enum/label/count로 제한
+- [x] 웹 UI 연결
+  - [x] 대시보드에 프로젝트 품질 프로필 패널 추가
+  - [x] 프로젝트 전체/품질 보강/민감정보 drilldown action 제공
+  - [x] desktop/mobile에서 긴 경로와 badge overflow 방지
+- [x] Playwright MCP 사용성 점검
+  - [x] project profile rendering
+  - [x] project 전체/품질 보강/민감정보 drilldown
+  - [x] desktop/mobile overflow와 console/network 오류
+- [x] 기본 검증 명령 실행
+  - [x] `pnpm test`
+  - [x] `pnpm lint`
+  - [x] `pnpm format`
+  - [x] `pnpm build`
+  - [x] `pnpm pack:dry-run`
+  - [x] `pnpm smoke:release`
+  - [x] `git diff --check`
+- [x] 커밋 및 `git push origin main`
+
+### P28 설계 메모
+
+- 새 원문 저장이나 외부 분석 없이 기존 `prompts`, `prompt_analyses`, usefulness 메타 이벤트만 집계한다.
+- 제품 효용은 어느 프로젝트에서 프롬프트 품질 보강/민감정보/재사용 신호가 집중되는지 한눈에 보고 바로 목록으로 이동하는 데 있다.
+- 프로젝트 프로필 API에는 count/rate/checklist key만 반환하고 prompt body, snippet, raw secret은 반환하지 않는다.
+- Playwright MCP로 프로젝트 프로필 렌더링, project-a 품질 보강 drilldown, project-a 민감정보 drilldown, mobile 390px 렌더링, 콘솔 경고/오류 0개를 확인했다.

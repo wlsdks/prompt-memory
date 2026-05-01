@@ -138,6 +138,22 @@ export type QualityDashboard = {
       quality_gaps: string[];
     }>;
   }>;
+  project_profiles: Array<{
+    key: string;
+    label: string;
+    prompt_count: number;
+    quality_gap_count: number;
+    quality_gap_rate: number;
+    sensitive_count: number;
+    copied_count: number;
+    bookmarked_count: number;
+    latest_received_at: string;
+    top_gap?: {
+      key: string;
+      label: string;
+      count: number;
+    };
+  }>;
 };
 
 export type DistributionBucket = {
