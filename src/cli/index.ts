@@ -3,6 +3,7 @@ import { pathToFileURL } from "node:url";
 
 import { Command } from "commander";
 
+import { registerInitCommand } from "./commands/init.js";
 import { VERSION } from "../shared/version.js";
 
 export function createProgram(): Command {
@@ -12,6 +13,8 @@ export function createProgram(): Command {
     .name("prompt-memory")
     .description("Local-first prompt archive for AI coding tools.")
     .version(VERSION);
+
+  registerInitCommand(program);
 
   return program;
 }
