@@ -644,6 +644,23 @@ dd {
   white-space: normal;
 }
 
+.checklist-action {
+  background: var(--pm-surface);
+  border: 1px solid var(--pm-border);
+  border-radius: 6px;
+  color: var(--pm-text);
+  font-size: 12px;
+  font-weight: 650;
+  margin-top: 8px;
+  min-height: 30px;
+  padding: 0 9px;
+}
+
+.checklist-action:hover {
+  background: var(--pm-accent-weak);
+  border-color: var(--pm-border-strong);
+}
+
 .quality-dot {
   border-radius: 999px;
   display: inline-block;
@@ -1346,6 +1363,11 @@ dd {
   .checklist-item,
   .setup-check {
     margin-bottom: 8px;
+  }
+
+  .checklist-action {
+    min-height: 40px;
+    width: 100%;
   }
 
   .trend-row {

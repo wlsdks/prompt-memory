@@ -437,6 +437,14 @@ export function App() {
             onBack={() => navigate({ name: "list" })}
             onCopy={copyPrompt}
             onDelete={setPendingDelete}
+            onOpenQualityGap={(qualityGap) => {
+              setFilters({
+                isSensitive: "all",
+                focus: "quality-gap",
+                qualityGap,
+              });
+              navigate({ name: "list" });
+            }}
             onNavigate={(id) => navigate({ name: "detail", id })}
             prompt={selected}
             queueNavigation={queueNavigation}
@@ -630,6 +638,7 @@ function PromptDetailView({
   onCopy,
   onDelete,
   onNavigate,
+  onOpenQualityGap,
   prompt,
   queueNavigation,
 }: {
@@ -639,6 +648,7 @@ function PromptDetailView({
   onCopy(prompt: PromptDetail): void;
   onDelete(prompt: PromptDetail): void;
   onNavigate(id: string): void;
+  onOpenQualityGap(gap: PromptQualityGap): void;
   prompt?: PromptDetail;
   queueNavigation: {
     current?: number;
@@ -683,7 +693,12 @@ function PromptDetailView({
         </button>
       </aside>
       <article className="prompt-body">
-        {prompt.analysis && <AnalysisPreview analysis={prompt.analysis} />}
+        {prompt.analysis && (
+          <AnalysisPreview
+            analysis={prompt.analysis}
+            onOpenQualityGap={onOpenQualityGap}
+          />
+        )}
         <div className="prompt-actions">
           <button className="secondary-action" onClick={onBack}>
             <ArrowLeft size={16} /> 목록으로
@@ -735,8 +750,10 @@ function PromptDetailView({
 
 function AnalysisPreview({
   analysis,
+  onOpenQualityGap,
 }: {
   analysis: NonNullable<PromptDetail["analysis"]>;
+  onOpenQualityGap(gap: PromptQualityGap): void;
 }) {
   return (
     <section className="analysis-panel" aria-label="분석 preview">
@@ -750,17 +767,30 @@ function AnalysisPreview({
       <p className="analysis-summary">{analysis.summary}</p>
       {analysis.checklist.length > 0 && (
         <div className="checklist-grid" aria-label="분석 체크리스트">
-          {analysis.checklist.map((item) => (
-            <div className="checklist-item" key={item.key}>
-              <div className="checklist-title">
-                <span className={`quality-dot ${item.status}`} />
-                <strong>{item.label}</strong>
-                <span className="quality-status">{item.status}</span>
+          {analysis.checklist.map((item) => {
+            const qualityGap = isQualityGapKey(item.key) ? item.key : undefined;
+
+            return (
+              <div className="checklist-item" key={item.key}>
+                <div className="checklist-title">
+                  <span className={`quality-dot ${item.status}`} />
+                  <strong>{item.label}</strong>
+                  <span className="quality-status">{item.status}</span>
+                </div>
+                <p>{item.reason}</p>
+                {item.suggestion && <code>{item.suggestion}</code>}
+                {item.status !== "good" && qualityGap && (
+                  <button
+                    className="checklist-action"
+                    onClick={() => onOpenQualityGap(qualityGap)}
+                    type="button"
+                  >
+                    같은 항목 보기
+                  </button>
+                )}
               </div>
-              <p>{item.reason}</p>
-              {item.suggestion && <code>{item.suggestion}</code>}
-            </div>
-          ))}
+            );
+          })}
         </div>
       )}
       {analysis.tags.length > 0 && (

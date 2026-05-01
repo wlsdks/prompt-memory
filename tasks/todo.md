@@ -758,3 +758,33 @@
 - 제품 효용은 품질 보강 큐, 날짜 drilldown, 민감정보 큐를 상세 화면에서 연속 검토하는 데 있다.
 - direct URL로 상세에 진입해 queue가 없으면 이전/다음은 비활성화한다.
 - Playwright MCP로 `?focus=quality-gap` 큐에서 상세 다음/이전 이동, `1 / 2`와 `2 / 2` 표시, direct detail `큐 없음` disabled, 모바일 overflow 없음, 콘솔 경고/오류 0개를 확인했다.
+
+## P27 Detail Gap Drilldown
+
+- [x] P26 이후 사용성 빈틈 기준으로 다음 구현 단위 확정
+- [x] 웹 UI 구현 전 `DESIGN.md`와 Web Interface Guidelines 재검토
+- [x] 웹 UI 연결
+  - [x] 상세 분석 체크리스트의 `weak` / `missing` 항목에 같은 부족 항목 보기 action 추가
+  - [x] 기존 `focus=quality-gap&gap=<key>` 목록 필터로 이동
+  - [x] URL에는 raw prompt나 민감정보가 아니라 체크리스트 enum key만 유지
+  - [x] desktop/mobile에서 checklist action overflow 방지
+- [x] Playwright MCP 사용성 점검
+  - [x] 상세 checklist action에서 부족 항목 목록 이동
+  - [x] active filter bar와 목록 결과 확인
+  - [x] desktop/mobile overflow와 console/network 오류 확인
+- [x] 기본 검증 명령 실행
+  - [x] `pnpm test`
+  - [x] `pnpm lint`
+  - [x] `pnpm format`
+  - [x] `pnpm build`
+  - [x] `pnpm pack:dry-run`
+  - [x] `pnpm smoke:release`
+  - [x] `git diff --check`
+- [x] 커밋 및 `git push origin main`
+
+### P27 설계 메모
+
+- 새 분석기나 저장 구조 없이 기존 detail checklist와 `qualityGap` 목록 필터를 연결한다.
+- 제품 효용은 개별 프롬프트 상세에서 발견한 부족 항목을 같은 문제를 가진 전체 큐로 바로 확장하는 데 있다.
+- URL과 API에는 안전한 checklist key만 사용하고, raw prompt나 snippet을 경로/쿼리에 넣지 않는다.
+- Playwright MCP로 상세 `배경 맥락` action 클릭 후 `?focus=quality-gap&gap=background_context` 이동, active filter 2개, 목록 2개, 모바일 390px 수평 overflow 없음, 콘솔 경고/오류 0개를 확인했다.
