@@ -1,5 +1,11 @@
 import Database from "better-sqlite3";
-import { existsSync, mkdirSync, unlinkSync } from "node:fs";
+import {
+  existsSync,
+  mkdirSync,
+  readdirSync,
+  statSync,
+  unlinkSync,
+} from "node:fs";
 import { join } from "node:path";
 
 import { redactPrompt } from "../redaction/redact.js";
@@ -19,7 +25,11 @@ import type {
   StorePromptInput,
   StorePromptResult,
 } from "./ports.js";
-import { readPromptMarkdown, writePromptMarkdown } from "./markdown.js";
+import {
+  parsePromptMarkdown,
+  readPromptMarkdown,
+  writePromptMarkdown,
+} from "./markdown.js";
 
 export type SqlitePromptStorageOptions = {
   dataDir: string;
@@ -125,7 +135,7 @@ export function createSqlitePromptStorage(
       return rows.map((row) => row.prompt_id);
     },
     rebuildIndex(options) {
-      return rebuildIndex(db, options.redactionMode);
+      return rebuildIndex(db, paths.promptsDir, options.redactionMode);
     },
     reconcileStorage() {
       return reconcileStorage(db);
@@ -501,16 +511,19 @@ function toSafeFtsQuery(query: string): string {
 
 function rebuildIndex(
   db: Database.Database,
+  promptsDir: string,
   redactionMode: RedactionPolicy,
 ): { rebuilt: string[]; hashMismatches: string[] } {
   const rebuilt: string[] = [];
   const hashMismatches: string[] = [];
-  const rows = db
-    .prepare("SELECT id, markdown_path FROM prompts WHERE deleted_at IS NULL")
-    .all() as Array<{ id: string; markdown_path: string }>;
 
   const transaction = db.transaction(() => {
+    importMarkdownOnlyPrompts(db, promptsDir);
     db.prepare("DELETE FROM prompt_fts").run();
+
+    const rows = db
+      .prepare("SELECT id, markdown_path FROM prompts WHERE deleted_at IS NULL")
+      .all() as Array<{ id: string; markdown_path: string }>;
 
     for (const row of rows) {
       if (!existsSync(row.markdown_path)) {
@@ -556,6 +569,134 @@ function rebuildIndex(
   transaction();
 
   return { rebuilt, hashMismatches };
+}
+
+function importMarkdownOnlyPrompts(
+  db: Database.Database,
+  promptsDir: string,
+): void {
+  for (const markdownPath of findMarkdownFiles(promptsDir)) {
+    const parsed = parsePromptMarkdown(markdownPath);
+    const frontmatter = parsed.frontmatter;
+    const id = readString(frontmatter.id);
+
+    if (!id || promptExists(db, id)) {
+      continue;
+    }
+
+    const stat = statSync(markdownPath);
+    const sessionId = readString(frontmatter.session_id) ?? "unknown-session";
+    db.prepare(
+      `
+      INSERT OR IGNORE INTO sessions(id, tool, transcript_path, started_at)
+      VALUES (?, ?, ?, ?)
+      `,
+    ).run(
+      sessionId,
+      readString(frontmatter.tool) ?? "unknown",
+      readNullableString(frontmatter.transcript_path),
+      readString(frontmatter.created_at) ??
+        new Date(stat.mtimeMs).toISOString(),
+    );
+
+    db.prepare(
+      `
+      INSERT OR IGNORE INTO prompts(
+        id, idempotency_key, stored_content_hash, tool, source_event,
+        session_id, turn_id, transcript_path, cwd, project_root, git_branch,
+        model, permission_mode, created_at, received_at, markdown_path,
+        markdown_schema_version, markdown_mtime, markdown_size, prompt_length,
+        is_sensitive, excluded_from_analysis, redaction_policy, adapter_version,
+        index_status
+      )
+      VALUES (
+        @id, @idempotency_key, @stored_content_hash, @tool, @source_event,
+        @session_id, @turn_id, @transcript_path, @cwd, @project_root,
+        @git_branch, @model, @permission_mode, @created_at, @received_at,
+        @markdown_path, @markdown_schema_version, @markdown_mtime,
+        @markdown_size, @prompt_length, @is_sensitive,
+        @excluded_from_analysis, @redaction_policy, @adapter_version,
+        @index_status
+      )
+      `,
+    ).run({
+      id,
+      idempotency_key: readString(frontmatter.idempotency_key) ?? id,
+      stored_content_hash: readString(frontmatter.stored_content_hash) ?? "",
+      tool: readString(frontmatter.tool) ?? "unknown",
+      source_event: readString(frontmatter.source_event) ?? "unknown",
+      session_id: sessionId,
+      turn_id: readNullableString(frontmatter.turn_id),
+      transcript_path: readNullableString(frontmatter.transcript_path),
+      cwd: readString(frontmatter.cwd) ?? "unknown",
+      project_root: readNullableString(frontmatter.project_root),
+      git_branch: readNullableString(frontmatter.git_branch),
+      model: readNullableString(frontmatter.model),
+      permission_mode: readNullableString(frontmatter.permission_mode),
+      created_at:
+        readString(frontmatter.created_at) ??
+        new Date(stat.mtimeMs).toISOString(),
+      received_at:
+        readString(frontmatter.received_at) ??
+        new Date(stat.mtimeMs).toISOString(),
+      markdown_path: markdownPath,
+      markdown_schema_version: readNumber(frontmatter.schema_version) ?? 1,
+      markdown_mtime: Math.round(stat.mtimeMs),
+      markdown_size: stat.size,
+      prompt_length:
+        readNumber(frontmatter.prompt_length) ?? parsed.body.length,
+      is_sensitive: readBoolean(frontmatter.is_sensitive) ? 1 : 0,
+      excluded_from_analysis: readBoolean(frontmatter.excluded_from_analysis)
+        ? 1
+        : 0,
+      redaction_policy: readString(frontmatter.redaction_policy) ?? "mask",
+      adapter_version: readString(frontmatter.adapter_version) ?? "unknown",
+      index_status: "pending",
+    });
+  }
+}
+
+function findMarkdownFiles(root: string): string[] {
+  if (!existsSync(root)) {
+    return [];
+  }
+
+  const entries = readdirSync(root, { withFileTypes: true });
+  const files: string[] = [];
+
+  for (const entry of entries) {
+    const path = join(root, entry.name);
+
+    if (entry.isDirectory()) {
+      files.push(...findMarkdownFiles(path));
+    } else if (entry.isFile() && entry.name.endsWith(".md")) {
+      files.push(path);
+    }
+  }
+
+  return files;
+}
+
+function promptExists(db: Database.Database, id: string): boolean {
+  return Boolean(db.prepare("SELECT 1 FROM prompts WHERE id = ?").get(id));
+}
+
+function readString(value: unknown): string | undefined {
+  return typeof value === "string" && value.length > 0 ? value : undefined;
+}
+
+function readNullableString(value: unknown): string | null {
+  return readString(value) ?? null;
+}
+
+function readNumber(value: unknown): number | undefined {
+  return typeof value === "number" && Number.isFinite(value)
+    ? value
+    : undefined;
+}
+
+function readBoolean(value: unknown): boolean {
+  return value === true;
 }
 
 function reconcileStorage(db: Database.Database): { missingFiles: string[] } {

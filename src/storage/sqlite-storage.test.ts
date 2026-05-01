@@ -16,6 +16,7 @@ import { redactPrompt } from "../redaction/redact.js";
 import { createServer } from "../server/create-server.js";
 import { initializePromptMemory } from "../config/config.js";
 import { createSqlitePromptStorage } from "./sqlite.js";
+import Database from "better-sqlite3";
 
 const tempDirs: string[] = [];
 
@@ -244,6 +245,45 @@ describe("SQLite prompt storage", () => {
     expect(storage.searchPrompts("beta", { limit: 10 }).items).toEqual([]);
     expect(existsSync(betaPath!)).toBe(false);
     expect(storage.deletePrompt(beta.id)).toEqual({ deleted: false });
+  });
+
+  it("rebuilds missing database rows from Markdown files", async () => {
+    const dataDir = createTempDir();
+    initializePromptMemory({ dataDir });
+    const storage = createSqlitePromptStorage({
+      dataDir,
+      hmacSecret: "test-secret",
+      now: () => new Date("2026-05-01T10:30:00.000Z"),
+    });
+    const stored = await storeClaudePrompt(storage, {
+      prompt: "markdown source of truth",
+      receivedAt: "2026-05-01T10:30:00.000Z",
+    });
+    const row = storage.listPromptRows()[0]!;
+    storage.close();
+
+    const db = new Database(join(dataDir, "prompt-memory.sqlite"));
+    db.prepare("DELETE FROM prompt_fts WHERE prompt_id = ?").run(stored.id);
+    db.prepare("DELETE FROM prompts WHERE id = ?").run(stored.id);
+    db.close();
+
+    const rebuiltStorage = createSqlitePromptStorage({
+      dataDir,
+      hmacSecret: "test-secret",
+    });
+
+    expect(rebuiltStorage.getPrompt(stored.id)).toBeUndefined();
+    expect(
+      rebuiltStorage.rebuildIndex({ redactionMode: "mask" }),
+    ).toMatchObject({
+      rebuilt: [stored.id],
+      hashMismatches: [],
+    });
+    expect(rebuiltStorage.getPrompt(stored.id)?.markdown).toContain(
+      "markdown source of truth",
+    );
+    expect(rebuiltStorage.searchPromptIds("truth")).toEqual([stored.id]);
+    expect(existsSync(row.markdown_path)).toBe(true);
   });
 });
 
