@@ -259,7 +259,7 @@
   - [x] mobile 390x844 list/dashboard/detail screenshot
   - [x] accessibility snapshot에서 nav/filter/copy/delete 이름 확인
   - [x] 콘솔/네트워크 오류, 텍스트 overflow, 직접 URL 진입 확인
-- [ ] 커밋 및 `git push origin main`
+- [x] 커밋 및 `git push origin main`
 
 ### P12 설계 메모
 
