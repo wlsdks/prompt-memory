@@ -1,7 +1,7 @@
 # prompt-memory PRD
 
 작성일: 2026-05-01  
-상태: Implementation Review  
+상태: Implementation Ready
 대상: 오픈소스 로컬 우선 개발자 도구
 
 ## 1. 개요
@@ -96,7 +96,7 @@ Claude Code의 1차 연동 지점은 `UserPromptSubmit` 훅이다. 공식 문서
 권장 MVP 방식:
 
 - Claude Code는 `UserPromptSubmit` command hook 또는 HTTP hook을 사용할 수 있다.
-- hook payload를 `http://127.0.0.1:<port>/api/ingest/claude-code`로 전송한다.
+- hook payload를 `http://127.0.0.1:<port>/api/v1/ingest/claude-code`로 전송한다.
 - 서버는 `prompt`, `session_id`, `cwd`, `transcript_path`, `permission_mode`를 저장한다.
 - HTTP hook과 command hook의 실패 의미를 구분한다.
 - `UserPromptSubmit` hook은 성공 시 stdout을 반드시 비워야 한다.
@@ -390,7 +390,7 @@ MVP 분석은 저장된 단일 프롬프트에 대한 로컬 규칙 기반 previ
 - 주의할 점
 - 다음 입력에서 보강하면 좋은 항목
 
-분석은 기본적으로 로컬 규칙 기반으로 먼저 제공한다. 외부 LLM 기반 분석은 사용자가 명시적으로 API key와 전송 허용을 설정한 경우에만 실행한다.
+MVP 분석은 로컬 규칙 기반 preview만 제공한다. 외부 LLM 기반 분석은 Phase 2 이후 사용자가 명시적으로 API key와 전송 허용을 설정한 경우에만 실행한다.
 
 ## 9. 데이터 모델
 
@@ -448,22 +448,29 @@ MVP 분석은 저장된 단일 프롬프트에 대한 로컬 규칙 기반 previ
 
 ### 9.4 PromptAnalysis
 
+MVP 필드:
+
 - `id`
 - `prompt_id`
+- `summary`
+- `warnings`
+- `suggestions`
+- `created_at`
+- `analyzer`
+
+Phase 2 이후 후보 필드:
+
 - `clarity_score`
 - `context_score`
 - `constraint_score`
 - `actionability_score`
 - `verification_score`
 - `overall_score`
-- `summary`
 - `strengths`
 - `weaknesses`
 - `improvements`
 - `rewritten_prompt`
 - `instruction_candidates`
-- `created_at`
-- `analyzer`
 
 요구사항:
 
@@ -551,6 +558,8 @@ MVP 분석은 저장된 단일 프롬프트에 대한 로컬 규칙 기반 previ
 - import 중 파싱 실패나 알 수 없는 이벤트 타입은 저장하지 않고 별도 오류로 기록한다.
 
 ### 10.5 외부 LLM 분석
+
+외부 LLM 분석은 MVP 구현 범위가 아니며, 아래 요구사항은 Phase 2 이후 외부 전송 기능을 추가할 때의 정책 경계다.
 
 - 외부 분석 API 전송은 기본 비활성화다.
 - 외부 LLM 분석은 전역 opt-in 외에 프로젝트별 opt-in을 요구한다.
@@ -892,9 +901,7 @@ discover -> parse -> normalize -> redact -> deduplicate -> persist -> index
 ## 18. 미해결 질문
 
 - 외부 LLM 분석을 어느 provider부터 지원할지 결정해야 한다.
-- raw 저장 모드를 MVP에 노출할지, 기본 마스킹 저장만 제공할지 결정해야 한다.
 - MVP의 핵심 채택 경로를 웹 UI 중심으로 둘지, CLI-first로 둘지 결정해야 한다.
-- 분석 기능을 MVP 핵심 가치로 둘지, 저장/검색 이후의 Phase 2 가치로 둘지 결정해야 한다.
 - 사용자 프롬프트만 저장할 때 “결과가 좋았던/나빴던 프롬프트”를 어떤 신호로 판단할지 결정해야 한다.
 - Markdown 파일명을 사용자가 커스터마이즈할 수 있게 할지 결정해야 한다.
 
@@ -913,7 +920,7 @@ discover -> parse -> normalize -> redact -> deduplicate -> persist -> index
 - 민감정보 마스킹 모드에서는 탐지된 raw secret이 Markdown, SQLite, 로그, 분석 결과에 저장되지 않는다.
 - `redactionMode=mask`에서는 탐지된 raw secret뿐 아니라 raw 기반 hash, FTS text, preview, 분석 결과, 외부 전송 payload에도 secret이 남지 않는다.
 - Markdown preview에서 raw HTML, 위험 URL scheme, 외부 리소스가 실행/로드되지 않는다.
-- 외부 LLM 분석은 전역 opt-in, 프로젝트 opt-in, 건별 preview를 모두 통과한 경우에만 실행된다.
+- 외부 LLM 분석 기능이 구현된 경우 전역 opt-in, 프로젝트 opt-in, 건별 preview를 모두 통과한 경우에만 실행된다.
 - `rebuild-index`로 Markdown 디렉터리에서 SQLite/FTS 인덱스를 재생성할 수 있다.
 - 제품명, 패키지명, 로고, README가 OpenAI/Anthropic과의 공식 제휴를 암시하지 않는다.
 - OAuth/session token을 추출, 저장, 재사용, 프록시하지 않는다.

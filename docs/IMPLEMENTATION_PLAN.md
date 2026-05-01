@@ -8,14 +8,14 @@
 
 이 문서는 `prompt-memory` MVP 구현을 실제 작업 단위로 분해한다. PRD는 제품 요구사항을, TECH_SPEC은 기술 설계를 정의한다. 이 문서는 어떤 순서로 구현하고, 각 단계가 언제 완료됐다고 볼지 정의한다.
 
-MVP 완료 기준은 다음이다.
+MVP core 완료 기준은 다음이다.
 
 - Claude Code `UserPromptSubmit` hook으로 prompt를 수집한다.
 - 저장 전 redaction이 적용된다.
 - Markdown 파일과 SQLite 인덱스가 생성된다.
 - CLI와 최소 웹 UI에서 목록/검색/상세/삭제가 가능하다.
 - 서버가 꺼져 있어도 Claude Code 사용 흐름을 막지 않는다.
-- Codex adapter는 beta 수준으로 fixture 기반 검증을 통과한다.
+- 첫 public beta release 기준에는 Codex adapter가 beta 수준으로 fixture 기반 검증을 통과해야 한다.
 
 ## 2. 원칙
 
@@ -421,11 +421,9 @@ P1 must provide config/init/token bootstrap before P2 auth and P4 hook work begi
 
 ## 14. Definition Of Done
 
-MVP is done when:
+Core MVP is done when:
 
 - All P0-P6 acceptance items pass.
-- P7 fixture tests pass and Codex is clearly labeled beta.
-- P8 security/documentation checks pass.
 - Node 22/24 CI passes.
 - Package dry run includes built CLI files and built web assets.
 - `better-sqlite3` release smoke tests pass on supported platforms or a documented fallback decision is made before release.
@@ -434,6 +432,12 @@ MVP is done when:
 - The prompt can be deleted cleanly.
 - `doctor` can diagnose common install and runtime failures.
 - No raw secret appears in Markdown, SQLite, FTS, diagnostics, or web preview under `mask` mode.
+
+First public beta release is done when:
+
+- Core MVP is done.
+- P7 fixture tests pass and Codex is clearly labeled beta.
+- P8 security/documentation checks pass.
 
 ## 15. First Implementation Task
 
