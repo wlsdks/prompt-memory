@@ -186,7 +186,7 @@ MVP의 신뢰 가능한 수집 경로는 Claude Code/Codex의 공식 hook payloa
 - `received_at`
 - `adapter_version`
 - `schema_version`
-- `raw_event_hash`
+- `raw_event_hash`: `redactionMode=raw`일 때만 영속 저장 가능하며, `mask`에서는 request 처리 중 transient 값으로만 사용한다.
 - `raw_metadata`
 
 동작 요구사항:
@@ -218,7 +218,7 @@ MVP의 신뢰 가능한 수집 경로는 Claude Code/Codex의 공식 hook payloa
 - `created_at`
 - `received_at`
 - `idempotency_key`
-- `raw_event_hash`
+- `raw_event_hash`: `redactionMode=raw`일 때만 저장 가능
 - `adapter_version`
 - `schema_version`
 
@@ -358,7 +358,7 @@ MVP 화면:
 
 - Markdown preview
 - frontmatter 메타데이터 표시
-- 저장 본문 보기/마스킹 보기 전환
+- 저장 정책이 적용된 본문 보기
 - 분석 preview 결과 표시
 - Markdown preview는 HTML 렌더링을 기본 비활성화한다.
 - Markdown 내 외부 이미지, iframe, script, data URL, file URL 렌더링은 기본 차단한다.
@@ -422,7 +422,7 @@ MVP 분석은 저장된 단일 프롬프트에 대한 로컬 규칙 기반 previ
 - `excluded_from_analysis`
 - `redaction_policy`
 - `adapter_version`
-- `raw_event_hash`
+- `raw_event_hash`: `redactionMode=raw`일 때만 저장 가능
 - `raw_metadata_path` 또는 `raw_metadata_json`
 - `index_status`: `indexed`, `missing_file`, `hash_mismatch`, `corrupt_frontmatter`
 - `import_job_id`: Phase 2 import에서 사용
