@@ -1,5 +1,11 @@
 import { randomUUID } from "node:crypto";
-import { mkdirSync, readFileSync, rmSync } from "node:fs";
+import {
+  mkdirSync,
+  readFileSync,
+  rmSync,
+  unlinkSync,
+  writeFileSync,
+} from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { afterEach, describe, expect, it } from "vitest";
@@ -69,6 +75,7 @@ describe("SQLite prompt storage", () => {
 
     expect(storage.searchPromptIds("store")).toEqual([first.id]);
     expect(storage.searchPromptIds("test@example.com")).toEqual([]);
+    expect(storage.searchPromptIds('"unterminated OR email')).toEqual([]);
   });
 
   it("connects Claude ingest to real Markdown, SQLite, and FTS storage", async () => {
@@ -111,6 +118,75 @@ describe("SQLite prompt storage", () => {
 
     expect(storage.listPromptRows()).toHaveLength(1);
     expect(storage.searchPromptIds("later")).toEqual([id]);
+  });
+
+  it("rebuilds FTS with redaction validation and quarantines hash mismatches", async () => {
+    const dataDir = createTempDir();
+    initializePromptMemory({ dataDir });
+    const storage = createSqlitePromptStorage({
+      dataDir,
+      hmacSecret: "test-secret",
+      now: () => new Date("2026-05-01T10:30:00.000Z"),
+    });
+
+    const event = normalizeClaudeCodePayload(
+      {
+        session_id: "session-1",
+        transcript_path: "/Users/example/.claude/session.jsonl",
+        cwd: "/Users/example/project",
+        permission_mode: "default",
+        hook_event_name: "UserPromptSubmit",
+        prompt: "safe prompt",
+      },
+      new Date("2026-05-01T10:29:59.000Z"),
+    );
+    const stored = await storage.storePrompt({
+      event,
+      redaction: redactPrompt(event.prompt, "mask"),
+    });
+    const row = storage.listPromptRows()[0]!;
+
+    writeFileSync(
+      row.markdown_path,
+      `${readFileSync(row.markdown_path, "utf8")}\nleaked sk-proj-1234567890abcdef\n`,
+    );
+
+    const result = storage.rebuildIndex({ redactionMode: "mask" });
+
+    expect(result.hashMismatches).toEqual([stored.id]);
+    expect(storage.listPromptRows()[0]?.index_status).toBe("hash_mismatch");
+    expect(storage.searchPromptIds("sk-proj")).toEqual([]);
+  });
+
+  it("marks missing markdown files during reconciliation", async () => {
+    const dataDir = createTempDir();
+    initializePromptMemory({ dataDir });
+    const storage = createSqlitePromptStorage({
+      dataDir,
+      hmacSecret: "test-secret",
+      now: () => new Date("2026-05-01T10:30:00.000Z"),
+    });
+
+    const event = normalizeClaudeCodePayload(
+      {
+        session_id: "session-1",
+        transcript_path: "/Users/example/.claude/session.jsonl",
+        cwd: "/Users/example/project",
+        permission_mode: "default",
+        hook_event_name: "UserPromptSubmit",
+        prompt: "safe prompt",
+      },
+      new Date("2026-05-01T10:29:59.000Z"),
+    );
+    const stored = await storage.storePrompt({
+      event,
+      redaction: redactPrompt(event.prompt, "mask"),
+    });
+    const row = storage.listPromptRows()[0]!;
+    unlinkSync(row.markdown_path);
+
+    expect(storage.reconcileStorage()).toEqual({ missingFiles: [stored.id] });
+    expect(storage.listPromptRows()[0]?.index_status).toBe("missing_file");
   });
 });
 

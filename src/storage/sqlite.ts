@@ -1,16 +1,18 @@
 import Database from "better-sqlite3";
-import { mkdirSync } from "node:fs";
+import { existsSync, mkdirSync } from "node:fs";
 import { join } from "node:path";
 
+import { redactPrompt } from "../redaction/redact.js";
 import { createPromptId } from "../shared/ids.js";
 import { createStoredContentHash } from "../shared/hashing.js";
+import type { RedactionPolicy } from "../shared/schema.js";
 import { getPromptMemoryPaths } from "./paths.js";
 import type {
   PromptStoragePort,
   StorePromptInput,
   StorePromptResult,
 } from "./ports.js";
-import { writePromptMarkdown } from "./markdown.js";
+import { readPromptMarkdown, writePromptMarkdown } from "./markdown.js";
 
 export type SqlitePromptStorageOptions = {
   dataDir: string;
@@ -48,6 +50,13 @@ export type SqlitePromptStorage = PromptStoragePort & {
   getAppliedMigrations(): AppliedMigration[];
   listPromptRows(): PromptRow[];
   searchPromptIds(query: string): string[];
+  rebuildIndex(options: { redactionMode: RedactionPolicy }): {
+    rebuilt: string[];
+    hashMismatches: string[];
+  };
+  reconcileStorage(): {
+    missingFiles: string[];
+  };
 };
 
 export function createSqlitePromptStorage(
@@ -94,6 +103,12 @@ export function createSqlitePromptStorage(
         .all(match) as Array<{ prompt_id: string }>;
 
       return rows.map((row) => row.prompt_id);
+    },
+    rebuildIndex(options) {
+      return rebuildIndex(db, options.redactionMode);
+    },
+    reconcileStorage() {
+      return reconcileStorage(db);
     },
   };
 }
@@ -290,6 +305,102 @@ function toSafeFtsQuery(query: string): string {
     .map((token) => `"${token.replaceAll('"', '""')}"`);
 
   return tokens?.join(" ") ?? "";
+}
+
+function rebuildIndex(
+  db: Database.Database,
+  redactionMode: RedactionPolicy,
+): { rebuilt: string[]; hashMismatches: string[] } {
+  const rebuilt: string[] = [];
+  const hashMismatches: string[] = [];
+  const rows = db
+    .prepare("SELECT id, markdown_path FROM prompts WHERE deleted_at IS NULL")
+    .all() as Array<{ id: string; markdown_path: string }>;
+
+  const transaction = db.transaction(() => {
+    db.prepare("DELETE FROM prompt_fts").run();
+
+    for (const row of rows) {
+      if (!existsSync(row.markdown_path)) {
+        db.prepare("UPDATE prompts SET index_status = ? WHERE id = ?").run(
+          "missing_file",
+          row.id,
+        );
+        continue;
+      }
+
+      const body = extractMarkdownBody(readPromptMarkdown(row.markdown_path));
+      const redaction = redactPrompt(body, redactionMode);
+
+      if (redaction.is_sensitive) {
+        db.prepare("UPDATE prompts SET index_status = ? WHERE id = ?").run(
+          "hash_mismatch",
+          row.id,
+        );
+        hashMismatches.push(row.id);
+        continue;
+      }
+
+      db.prepare(
+        `
+        INSERT INTO prompt_fts(prompt_id, body, snippet, project_name, tags)
+        VALUES (?, ?, ?, ?, ?)
+        `,
+      ).run(
+        row.id,
+        redaction.stored_text,
+        redaction.stored_text.slice(0, 240),
+        "",
+        "",
+      );
+      db.prepare("UPDATE prompts SET index_status = ? WHERE id = ?").run(
+        "indexed",
+        row.id,
+      );
+      rebuilt.push(row.id);
+    }
+  });
+
+  transaction();
+
+  return { rebuilt, hashMismatches };
+}
+
+function reconcileStorage(db: Database.Database): { missingFiles: string[] } {
+  const missingFiles: string[] = [];
+  const rows = db
+    .prepare("SELECT id, markdown_path FROM prompts WHERE deleted_at IS NULL")
+    .all() as Array<{ id: string; markdown_path: string }>;
+
+  const transaction = db.transaction(() => {
+    for (const row of rows) {
+      if (!existsSync(row.markdown_path)) {
+        db.prepare("UPDATE prompts SET index_status = ? WHERE id = ?").run(
+          "missing_file",
+          row.id,
+        );
+        missingFiles.push(row.id);
+      }
+    }
+  });
+
+  transaction();
+
+  return { missingFiles };
+}
+
+function extractMarkdownBody(markdown: string): string {
+  if (!markdown.startsWith("---\n")) {
+    return markdown;
+  }
+
+  const delimiter = markdown.indexOf("\n---\n", 4);
+
+  if (delimiter === -1) {
+    return markdown;
+  }
+
+  return markdown.slice(delimiter + "\n---\n".length).trimStart();
 }
 
 const INITIAL_DDL = `
