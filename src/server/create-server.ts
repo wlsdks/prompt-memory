@@ -8,6 +8,7 @@ import type { ServerAuthConfig } from "./auth.js";
 import { HttpProblem, problem } from "./errors.js";
 import { registerHealthRoutes } from "./routes/health.js";
 import { registerIngestRoutes } from "./routes/ingest.js";
+import { registerPromptRoutes } from "./routes/prompts.js";
 
 export type CreateServerOptions = {
   dataDir: string;
@@ -92,6 +93,10 @@ export function createServer(options: CreateServerOptions): FastifyInstance {
     redactionMode: options.redactionMode,
     excludedProjectRoots: options.excludedProjectRoots ?? [],
     maxPromptLength: options.maxPromptLength ?? 100_000,
+  });
+  registerPromptRoutes(server, {
+    auth: options.auth,
+    storage: options.storage,
   });
 
   return server;

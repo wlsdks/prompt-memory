@@ -1,0 +1,102 @@
+import type { FastifyInstance } from "fastify";
+import { z } from "zod";
+
+import type {
+  PromptReadStoragePort,
+  PromptStoragePort,
+} from "../../storage/ports.js";
+import { requireBearerToken, type ServerAuthConfig } from "../auth.js";
+import { problem } from "../errors.js";
+
+export type PromptRouteOptions = {
+  auth: ServerAuthConfig;
+  storage: PromptStoragePort & Partial<PromptReadStoragePort>;
+};
+
+const ListQuerySchema = z.object({
+  limit: z.coerce.number().int().positive().max(100).optional(),
+  cursor: z.string().min(1).optional(),
+  q: z.string().trim().max(500).optional(),
+});
+
+const PromptParamsSchema = z.object({
+  id: z.string().regex(/^prmt_[A-Za-z0-9_]+$/),
+});
+
+export function registerPromptRoutes(
+  server: FastifyInstance,
+  options: PromptRouteOptions,
+): void {
+  server.get("/api/v1/prompts", async (request) => {
+    requireBearerToken(request, options.auth.appToken);
+    const storage = requireReadStorage(options.storage, request.url);
+    const query = ListQuerySchema.parse(request.query);
+
+    try {
+      const result = query.q
+        ? storage.searchPrompts(query.q, { limit: query.limit })
+        : storage.listPrompts({ limit: query.limit, cursor: query.cursor });
+
+      return {
+        data: {
+          items: result.items,
+          next_cursor: result.nextCursor,
+        },
+      };
+    } catch {
+      throw problem(
+        400,
+        "Bad Request",
+        "Invalid prompt list query.",
+        request.url,
+      );
+    }
+  });
+
+  server.get("/api/v1/prompts/:id", async (request) => {
+    requireBearerToken(request, options.auth.appToken);
+    const storage = requireReadStorage(options.storage, request.url);
+    const params = PromptParamsSchema.parse(request.params);
+    const prompt = storage.getPrompt(params.id);
+
+    if (!prompt) {
+      throw problem(404, "Not Found", "Prompt not found.", request.url);
+    }
+
+    return { data: prompt };
+  });
+
+  server.delete("/api/v1/prompts/:id", async (request) => {
+    requireBearerToken(request, options.auth.appToken);
+    const storage = requireReadStorage(options.storage, request.url);
+    const params = PromptParamsSchema.parse(request.params);
+    const result = storage.deletePrompt(params.id);
+
+    if (!result.deleted) {
+      throw problem(404, "Not Found", "Prompt not found.", request.url);
+    }
+
+    return { data: result };
+  });
+}
+
+function requireReadStorage(
+  storage: PromptRouteOptions["storage"],
+  instance: string,
+): PromptReadStoragePort {
+  if (
+    !storage.listPrompts ||
+    !storage.searchPrompts ||
+    !storage.getPrompt ||
+    !storage.deletePrompt
+  ) {
+    throw problem(
+      500,
+      "Internal Server Error",
+      "Prompt read storage is not configured.",
+      instance,
+    );
+  }
+
+  return storage as PromptReadStoragePort;
+}

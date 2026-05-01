@@ -7,6 +7,7 @@ import {
   writeFileSync,
 } from "node:fs";
 import { tmpdir } from "node:os";
+import { existsSync } from "node:fs";
 import { join } from "node:path";
 import { afterEach, describe, expect, it } from "vitest";
 
@@ -188,7 +189,93 @@ describe("SQLite prompt storage", () => {
     expect(storage.reconcileStorage()).toEqual({ missingFiles: [stored.id] });
     expect(storage.listPromptRows()[0]?.index_status).toBe("missing_file");
   });
+
+  it("lists, searches, reads, and deletes stored prompts", async () => {
+    const dataDir = createTempDir();
+    initializePromptMemory({ dataDir });
+    const storage = createSqlitePromptStorage({
+      dataDir,
+      hmacSecret: "test-secret",
+      now: nextDate([
+        "2026-05-01T10:00:00.000Z",
+        "2026-05-01T10:01:00.000Z",
+        "2026-05-01T10:02:00.000Z",
+      ]),
+    });
+
+    const alpha = await storeClaudePrompt(storage, {
+      prompt: "alpha prompt",
+      receivedAt: "2026-05-01T10:00:00.000Z",
+    });
+    const beta = await storeClaudePrompt(storage, {
+      prompt: "beta prompt",
+      receivedAt: "2026-05-01T10:01:00.000Z",
+    });
+    const gamma = await storeClaudePrompt(storage, {
+      prompt: "gamma prompt",
+      receivedAt: "2026-05-01T10:02:00.000Z",
+    });
+
+    const firstPage = storage.listPrompts({ limit: 2 });
+    expect(firstPage.items.map((item) => item.id)).toEqual([gamma.id, beta.id]);
+    expect(firstPage.nextCursor).toBeTypeOf("string");
+
+    const secondPage = storage.listPrompts({
+      limit: 2,
+      cursor: firstPage.nextCursor,
+    });
+    expect(secondPage.items.map((item) => item.id)).toEqual([alpha.id]);
+    expect(secondPage.nextCursor).toBeUndefined();
+
+    expect(storage.searchPrompts("beta", { limit: 10 }).items).toMatchObject([
+      { id: beta.id, prompt_length: "beta prompt".length },
+    ]);
+
+    const detail = storage.getPrompt(beta.id);
+    expect(detail?.markdown).toContain("beta prompt");
+    expect(detail?.cwd).toBe("/Users/example/project");
+
+    const betaPath = storage
+      .listPromptRows()
+      .find((row) => row.id === beta.id)?.markdown_path;
+    expect(betaPath).toBeTypeOf("string");
+    expect(storage.deletePrompt(beta.id)).toEqual({ deleted: true });
+    expect(storage.getPrompt(beta.id)).toBeUndefined();
+    expect(storage.searchPrompts("beta", { limit: 10 }).items).toEqual([]);
+    expect(existsSync(betaPath!)).toBe(false);
+    expect(storage.deletePrompt(beta.id)).toEqual({ deleted: false });
+  });
 });
+
+type StoredPrompt = Awaited<ReturnType<typeof storeClaudePrompt>>;
+
+async function storeClaudePrompt(
+  storage: ReturnType<typeof createSqlitePromptStorage>,
+  options: { prompt: string; receivedAt: string },
+): Promise<{ id: string; duplicate: boolean }> {
+  const event = normalizeClaudeCodePayload(
+    {
+      session_id: `session-${options.receivedAt}`,
+      transcript_path: "/Users/example/.claude/session.jsonl",
+      cwd: "/Users/example/project",
+      permission_mode: "default",
+      hook_event_name: "UserPromptSubmit",
+      prompt: options.prompt,
+    },
+    new Date(options.receivedAt),
+  );
+
+  return storage.storePrompt({
+    event,
+    redaction: redactPrompt(event.prompt, "mask"),
+  });
+}
+
+function nextDate(values: string[]): () => Date {
+  let index = 0;
+
+  return () => new Date(values[index++] ?? values.at(-1)!);
+}
 
 function createTempDir(): string {
   const dir = join(tmpdir(), `prompt-memory-storage-${randomUUID()}`);

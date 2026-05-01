@@ -1,5 +1,5 @@
 import Database from "better-sqlite3";
-import { existsSync, mkdirSync } from "node:fs";
+import { existsSync, mkdirSync, unlinkSync } from "node:fs";
 import { join } from "node:path";
 
 import { redactPrompt } from "../redaction/redact.js";
@@ -8,7 +8,14 @@ import { createStoredContentHash } from "../shared/hashing.js";
 import type { RedactionPolicy } from "../shared/schema.js";
 import { getPromptMemoryPaths } from "./paths.js";
 import type {
+  DeletePromptResult,
+  ListPromptsOptions,
+  PromptDetail,
+  PromptListResult,
+  PromptReadStoragePort,
+  PromptSummary,
   PromptStoragePort,
+  SearchPromptsOptions,
   StorePromptInput,
   StorePromptResult,
 } from "./ports.js";
@@ -45,19 +52,20 @@ export type AppliedMigration = {
   name: string;
 };
 
-export type SqlitePromptStorage = PromptStoragePort & {
-  close(): void;
-  getAppliedMigrations(): AppliedMigration[];
-  listPromptRows(): PromptRow[];
-  searchPromptIds(query: string): string[];
-  rebuildIndex(options: { redactionMode: RedactionPolicy }): {
-    rebuilt: string[];
-    hashMismatches: string[];
+export type SqlitePromptStorage = PromptStoragePort &
+  PromptReadStoragePort & {
+    close(): void;
+    getAppliedMigrations(): AppliedMigration[];
+    listPromptRows(): PromptRow[];
+    searchPromptIds(query: string): string[];
+    rebuildIndex(options: { redactionMode: RedactionPolicy }): {
+      rebuilt: string[];
+      hashMismatches: string[];
+    };
+    reconcileStorage(): {
+      missingFiles: string[];
+    };
   };
-  reconcileStorage(): {
-    missingFiles: string[];
-  };
-};
 
 export function createSqlitePromptStorage(
   options: SqlitePromptStorageOptions,
@@ -87,8 +95,20 @@ export function createSqlitePromptStorage(
     },
     listPromptRows() {
       return db
-        .prepare("SELECT * FROM prompts ORDER BY received_at DESC")
+        .prepare("SELECT * FROM prompts ORDER BY received_at DESC, id DESC")
         .all() as PromptRow[];
+    },
+    listPrompts(options) {
+      return listPrompts(db, options);
+    },
+    searchPrompts(query, options) {
+      return searchPrompts(db, query, options);
+    },
+    getPrompt(id) {
+      return getPrompt(db, id);
+    },
+    deletePrompt(id) {
+      return deletePrompt(db, id);
     },
     searchPromptIds(query) {
       const match = toSafeFtsQuery(query);
@@ -279,6 +299,178 @@ function storePrompt(
   transaction();
 
   return { id, duplicate: false };
+}
+
+function listPrompts(
+  db: Database.Database,
+  options: ListPromptsOptions = {},
+): PromptListResult {
+  const limit = normalizeLimit(options.limit);
+  const cursor = options.cursor ? decodeCursor(options.cursor) : undefined;
+  const rows = cursor
+    ? (db
+        .prepare(
+          `
+          SELECT * FROM prompts
+          WHERE deleted_at IS NULL
+            AND (received_at < ? OR (received_at = ? AND id < ?))
+          ORDER BY received_at DESC, id DESC
+          LIMIT ?
+          `,
+        )
+        .all(
+          cursor.received_at,
+          cursor.received_at,
+          cursor.id,
+          limit + 1,
+        ) as PromptRow[])
+    : (db
+        .prepare(
+          `
+          SELECT * FROM prompts
+          WHERE deleted_at IS NULL
+          ORDER BY received_at DESC, id DESC
+          LIMIT ?
+          `,
+        )
+        .all(limit + 1) as PromptRow[]);
+
+  return toListResult(rows, limit);
+}
+
+function searchPrompts(
+  db: Database.Database,
+  query: string,
+  options: SearchPromptsOptions = {},
+): PromptListResult {
+  const match = toSafeFtsQuery(query);
+  if (!match) {
+    return { items: [] };
+  }
+
+  const limit = normalizeLimit(options.limit);
+  const rows = db
+    .prepare(
+      `
+      SELECT p.*
+      FROM prompt_fts
+      JOIN prompts p ON p.id = prompt_fts.prompt_id
+      WHERE prompt_fts MATCH ? AND p.deleted_at IS NULL
+      ORDER BY rank
+      LIMIT ?
+      `,
+    )
+    .all(match, limit + 1) as PromptRow[];
+
+  return toListResult(rows, limit);
+}
+
+function getPrompt(
+  db: Database.Database,
+  id: string,
+): PromptDetail | undefined {
+  const row = db
+    .prepare("SELECT * FROM prompts WHERE id = ? AND deleted_at IS NULL")
+    .get(id) as PromptRow | undefined;
+
+  if (!row || !existsSync(row.markdown_path)) {
+    return undefined;
+  }
+
+  return {
+    ...toPromptSummary(row),
+    markdown: readPromptMarkdown(row.markdown_path),
+  };
+}
+
+function deletePrompt(db: Database.Database, id: string): DeletePromptResult {
+  const row = db
+    .prepare("SELECT id, markdown_path FROM prompts WHERE id = ?")
+    .get(id) as { id: string; markdown_path: string } | undefined;
+
+  if (!row) {
+    return { deleted: false };
+  }
+
+  const transaction = db.transaction(() => {
+    db.prepare("DELETE FROM prompt_fts WHERE prompt_id = ?").run(id);
+    db.prepare("DELETE FROM prompt_tags WHERE prompt_id = ?").run(id);
+    db.prepare("DELETE FROM prompt_analyses WHERE prompt_id = ?").run(id);
+    db.prepare("DELETE FROM redaction_events WHERE prompt_id = ?").run(id);
+    db.prepare("DELETE FROM prompts WHERE id = ?").run(id);
+  });
+
+  transaction();
+
+  if (existsSync(row.markdown_path)) {
+    unlinkSync(row.markdown_path);
+  }
+
+  return { deleted: true };
+}
+
+function normalizeLimit(limit: number | undefined): number {
+  if (!limit || !Number.isInteger(limit)) {
+    return 20;
+  }
+
+  return Math.min(Math.max(limit, 1), 100);
+}
+
+function toListResult(rows: PromptRow[], limit: number): PromptListResult {
+  const pageRows = rows.slice(0, limit);
+  const last = pageRows.at(-1);
+
+  return {
+    items: pageRows.map(toPromptSummary),
+    nextCursor:
+      rows.length > limit && last
+        ? encodeCursor({ received_at: last.received_at, id: last.id })
+        : undefined,
+  };
+}
+
+function toPromptSummary(row: PromptRow): PromptSummary {
+  return {
+    id: row.id,
+    tool: row.tool,
+    source_event: row.source_event,
+    session_id: row.session_id,
+    cwd: row.cwd,
+    created_at: row.created_at,
+    received_at: row.received_at,
+    prompt_length: row.prompt_length,
+    is_sensitive: row.is_sensitive === 1,
+    excluded_from_analysis: row.excluded_from_analysis === 1,
+    redaction_policy: row.redaction_policy,
+    adapter_version: row.adapter_version,
+    index_status: row.index_status,
+  };
+}
+
+function encodeCursor(cursor: { received_at: string; id: string }): string {
+  return Buffer.from(JSON.stringify(cursor), "utf8").toString("base64url");
+}
+
+function decodeCursor(cursor: string): { received_at: string; id: string } {
+  const decoded = JSON.parse(
+    Buffer.from(cursor, "base64url").toString("utf8"),
+  ) as {
+    received_at?: unknown;
+    id?: unknown;
+  };
+
+  if (
+    typeof decoded.received_at !== "string" ||
+    typeof decoded.id !== "string"
+  ) {
+    throw new Error("Invalid cursor.");
+  }
+
+  return {
+    received_at: decoded.received_at,
+    id: decoded.id,
+  };
 }
 
 function createMarkdownPath(
