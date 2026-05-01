@@ -7,6 +7,7 @@ import {
   Search,
   Settings,
   ShieldCheck,
+  Star,
   Tags,
   Trash2,
 } from "lucide-react";
@@ -19,6 +20,8 @@ import {
   getQualityDashboard,
   getSettings,
   listPrompts,
+  recordPromptCopied,
+  setPromptBookmark,
   type QualityDashboard,
   type PromptFilters,
   type PromptDetail,
@@ -157,10 +160,48 @@ export function App() {
     if (copied) {
       setCopiedPromptId(prompt.id);
       window.setTimeout(() => setCopiedPromptId(undefined), 3000);
+      try {
+        const usefulness = await recordPromptCopied(prompt.id);
+        updatePromptUsefulness(prompt.id, usefulness);
+        void getQualityDashboard()
+          .then(setDashboard)
+          .catch(() => undefined);
+      } catch {
+        setError("복사는 완료됐지만 사용 기록을 저장하지 못했습니다.");
+      }
       return;
     }
 
     setError("프롬프트를 복사하지 못했습니다.");
+  }
+
+  async function toggleBookmark(prompt: PromptDetail): Promise<void> {
+    try {
+      const usefulness = await setPromptBookmark(
+        prompt.id,
+        !prompt.usefulness.bookmarked,
+      );
+      updatePromptUsefulness(prompt.id, usefulness);
+      void getQualityDashboard()
+        .then(setDashboard)
+        .catch(() => undefined);
+    } catch {
+      setError("북마크 상태를 저장하지 못했습니다.");
+    }
+  }
+
+  function updatePromptUsefulness(
+    id: string,
+    usefulness: PromptDetail["usefulness"],
+  ): void {
+    setSelected((current) =>
+      current?.id === id ? { ...current, usefulness } : current,
+    );
+    setPrompts((current) =>
+      current.map((prompt) =>
+        prompt.id === id ? { ...prompt, usefulness } : prompt,
+      ),
+    );
   }
 
   function navigate(next: View): void {
@@ -319,13 +360,18 @@ export function App() {
         {view.name === "detail" && (
           <PromptDetailView
             copied={selected?.id === copiedPromptId}
+            onBookmark={toggleBookmark}
             onCopy={copyPrompt}
             onDelete={setPendingDelete}
             prompt={selected}
           />
         )}
         {view.name === "dashboard" && (
-          <DashboardView dashboard={dashboard} loading={!dashboard} />
+          <DashboardView
+            dashboard={dashboard}
+            loading={!dashboard}
+            onSelect={(id) => navigate({ name: "detail", id })}
+          />
         )}
         {view.name === "settings" && (
           <SettingsView health={health} settings={settings} />
@@ -411,6 +457,14 @@ function PromptList({
                   {gap}
                 </span>
               ))}
+              {prompt.usefulness.bookmarked && (
+                <span className="badge saved-badge">saved</span>
+              )}
+              {prompt.usefulness.copied_count > 0 && (
+                <span className="badge reuse-badge">
+                  copy {prompt.usefulness.copied_count}
+                </span>
+              )}
             </span>
             <span>{prompt.prompt_length}</span>
           </button>
@@ -431,11 +485,13 @@ function PromptList({
 
 function PromptDetailView({
   copied,
+  onBookmark,
   onCopy,
   onDelete,
   prompt,
 }: {
   copied: boolean;
+  onBookmark(prompt: PromptDetail): void;
   onCopy(prompt: PromptDetail): void;
   onDelete(prompt: PromptDetail): void;
   prompt?: PromptDetail;
@@ -459,6 +515,15 @@ function PromptDetailView({
           <dt>Redaction</dt>
           <dd>{prompt.redaction_policy}</dd>
         </dl>
+        <div className="metadata-stats" aria-label="유용성 신호">
+          <span>
+            <Copy size={14} /> {prompt.usefulness.copied_count}
+          </span>
+          <span>
+            <Star size={14} />{" "}
+            {prompt.usefulness.bookmarked ? "saved" : "unsaved"}
+          </span>
+        </div>
         <button className="danger full-width" onClick={() => onDelete(prompt)}>
           <Trash2 size={16} /> 삭제
         </button>
@@ -466,6 +531,13 @@ function PromptDetailView({
       <article className="prompt-body">
         {prompt.analysis && <AnalysisPreview analysis={prompt.analysis} />}
         <div className="prompt-actions">
+          <button
+            aria-pressed={prompt.usefulness.bookmarked}
+            onClick={() => onBookmark(prompt)}
+          >
+            <Star size={16} />
+            {prompt.usefulness.bookmarked ? "저장됨" : "다시 볼 프롬프트"}
+          </button>
           <button onClick={() => onCopy(prompt)}>
             <Copy size={16} /> {copied ? "복사됨" : "프롬프트 복사"}
           </button>
@@ -543,9 +615,11 @@ function AnalysisPreview({
 function DashboardView({
   dashboard,
   loading,
+  onSelect,
 }: {
   dashboard?: QualityDashboard;
   loading: boolean;
+  onSelect(id: string): void;
 }) {
   if (loading || !dashboard) {
     return <div className="panel empty">대시보드를 불러오는 중입니다.</div>;
@@ -575,6 +649,37 @@ function DashboardView({
       </section>
 
       <section className="dashboard-grid wide">
+        <div className="panel">
+          <h2>재사용 후보</h2>
+          <div className="useful-list">
+            {dashboard.useful_prompts.length === 0 && (
+              <p className="muted">
+                복사하거나 저장한 프롬프트가 여기에 표시됩니다.
+              </p>
+            )}
+            {dashboard.useful_prompts.map((prompt) => (
+              <button
+                className="useful-row"
+                key={prompt.id}
+                onClick={() => onSelect(prompt.id)}
+              >
+                <span>
+                  <strong>{projectLabel(prompt.cwd)}</strong>
+                  <small>{formatDate(prompt.received_at)}</small>
+                </span>
+                <span className="status-cell">
+                  {prompt.bookmarked && (
+                    <span className="badge saved-badge">saved</span>
+                  )}
+                  <span className="badge reuse-badge">
+                    copy {prompt.copied_count}
+                  </span>
+                </span>
+              </button>
+            ))}
+          </div>
+        </div>
+
         <div className="panel">
           <h2>자주 부족한 항목</h2>
           <div className="gap-list">
@@ -837,4 +942,8 @@ function formatDate(value: string): string {
     dateStyle: "short",
     timeStyle: "short",
   }).format(new Date(value));
+}
+
+function projectLabel(path: string): string {
+  return path.split("/").filter(Boolean).at(-1) ?? path;
 }

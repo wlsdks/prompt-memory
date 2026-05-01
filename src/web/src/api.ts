@@ -14,6 +14,7 @@ export type PromptSummary = {
   index_status: string;
   tags: string[];
   quality_gaps: string[];
+  usefulness: PromptUsefulness;
 };
 
 export type PromptDetail = PromptSummary & {
@@ -33,6 +34,13 @@ export type PromptDetail = PromptSummary & {
     analyzer: string;
     created_at: string;
   };
+};
+
+export type PromptUsefulness = {
+  copied_count: number;
+  last_copied_at?: string;
+  bookmarked: boolean;
+  bookmarked_at?: string;
 };
 
 export type PromptListResponse = {
@@ -83,6 +91,18 @@ export type QualityDashboard = {
     project?: string;
     text: string;
     reason: string;
+  }>;
+  useful_prompts: Array<{
+    id: string;
+    tool: string;
+    cwd: string;
+    received_at: string;
+    copied_count: number;
+    last_copied_at?: string;
+    bookmarked: boolean;
+    bookmarked_at?: string;
+    tags: string[];
+    quality_gaps: string[];
   }>;
 };
 
@@ -204,6 +224,57 @@ export async function deletePrompt(id: string): Promise<void> {
   if (!response.ok) {
     throw new Error("Delete failed");
   }
+}
+
+export async function recordPromptCopied(
+  id: string,
+): Promise<PromptUsefulness> {
+  await ensureSession();
+  const response = await fetch(
+    `/api/v1/prompts/${encodeURIComponent(id)}/events`,
+    {
+      method: "POST",
+      credentials: "same-origin",
+      headers: {
+        "content-type": "application/json",
+        "x-csrf-token": csrfToken ?? "",
+      },
+      body: JSON.stringify({ type: "prompt_copied" }),
+    },
+  );
+  if (!response.ok) {
+    throw new Error("Prompt event failed");
+  }
+  const body = (await response.json()) as {
+    data: { usefulness: PromptUsefulness };
+  };
+  return body.data.usefulness;
+}
+
+export async function setPromptBookmark(
+  id: string,
+  bookmarked: boolean,
+): Promise<PromptUsefulness> {
+  await ensureSession();
+  const response = await fetch(
+    `/api/v1/prompts/${encodeURIComponent(id)}/bookmark`,
+    {
+      method: "PUT",
+      credentials: "same-origin",
+      headers: {
+        "content-type": "application/json",
+        "x-csrf-token": csrfToken ?? "",
+      },
+      body: JSON.stringify({ bookmarked }),
+    },
+  );
+  if (!response.ok) {
+    throw new Error("Bookmark failed");
+  }
+  const body = (await response.json()) as {
+    data: { usefulness: PromptUsefulness };
+  };
+  return body.data.usefulness;
 }
 
 export async function getHealth(): Promise<{

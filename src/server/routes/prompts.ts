@@ -29,6 +29,14 @@ const PromptParamsSchema = z.object({
   id: z.string().regex(/^prmt_[A-Za-z0-9_]+$/),
 });
 
+const PromptUsageEventSchema = z.object({
+  type: z.literal("prompt_copied"),
+});
+
+const PromptBookmarkSchema = z.object({
+  bookmarked: z.boolean(),
+});
+
 export function registerPromptRoutes(
   server: FastifyInstance,
   options: PromptRouteOptions,
@@ -96,6 +104,34 @@ export function registerPromptRoutes(
     return { data: storage.getQualityDashboard() };
   });
 
+  server.post("/api/v1/prompts/:id/events", async (request) => {
+    requireAppAccess(request, options.auth, { csrf: true });
+    const storage = requireReadStorage(options.storage, request.url);
+    const params = PromptParamsSchema.parse(request.params);
+    const body = PromptUsageEventSchema.parse(request.body);
+    const result = storage.recordPromptUsage(params.id, body.type);
+
+    if (!result.recorded) {
+      throw problem(404, "Not Found", "Prompt not found.", request.url);
+    }
+
+    return { data: result };
+  });
+
+  server.put("/api/v1/prompts/:id/bookmark", async (request) => {
+    requireAppAccess(request, options.auth, { csrf: true });
+    const storage = requireReadStorage(options.storage, request.url);
+    const params = PromptParamsSchema.parse(request.params);
+    const body = PromptBookmarkSchema.parse(request.body);
+    const result = storage.setPromptBookmark(params.id, body.bookmarked);
+
+    if (!result.updated) {
+      throw problem(404, "Not Found", "Prompt not found.", request.url);
+    }
+
+    return { data: result };
+  });
+
   server.delete("/api/v1/prompts/:id", async (request) => {
     requireAppAccess(request, options.auth, { csrf: true });
     const storage = requireReadStorage(options.storage, request.url);
@@ -119,7 +155,9 @@ function requireReadStorage(
     !storage.searchPrompts ||
     !storage.getPrompt ||
     !storage.deletePrompt ||
-    !storage.getQualityDashboard
+    !storage.getQualityDashboard ||
+    !storage.recordPromptUsage ||
+    !storage.setPromptBookmark
   ) {
     throw problem(
       500,

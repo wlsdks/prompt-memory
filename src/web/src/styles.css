@@ -330,6 +330,16 @@ h2 {
   color: var(--pm-warning);
 }
 
+.saved-badge {
+  background: var(--pm-accent-weak);
+  color: var(--pm-accent-strong);
+}
+
+.reuse-badge {
+  background: var(--pm-code-bg);
+  color: var(--pm-text-muted);
+}
+
 .panel {
   background: var(--pm-surface-raised);
   border: 1px solid var(--pm-border);
@@ -384,12 +394,29 @@ dd {
   overflow-wrap: anywhere;
 }
 
+.metadata-stats {
+  border-top: 1px solid var(--pm-border);
+  display: grid;
+  gap: 6px;
+  margin: 16px 0;
+  padding-top: 12px;
+}
+
+.metadata-stats span {
+  align-items: center;
+  color: var(--pm-text-muted);
+  display: inline-flex;
+  font-size: 12px;
+  gap: 6px;
+}
+
 .prompt-body {
   min-width: 0;
 }
 
 .prompt-actions {
   display: flex;
+  gap: 8px;
   justify-content: flex-end;
   margin-bottom: 12px;
 }
@@ -578,6 +605,7 @@ dd {
 .distribution-list,
 .gap-list,
 .pattern-list,
+.useful-list,
 .suggestion-grid {
   display: grid;
   gap: 10px;
@@ -617,6 +645,42 @@ dd {
 .gap-row:last-child {
   border-bottom: 0;
   padding-bottom: 0;
+}
+
+.useful-row {
+  align-items: center;
+  background: var(--pm-surface);
+  border: 1px solid var(--pm-border);
+  border-radius: 6px;
+  color: var(--pm-text);
+  display: grid;
+  gap: 10px;
+  grid-template-columns: minmax(0, 1fr) auto;
+  min-height: 52px;
+  padding: 10px;
+  text-align: left;
+}
+
+.useful-row:hover {
+  background: var(--pm-accent-weak);
+}
+
+.useful-row span:first-child {
+  display: grid;
+  gap: 2px;
+  min-width: 0;
+}
+
+.useful-row strong,
+.useful-row small {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.useful-row small {
+  color: var(--pm-text-muted);
+  font-size: 12px;
 }
 
 .gap-row p,
@@ -822,6 +886,10 @@ dd {
 
   .metadata-panel {
     margin-bottom: 12px;
+  }
+
+  .prompt-actions {
+    flex-direction: column;
   }
 
   .load-more-button,

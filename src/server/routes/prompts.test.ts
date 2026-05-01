@@ -201,6 +201,98 @@ describe("prompt read/delete API", () => {
       }),
     ]);
   });
+
+  it("records copy events and bookmark state for local usefulness signals", async () => {
+    const { server, ids } = await createPromptApiFixture();
+
+    const copied = await server.inject({
+      method: "POST",
+      url: `/api/v1/prompts/${ids.gamma}/events`,
+      headers: {
+        host: "127.0.0.1:17373",
+        authorization: "Bearer app-token",
+      },
+      payload: {
+        type: "prompt_copied",
+      },
+    });
+    expect(copied.statusCode).toBe(200);
+    expect(copied.json()).toMatchObject({
+      data: {
+        recorded: true,
+        usefulness: {
+          copied_count: 1,
+          bookmarked: false,
+        },
+      },
+    });
+
+    const bookmark = await server.inject({
+      method: "PUT",
+      url: `/api/v1/prompts/${ids.gamma}/bookmark`,
+      headers: {
+        host: "127.0.0.1:17373",
+        authorization: "Bearer app-token",
+      },
+      payload: {
+        bookmarked: true,
+      },
+    });
+    expect(bookmark.statusCode).toBe(200);
+    expect(bookmark.json()).toMatchObject({
+      data: {
+        updated: true,
+        usefulness: {
+          copied_count: 1,
+          bookmarked: true,
+        },
+      },
+    });
+
+    const detail = await server.inject({
+      method: "GET",
+      url: `/api/v1/prompts/${ids.gamma}`,
+      headers: {
+        host: "127.0.0.1:17373",
+        authorization: "Bearer app-token",
+      },
+    });
+    expect(detail.statusCode).toBe(200);
+    expect(
+      detail.json<{
+        data: { usefulness: { copied_count: number; bookmarked: boolean } };
+      }>().data.usefulness,
+    ).toMatchObject({
+      copied_count: 1,
+      bookmarked: true,
+    });
+
+    const dashboard = await server.inject({
+      method: "GET",
+      url: "/api/v1/quality",
+      headers: {
+        host: "127.0.0.1:17373",
+        authorization: "Bearer app-token",
+      },
+    });
+    expect(
+      dashboard.json<{
+        data: {
+          useful_prompts: Array<{
+            id: string;
+            copied_count: number;
+            bookmarked: boolean;
+          }>;
+        };
+      }>().data.useful_prompts,
+    ).toEqual([
+      expect.objectContaining({
+        id: ids.gamma,
+        copied_count: 1,
+        bookmarked: true,
+      }),
+    ]);
+  });
 });
 
 async function createPromptApiFixture() {

@@ -1,4 +1,5 @@
 import Database from "better-sqlite3";
+import { randomUUID } from "node:crypto";
 import {
   existsSync,
   mkdirSync,
@@ -28,9 +29,12 @@ import type {
   PromptReadStoragePort,
   PromptSummary,
   PromptStoragePort,
+  PromptUsageEventType,
+  PromptUsefulness,
   SearchPromptsOptions,
   StorePromptInput,
   StorePromptResult,
+  UsefulPrompt,
 } from "./ports.js";
 import {
   parsePromptMarkdown,
@@ -81,6 +85,14 @@ type PromptQualityRow = {
   checklist_json: string | null;
   tags_json: string | null;
 };
+
+type PromptUsefulnessRow = {
+  copied_count: number;
+  last_copied_at: string | null;
+  bookmarked_at: string | null;
+};
+
+type UsefulPromptRow = PromptRow & PromptUsefulnessRow;
 
 type RebuildPromptRow = {
   id: string;
@@ -154,6 +166,17 @@ export function createSqlitePromptStorage(
     getQualityDashboard() {
       return getQualityDashboard(db, options.now?.() ?? new Date());
     },
+    recordPromptUsage(id, type) {
+      return recordPromptUsage(db, id, type, options.now?.() ?? new Date());
+    },
+    setPromptBookmark(id, bookmarked) {
+      return setPromptBookmark(
+        db,
+        id,
+        bookmarked,
+        options.now?.() ?? new Date(),
+      );
+    },
     searchPromptIds(query) {
       const match = toSafeFtsQuery(query);
       if (!match) {
@@ -191,6 +214,7 @@ function applyMigrations(db: Database.Database): void {
   }
 
   applyAnalysisChecklistTagsMigration(db);
+  applyPromptUsefulnessMigration(db);
 }
 
 function applyAnalysisChecklistTagsMigration(db: Database.Database): void {
@@ -212,6 +236,39 @@ function applyAnalysisChecklistTagsMigration(db: Database.Database): void {
     db.prepare(
       "INSERT INTO schema_migrations(version, name, applied_at) VALUES (?, ?, ?)",
     ).run(2, "002_analysis_checklist_tags", new Date().toISOString());
+  }
+}
+
+function applyPromptUsefulnessMigration(db: Database.Database): void {
+  const applied = db
+    .prepare("SELECT 1 FROM schema_migrations WHERE version = ?")
+    .get(3);
+
+  db.exec(`
+    CREATE TABLE IF NOT EXISTS prompt_usage_events (
+      id TEXT PRIMARY KEY,
+      prompt_id TEXT NOT NULL,
+      event_type TEXT NOT NULL,
+      created_at TEXT NOT NULL,
+      FOREIGN KEY(prompt_id) REFERENCES prompts(id) ON DELETE CASCADE
+    );
+
+    CREATE TABLE IF NOT EXISTS prompt_bookmarks (
+      prompt_id TEXT PRIMARY KEY,
+      created_at TEXT NOT NULL,
+      FOREIGN KEY(prompt_id) REFERENCES prompts(id) ON DELETE CASCADE
+    );
+
+    CREATE INDEX IF NOT EXISTS idx_prompt_usage_events_prompt_id
+      ON prompt_usage_events(prompt_id);
+    CREATE INDEX IF NOT EXISTS idx_prompt_usage_events_type_created_at
+      ON prompt_usage_events(event_type, created_at DESC);
+  `);
+
+  if (!applied) {
+    db.prepare(
+      "INSERT INTO schema_migrations(version, name, applied_at) VALUES (?, ?, ?)",
+    ).run(3, "003_prompt_usefulness", new Date().toISOString());
   }
 }
 
@@ -532,6 +589,8 @@ function deletePrompt(db: Database.Database, id: string): DeletePromptResult {
     db.prepare("DELETE FROM prompt_tags WHERE prompt_id = ?").run(id);
     db.prepare("DELETE FROM prompt_analyses WHERE prompt_id = ?").run(id);
     db.prepare("DELETE FROM redaction_events WHERE prompt_id = ?").run(id);
+    db.prepare("DELETE FROM prompt_usage_events WHERE prompt_id = ?").run(id);
+    db.prepare("DELETE FROM prompt_bookmarks WHERE prompt_id = ?").run(id);
     db.prepare("DELETE FROM prompts WHERE id = ?").run(id);
   });
 
@@ -590,6 +649,117 @@ function toPromptSummary(db: Database.Database, row: PromptRow): PromptSummary {
       analysis?.checklist
         .filter((item) => item.status !== "good")
         .map((item) => item.label) ?? [],
+    usefulness: readPromptUsefulness(db, row.id),
+  };
+}
+
+function recordPromptUsage(
+  db: Database.Database,
+  id: string,
+  type: PromptUsageEventType,
+  now: Date,
+): { recorded: boolean; usefulness: PromptUsefulness } {
+  if (!hasLivePrompt(db, id)) {
+    return {
+      recorded: false,
+      usefulness: emptyPromptUsefulness(),
+    };
+  }
+
+  db.prepare(
+    `
+    INSERT INTO prompt_usage_events(id, prompt_id, event_type, created_at)
+    VALUES (?, ?, ?, ?)
+    `,
+  ).run(
+    `${id}:${type}:${now.toISOString()}:${randomUUID()}`,
+    id,
+    type,
+    now.toISOString(),
+  );
+
+  return {
+    recorded: true,
+    usefulness: readPromptUsefulness(db, id),
+  };
+}
+
+function setPromptBookmark(
+  db: Database.Database,
+  id: string,
+  bookmarked: boolean,
+  now: Date,
+): { updated: boolean; usefulness: PromptUsefulness } {
+  if (!hasLivePrompt(db, id)) {
+    return {
+      updated: false,
+      usefulness: emptyPromptUsefulness(),
+    };
+  }
+
+  if (bookmarked) {
+    db.prepare(
+      `
+      INSERT INTO prompt_bookmarks(prompt_id, created_at)
+      VALUES (?, ?)
+      ON CONFLICT(prompt_id) DO NOTHING
+      `,
+    ).run(id, now.toISOString());
+  } else {
+    db.prepare("DELETE FROM prompt_bookmarks WHERE prompt_id = ?").run(id);
+  }
+
+  return {
+    updated: true,
+    usefulness: readPromptUsefulness(db, id),
+  };
+}
+
+function hasLivePrompt(db: Database.Database, id: string): boolean {
+  return Boolean(
+    db
+      .prepare("SELECT 1 FROM prompts WHERE id = ? AND deleted_at IS NULL")
+      .get(id),
+  );
+}
+
+function readPromptUsefulness(
+  db: Database.Database,
+  id: string,
+): PromptUsefulness {
+  const row = db
+    .prepare(
+      `
+      SELECT
+        COUNT(pue.id) AS copied_count,
+        MAX(pue.created_at) AS last_copied_at,
+        pb.created_at AS bookmarked_at
+      FROM prompts p
+      LEFT JOIN prompt_usage_events pue
+        ON pue.prompt_id = p.id AND pue.event_type = 'prompt_copied'
+      LEFT JOIN prompt_bookmarks pb ON pb.prompt_id = p.id
+      WHERE p.id = ? AND p.deleted_at IS NULL
+      GROUP BY p.id, pb.created_at
+      `,
+    )
+    .get(id) as PromptUsefulnessRow | undefined;
+
+  if (!row) {
+    return emptyPromptUsefulness();
+  }
+
+  return {
+    copied_count: row.copied_count,
+    last_copied_at: row.last_copied_at ?? undefined,
+    bookmarked: row.bookmarked_at !== null,
+    bookmarked_at: row.bookmarked_at ?? undefined,
+  };
+}
+
+function emptyPromptUsefulness(): PromptUsefulness {
+  return {
+    copied_count: 0,
+    bookmarked: false,
   };
 }
 
@@ -1081,7 +1251,51 @@ function getQualityDashboard(
       missingItems,
       buildQualityPatterns(qualityRows),
     ),
+    useful_prompts: readUsefulPrompts(db),
   };
+}
+
+function readUsefulPrompts(db: Database.Database): UsefulPrompt[] {
+  const rows = db
+    .prepare(
+      `
+      SELECT
+        p.*,
+        COUNT(pue.id) AS copied_count,
+        MAX(pue.created_at) AS last_copied_at,
+        pb.created_at AS bookmarked_at
+      FROM prompts p
+      LEFT JOIN prompt_usage_events pue
+        ON pue.prompt_id = p.id AND pue.event_type = 'prompt_copied'
+      LEFT JOIN prompt_bookmarks pb ON pb.prompt_id = p.id
+      WHERE p.deleted_at IS NULL
+      GROUP BY p.id, pb.created_at
+      HAVING copied_count > 0 OR bookmarked_at IS NOT NULL
+      ORDER BY
+        CASE WHEN bookmarked_at IS NOT NULL THEN 1 ELSE 0 END DESC,
+        copied_count DESC,
+        COALESCE(last_copied_at, bookmarked_at, p.received_at) DESC,
+        p.received_at DESC
+      LIMIT 8
+      `,
+    )
+    .all() as UsefulPromptRow[];
+
+  return rows.map((row) => {
+    const summary = toPromptSummary(db, row);
+    return {
+      id: row.id,
+      tool: row.tool,
+      cwd: row.cwd,
+      received_at: row.received_at,
+      copied_count: row.copied_count,
+      last_copied_at: row.last_copied_at ?? undefined,
+      bookmarked: row.bookmarked_at !== null,
+      bookmarked_at: row.bookmarked_at ?? undefined,
+      tags: summary.tags,
+      quality_gaps: summary.quality_gaps,
+    };
+  });
 }
 
 function readCount(
@@ -1400,6 +1614,20 @@ CREATE TABLE IF NOT EXISTS prompt_tags (
   FOREIGN KEY(tag_id) REFERENCES tags(id) ON DELETE CASCADE
 );
 
+CREATE TABLE IF NOT EXISTS prompt_usage_events (
+  id TEXT PRIMARY KEY,
+  prompt_id TEXT NOT NULL,
+  event_type TEXT NOT NULL,
+  created_at TEXT NOT NULL,
+  FOREIGN KEY(prompt_id) REFERENCES prompts(id) ON DELETE CASCADE
+);
+
+CREATE TABLE IF NOT EXISTS prompt_bookmarks (
+  prompt_id TEXT PRIMARY KEY,
+  created_at TEXT NOT NULL,
+  FOREIGN KEY(prompt_id) REFERENCES prompts(id) ON DELETE CASCADE
+);
+
 CREATE TABLE IF NOT EXISTS settings (
   key TEXT PRIMARY KEY,
   value_json TEXT NOT NULL,
@@ -1430,4 +1658,8 @@ CREATE INDEX IF NOT EXISTS idx_prompts_tool ON prompts(tool);
 CREATE INDEX IF NOT EXISTS idx_prompts_project_id ON prompts(project_id);
 CREATE INDEX IF NOT EXISTS idx_prompts_session_id ON prompts(session_id);
 CREATE INDEX IF NOT EXISTS idx_prompts_index_status ON prompts(index_status);
+CREATE INDEX IF NOT EXISTS idx_prompt_usage_events_prompt_id
+  ON prompt_usage_events(prompt_id);
+CREATE INDEX IF NOT EXISTS idx_prompt_usage_events_type_created_at
+  ON prompt_usage_events(event_type, created_at DESC);
 `;

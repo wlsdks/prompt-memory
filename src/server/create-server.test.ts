@@ -564,6 +564,19 @@ function createMemoryStorage() {
         missing_items: [],
         patterns: [],
         instruction_suggestions: [],
+        useful_prompts: [],
+      };
+    },
+    recordPromptUsage() {
+      return {
+        recorded: false,
+        usefulness: { copied_count: 0, bookmarked: false },
+      };
+    },
+    setPromptBookmark() {
+      return {
+        updated: false,
+        usefulness: { copied_count: 0, bookmarked: false },
       };
     },
   } satisfies PromptStoragePort & {

@@ -60,6 +60,7 @@ describe("SQLite prompt storage", () => {
     expect(storage.getAppliedMigrations()).toEqual([
       { version: 1, name: "001_initial" },
       { version: 2, name: "002_analysis_checklist_tags" },
+      { version: 3, name: "003_prompt_usefulness" },
     ]);
 
     const prompts = storage.listPromptRows();
@@ -518,6 +519,92 @@ describe("SQLite prompt storage", () => {
           "SELECT COUNT(*) AS count FROM prompt_analyses WHERE prompt_id = ?",
         )
         .get(sensitive.id) as { count: number },
+    ).toEqual({ count: 0 });
+    db.close();
+  });
+
+  it("records local usefulness signals and removes them with prompt delete", async () => {
+    const dataDir = createTempDir();
+    initializePromptMemory({ dataDir });
+    const storage = createSqlitePromptStorage({
+      dataDir,
+      hmacSecret: "test-secret",
+      now: nextDate([
+        "2026-05-01T10:00:00.000Z",
+        "2026-05-01T10:01:00.000Z",
+        "2026-05-01T10:02:00.000Z",
+        "2026-05-01T10:03:00.000Z",
+      ]),
+    });
+
+    const alpha = await storeClaudePrompt(storage, {
+      prompt: "Reusable refactor prompt with pnpm test",
+      receivedAt: "2026-05-01T10:00:00.000Z",
+    });
+    const beta = await storeClaudePrompt(storage, {
+      prompt: "One-off docs prompt",
+      receivedAt: "2026-05-01T10:01:00.000Z",
+    });
+
+    expect(storage.recordPromptUsage(alpha.id, "prompt_copied")).toMatchObject({
+      recorded: true,
+      usefulness: {
+        copied_count: 1,
+        bookmarked: false,
+      },
+    });
+    storage.recordPromptUsage(alpha.id, "prompt_copied");
+    expect(storage.setPromptBookmark(alpha.id, true)).toMatchObject({
+      updated: true,
+      usefulness: {
+        copied_count: 2,
+        bookmarked: true,
+      },
+    });
+    expect(storage.setPromptBookmark(beta.id, true)).toMatchObject({
+      updated: true,
+      usefulness: expect.objectContaining({ bookmarked: true }),
+    });
+
+    expect(storage.getPrompt(alpha.id)?.usefulness).toMatchObject({
+      copied_count: 2,
+      bookmarked: true,
+    });
+    expect(storage.listPrompts().items[1]).toMatchObject({
+      id: alpha.id,
+      usefulness: {
+        copied_count: 2,
+        bookmarked: true,
+      },
+    });
+    expect(storage.getQualityDashboard().useful_prompts).toEqual([
+      expect.objectContaining({
+        id: alpha.id,
+        copied_count: 2,
+        bookmarked: true,
+      }),
+      expect.objectContaining({
+        id: beta.id,
+        copied_count: 0,
+        bookmarked: true,
+      }),
+    ]);
+
+    const db = new Database(join(dataDir, "prompt-memory.sqlite"));
+    expect(storage.deletePrompt(alpha.id)).toEqual({ deleted: true });
+    expect(
+      db
+        .prepare(
+          "SELECT COUNT(*) AS count FROM prompt_usage_events WHERE prompt_id = ?",
+        )
+        .get(alpha.id) as { count: number },
+    ).toEqual({ count: 0 });
+    expect(
+      db
+        .prepare(
+          "SELECT COUNT(*) AS count FROM prompt_bookmarks WHERE prompt_id = ?",
+        )
+        .get(alpha.id) as { count: number },
     ).toEqual({ count: 0 });
     db.close();
   });

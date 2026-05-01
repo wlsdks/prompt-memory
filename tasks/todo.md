@@ -218,7 +218,7 @@
   - [x] `pnpm build`
   - [x] `pnpm pack:dry-run`
   - [x] `git diff --check`
-- [ ] 커밋 및 `git push origin main`
+- [x] 커밋 및 `git push origin main`
 
 ### P11 설계 메모
 
@@ -307,3 +307,48 @@
 - 다음 기능 후보 우선순위는 중복 프롬프트 감지, 프로젝트 설정 UI, usefulness feedback/bookmark, git branch/commit/PR 연결, transcript import 순서가 적절하다.
 - usefulness 측정은 외부 전송 없이 로컬 이벤트로 시작한다. 1차 이벤트는 `prompt_copied`, `prompt_bookmarked`, `prompt_reused_hint` 정도가 적합하고, dashboard에서는 "재사용 후보"로만 보여준다.
 - Playwright MCP로 `/`, `/?tag=docs`, `/?q=P13`, prompt detail, mobile list/detail을 확인했다. 첫 페이지 50개에서 `더 보기` 후 62개로 확장됐고, 상세 복사 버튼은 실제 클릭 후 `복사됨` 상태를 표시했다.
+
+## P14 Local Usefulness Signals
+
+- [x] PRD 잔여 기능과 P13 사용성 결과 기준으로 다음 구현 단위 확정
+- [x] 실패 테스트 먼저 작성
+  - [x] copy 이벤트와 bookmark toggle API 계약 테스트
+  - [x] SQLite 저장/조회/삭제 정합성 테스트
+  - [x] dashboard 재사용 후보 집계 테스트
+- [x] 로컬 usefulness 저장 구조 추가
+  - [x] `prompt_usage_events`에 `prompt_copied` 같은 저위험 이벤트 기록
+  - [x] `prompt_bookmarks`로 사용자가 다시 보고 싶은 프롬프트 표시
+  - [x] 삭제 시 prompt 관련 usefulness 데이터 정리
+- [x] API 확장
+  - [x] prompt summary/detail에 `usefulness` 반환
+  - [x] `POST /api/v1/prompts/:id/events` 추가
+  - [x] `PUT /api/v1/prompts/:id/bookmark` 추가
+  - [x] quality dashboard에 `useful_prompts` 반환
+- [x] 웹 UI 구현 전 `DESIGN.md` 재검토
+- [x] 웹 UI 연결
+  - [x] detail copy 성공 시 로컬 copy 이벤트 기록
+  - [x] detail bookmark toggle 추가
+  - [x] list에 saved/reuse count 신호를 낮은 대비로 표시
+  - [x] dashboard에 "재사용 후보" 패널 추가
+- [x] Playwright MCP 사용성 점검
+  - [x] detail copy event
+  - [x] bookmark toggle
+  - [x] dashboard useful prompts
+  - [x] desktop/mobile overflow와 console/network 오류
+- [x] 기본 검증 명령 실행
+  - [x] `pnpm test`
+  - [x] `pnpm lint`
+  - [x] `pnpm format`
+  - [x] `pnpm build`
+  - [x] `pnpm pack:dry-run`
+  - [x] `pnpm smoke:release`
+  - [x] `git diff --check`
+- [ ] 커밋 및 `git push origin main`
+
+### P14 설계 메모
+
+- usefulness는 외부 분석이나 원문 전송이 아니라 로컬 메타 이벤트만 저장한다.
+- `prompt_copied`는 "이 프롬프트를 다시 쓸 가능성이 있다"는 약한 신호로 본다.
+- bookmark는 사용자가 명시적으로 저장한 강한 신호로 본다.
+- dashboard의 "재사용 후보"는 자동 판단이 아니라 copy count/bookmark 기반 정렬 목록으로 표시한다.
+- Playwright MCP로 detail bookmark, copy event, dashboard useful prompts, mobile dashboard를 확인했다. 콘솔 오류는 0개였고 관련 API는 200으로 응답했다.

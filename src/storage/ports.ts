@@ -30,11 +30,31 @@ export type PromptSummary = {
   index_status: string;
   tags: string[];
   quality_gaps: string[];
+  usefulness: PromptUsefulness;
 };
 
 export type PromptDetail = PromptSummary & {
   markdown: string;
   analysis?: PromptAnalysisPreview;
+};
+
+export type PromptUsefulness = {
+  copied_count: number;
+  last_copied_at?: string;
+  bookmarked: boolean;
+  bookmarked_at?: string;
+};
+
+export type PromptUsageEventType = "prompt_copied";
+
+export type PromptUsageResult = {
+  recorded: boolean;
+  usefulness: PromptUsefulness;
+};
+
+export type PromptBookmarkResult = {
+  updated: boolean;
+  usefulness: PromptUsefulness;
 };
 
 export type ListPromptsOptions = {
@@ -91,6 +111,19 @@ export type InstructionSuggestion = {
   reason: string;
 };
 
+export type UsefulPrompt = {
+  id: string;
+  tool: string;
+  cwd: string;
+  received_at: string;
+  copied_count: number;
+  last_copied_at?: string;
+  bookmarked: boolean;
+  bookmarked_at?: string;
+  tags: string[];
+  quality_gaps: string[];
+};
+
 export type PromptQualityDashboard = {
   total_prompts: number;
   sensitive_prompts: number;
@@ -106,6 +139,7 @@ export type PromptQualityDashboard = {
   missing_items: MissingQualityItem[];
   patterns: QualityPattern[];
   instruction_suggestions: InstructionSuggestion[];
+  useful_prompts: UsefulPrompt[];
 };
 
 export type PromptStoragePort = {
@@ -121,4 +155,6 @@ export type PromptReadStoragePort = {
   getPrompt(id: string): PromptDetail | undefined;
   deletePrompt(id: string): DeletePromptResult;
   getQualityDashboard(): PromptQualityDashboard;
+  recordPromptUsage(id: string, type: PromptUsageEventType): PromptUsageResult;
+  setPromptBookmark(id: string, bookmarked: boolean): PromptBookmarkResult;
 };
