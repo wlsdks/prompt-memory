@@ -391,15 +391,24 @@ export function App() {
 
         {error && <div className="error-line">{error}</div>}
         {view.name === "list" && (
-          <PromptList
-            focus={filters.focus}
-            qualityGap={filters.qualityGap}
-            loading={loading}
-            nextCursor={filters.query?.trim() ? undefined : nextCursor}
-            onLoadMore={() => void refreshList(filters, { cursor: nextCursor })}
-            onSelect={(id) => navigate({ name: "detail", id })}
-            prompts={prompts}
-          />
+          <>
+            <ActiveFilterBar
+              filters={filters}
+              onClearAll={() => setFilters(emptyFilters())}
+              onRemove={(key) => updateFilters(clearFilterPatch(key))}
+            />
+            <PromptList
+              focus={filters.focus}
+              qualityGap={filters.qualityGap}
+              loading={loading}
+              nextCursor={filters.query?.trim() ? undefined : nextCursor}
+              onLoadMore={() =>
+                void refreshList(filters, { cursor: nextCursor })
+              }
+              onSelect={(id) => navigate({ name: "detail", id })}
+              prompts={prompts}
+            />
+          </>
         )}
         {view.name === "detail" && (
           <PromptDetailView
@@ -537,6 +546,50 @@ function PromptList({
         </button>
       )}
     </>
+  );
+}
+
+type FilterKey = keyof PromptFilters;
+
+function ActiveFilterBar({
+  filters,
+  onClearAll,
+  onRemove,
+}: {
+  filters: PromptFilters;
+  onClearAll(): void;
+  onRemove(key: FilterKey): void;
+}) {
+  const chips = activeFilterChips(filters);
+
+  if (chips.length === 0) {
+    return null;
+  }
+
+  return (
+    <section className="active-filter-bar" aria-label="활성 필터">
+      <div className="active-filter-list">
+        {chips.map((chip) => (
+          <button
+            aria-label={`${chip.label} 필터 제거: ${chip.value}`}
+            className="filter-chip"
+            key={chip.key}
+            onClick={() => onRemove(chip.key)}
+            type="button"
+          >
+            <span>{chip.label}</span>
+            <strong>{chip.value}</strong>
+          </button>
+        ))}
+      </div>
+      <button
+        className="clear-filters-button"
+        onClick={onClearAll}
+        type="button"
+      >
+        필터 초기화
+      </button>
+    </section>
   );
 }
 
@@ -1114,6 +1167,24 @@ const QUALITY_GAP_OPTIONS: Array<{ key: PromptQualityGap; label: string }> = [
   { key: "verification_criteria", label: "검증 기준" },
 ];
 
+const TOOL_LABELS: Record<string, string> = {
+  "claude-code": "Claude Code",
+  codex: "Codex",
+  manual: "Manual",
+  unknown: "Unknown",
+};
+
+const SENSITIVITY_LABELS: Record<string, string> = {
+  true: "민감정보 포함",
+  false: "민감정보 없음",
+};
+
+const FOCUS_LABELS: Record<NonNullable<PromptFilters["focus"]>, string> = {
+  saved: "저장됨",
+  duplicated: "중복 후보",
+  "quality-gap": "품질 보강",
+};
+
 function formatDate(value: string): string {
   return new Intl.DateTimeFormat("ko-KR", {
     dateStyle: "short",
@@ -1125,6 +1196,90 @@ function daysAgoDateInput(days: number): string {
   const date = new Date();
   date.setDate(date.getDate() - days);
   return date.toISOString().slice(0, 10);
+}
+
+function emptyFilters(): PromptFilters {
+  return { isSensitive: "all" };
+}
+
+function clearFilterPatch(key: FilterKey): Partial<PromptFilters> {
+  if (key === "isSensitive") {
+    return { isSensitive: "all" };
+  }
+
+  return { [key]: undefined };
+}
+
+function activeFilterChips(
+  filters: PromptFilters,
+): Array<{ key: FilterKey; label: string; value: string }> {
+  const chips: Array<{ key: FilterKey; label: string; value: string }> = [];
+
+  if (filters.query?.trim()) {
+    chips.push({ key: "query", label: "검색", value: filters.query.trim() });
+  }
+
+  if (filters.tool) {
+    chips.push({
+      key: "tool",
+      label: "도구",
+      value: TOOL_LABELS[filters.tool] ?? filters.tool,
+    });
+  }
+
+  if (filters.tag) {
+    chips.push({ key: "tag", label: "태그", value: filters.tag });
+  }
+
+  if (filters.isSensitive && filters.isSensitive !== "all") {
+    chips.push({
+      key: "isSensitive",
+      label: "민감도",
+      value: SENSITIVITY_LABELS[filters.isSensitive],
+    });
+  }
+
+  if (filters.focus) {
+    chips.push({
+      key: "focus",
+      label: "Focus",
+      value: FOCUS_LABELS[filters.focus],
+    });
+  }
+
+  if (filters.qualityGap) {
+    chips.push({
+      key: "qualityGap",
+      label: "부족 항목",
+      value: qualityGapLabel(filters.qualityGap) ?? filters.qualityGap,
+    });
+  }
+
+  if (filters.cwdPrefix?.trim()) {
+    chips.push({
+      key: "cwdPrefix",
+      label: "경로",
+      value: filters.cwdPrefix.trim(),
+    });
+  }
+
+  if (filters.receivedFrom) {
+    chips.push({
+      key: "receivedFrom",
+      label: "시작일",
+      value: filters.receivedFrom,
+    });
+  }
+
+  if (filters.receivedTo) {
+    chips.push({
+      key: "receivedTo",
+      label: "종료일",
+      value: filters.receivedTo,
+    });
+  }
+
+  return chips;
 }
 
 function projectLabel(path: string): string {

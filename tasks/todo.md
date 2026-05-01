@@ -526,3 +526,34 @@
 - 제품 효용은 "민감정보 비율이 높다" 또는 "최근 입력량이 늘었다"를 본 뒤 바로 해당 프롬프트 목록을 확인하는 데 있다.
 - metric은 통계 카드이면서 동작 가능한 탐색 항목이므로 `button`으로 구현하고 URL query 상태를 유지한다.
 - Playwright MCP로 민감정보 metric drilldown이 `?sensitive=true`에서 1행만 표시하고, 최근 7일 metric drilldown이 `?from=2026-04-24`에서 3행, 최근 30일 metric drilldown이 `?from=2026-04-01`에서 3행을 표시하는 것을 확인했다. 모바일 목록 렌더링과 현재 페이지 콘솔 오류 0개도 확인했다.
+
+## P20 Active Filter Bar
+
+- [x] PRD 완료 범위와 P19 이후 사용성 빈틈 기준으로 다음 구현 단위 확정
+- [x] 웹 UI 구현 전 `DESIGN.md`와 Web Interface Guidelines 재검토
+- [x] 웹 UI 연결
+  - [x] 현재 적용된 query/tool/tag/sensitivity/focus/gap/cwd/date 필터를 칩으로 표시
+  - [x] 각 칩에서 해당 필터만 해제
+  - [x] 전체 필터 초기화 버튼 추가
+  - [x] 필터 없음 상태에서는 불필요한 UI를 렌더링하지 않음
+- [x] Playwright MCP 사용성 점검
+  - [x] dashboard drilldown 이후 활성 필터 표시
+  - [x] 단일 필터 제거
+  - [x] 전체 필터 초기화
+  - [x] desktop/mobile overflow와 console/network 오류
+- [x] 기본 검증 명령 실행
+  - [x] `pnpm test`
+  - [x] `pnpm lint`
+  - [x] `pnpm format`
+  - [x] `pnpm build`
+  - [x] `pnpm pack:dry-run`
+  - [x] `pnpm smoke:release`
+  - [x] `git diff --check`
+- [x] 커밋 및 `git push origin main`
+
+### P20 설계 메모
+
+- 새 저장 구조나 API 없이 기존 URL 필터 상태를 더 명확하게 보여주는 UI 개선이다.
+- 제품 효용은 drilldown과 복합 필터 사용 후 현재 조건을 이해하고 빠르게 해제하는 데 있다.
+- 칩은 좁은 화면에서도 줄바꿈되는 낮은 대비 컨트롤로 두고, 필터 값이 raw prompt나 민감정보를 포함하지 않도록 기존 query param 값만 표시한다.
+- Playwright MCP로 복합 필터 URL에서 활성 필터 칩 표시, `도구` 칩 단일 제거, 전체 필터 초기화, 모바일 줄바꿈 렌더링을 확인했다. 현재 페이지 콘솔 오류는 0개였다.
