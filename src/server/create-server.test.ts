@@ -16,6 +16,12 @@ const claudeFixture = JSON.parse(
     "utf8",
   ),
 ) as Record<string, unknown>;
+const codexFixture = JSON.parse(
+  readFileSync(
+    resolve(__dirname, "../adapters/fixtures/codex-user-prompt-submit.json"),
+    "utf8",
+  ),
+) as Record<string, unknown>;
 
 describe("createServer P2 ingest boundary", () => {
   it("returns health without auth", async () => {
@@ -225,6 +231,51 @@ describe("createServer P2 ingest boundary", () => {
     );
     expect(storage.events[0]?.redaction.stored_text).not.toContain(
       "test@example.com",
+    );
+  });
+
+  it("normalizes, redacts, and stores a valid Codex fixture", async () => {
+    const storage = createMemoryStorage();
+    const server = createTestServer({ storage });
+
+    const response = await server.inject({
+      method: "POST",
+      url: "/api/v1/ingest/codex",
+      headers: {
+        host: "127.0.0.1:17373",
+        authorization: "Bearer ingest-token",
+      },
+      payload: {
+        ...codexFixture,
+        prompt: "Review this and keep api key sk-proj-1234567890abcdef safe",
+      },
+    });
+
+    expect(response.statusCode).toBe(200);
+    expect(response.json()).toMatchObject({
+      data: {
+        id: "stored-1",
+        stored: true,
+        duplicate: false,
+        redacted: true,
+      },
+    });
+    expect(storage.events).toHaveLength(1);
+    expect(storage.events[0]?.event).toMatchObject({
+      tool: "codex",
+      source_event: "UserPromptSubmit",
+      session_id: "codex-session-123",
+      turn_id: "turn-456",
+      cwd: "/Users/example/side-project/prompt-memory",
+      transcript_path: "/Users/example/.codex/sessions/prompt-memory.jsonl",
+      model: "gpt-5.5",
+      adapter_version: "codex-v1",
+    });
+    expect(storage.events[0]?.redaction.stored_text).toContain(
+      "[REDACTED:api_key]",
+    );
+    expect(storage.events[0]?.redaction.stored_text).not.toContain(
+      "sk-proj-1234567890abcdef",
     );
   });
 

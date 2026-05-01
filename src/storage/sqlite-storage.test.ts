@@ -123,6 +123,59 @@ describe("SQLite prompt storage", () => {
     expect(storage.searchPromptIds("later")).toEqual([id]);
   });
 
+  it("connects Codex ingest to real Markdown, SQLite, and FTS storage", async () => {
+    const dataDir = createTempDir();
+    initializePromptMemory({ dataDir });
+    const storage = createSqlitePromptStorage({
+      dataDir,
+      hmacSecret: "test-secret",
+      now: () => new Date("2026-05-01T10:31:00.000Z"),
+    });
+    const server = createServer({
+      dataDir,
+      auth: {
+        appToken: "app-token",
+        ingestToken: "ingest-token",
+        webSessionSecret: "web-session-secret",
+      },
+      storage,
+      redactionMode: "mask",
+    });
+
+    const response = await server.inject({
+      method: "POST",
+      url: "/api/v1/ingest/codex",
+      headers: {
+        host: "127.0.0.1:17373",
+        authorization: "Bearer ingest-token",
+      },
+      payload: {
+        session_id: "codex-session-1",
+        turn_id: "turn-1",
+        transcript_path: "/Users/example/.codex/sessions/session.jsonl",
+        cwd: "/Users/example/project",
+        hook_event_name: "UserPromptSubmit",
+        model: "gpt-5.5",
+        prompt: "Index this Codex beta prompt",
+      },
+    });
+
+    expect(response.statusCode).toBe(200);
+    const id = response.json<{ data: { id: string } }>().data.id;
+    const rows = storage.listPromptRows();
+
+    expect(rows).toHaveLength(1);
+    expect(rows[0]).toMatchObject({
+      id,
+      tool: "codex",
+      source_event: "UserPromptSubmit",
+      session_id: "codex-session-1",
+      cwd: "/Users/example/project",
+      adapter_version: "codex-v1",
+    });
+    expect(storage.searchPromptIds("beta")).toEqual([id]);
+  });
+
   it("rebuilds FTS with redaction validation and quarantines hash mismatches", async () => {
     const dataDir = createTempDir();
     initializePromptMemory({ dataDir });

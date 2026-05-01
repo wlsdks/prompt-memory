@@ -46,3 +46,20 @@
 - Playwright MCP로 desktop 필터 조합, date range 빈 결과/복귀, settings 화면을 확인했다.
 - Playwright MCP로 mobile 폭에서 필터 컨트롤이 세로로 안정적으로 쌓이고 목록이 깨지지 않는지 확인했다.
 - `pnpm test`, `pnpm lint`, `pnpm build`, `pnpm pack:dry-run`, `git diff --check`를 통과했다.
+
+## P7 Codex Beta - Adapter/Ingest
+
+- [x] 공식 Codex hooks 문서와 현재 PRD/TECH_SPEC 범위 재확인
+- [x] Codex adapter 정규화 테스트 작성
+- [x] `/api/v1/ingest/codex` 계약 테스트 작성
+- [x] Codex adapter 구현
+- [x] Codex ingest route 연결
+- [x] targeted/full 검증 실행
+- [x] 커밋 및 푸시
+
+### P7 Adapter/Ingest 범위
+
+- 이번 단위는 Codex `UserPromptSubmit` payload 정규화와 서버 ingest route까지만 포함한다.
+- `install-hook codex`, `uninstall-hook codex`, Codex doctor는 config merge/feature flag 진단을 포함하므로 다음 커밋에서 별도 처리한다.
+- 공식 Codex hooks 문서 기준 `UserPromptSubmit`은 공통 stdin JSON 필드와 `turn_id`, `prompt`를 받으며, matcher는 현재 무시된다.
+- `pnpm test`, `pnpm lint`, `pnpm build`, `pnpm pack:dry-run`, `git diff --check`를 통과했다.
