@@ -664,3 +664,38 @@
 - 제품 효용은 "프롬프트 입력량이 늘고 있는지"와 "품질 보강이 필요한 프롬프트 비율이 줄고 있는지"를 대시보드에서 빠르게 확인하는 데 있다.
 - trend는 날짜, count, rate만 반환하고 저장 본문이나 snippet은 반환하지 않는다.
 - Playwright MCP로 desktop/mobile 대시보드에서 trend 7개 row, 민감정보 count, 수평 overflow 없음, 콘솔 경고/오류 0개를 확인했다.
+
+## P24 Trend Day Drilldown / Date Filter Semantics
+
+- [x] P23 이후 사용성 빈틈 기준으로 다음 구현 단위 확정
+- [x] 실패 테스트 먼저 작성
+  - [x] date-only `receivedFrom`/`receivedTo`가 해당 날짜 전체를 포함
+  - [x] ISO timestamp 범위 필터 기존 동작 유지
+- [x] 저장소/API 구현
+  - [x] date-only lower bound를 day start로 정규화
+  - [x] date-only upper bound를 day end로 정규화
+- [x] 웹 UI 구현 전 `DESIGN.md`와 Web Interface Guidelines 재검토
+- [x] 웹 UI 연결
+  - [x] trend day row 클릭 시 `from=<date>&to=<date>` 목록으로 이동
+  - [x] row가 button 의미, aria-label, hover/focus 상태를 갖도록 정리
+  - [x] desktop/mobile overflow 방지
+- [x] Playwright MCP 사용성 점검
+  - [x] trend day drilldown URL과 목록 결과
+  - [x] active filter bar의 시작일/종료일 표시
+  - [x] desktop/mobile overflow와 console/network 오류
+- [x] 기본 검증 명령 실행
+  - [x] `pnpm test`
+  - [x] `pnpm lint`
+  - [x] `pnpm format`
+  - [x] `pnpm build`
+  - [x] `pnpm pack:dry-run`
+  - [x] `pnpm smoke:release`
+  - [x] `git diff --check`
+- [x] 커밋 및 `git push origin main`
+
+### P24 설계 메모
+
+- 새 집계를 만들지 않고 P23 trend와 기존 날짜 필터를 연결한다.
+- 제품 효용은 "품질 보강 비율이 높았던 날"을 본 뒤 바로 해당 날짜의 실제 프롬프트 목록으로 내려가 점검하는 데 있다.
+- date input 사용자는 `2026-05-01`을 하루 전체로 기대하므로 저장소 레벨에서 date-only bound를 명확히 보정한다.
+- Playwright MCP로 trend day row 클릭 후 `?from=2026-05-01&to=2026-05-01` 목록 이동, 3개 결과, active filter 표시, 모바일 overflow 없음, 콘솔 경고/오류 0개를 확인했다.

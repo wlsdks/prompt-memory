@@ -775,6 +775,18 @@ describe("SQLite prompt storage", () => {
     ).toEqual([sensitive.id]);
     expect(
       storage
+        .listPrompts({
+          receivedFrom: "2026-05-01",
+          receivedTo: "2026-05-01",
+        })
+        .items.map((item) => item.received_at),
+    ).toEqual([
+      "2026-05-01T10:02:00.000Z",
+      "2026-05-01T10:01:00.000Z",
+      "2026-05-01T10:00:00.000Z",
+    ]);
+    expect(
+      storage
         .searchPrompts("secret", { isSensitive: true })
         .items.map((item) => item.id),
     ).toEqual([sensitive.id]);

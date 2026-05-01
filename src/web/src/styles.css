@@ -723,10 +723,22 @@ dd {
 
 .trend-row {
   align-items: center;
+  background: transparent;
+  border: 1px solid transparent;
+  border-radius: 6px;
+  color: var(--pm-text);
   display: grid;
   gap: 10px;
   grid-template-columns: 72px minmax(0, 1fr) minmax(120px, auto);
   min-height: 36px;
+  padding: 4px;
+  text-align: left;
+  width: 100%;
+}
+
+.trend-row:hover {
+  background: var(--pm-accent-weak);
+  border-color: var(--pm-border);
 }
 
 .trend-row > span:first-child {

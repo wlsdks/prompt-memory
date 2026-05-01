@@ -546,12 +546,12 @@ function buildPromptFilters(
 
   if (options.receivedFrom) {
     clauses.push(`${prefix}received_at >= ?`);
-    values.push(options.receivedFrom);
+    values.push(normalizeDateLowerBound(options.receivedFrom));
   }
 
   if (options.receivedTo) {
     clauses.push(`${prefix}received_at <= ?`);
-    values.push(options.receivedTo);
+    values.push(normalizeDateUpperBound(options.receivedTo));
   }
 
   if (options.tag) {
@@ -626,6 +626,18 @@ function buildPromptFilters(
   }
 
   return { clauses, values };
+}
+
+function normalizeDateLowerBound(value: string): string {
+  return isDateOnly(value) ? `${value}T00:00:00.000Z` : value;
+}
+
+function normalizeDateUpperBound(value: string): string {
+  return isDateOnly(value) ? `${value}T23:59:59.999Z` : value;
+}
+
+function isDateOnly(value: string): boolean {
+  return /^\d{4}-\d{2}-\d{2}$/.test(value);
 }
 
 function qualityGapLikePattern(

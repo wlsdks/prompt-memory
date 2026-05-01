@@ -784,7 +784,15 @@ function DashboardView({
         />
       </section>
 
-      <TrendPanel daily={dashboard.trend.daily} />
+      <TrendPanel
+        daily={dashboard.trend.daily}
+        onSelectDay={(date) =>
+          onOpenFilteredList({
+            receivedFrom: date,
+            receivedTo: date,
+          })
+        }
+      />
 
       <section className="dashboard-grid">
         <DistributionPanel
@@ -945,7 +953,13 @@ function DashboardView({
   );
 }
 
-function TrendPanel({ daily }: { daily: QualityDashboard["trend"]["daily"] }) {
+function TrendPanel({
+  daily,
+  onSelectDay,
+}: {
+  daily: QualityDashboard["trend"]["daily"];
+  onSelectDay(date: string): void;
+}) {
   const maxPromptCount = Math.max(1, ...daily.map((item) => item.prompt_count));
 
   return (
@@ -959,7 +973,13 @@ function TrendPanel({ daily }: { daily: QualityDashboard["trend"]["daily"] }) {
           <p className="muted">트렌드 데이터가 없습니다.</p>
         )}
         {daily.map((day) => (
-          <div className="trend-row" key={day.date}>
+          <button
+            aria-label={`${day.date} 프롬프트 ${day.prompt_count}개 보기`}
+            className="trend-row"
+            key={day.date}
+            onClick={() => onSelectDay(day.date)}
+            type="button"
+          >
             <span>{formatTrendDate(day.date)}</span>
             <div className="trend-bars" aria-hidden="true">
               <span
@@ -982,7 +1002,7 @@ function TrendPanel({ daily }: { daily: QualityDashboard["trend"]["daily"] }) {
                 <small>{day.sensitive_count} redacted</small>
               )}
             </span>
-          </div>
+          </button>
         ))}
       </div>
     </section>
