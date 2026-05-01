@@ -26,12 +26,25 @@ export type RunClaudeCodeHookOptions = {
 export async function runClaudeCodeHook(
   options: RunClaudeCodeHookOptions,
 ): Promise<HookRunResult> {
+  return runPromptMemoryHook(options, "claude-code");
+}
+
+export async function runCodexHook(
+  options: RunClaudeCodeHookOptions,
+): Promise<HookRunResult> {
+  return runPromptMemoryHook(options, "codex");
+}
+
+async function runPromptMemoryHook(
+  options: RunClaudeCodeHookOptions,
+  tool: "claude-code" | "codex",
+): Promise<HookRunResult> {
   try {
     const payload = JSON.parse(options.stdin);
     const config = loadPromptMemoryConfig(options.dataDir);
     const hookAuth = loadHookAuth(options.dataDir);
     const postPayload = options.postPayload ?? postHookPayload;
-    const url = `http://${config.server.host}:${config.server.port}/api/v1/ingest/claude-code`;
+    const url = `http://${config.server.host}:${config.server.port}/api/v1/ingest/${tool}`;
 
     const result = await postPayload({
       url,

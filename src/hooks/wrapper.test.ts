@@ -5,7 +5,7 @@ import { randomUUID } from "node:crypto";
 import { afterEach, describe, expect, it } from "vitest";
 
 import { initializePromptMemory } from "../config/config.js";
-import { runClaudeCodeHook } from "./wrapper.js";
+import { runClaudeCodeHook, runCodexHook } from "./wrapper.js";
 
 const tempDirs: string[] = [];
 
@@ -57,6 +57,33 @@ describe("runClaudeCodeHook", () => {
     expect(result.exitCode).toBe(0);
     expect(result.stdout).toBe("");
     expect(result.stderr).toBe("");
+  });
+});
+
+describe("runCodexHook", () => {
+  it("posts Codex hook payload to the Codex ingest route", async () => {
+    const dataDir = createTempDir();
+    const init = initializePromptMemory({ dataDir });
+    const posted: unknown[] = [];
+
+    const result = await runCodexHook({
+      stdin: JSON.stringify({
+        hook_event_name: "UserPromptSubmit",
+        prompt: "codex prompt",
+      }),
+      dataDir,
+      postPayload: async (request) => {
+        posted.push(request);
+        return { ok: true, status: 200 };
+      },
+    });
+
+    expect(result).toEqual({ exitCode: 0, stdout: "", stderr: "" });
+    expect(posted[0]).toMatchObject({
+      ingestToken: init.hookAuth.ingest_token,
+      payload: { hook_event_name: "UserPromptSubmit", prompt: "codex prompt" },
+      url: `http://127.0.0.1:${init.config.server.port}/api/v1/ingest/codex`,
+    });
   });
 });
 

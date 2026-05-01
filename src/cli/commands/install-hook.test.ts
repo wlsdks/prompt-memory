@@ -6,7 +6,9 @@ import { afterEach, describe, expect, it } from "vitest";
 
 import { initializePromptMemory, loadHookAuth } from "../../config/config.js";
 import {
+  installCodexHook,
   installClaudeCodeHook,
+  uninstallCodexHook,
   uninstallClaudeCodeHook,
 } from "./install-hook.js";
 
@@ -82,6 +84,95 @@ describe("Claude Code hook install/uninstall", () => {
 
     expect(result.changed).toBe(true);
     expect(settings.hooks.UserPromptSubmit).toEqual([]);
+    expect(loadHookAuth(dataDir).ingest_token).not.toBe(oldToken);
+  });
+});
+
+describe("Codex hook install/uninstall", () => {
+  it("dry-run reports hooks.json and config.toml changes without writing", () => {
+    const dir = createTempDir();
+    const dataDir = join(dir, "data");
+    const hooksPath = join(dir, ".codex", "hooks.json");
+    const configPath = join(dir, ".codex", "config.toml");
+    initializePromptMemory({ dataDir });
+
+    const result = installCodexHook({
+      dataDir,
+      hooksPath,
+      configPath,
+      dryRun: true,
+    });
+
+    expect(result.changed).toBe(true);
+    expect(result.dryRun).toBe(true);
+    expect(result.nextHooks.hooks.UserPromptSubmit).toHaveLength(1);
+    expect(result.nextConfig).toContain("[features]");
+    expect(result.nextConfig).toContain("codex_hooks = true");
+    expect(() => readFileSync(hooksPath, "utf8")).toThrow();
+    expect(() => readFileSync(configPath, "utf8")).toThrow();
+  });
+
+  it("installs once, preserves unrelated hooks/config, and creates backups", () => {
+    const dir = createTempDir();
+    const dataDir = join(dir, "data");
+    const hooksPath = join(dir, ".codex", "hooks.json");
+    const configPath = join(dir, ".codex", "config.toml");
+    initializePromptMemory({ dataDir });
+    mkdirSync(join(dir, ".codex"), { recursive: true });
+    writeFileSync(
+      hooksPath,
+      `${JSON.stringify(
+        {
+          hooks: {
+            Stop: [{ hooks: [{ type: "command", command: "echo stop" }] }],
+          },
+        },
+        null,
+        2,
+      )}\n`,
+    );
+    writeFileSync(
+      configPath,
+      'model = "gpt-5.5"\n[features]\ncodex_hooks = false\n',
+    );
+
+    const first = installCodexHook({ dataDir, hooksPath, configPath });
+    const second = installCodexHook({ dataDir, hooksPath, configPath });
+    const hooks = JSON.parse(readFileSync(hooksPath, "utf8"));
+    const config = readFileSync(configPath, "utf8");
+
+    expect(first.changed).toBe(true);
+    expect(second.changed).toBe(false);
+    expect(first.hooksBackupPath).toBeTruthy();
+    expect(first.configBackupPath).toBeTruthy();
+    expect(hooks.hooks.Stop).toHaveLength(1);
+    expect(hooks.hooks.UserPromptSubmit).toHaveLength(1);
+    expect(hooks.hooks.UserPromptSubmit[0].hooks[0].command).toContain(
+      "prompt-memory hook codex",
+    );
+    expect(hooks.hooks.UserPromptSubmit[0].hooks[0].command).not.toContain(
+      loadHookAuth(dataDir).ingest_token,
+    );
+    expect(config).toContain('model = "gpt-5.5"');
+    expect(config).toContain("codex_hooks = true");
+  });
+
+  it("uninstalls hook and revokes the previous ingest token", () => {
+    const dir = createTempDir();
+    const dataDir = join(dir, "data");
+    const hooksPath = join(dir, ".codex", "hooks.json");
+    const configPath = join(dir, ".codex", "config.toml");
+    initializePromptMemory({ dataDir });
+    const oldToken = loadHookAuth(dataDir).ingest_token;
+    installCodexHook({ dataDir, hooksPath, configPath });
+
+    const result = uninstallCodexHook({ dataDir, hooksPath, configPath });
+    const hooks = JSON.parse(readFileSync(hooksPath, "utf8"));
+    const config = readFileSync(configPath, "utf8");
+
+    expect(result.changed).toBe(true);
+    expect(hooks.hooks.UserPromptSubmit).toEqual([]);
+    expect(config).toContain("codex_hooks = true");
     expect(loadHookAuth(dataDir).ingest_token).not.toBe(oldToken);
   });
 });

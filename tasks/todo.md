@@ -63,3 +63,21 @@
 - `install-hook codex`, `uninstall-hook codex`, Codex doctor는 config merge/feature flag 진단을 포함하므로 다음 커밋에서 별도 처리한다.
 - 공식 Codex hooks 문서 기준 `UserPromptSubmit`은 공통 stdin JSON 필드와 `turn_id`, `prompt`를 받으며, matcher는 현재 무시된다.
 - `pnpm test`, `pnpm lint`, `pnpm build`, `pnpm pack:dry-run`, `git diff --check`를 통과했다.
+
+## P7 Codex Beta - Hook Install/Doctor
+
+- [x] Codex hooks.json/config.toml 설치 테스트 작성
+- [x] Codex hook wrapper route 테스트 작성
+- [x] Codex doctor feature flag/hook/중복 탐지 테스트 작성
+- [x] `install-hook codex` / `uninstall-hook codex` 구현
+- [x] `prompt-memory hook codex` 구현
+- [x] `doctor codex` 구현
+- [x] targeted/full 검증 실행
+- [x] 커밋 및 푸시
+
+### P7 Hook Install/Doctor 범위
+
+- Codex 설치는 공식 hooks 문서 기준 user-level `~/.codex/hooks.json`과 `~/.codex/config.toml`을 기본 대상으로 한다.
+- `config.toml`에는 `[features].codex_hooks = true`를 구조적으로 보강하고, uninstall 시에는 feature flag를 제거하지 않는다.
+- doctor는 user/project hook source 중복 설치를 경고 상태로 본다.
+- `pnpm test`, `pnpm lint`, `pnpm build`, `pnpm pack:dry-run`, `git diff --check`를 통과했다.
