@@ -1,5 +1,23 @@
 # 작업 계획
 
+## 2026-05-02 One-command Setup UX
+
+- [x] `setup`/service 설계 범위 확정
+- [x] 실패 테스트 작성: setup dry-run, hook install, macOS service plist
+- [x] `prompt-memory setup` 구현
+- [x] `prompt-memory service install/start/status/stop` 구현
+- [x] README에 명시적 setup 필요 이유와 간단 사용법 추가
+- [x] 검증 명령 실행
+- [x] 커밋 및 푸시
+
+### 점검 결과
+
+- `prompt-memory setup`은 data dir 초기화, Claude Code/Codex hook 자동 감지 설치, macOS LaunchAgent 서버 등록을 한 번에 수행한다.
+- package install만으로 사용자 설정 파일이나 로그인 서비스를 바꾸지 않는 이유를 README에 명시했다. `setup`은 사용자가 로컬 설정 변경을 승인하는 명시적 단계다.
+- `prompt-memory setup --dry-run`으로 어떤 설정이 바뀔지 먼저 확인할 수 있고, `--no-service`로 hook만 설치한 뒤 서버는 수동 실행할 수 있다.
+- `prompt-memory service install/status/start/stop`을 추가했다. 현재 자동 서비스 등록은 macOS LaunchAgent만 지원하고, 다른 OS에서는 unsupported 결과를 돌려준다.
+- 검증 명령: `pnpm format`, `pnpm test`, `pnpm lint`, `pnpm build`, `pnpm pack:dry-run`, `pnpm smoke:release`, `git diff --check` 통과. Node 20.20.0에서 실행되어 `engines.node >=22 <25` 경고는 계속 발생한다.
+
 ## 2026-05-02 Hook 재점검 및 동작 설명
 
 - [x] 현재 서버/doctor 상태 재확인

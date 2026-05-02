@@ -42,6 +42,48 @@ pnpm install
 pnpm build
 ```
 
+Run the guided local setup:
+
+```sh
+pnpm prompt-memory setup
+```
+
+`setup` is intentionally explicit. Installing an npm/pnpm package should not
+silently edit Claude Code or Codex settings, install a login service, or start a
+local background server. `prompt-memory setup` is the consent step that prepares
+the local archive, connects supported tools that are installed on your machine,
+and configures the local server startup where supported.
+
+The setup command:
+
+- initializes the local data directory
+- detects `claude` and `codex`
+- installs Claude Code and/or Codex hooks for detected tools
+- enables Codex hooks when Codex is detected
+- installs and starts a macOS LaunchAgent for the local server when supported
+- prints next steps and paths that were changed
+
+Preview setup without writing files:
+
+```sh
+pnpm prompt-memory setup --dry-run
+```
+
+If you do not want a background service, use:
+
+```sh
+pnpm prompt-memory setup --no-service
+pnpm prompt-memory server
+```
+
+Open the web UI:
+
+```text
+http://127.0.0.1:17373
+```
+
+You can still run each setup step manually.
+
 Initialize the local data directory:
 
 ```sh
@@ -73,6 +115,16 @@ http://127.0.0.1:17373
 ```
 
 Open that URL in a browser to use the web UI.
+
+On macOS, `setup` can install a LaunchAgent so the server starts automatically
+at login. You can also manage it directly:
+
+```sh
+pnpm prompt-memory service install
+pnpm prompt-memory service status
+pnpm prompt-memory service start
+pnpm prompt-memory service stop
+```
 
 ## Connect Claude Code
 

@@ -9,6 +9,8 @@ import { registerInstallHookCommands } from "./commands/install-hook.js";
 import { registerInitCommand } from "./commands/init.js";
 import { registerPromptCommands } from "./commands/prompts.js";
 import { registerServerCommand } from "./commands/server.js";
+import { registerServiceCommand } from "./commands/service.js";
+import { registerSetupCommand } from "./commands/setup.js";
 import { VERSION } from "../shared/version.js";
 
 export function createProgram(): Command {
@@ -22,8 +24,10 @@ export function createProgram(): Command {
   registerInitCommand(program);
   registerHookCommand(program);
   registerInstallHookCommands(program);
+  registerSetupCommand(program);
   registerDoctorCommand(program);
   registerServerCommand(program);
+  registerServiceCommand(program);
   registerPromptCommands(program);
 
   return program;

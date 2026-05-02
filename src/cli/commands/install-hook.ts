@@ -162,7 +162,9 @@ export function registerInstallHookCommands(program: Command): void {
 export function installClaudeCodeHook(
   options: HookInstallOptions = {},
 ): HookInstallResult {
-  initializePromptMemory({ dataDir: options.dataDir });
+  if (!options.dryRun) {
+    initializePromptMemory({ dataDir: options.dataDir });
+  }
 
   const settingsPath = options.settingsPath ?? defaultClaudeSettingsPath();
   const current = readSettings(settingsPath);
@@ -232,7 +234,9 @@ export function uninstallClaudeCodeHook(
 export function installCodexHook(
   options: HookInstallOptions = {},
 ): CodexHookInstallResult {
-  initializePromptMemory({ dataDir: options.dataDir });
+  if (!options.dryRun) {
+    initializePromptMemory({ dataDir: options.dataDir });
+  }
 
   const hooksPath = options.hooksPath ?? defaultCodexHooksPath();
   const configPath = options.configPath ?? defaultCodexConfigPath();
