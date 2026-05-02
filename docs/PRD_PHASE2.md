@@ -12,7 +12,7 @@ Phase 2의 목적은 `prompt-memory`를 "안전하게 저장하고 찾는 도구
 
 ## 2. 현재 기준선
 
-다음 기능은 Phase 2 계획의 출발점으로 이미 구현된 것으로 본다.
+다음 기능은 Phase 2 계획의 출발점으로 현재 브랜치에 이미 구현된 것으로 본다. `PRD.md`는 초기 MVP 경계를 설명하는 기준 문서이므로, 이 목록이 `PRD.md`의 MVP 제외 범위보다 넓을 수 있다. Phase 2 구현 판단은 이 현재 기준선을 우선한다.
 
 - Claude Code/Codex hook 수집, fail-open wrapper, hook install/uninstall/doctor
 - guided `setup`, macOS service, Claude statusline
@@ -49,13 +49,15 @@ Phase 2 완료 조건은 다음 core 기능으로 제한한다.
 
 External LLM Analysis는 Phase 2 core 완료 조건이 아니다. Project Control Plane, import, local improvement workspace, anonymized export가 안정화된 뒤 gated beta로만 제공한다. Phase 2 core 구현 중에는 external analysis route stub이나 network code path를 만들지 않는다. 단, project policy와 audit schema에는 향후 external analysis opt-in을 수용할 필드를 미리 정의할 수 있다.
 
+이 문서의 External LLM Analysis 요구사항은 gated beta appendix로 취급한다. Phase 2 core migration, API, UI, smoke gate에는 external analysis 실행 테이블, route, provider 설정, network client를 포함하지 않는다.
+
 ## 5. 공통 보안 및 API 요구사항
 
 - 모든 Phase 2 read API는 app access를 요구한다.
 - 모든 import/export/external-analysis/project-policy mutation과 preview job 생성 API는 app access와 CSRF를 요구한다.
 - ingest token은 Phase 2 관리 API에서 절대 허용하지 않는다.
 - problem detail, audit event, browser response에는 raw prompt, raw secret, provider API key, token, import payload 원문을 포함하지 않는다.
-- browser API는 raw path를 기본 반환하지 않는다. raw path가 필요한 경우 CLI 또는 explicit debug/detail action으로 분리한다.
+- browser API는 raw path를 기본 반환하지 않는다. raw path가 필요한 경우 CLI 또는 explicit debug/detail action으로 분리한다. 브라우저 preview에는 source label, basename, home-relative masked path, path hash만 노출한다.
 - provider response, rewrite draft, instruction candidate, imported transcript text는 모두 untrusted user content로 취급한다.
 - UI 렌더링은 기존 Markdown sanitizer와 CSP 경계를 재사용하고 raw HTML, external image, `file:`, `data:`, custom scheme, `javascript:` URL을 차단한다.
 - `AGENTS.md`와 `CLAUDE.md` 후보는 copy-only를 기본으로 하며, 파일 쓰기는 별도 명시 확인이 있을 때만 허용한다.
@@ -70,7 +72,10 @@ Project identity:
 
 - Project identity는 우선 normalized `project_root`를 기준으로 한다.
 - `project_root`가 없으면 normalized `cwd` bucket을 read-only inferred project로 표시한다.
+- `project_key`는 normalized project root 또는 cwd bucket에 설치별 salt를 더해 만든 stable hash다. browser API는 기본적으로 `project_key`와 alias/label만 노출하고 raw path는 노출하지 않는다.
+- normalized path는 symlink resolution, case normalization이 가능한 플랫폼에서는 동일 규칙을 적용한다. resolution 실패 시 inferred read-only project로 분류하고 policy mutation을 거부한다.
 - 사용자가 alias를 지정해도 기존 Markdown frontmatter와 원본 path 값은 변경하지 않는다.
+- alias는 같은 install 안에서 unique해야 한다. 충돌 시 기존 alias를 유지하고 validation error를 raw path 없이 반환한다.
 - Projects API는 기본적으로 `project_id`, `label`, `alias`, `path_kind`, count/rate만 반환한다.
 - raw `cwd`, `project_root`, `transcript_path`는 browser project list에 기본 노출하지 않는다.
 - Settings API는 global defaults와 secret-free diagnostics만 담당한다. Project policy 변경은 Projects API로 분리한다.
@@ -86,6 +91,7 @@ Project identity:
 - 모든 policy 변경은 raw prompt 없이 audit event로 저장한다.
 - policy에는 version을 둔다. preview/import/export/external-analysis job은 생성 시점의 policy version을 기록한다.
 - policy lookup은 별도 read port로 허용한다. capture-disabled 프로젝트는 policy lookup 이후 prompt persistence storage를 호출하지 않아야 한다.
+- policy lookup 실패 시 hook ingest는 fail-open 원칙에 따라 AI 도구 실행은 막지 않되, prompt persistence storage를 호출하지 않고 raw prompt 없는 diagnostic/audit code만 남긴다.
 
 수용 기준:
 
@@ -105,6 +111,7 @@ Project identity:
 - import는 기본 비활성화이며 사용자가 파일, 기간, 프로젝트를 명시해야 한다.
 - `prompt-memory import --dry-run`을 먼저 제공한다.
 - dry-run은 예상 수집 건수, skipped count, parse errors, sensitive summary, source type, 가져온 뒤 생길 dashboard 변화 preview를 표시한다.
+- dry-run은 prompt Markdown, prompt index, FTS를 변경하지 않는다. 단, resume과 감사 목적의 raw-free `import_jobs` summary는 저장할 수 있다.
 - assistant response, tool output, command output, 파일 내용은 기본 저장 대상에서 제외한다.
 - import source는 `official-hook`, `claude-transcript-best-effort`, `codex-transcript-best-effort`, `manual-jsonl`처럼 구분한다.
 - 한 record 실패가 전체 import를 중단하지 않는다.
@@ -117,13 +124,13 @@ Project identity:
 - parser는 source별 allowlist parser만 사용한다.
 - 알 수 없는 event type, assistant/tool role, command output, file content, diff blob, attachment/content array는 저장하지 않고 `import_errors`에 raw content 없이 code/count만 기록한다.
 - import job 상태는 `pending`, `dry_run_completed`, `running`, `completed`, `failed`, `canceled` 중 하나로 기록한다.
-- import idempotency key는 `source_type + source_path_hash + record_offset/session_id/turn_id + redacted_prompt_hash` 기반으로 정의한다.
+- import idempotency key는 source별 stable event id가 있으면 이를 우선 사용한다. 없으면 `source_type + source_path_hash + parser_version + record_offset/session_id/turn_id + stored_prompt_hash` 기반으로 정의한다.
 - import 완료 후 사용자는 job detail에서 imported/skipped/error/sensitive summary를 확인하고, "이번 import 결과만 보기"로 list와 dashboard를 필터링할 수 있어야 한다.
 - imported prompt는 source badge와 best-effort 신뢰도 표시를 가져야 한다.
 
 수용 기준:
 
-- dry-run은 Markdown/SQLite를 변경하지 않는다.
+- dry-run은 prompt Markdown, prompt index, FTS를 변경하지 않는다. raw-free job summary 저장은 허용한다.
 - import 실행은 redaction 이후 저장하고 raw secret을 Markdown/SQLite/FTS/analysis에 남기지 않는다.
 - malformed JSONL record는 import error로 남고 기존 데이터는 유지된다.
 - import된 prompt는 list/search/detail/dashboard에 기존 hook prompt와 동일하게 표시된다.
@@ -163,6 +170,8 @@ Project identity:
 - raw export는 browser API/UI에서 제공하지 않는다.
 - raw export는 hidden/advanced CLI에서만 제공하고 `--raw --i-understand-local-secrets-may-be-exported --output <path>` 같은 명시 플래그를 요구한다.
 - export preview는 포함될 field, 제외될 field, prompt count, sensitive count를 보여준다.
+- export preview는 `export_jobs`에 raw-free snapshot을 저장하고 `job_id`, 대상 prompt id hash 목록, policy version, redaction version, preset, count, expires_at을 기록한다.
+- export 실행 API는 `job_id`만 받는다. preview 이후 prompt, deletion state, policy, redaction version, preset이 바뀌면 기존 job은 invalid 처리하고 다시 preview를 요구한다.
 - 기본 export는 masked prompt, tags, checklist summary, tool, coarse date, project alias만 포함한다.
 - `cwd`, `project_root`, `transcript_path`, raw metadata는 기본 제외한다.
 - export file에는 app token, ingest token, web session secret, upstream session token이 포함되지 않는다.
@@ -176,11 +185,11 @@ Project identity:
 수용 기준:
 
 - anonymized export fixture에서 raw path, raw secret, token 값이 검출되지 않는다.
-- export preview와 실제 export count가 일치한다.
+- 유효한 export job에서는 preview와 실제 export count가 일치한다.
 - delete된 prompt는 export 대상에 포함되지 않는다.
 - raw export는 project/prompt policy, deleted prompts, excluded-from-export 플래그를 적용하고 raw content 없는 audit event를 남긴다.
 
-### 6.5 External LLM Analysis Gated Beta
+### 6.5 External LLM Analysis Gated Beta Appendix
 
 외부 LLM 분석은 project policy, prompt policy, redaction preview, 감사 로그가 준비된 뒤에만 구현한다.
 
@@ -223,7 +232,7 @@ Phase 2 core에서 제외한다.
 
 ## 8. 데이터 모델 후보
 
-Phase 2에서 추가 또는 상세화할 테이블:
+Phase 2 core에서 추가 또는 상세화할 테이블:
 
 - `project_policies`
 - `policy_audit_events`
@@ -232,6 +241,9 @@ Phase 2에서 추가 또는 상세화할 테이블:
 - `import_records`
 - `prompt_improvement_drafts`
 - `export_jobs`
+
+Gated beta에서만 추가할 테이블:
+
 - `external_analysis_jobs`
 - `external_analysis_audit_events`
 
@@ -270,6 +282,18 @@ Phase 2에서 추가 또는 상세화할 테이블:
 - `completed_at`
 - `project_policy_version`
 - `summary_json`
+
+`export_jobs` 최소 필드:
+
+- `id`
+- `preset`
+- `status`
+- `prompt_id_hashes_json`
+- `project_policy_versions_json`
+- `redaction_version`
+- `counts_json`
+- `expires_at`
+- `created_at`
 
 `import_records` 최소 필드:
 
@@ -328,6 +352,8 @@ Gated beta API 후보:
 6. External LLM analysis gated beta preview
 7. External LLM analysis gated beta execution
 
+1-5번이 Phase 2 core 완료 범위다. 6-7번은 별도 gated beta 착수 조건을 통과한 뒤 진행한다.
+
 ## 12. 검증 게이트
 
 기능 변경 후 기본 게이트:
@@ -385,6 +411,7 @@ pnpm prompt-memory server -- --data-dir <temp-data-dir>
 - external opt-in 실행
 - import/export candidate filtering
 - external-analysis route stub 또는 network code path
+- external analysis migration/table
 
 필수 테스트:
 
@@ -393,3 +420,4 @@ pnpm prompt-memory server -- --data-dir <temp-data-dir>
 - capture-disabled project ingest는 prompt persistence storage를 호출하지 않는다.
 - policy audit event는 raw prompt/path/secret 없이 변경 field와 policy hash만 기록한다.
 - `rebuild-index` 후 project profile은 복구되지만 project policies/audit은 보존된다.
+- policy lookup 실패 시 hook ingest는 fail-open 하되 prompt persistence storage를 호출하지 않는다.

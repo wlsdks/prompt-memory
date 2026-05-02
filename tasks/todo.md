@@ -1,5 +1,27 @@
 # 작업 계획
 
+## 2026-05-02 Phase 2 PRD 정리 및 Project Control Plane
+
+- [x] Phase 2 PRD의 MVP/현재 기준선 충돌 정리
+- [x] import dry-run 저장 범위와 export preview/job 일관성 보정
+- [x] project identity, raw path 노출, policy lookup 실패 정책 명시
+- [x] external analysis를 core 범위에서 분리
+- [x] 문서 변경 검증
+- [x] 문서 커밋 및 푸시
+- [ ] Project Control Plane 최소 구현 실패 테스트 작성
+- [ ] project policy storage/API/ingest capture-disabled 구현
+- [ ] UI project list와 capture-disabled toggle 구현
+- [ ] 서버/UI 브라우저 검증
+- [ ] 전체 검증, 커밋 및 푸시
+
+### 첫 구현 범위
+
+- `project_policies`, `policy_audit_events`를 추가한다.
+- `GET /api/v1/projects`, `PATCH /api/v1/projects/:id/policy`를 추가한다.
+- 첫 policy 적용은 ingest의 `capture_disabled`만 포함한다.
+- UI는 project list와 capture-disabled toggle만 제공한다.
+- import/export/external analysis 후보 산정, retention 실행, external network path는 제외한다.
+
 ## 2026-05-02 README Marketplace Install Flow
 
 - [x] Claude Code/Codex 외부 사용자 설치 순서 정리
