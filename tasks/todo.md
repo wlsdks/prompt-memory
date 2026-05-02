@@ -6,7 +6,7 @@
 - [x] MCP `tools/call` 응답에 `structuredContent`를 추가하고 테스트로 고정
 - [x] MCP tool definition에 read-only/local-only risk hints를 추가하고 웹 카탈로그에 표시
 - [x] 한국어/영어 UI 문구, browser E2E, release gate 검증
-- [ ] 커밋, 푸시, CI 확인
+- [x] 커밋, 푸시, CI 확인
 
 ### 판단 기준
 
