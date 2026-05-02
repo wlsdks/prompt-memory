@@ -83,6 +83,7 @@ import {
 } from "./measurement.js";
 import {
   appendPracticeQuickFix,
+  applyPracticeQuickFixes,
   createPracticeQuickFixes,
   type PracticeQuickFix,
 } from "./practice-builder.js";
@@ -1738,6 +1739,20 @@ function PracticeView({
     () => createPracticeQuickFixes(analysis),
     [analysis],
   );
+  const projectedDraft = useMemo(
+    () => applyPracticeQuickFixes(draft, quickFixes),
+    [draft, quickFixes],
+  );
+  const projectedAnalysis = useMemo(
+    () =>
+      analyzePrompt({
+        prompt: projectedDraft,
+        createdAt: new Date().toISOString(),
+      }),
+    [projectedDraft],
+  );
+  const projectedScore = projectedAnalysis.quality_score;
+  const projectedDelta = projectedScore.value - score.value;
   const practiceSummary = useMemo(
     () => summarizePracticeHistory(practiceHistory),
     [practiceHistory],
@@ -1772,10 +1787,7 @@ function PracticeView({
 
   function applyAllQuickFixes(): void {
     setDraft((currentDraft) =>
-      quickFixes.reduce(
-        (nextDraft, fix) => appendPracticeQuickFix(nextDraft, fix),
-        currentDraft,
-      ),
+      applyPracticeQuickFixes(currentDraft, quickFixes),
     );
   }
 
@@ -1871,29 +1883,44 @@ function PracticeView({
         {quickFixes.length === 0 ? (
           <p className="muted">This draft covers the core prompt habits.</p>
         ) : (
-          <div className="practice-fix-list">
-            {quickFixes.map((fix) => {
-              const item = missingItems.find(
-                (checkItem) => checkItem.key === fix.key,
-              );
+          <>
+            <div className="practice-projection">
+              <span className={`score-value ${projectedScore.band}`}>
+                {projectedScore.value}
+              </span>
+              <div>
+                <strong>Projected after fixes</strong>
+                <small>
+                  {projectedDelta > 0
+                    ? `+${projectedDelta} points if all sections are added`
+                    : "No score change from available fixes"}
+                </small>
+              </div>
+            </div>
+            <div className="practice-fix-list">
+              {quickFixes.map((fix) => {
+                const item = missingItems.find(
+                  (checkItem) => checkItem.key === fix.key,
+                );
 
-              return (
-                <div className="practice-fix-row" key={fix.key}>
-                  <div>
-                    <strong>{fix.label}</strong>
-                    <p>{item?.suggestion ?? item?.reason ?? fix.snippet}</p>
+                return (
+                  <div className="practice-fix-row" key={fix.key}>
+                    <div>
+                      <strong>{fix.label}</strong>
+                      <p>{item?.suggestion ?? item?.reason ?? fix.snippet}</p>
+                    </div>
+                    <button
+                      className="practice-fix-add"
+                      onClick={() => applyQuickFix(fix)}
+                      type="button"
+                    >
+                      <Plus size={13} /> {fix.actionLabel}
+                    </button>
                   </div>
-                  <button
-                    className="practice-fix-add"
-                    onClick={() => applyQuickFix(fix)}
-                    type="button"
-                  >
-                    <Plus size={13} /> {fix.actionLabel}
-                  </button>
-                </div>
-              );
-            })}
-          </div>
+                );
+              })}
+            </div>
+          </>
         )}
       </section>
 

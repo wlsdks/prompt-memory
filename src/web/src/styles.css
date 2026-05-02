@@ -2154,6 +2154,38 @@ dd {
   white-space: nowrap;
 }
 
+.practice-projection {
+  align-items: center;
+  background: var(--color-overlay-1);
+  border: 1px solid rgba(130, 143, 255, 0.34);
+  border-radius: 8px;
+  display: grid;
+  gap: 12px;
+  grid-template-columns: auto minmax(0, 1fr);
+  padding: 10px;
+}
+
+.practice-projection .score-value {
+  font-size: 34px;
+  line-height: 38px;
+}
+
+.practice-projection strong {
+  color: var(--color-text-primary);
+  display: block;
+  font-size: 13px;
+  line-height: 18px;
+}
+
+.practice-projection small {
+  color: var(--color-indigo-hover);
+  display: block;
+  font-size: 12px;
+  line-height: 18px;
+  margin-top: 2px;
+  overflow-wrap: anywhere;
+}
+
 .practice-check-row {
   align-items: start;
   background: var(--color-overlay-1);
@@ -3475,7 +3507,8 @@ dd {
   }
 
   .practice-fix-header,
-  .practice-fix-row {
+  .practice-fix-row,
+  .practice-projection {
     display: grid;
     grid-template-columns: 1fr;
   }

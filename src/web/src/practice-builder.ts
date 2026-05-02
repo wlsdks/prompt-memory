@@ -93,6 +93,16 @@ export function appendPracticeQuickFix(
   return `${trimmedDraft}\n${fix.snippet}`;
 }
 
+export function applyPracticeQuickFixes(
+  draft: string,
+  fixes: PracticeQuickFix[],
+): string {
+  return fixes.reduce(
+    (nextDraft, fix) => appendPracticeQuickFix(nextDraft, fix),
+    draft,
+  );
+}
+
 function hasSection(draft: string, fix: PracticeQuickFix): boolean {
   const section = sectionForFix(fix);
   if (!section) {

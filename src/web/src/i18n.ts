@@ -158,6 +158,12 @@ function translateDynamic(value: string): string | undefined {
   if (/^[+-]\d+ points$/.test(value)) {
     return value.replace(/^([+-]\d+) points$/, "$1점");
   }
+  if (/^\+\d+ points if all sections are added$/.test(value)) {
+    return value.replace(
+      /^\+(\d+) points if all sections are added$/,
+      "모든 섹션 추가 시 +$1점",
+    );
+  }
   if (/^\d+ prompts \/ \d+%$/.test(value)) {
     return value.replace(/^(\d+) prompts \/ (\d+)%$/, "$1개 프롬프트 / $2%");
   }
@@ -707,6 +713,9 @@ const UI_TRANSLATIONS: Record<string, string> = {
   "Add Verification": "검증 추가",
   "Add note": "메모 추가",
   "Improve prompt": "프롬프트 개선",
+  "Projected after fixes": "보완 후 예상 점수",
+  "No score change from available fixes":
+    "현재 quick fix로는 점수 변화가 없습니다",
   "This draft covers the core prompt habits.":
     "이 초안은 핵심 프롬프트 습관을 충족합니다.",
   "Prompts to review": "리뷰할 프롬프트",

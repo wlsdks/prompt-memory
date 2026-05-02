@@ -240,6 +240,16 @@ try {
     ["Add all missing sections", "부족한 섹션 모두 추가"],
     "Practice should offer an all-fixes builder action.",
   );
+  await assertTextAny(
+    page,
+    ["Projected after fixes", "보완 후 예상 점수"],
+    "Practice should show the projected score before applying fixes.",
+  );
+  await assertTextAny(
+    page,
+    ["points if all sections are added", "모든 섹션 추가 시"],
+    "Practice should show the projected score delta.",
+  );
   await page
     .getByRole("button", { name: /Add Verification|검증 추가/ })
     .click();

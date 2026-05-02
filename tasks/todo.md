@@ -1,5 +1,18 @@
 # 작업 계획
 
+## 2026-05-03 Practice Projected Score Preview
+
+- [x] quick fix 전체 적용 draft preview 모델을 TDD로 추가
+- [x] Practice UI에서 fixes 적용 후 예상 점수와 delta를 표시
+- [x] browser E2E와 desktop/mobile screenshot으로 흐름 확인
+- [x] release gate 검증, 커밋, 푸시, CI 확인
+
+### 판단 기준
+
+- 사용자는 quick fix를 적용하기 전에 예상 점수 개선 폭을 볼 수 있어야 한다.
+- projected preview는 브라우저 메모리에서만 계산하고 prompt draft text, raw path, secret을 저장하지 않는다.
+- 새 화면, 새 DB, 새 MCP tool 없이 Practice builder의 확신과 행동성을 강화한다.
+
 ## 2026-05-03 Practice Quick Fix Builder
 
 - [x] Practice quick-fix builder 모델을 TDD로 추가

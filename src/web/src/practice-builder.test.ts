@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 
 import {
   appendPracticeQuickFix,
+  applyPracticeQuickFixes,
   createPracticeQuickFixes,
 } from "./practice-builder.js";
 import type { PracticePromptAnalysis } from "./practice-history.js";
@@ -88,6 +89,47 @@ describe("practice quick-fix builder", () => {
     expect(appendPracticeQuickFix("Goal: fix it\nScope: only UI", fix)).toBe(
       "Goal: fix it\nScope: only UI",
     );
+  });
+
+  it("builds a projected draft by applying every missing section once", () => {
+    const fixes = createPracticeQuickFixes(
+      analysisFixture({
+        summary:
+          "Fix /Users/example/private-project with token sk-proj-1234567890abcdef.",
+        checklist: [
+          {
+            key: "goal_clarity",
+            label: "Goal clarity",
+            status: "missing",
+          },
+          {
+            key: "scope_limits",
+            label: "Scope limits",
+            status: "weak",
+          },
+          {
+            key: "verification_criteria",
+            label: "Verification criteria",
+            status: "missing",
+          },
+        ],
+      }),
+    );
+
+    const projectedDraft = applyPracticeQuickFixes("Context: existing", fixes);
+
+    expect(projectedDraft).toContain(
+      "Goal: state the exact target and expected behavior.",
+    );
+    expect(projectedDraft).toContain(
+      "Scope: list allowed changes and explicit non-goals.",
+    );
+    expect(projectedDraft).toContain(
+      "Verification: name commands or acceptance checks.",
+    );
+    expect(projectedDraft.match(/^Context:/gm)).toHaveLength(1);
+    expect(projectedDraft).not.toContain("/Users/example");
+    expect(projectedDraft).not.toContain("sk-proj");
   });
 });
 
