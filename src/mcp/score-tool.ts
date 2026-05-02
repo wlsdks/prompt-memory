@@ -124,10 +124,21 @@ export type GetPromptMemoryStatusToolResult = {
   };
 };
 
+const LOCAL_READ_ONLY_TOOL_ANNOTATIONS = {
+  destructiveHint: false,
+  idempotentHint: true,
+  openWorldHint: false,
+  readOnlyHint: true,
+} as const;
+
 export const GET_PROMPT_MEMORY_STATUS_TOOL_DEFINITION = {
   name: "get_prompt_memory_status",
   description:
     "Check whether the local prompt-memory archive is initialized and has captured prompts before calling scoring tools. Use this first when the user asks if prompt-memory is working, whether Claude Code/Codex prompts are being captured, or which prompt-memory MCP tool to call next. Returns local readiness, safe counts, latest prompt metadata, available tool names, and next actions. It never returns prompt bodies, raw absolute paths, secrets, or external LLM results.",
+  annotations: {
+    ...LOCAL_READ_ONLY_TOOL_ANNOTATIONS,
+    title: "Prompt-memory status preflight",
+  },
   inputSchema: {
     type: "object",
     properties: {
@@ -145,6 +156,10 @@ export const SCORE_PROMPT_TOOL_DEFINITION = {
   name: "score_prompt",
   description:
     "Score a coding prompt with prompt-memory's local deterministic 0-100 Prompt Quality Score. Use this when the user asks Claude Code or Codex to evaluate the current request, a pasted prompt, a stored prompt id, or the latest captured prompt. The tool does not call external LLMs, does not store direct prompt input, and does not return prompt bodies.",
+  annotations: {
+    ...LOCAL_READ_ONLY_TOOL_ANNOTATIONS,
+    title: "Prompt quality score",
+  },
   inputSchema: {
     type: "object",
     properties: {
@@ -177,6 +192,10 @@ export const SCORE_PROMPT_ARCHIVE_TOOL_DEFINITION = {
   name: "score_prompt_archive",
   description:
     "Score the local prompt-memory archive across many stored Claude Code or Codex prompts. Use this when the user asks to evaluate accumulated prompt habits, score all recent prompts, find low scoring prompts, or summarize recurring prompt quality gaps. The result is a local-only aggregate report and low-score metadata; it does not return prompt bodies, raw paths, or call external LLMs.",
+  annotations: {
+    ...LOCAL_READ_ONLY_TOOL_ANNOTATIONS,
+    title: "Archive prompt habit score",
+  },
   inputSchema: {
     type: "object",
     properties: {
@@ -223,6 +242,10 @@ export const REVIEW_PROJECT_INSTRUCTIONS_TOOL_DEFINITION = {
   name: "review_project_instructions",
   description:
     "Review a local project's Claude Code/Codex instruction files such as AGENTS.md and CLAUDE.md using prompt-memory's deterministic local rubric. Use this when the user asks whether project rules are good enough, wants agent instructions scored, or wants suggestions for improving coding-agent behavior. With no project_id, set latest=true or omit project_id to review the most recently captured project. The tool can rescan local instruction files, but returns only file metadata, checklist scores, and suggestions; it never returns file bodies, raw absolute paths, or calls external LLMs.",
+  annotations: {
+    ...LOCAL_READ_ONLY_TOOL_ANNOTATIONS,
+    title: "Project instruction review",
+  },
   inputSchema: {
     type: "object",
     properties: {

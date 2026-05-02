@@ -1,5 +1,19 @@
 # 작업 계획
 
+## 2026-05-03 MCP Structured Tool Contract Polish
+
+- [x] MCP tool contract가 에이전트가 안정적으로 쓰기에 충분한지 재평가
+- [x] MCP `tools/call` 응답에 `structuredContent`를 추가하고 테스트로 고정
+- [x] MCP tool definition에 read-only/local-only risk hints를 추가하고 웹 카탈로그에 표시
+- [x] 한국어/영어 UI 문구, browser E2E, release gate 검증
+- [ ] 커밋, 푸시, CI 확인
+
+### 판단 기준
+
+- MCP tool은 raw prompt body, raw absolute path, secret을 반환하지 않는다.
+- 에이전트가 tool 선택 시 read-only/local-only/structured JSON 여부를 바로 알 수 있어야 한다.
+- 웹 MCP 화면은 설명용 문서가 아니라 실제 Claude Code/Codex 호출 전 참고하는 작업 화면이어야 한다.
+
 ## 2026-05-03 MCP Live Readiness UI
 
 - [x] MCP 화면이 실제 사용 준비 상태를 판단하는 데 충분한지 재평가

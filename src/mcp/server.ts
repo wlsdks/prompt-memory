@@ -183,6 +183,7 @@ function handleToolCall(
         text: JSON.stringify(result, null, 2),
       },
     ],
+    structuredContent: result,
     isError,
   });
 }

@@ -464,6 +464,10 @@ The MCP server exposes four tools:
   instruction files for the latest or selected project and return score,
   checklist status, and improvement hints.
 
+All tools are read-only, idempotent, local-only, and return structured JSON
+metadata plus a text JSON fallback. They do not return prompt bodies, raw
+absolute paths, secrets, or external LLM results.
+
 Practical agent prompts:
 
 ```text

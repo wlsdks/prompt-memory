@@ -365,6 +365,10 @@ MCP server는 네 개의 tool을 제공합니다.
 - `score_prompt_archive`: 최근 저장 prompt 전체를 대상으로 누적 prompt 습관을 점수화하고, 평균 점수, 반복 부족 항목, 낮은 점수 prompt id를 반환합니다.
 - `review_project_instructions`: 최신 또는 선택한 프로젝트의 `AGENTS.md` / `CLAUDE.md` 규칙 파일을 리뷰하고 점수, checklist 상태, 개선 힌트를 반환합니다.
 
+모든 tool은 read-only, idempotent, local-only로 선언되며 구조화 JSON
+metadata와 text JSON fallback을 함께 반환합니다. prompt 본문, raw absolute
+path, secret, 외부 LLM 결과는 반환하지 않습니다.
+
 Agent에게 이렇게 요청할 수 있습니다.
 
 ```text

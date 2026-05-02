@@ -582,6 +582,10 @@ const UI_TRANSLATIONS: Record<string, string> = {
   "Review AGENTS.md / CLAUDE.md": "AGENTS.md / CLAUDE.md 리뷰",
   "Use when": "사용 시점",
   Returns: "반환",
+  Behavior: "동작",
+  "read-only": "읽기 전용",
+  "local-only": "로컬 전용",
+  "structured JSON": "구조화 JSON",
   "The user asks if prompt-memory is working, whether prompts are being captured, or what to do next.":
     "사용자가 prompt-memory가 동작하는지, prompt가 캡처되는지, 다음에 무엇을 해야 하는지 물을 때 사용합니다.",
   "Ready/setup status, safe prompt counts, latest prompt metadata, available tools, and next actions.":

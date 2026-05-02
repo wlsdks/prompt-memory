@@ -269,6 +269,16 @@ try {
     "get_prompt_memory_status",
     "MCP page should expose the preflight status tool.",
   );
+  await assertTextAny(
+    page,
+    ["structured JSON", "구조화 JSON"],
+    "MCP page should explain the structured tool result contract.",
+  );
+  await assertTextAny(
+    page,
+    ["read-only", "읽기 전용"],
+    "MCP page should expose read-only tool behavior.",
+  );
   await assertText(
     page,
     "review_project_instructions",

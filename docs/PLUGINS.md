@@ -127,8 +127,11 @@ file metadata, checklist status, and improvement hints.
 
 These tools return metadata without calling external LLMs or returning prompt
 bodies. The archive and status tools avoid raw absolute paths, and the
-instruction review tool avoids file bodies and raw absolute paths. If MCP is not
-configured, users can run the same archive review through:
+instruction review tool avoids file bodies and raw absolute paths. Tool
+definitions are marked read-only, idempotent, and local-only through MCP
+annotations. Each `tools/call` response includes `structuredContent` plus a JSON
+text block for clients that still expect text content. If MCP is not configured,
+users can run the same archive review through:
 
 ```sh
 prompt-memory score --json

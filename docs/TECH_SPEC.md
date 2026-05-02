@@ -147,11 +147,16 @@ Hard delete removes:
 9. Project instruction review reads local project metadata from SQLite, can
    rescan `AGENTS.md` / `CLAUDE.md`, and returns checklist metadata without
    instruction file bodies or raw paths.
+10. Every MCP tool is declared as read-only, idempotent, and local-only through
+    tool annotations, and `tools/call` returns both serialized JSON text and
+    `structuredContent` for clients that can consume structured tool results.
 
 Important rules:
 
 - stdout is reserved for newline-delimited JSON-RPC MCP messages
 - no external LLM calls are made
+- MCP tool definitions include read-only/local-only risk hints
+- MCP tool responses include `structuredContent` plus a JSON text content block
 - direct MCP prompt input is not written to Markdown or SQLite
 - MCP tool results return score metadata and checklist explanations, not prompt
   bodies

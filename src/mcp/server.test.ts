@@ -35,6 +35,30 @@ describe("MCP stdio server", () => {
     });
   });
 
+  it("declares read-only local tool annotations for each tool", () => {
+    const response = handleMcpMessage({
+      jsonrpc: "2.0",
+      id: "tool-contract",
+      method: "tools/list",
+    });
+
+    const tools = (response?.result as { tools: Array<unknown> }).tools;
+
+    expect(tools).toHaveLength(4);
+    for (const tool of tools) {
+      expect(tool).toEqual(
+        expect.objectContaining({
+          annotations: expect.objectContaining({
+            destructiveHint: false,
+            idempotentHint: true,
+            openWorldHint: false,
+            readOnlyHint: true,
+          }),
+        }),
+      );
+    }
+  });
+
   it("returns text MCP content for score_prompt_archive calls", () => {
     const response = handleMcpMessage(
       {
@@ -92,6 +116,13 @@ describe("MCP stdio server", () => {
             text: expect.stringContaining('"quality_score"'),
           },
         ],
+        structuredContent: expect.objectContaining({
+          quality_score: expect.any(Object),
+          privacy: expect.objectContaining({
+            external_calls: false,
+            returns_prompt_body: false,
+          }),
+        }),
         isError: false,
       },
     });
