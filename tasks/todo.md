@@ -1335,3 +1335,11 @@
 - 구현 리뷰에서 지적한 project identity, Projects API와 Settings API 경계, `ProjectPolicyStoragePort`, policy audit, rebuild/delete lifecycle, 첫 구현 slice 축소와 필수 테스트 목록을 반영했다.
 - 효율성 평가 문서도 external LLM을 Phase 2 core가 아닌 gated beta로 낮추고, import dry-run + imported-only queue를 앞당기는 순서로 갱신했다.
 - 검증 명령: `pnpm format`, `pnpm test`, `pnpm lint`, `pnpm build`, `pnpm pack:dry-run`, `git diff --check` 통과. Node 20.20.0에서 실행되어 `engines.node >=22 <25` 경고는 계속 발생한다.
+
+## 2026-05-02 Full Runtime Feature Check
+
+- [x] CLI command surface 확인
+- [x] 임시 data dir에서 init/server/ingest/list/search/show/delete/rebuild 동작 확인
+- [x] Prompt Coach improve, import, anonymized export 동작 확인
+- [x] Benchmark, release smoke, browser E2E 실행
+- [x] 실제 기능 목록과 한계 정리
