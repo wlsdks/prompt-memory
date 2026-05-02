@@ -13,6 +13,7 @@
   --pm-accent-strong: #154f48;
   --pm-accent-weak: #ddece7;
   --pm-info: #315f8c;
+  --pm-success: #287a3e;
   --pm-danger: #b42318;
   --pm-danger-weak: #fde7e4;
   --pm-warning: #9a5b00;
@@ -606,6 +607,48 @@ dd {
   justify-content: space-between;
 }
 
+.analysis-score-box {
+  align-items: flex-end;
+  display: grid;
+  gap: 4px;
+  justify-items: end;
+  min-width: 96px;
+}
+
+.analysis-score-box small {
+  color: var(--pm-text-subtle);
+  font-size: 11px;
+  font-weight: 650;
+  line-height: 14px;
+}
+
+.score-value {
+  font-size: 28px;
+  font-variant-numeric: tabular-nums;
+  font-weight: 750;
+  line-height: 30px;
+}
+
+.score-value.excellent,
+.score-badge.excellent {
+  color: var(--pm-success);
+}
+
+.score-value.good,
+.score-badge.good {
+  color: var(--pm-accent);
+}
+
+.score-value.needs_work,
+.score-badge.needs_work {
+  color: var(--pm-warning);
+}
+
+.score-value.weak,
+.score-badge.weak {
+  color: var(--pm-danger);
+}
+
 .analysis-summary {
   font-size: 14px;
   line-height: 22px;
@@ -863,7 +906,7 @@ dd {
 }
 
 .metric-strip {
-  grid-template-columns: repeat(4, minmax(0, 1fr));
+  grid-template-columns: repeat(5, minmax(0, 1fr));
 }
 
 .dashboard-grid {

@@ -9,7 +9,11 @@ import {
 } from "node:fs";
 import { join } from "node:path";
 
-import { analyzePrompt } from "../analysis/analyze.js";
+import {
+  analyzePrompt,
+  calculatePromptQualityScore,
+  qualityScoreBand,
+} from "../analysis/analyze.js";
 import { redactPrompt } from "../redaction/redact.js";
 import { createPromptId } from "../shared/ids.js";
 import { createStoredContentHash } from "../shared/hashing.js";
@@ -1095,6 +1099,8 @@ function toPromptSummary(db: Database.Database, row: PromptRow): PromptSummary {
       analysis?.checklist
         .filter((item) => item.status !== "good")
         .map((item) => item.label) ?? [],
+    quality_score: analysis?.quality_score.value ?? 0,
+    quality_score_band: analysis?.quality_score.band ?? "weak",
     usefulness: readPromptUsefulness(db, row.id),
     duplicate_count: readPromptDuplicateCount(db, row.stored_content_hash),
   };
@@ -1987,12 +1993,15 @@ function readPromptAnalysis(
     return undefined;
   }
 
+  const checklist = readChecklist(row.checklist_json);
+
   return {
     summary: row.summary ?? "",
     warnings: readStringArray(row.warnings_json),
     suggestions: readStringArray(row.suggestions_json),
-    checklist: readChecklist(row.checklist_json),
+    checklist,
     tags: readPromptTags(row.tags_json),
+    quality_score: calculatePromptQualityScore(checklist),
     analyzer: row.analyzer,
     created_at: row.created_at,
   };
@@ -2110,6 +2119,7 @@ function getQualityDashboard(
     sensitive_prompts: sensitivePrompts,
     sensitive_ratio: ratio(sensitivePrompts, totalPrompts),
     recent,
+    quality_score: buildDashboardQualityScore(qualityRows),
     trend: {
       daily: buildDailyTrend(qualityRows, now),
     },
@@ -2144,6 +2154,8 @@ function buildDailyTrend(
       date: string;
       prompt_count: number;
       quality_gap_count: number;
+      quality_score_sum: number;
+      scored_prompts: number;
       sensitive_count: number;
     }
   >(
@@ -2153,6 +2165,8 @@ function buildDailyTrend(
         date,
         prompt_count: 0,
         quality_gap_count: 0,
+        quality_score_sum: 0,
+        scored_prompts: 0,
         sensitive_count: 0,
       },
     ]),
@@ -2177,6 +2191,11 @@ function buildDailyTrend(
     if (hasQualityGap(row.checklist_json)) {
       bucket.quality_gap_count += 1;
     }
+    const score = scoreChecklistJson(row.checklist_json);
+    if (score !== undefined) {
+      bucket.quality_score_sum += score;
+      bucket.scored_prompts += 1;
+    }
   }
 
   return dates.map((date) => {
@@ -2184,14 +2203,55 @@ function buildDailyTrend(
       date,
       prompt_count: 0,
       quality_gap_count: 0,
+      quality_score_sum: 0,
+      scored_prompts: 0,
       sensitive_count: 0,
     };
 
     return {
-      ...bucket,
+      date: bucket.date,
+      prompt_count: bucket.prompt_count,
+      quality_gap_count: bucket.quality_gap_count,
       quality_gap_rate: ratio(bucket.quality_gap_count, bucket.prompt_count),
+      average_quality_score: averageScore(
+        bucket.quality_score_sum,
+        bucket.scored_prompts,
+      ),
+      sensitive_count: bucket.sensitive_count,
     };
   });
+}
+
+function buildDashboardQualityScore(
+  rows: PromptQualityRow[],
+): PromptQualityDashboard["quality_score"] {
+  const scores = rows
+    .map((row) => scoreChecklistJson(row.checklist_json))
+    .filter((value): value is number => value !== undefined);
+  const average = averageScore(
+    scores.reduce((total, score) => total + score, 0),
+    scores.length,
+  );
+
+  return {
+    average,
+    max: 100,
+    band: qualityScoreBand(average),
+    scored_prompts: scores.length,
+  };
+}
+
+function scoreChecklistJson(checklistJson: string | null): number | undefined {
+  const checklist = readChecklist(checklistJson);
+  if (checklist.length === 0) {
+    return undefined;
+  }
+
+  return calculatePromptQualityScore(checklist).value;
+}
+
+function averageScore(total: number, count: number): number {
+  return count > 0 ? Math.round(total / count) : 0;
 }
 
 function hasQualityGap(checklistJson: string | null): boolean {
@@ -2374,6 +2434,8 @@ function readProjectQualityProfiles(
       label: string;
       prompt_count: number;
       quality_gap_count: number;
+      quality_score_sum: number;
+      scored_prompts: number;
       sensitive_count: number;
       latest_received_at: string;
       gapCounts: Map<string, { key: string; label: string; count: number }>;
@@ -2389,6 +2451,8 @@ function readProjectQualityProfiles(
         label: projectLabel(key),
         prompt_count: 0,
         quality_gap_count: 0,
+        quality_score_sum: 0,
+        scored_prompts: 0,
         sensitive_count: 0,
         latest_received_at: row.received_at,
         gapCounts: new Map(),
@@ -2397,6 +2461,8 @@ function readProjectQualityProfiles(
         label: string;
         prompt_count: number;
         quality_gap_count: number;
+        quality_score_sum: number;
+        scored_prompts: number;
         sensitive_count: number;
         latest_received_at: string;
         gapCounts: Map<string, { key: string; label: string; count: number }>;
@@ -2416,6 +2482,10 @@ function readProjectQualityProfiles(
       )
     ) {
       current.quality_gap_count += 1;
+    }
+    if (checklist.length > 0) {
+      current.quality_score_sum += calculatePromptQualityScore(checklist).value;
+      current.scored_prompts += 1;
     }
 
     for (const item of checklist) {
@@ -2456,6 +2526,10 @@ function readProjectQualityProfiles(
         quality_gap_rate: ratio(
           project.quality_gap_count,
           project.prompt_count,
+        ),
+        average_quality_score: averageScore(
+          project.quality_score_sum,
+          project.scored_prompts,
         ),
         sensitive_count: project.sensitive_count,
         copied_count: projectUsefulness.copied_count,

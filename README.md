@@ -17,6 +17,7 @@ This repository is pre-release software.
 - Claude Code support: MVP path
 - Codex support: beta adapter
 - Local rule-based analysis preview: implemented
+- Prompt Quality Score: implemented as a local deterministic `0-100` rubric
 - Copy-based Prompt Coach: implemented
 - Transcript import: CLI only
 - Anonymized export: web UI and CLI preview/job flow
@@ -418,14 +419,15 @@ pnpm prompt-memory improve --text "make this request clearer" --json
 
 ## Local Analysis Preview
 
-Prompt detail views include a local rule-based analysis preview. It summarizes whether a prompt includes clear targets, context, constraints, output format, and verification criteria.
+Prompt detail views include a local rule-based analysis preview. It summarizes whether a prompt includes clear targets, context, constraints, output format, and verification criteria. Each prompt also receives a deterministic `0-100` Prompt Quality Score with a checklist-based breakdown.
 
 This preview runs locally against the stored, redacted prompt body. It does not call an external LLM provider.
 
 ## Benchmark
 
 Benchmark v1 measures local regression signals for privacy, retrieval,
-rule-based prompt improvement, analytics, and latency:
+rule-based prompt improvement, prompt quality score calibration, analytics, and
+latency:
 
 ```sh
 pnpm benchmark

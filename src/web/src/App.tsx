@@ -811,6 +811,11 @@ function PromptList({
                   {gap}
                 </span>
               ))}
+              <span
+                className={`badge score-badge ${prompt.quality_score_band}`}
+              >
+                {prompt.quality_score}
+              </span>
               {prompt.usefulness.bookmarked && (
                 <span className="badge saved-badge">saved</span>
               )}
@@ -1109,7 +1114,13 @@ function AnalysisPreview({
           <p className="eyebrow">Local analysis</p>
           <h2>Analysis preview</h2>
         </div>
-        <span className="badge">{analysis.analyzer}</span>
+        <div className="analysis-score-box">
+          <span className={`score-value ${analysis.quality_score.band}`}>
+            {analysis.quality_score.value}
+          </span>
+          <small>Prompt score</small>
+          <span className="badge">{analysis.analyzer}</span>
+        </div>
       </div>
       <p className="analysis-summary">{analysis.summary}</p>
       {analysis.checklist.length > 0 && (
@@ -1196,6 +1207,15 @@ function DashboardView({
           label="Total prompts"
           onSelect={() => onOpenFilteredList({})}
           value={dashboard.total_prompts}
+        />
+        <Metric
+          label="Average prompt score"
+          onSelect={() =>
+            onOpenFilteredList({
+              focus: "quality-gap",
+            })
+          }
+          value={dashboard.quality_score.average}
         />
         <Metric
           label="Contains sensitive data"
@@ -1441,6 +1461,10 @@ function ProjectProfilesPanel({
                 prompts
               </span>
               <span>
+                <strong>{profile.average_quality_score}</strong>
+                score
+              </span>
+              <span>
                 <strong>{Math.round(profile.quality_gap_rate * 100)}%</strong>
                 gap
               </span>
@@ -1568,6 +1592,7 @@ function TrendPanel({
             <span className="trend-meta">
               <strong>{day.prompt_count}</strong>
               <small>{Math.round(day.quality_gap_rate * 100)}% gap</small>
+              <small>{day.average_quality_score} score</small>
               {day.sensitive_count > 0 && (
                 <small>{day.sensitive_count} redacted</small>
               )}

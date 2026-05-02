@@ -15,6 +15,8 @@ export type PromptSummary = {
   index_status: string;
   tags: string[];
   quality_gaps: string[];
+  quality_score: number;
+  quality_score_band: PromptQualityScoreBand;
   usefulness: PromptUsefulness;
   duplicate_count: number;
 };
@@ -33,6 +35,7 @@ export type PromptDetail = PromptSummary & {
       suggestion?: string;
     }>;
     tags: string[];
+    quality_score: PromptQualityScore;
     analyzer: string;
     created_at: string;
   };
@@ -85,6 +88,25 @@ export type PromptQualityGap =
   | "output_format"
   | "verification_criteria";
 
+export type PromptQualityScoreBand =
+  | "excellent"
+  | "good"
+  | "needs_work"
+  | "weak";
+
+export type PromptQualityScore = {
+  value: number;
+  max: 100;
+  band: PromptQualityScoreBand;
+  breakdown: Array<{
+    key: PromptQualityGap;
+    label: string;
+    status: "good" | "weak" | "missing";
+    weight: number;
+    earned: number;
+  }>;
+};
+
 export type QualityDashboard = {
   total_prompts: number;
   sensitive_prompts: number;
@@ -99,8 +121,15 @@ export type QualityDashboard = {
       prompt_count: number;
       quality_gap_count: number;
       quality_gap_rate: number;
+      average_quality_score: number;
       sensitive_count: number;
     }>;
+  };
+  quality_score: {
+    average: number;
+    max: 100;
+    band: PromptQualityScoreBand;
+    scored_prompts: number;
   };
   distribution: {
     by_tool: DistributionBucket[];
@@ -160,6 +189,7 @@ export type QualityDashboard = {
     prompt_count: number;
     quality_gap_count: number;
     quality_gap_rate: number;
+    average_quality_score: number;
     sensitive_count: number;
     copied_count: number;
     bookmarked_count: number;

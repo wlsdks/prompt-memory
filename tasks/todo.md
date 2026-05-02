@@ -1343,3 +1343,20 @@
 - [x] Prompt Coach improve, import, anonymized export 동작 확인
 - [x] Benchmark, release smoke, browser E2E 실행
 - [x] 실제 기능 목록과 한계 정리
+
+## 2026-05-02 Prompt Quality Score v1
+
+- [x] 점수 기준 설계: 기존 5개 checklist를 0-100 rubric으로 변환
+- [x] 분석 단위 테스트: strong/vague/partial prompt 점수와 breakdown 검증
+- [x] storage/API/dashboard에 quality score와 평균/추세 노출
+- [x] 웹 UI에 per-prompt score, dashboard 평균, 프로젝트 평균 표시
+- [x] benchmark에 score calibration 지표 추가
+- [x] 문서/검증/커밋/PR 브랜치 푸시
+
+### 설계 메모
+
+- Prompt Quality Score v1은 외부 LLM judge가 아니라 기존 로컬 checklist의 deterministic 점수다.
+- 가중치: goal clarity 25, background context 20, scope limits 20, output format 15, verification criteria 20.
+- 상태 점수: good은 full weight, weak은 half weight, missing은 0점이다.
+- band는 excellent >= 85, good >= 60, needs_work >= 40, weak < 40으로 계산한다.
+- benchmark는 `prompt_quality_score_calibration`으로 list/detail score 일치, vague prompt 저점, fixture 간 점수 spread를 확인한다.

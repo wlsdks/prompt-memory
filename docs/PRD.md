@@ -334,6 +334,7 @@ Benchmark v1 measures:
 - privacy leak count
 - retrieval top-k
 - Prompt Coach gap fix rate
+- Prompt Quality Score calibration
 - analytics usefulness
 - local runtime latency
 

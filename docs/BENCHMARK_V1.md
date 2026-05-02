@@ -95,7 +95,24 @@ Pass threshold:
 
 - `>= 0.75`
 
-### 5. Local Runtime Performance
+### 5. Prompt Quality Score Calibration
+
+Checks:
+
+- each fixture prompt receives a deterministic `0-100` prompt quality score
+- prompt list and prompt detail expose the same score and band
+- vague prompt fixtures score low
+- stronger fixtures score meaningfully higher than vague fixtures
+
+Metric:
+
+- `prompt_quality_score_calibration`
+
+Pass threshold:
+
+- `>= 0.8`
+
+### 6. Local Runtime Performance
 
 Checks:
 
@@ -122,6 +139,7 @@ Pass thresholds:
     "privacy_leak_count": 0,
     "retrieval_top3": 1,
     "coach_gap_fix_rate": 1,
+    "prompt_quality_score_calibration": 1,
     "analytics_score": 1,
     "ingest_p95_ms": 21,
     "search_p95_ms": 8,
@@ -132,6 +150,7 @@ Pass thresholds:
     "privacy_leak_count": 0,
     "retrieval_top3": 0.8,
     "coach_gap_fix_rate": 0.8,
+    "prompt_quality_score_calibration": 0.8,
     "analytics_score": 0.75,
     "ingest_p95_ms": 500,
     "search_p95_ms": 250,

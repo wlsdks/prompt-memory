@@ -2,6 +2,7 @@ import type {
   NormalizedPromptEvent,
   PromptAnalysisPreview,
   PromptQualityCriterion,
+  PromptQualityScoreBand,
   RedactionResult,
 } from "../shared/schema.js";
 
@@ -32,6 +33,8 @@ export type PromptSummary = {
   index_status: string;
   tags: string[];
   quality_gaps: string[];
+  quality_score: number;
+  quality_score_band: PromptQualityScoreBand;
   usefulness: PromptUsefulness;
   duplicate_count: number;
 };
@@ -158,6 +161,7 @@ export type ProjectQualityProfile = {
   prompt_count: number;
   quality_gap_count: number;
   quality_gap_rate: number;
+  average_quality_score: number;
   sensitive_count: number;
   copied_count: number;
   bookmarked_count: number;
@@ -183,8 +187,15 @@ export type PromptQualityDashboard = {
       prompt_count: number;
       quality_gap_count: number;
       quality_gap_rate: number;
+      average_quality_score: number;
       sensitive_count: number;
     }>;
+  };
+  quality_score: {
+    average: number;
+    max: 100;
+    band: PromptQualityScoreBand;
+    scored_prompts: number;
   };
   distribution: {
     by_tool: DistributionBucket[];

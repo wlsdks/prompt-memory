@@ -6,11 +6,30 @@ describe("analyzePrompt", () => {
   it("summarizes strong prompts without using external services", () => {
     const result = analyzePrompt({
       prompt:
-        "Update src/server/create-server.ts to reject cross-site requests. Add Vitest coverage and run pnpm test. Return a concise Markdown summary.",
+        "Because browser security checks are incomplete, update src/server/create-server.ts to reject cross-site requests. Add Vitest coverage and run pnpm test. Return a concise Markdown summary.",
       createdAt: "2026-05-01T10:00:00.000Z",
     });
 
     expect(result.analyzer).toBe("local-rules-v1");
+    expect(result.quality_score).toMatchObject({
+      value: 100,
+      max: 100,
+      band: "excellent",
+    });
+    expect(result.quality_score.breakdown).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({
+          key: "goal_clarity",
+          weight: 25,
+          earned: 25,
+        }),
+        expect.objectContaining({
+          key: "verification_criteria",
+          weight: 20,
+          earned: 20,
+        }),
+      ]),
+    );
     expect(result.summary).toContain("relatively clear");
     expect(result.warnings).not.toContain(
       "Completion criteria or verification steps are missing.",
@@ -37,6 +56,11 @@ describe("analyzePrompt", () => {
     });
 
     expect(result.summary).toContain("short request");
+    expect(result.quality_score).toMatchObject({
+      value: 10,
+      max: 100,
+      band: "weak",
+    });
     expect(result.warnings).toContain(
       "The target or background context is missing.",
     );
@@ -82,5 +106,26 @@ describe("analyzePrompt", () => {
     });
 
     expect(result.tags).toEqual(expect.arrayContaining(["ui", "test", "docs"]));
+  });
+
+  it("scores partial prompts between vague and complete prompts", () => {
+    const result = analyzePrompt({
+      prompt:
+        "Review src/web/src/App.tsx export UI and return a Markdown summary.",
+      createdAt: "2026-05-01T10:00:00.000Z",
+    });
+
+    expect(result.quality_score.value).toBeGreaterThan(50);
+    expect(result.quality_score.value).toBeLessThan(85);
+    expect(result.quality_score.band).toBe("good");
+    expect(result.quality_score.breakdown).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({
+          key: "verification_criteria",
+          status: "missing",
+          earned: 0,
+        }),
+      ]),
+    );
   });
 });

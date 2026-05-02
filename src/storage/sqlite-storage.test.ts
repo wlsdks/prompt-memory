@@ -159,6 +159,18 @@ describe("SQLite prompt storage", () => {
 
     expect(detail?.analysis).toMatchObject({
       analyzer: "local-rules-v1",
+      quality_score: {
+        value: 90,
+        max: 100,
+        band: "excellent",
+        breakdown: expect.arrayContaining([
+          expect.objectContaining({
+            key: "goal_clarity",
+            weight: 25,
+            earned: 25,
+          }),
+        ]),
+      },
       summary: expect.stringContaining("relatively clear"),
       warnings: [],
       suggestions: [],
@@ -253,6 +265,12 @@ describe("SQLite prompt storage", () => {
     const serialized = JSON.stringify(dashboard);
 
     expect(dashboard.total_prompts).toBe(3);
+    expect(dashboard.quality_score).toMatchObject({
+      average: 45,
+      band: "needs_work",
+      scored_prompts: 3,
+      max: 100,
+    });
     expect(dashboard.recent.last_7_days).toBe(3);
     expect(dashboard.trend.daily).toEqual([
       {
@@ -260,6 +278,7 @@ describe("SQLite prompt storage", () => {
         prompt_count: 0,
         quality_gap_count: 0,
         quality_gap_rate: 0,
+        average_quality_score: 0,
         sensitive_count: 0,
       },
       {
@@ -267,6 +286,7 @@ describe("SQLite prompt storage", () => {
         prompt_count: 0,
         quality_gap_count: 0,
         quality_gap_rate: 0,
+        average_quality_score: 0,
         sensitive_count: 0,
       },
       {
@@ -274,6 +294,7 @@ describe("SQLite prompt storage", () => {
         prompt_count: 0,
         quality_gap_count: 0,
         quality_gap_rate: 0,
+        average_quality_score: 0,
         sensitive_count: 0,
       },
       {
@@ -281,6 +302,7 @@ describe("SQLite prompt storage", () => {
         prompt_count: 0,
         quality_gap_count: 0,
         quality_gap_rate: 0,
+        average_quality_score: 0,
         sensitive_count: 0,
       },
       {
@@ -288,6 +310,7 @@ describe("SQLite prompt storage", () => {
         prompt_count: 1,
         quality_gap_count: 1,
         quality_gap_rate: 1,
+        average_quality_score: 0,
         sensitive_count: 0,
       },
       {
@@ -295,6 +318,7 @@ describe("SQLite prompt storage", () => {
         prompt_count: 1,
         quality_gap_count: 1,
         quality_gap_rate: 1,
+        average_quality_score: 35,
         sensitive_count: 1,
       },
       {
@@ -302,6 +326,7 @@ describe("SQLite prompt storage", () => {
         prompt_count: 1,
         quality_gap_count: 0,
         quality_gap_rate: 0,
+        average_quality_score: 100,
         sensitive_count: 0,
       },
     ]);
@@ -331,6 +356,7 @@ describe("SQLite prompt storage", () => {
         prompt_count: 2,
         quality_gap_count: 2,
         quality_gap_rate: 1,
+        average_quality_score: 18,
         sensitive_count: 1,
         copied_count: 0,
         bookmarked_count: 0,
@@ -345,6 +371,7 @@ describe("SQLite prompt storage", () => {
         prompt_count: 1,
         quality_gap_count: 0,
         quality_gap_rate: 0,
+        average_quality_score: 100,
         sensitive_count: 0,
         copied_count: 1,
         bookmarked_count: 1,

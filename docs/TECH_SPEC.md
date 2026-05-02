@@ -237,6 +237,13 @@ It detects prompt quality gaps:
 - verification missing
 - output format missing
 
+It also derives a local Prompt Quality Score:
+
+- range: `0-100`
+- weights: goal clarity `25`, background context `20`, scope limits `20`, output format `15`, verification criteria `20`
+- status scoring: `good` earns full weight, `weak` earns half weight, `missing` earns zero
+- bands: `excellent >= 85`, `good >= 60`, `needs_work >= 40`, `weak < 40`
+
 Prompt Coach creates a copy-based improvement draft. Drafts:
 
 - do not overwrite source prompts

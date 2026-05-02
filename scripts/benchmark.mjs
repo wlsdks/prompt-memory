@@ -37,6 +37,7 @@ const thresholds = {
   privacy_leak_count: 0,
   retrieval_top3: 0.8,
   coach_gap_fix_rate: 0.8,
+  prompt_quality_score_calibration: 0.8,
   analytics_score: 0.75,
   ingest_p95_ms: 500,
   search_p95_ms: 250,
@@ -160,6 +161,7 @@ try {
   } = await runExportFlow(serverBaseUrl);
 
   const coachScore = scorePromptCoach();
+  const scoreCalibration = scorePromptQualityCalibration({ list, details });
   const analyticsScore = scoreAnalytics(dashboard.data);
   const privacyLeakCount = countPrivacyLeaks({
     list,
@@ -173,6 +175,7 @@ try {
     privacy_leak_count: privacyLeakCount,
     retrieval_top3: roundScore(retrievalHits / fixtures.length),
     coach_gap_fix_rate: coachScore,
+    prompt_quality_score_calibration: scoreCalibration,
     analytics_score: analyticsScore,
     ingest_p95_ms: Math.round(p95(ingestDurations)),
     search_p95_ms: Math.round(p95(searchDurations)),
@@ -247,6 +250,36 @@ function scoreAnalytics(dashboard) {
     dashboard.missing_items.length > 0,
     dashboard.instruction_suggestions.length > 0,
   ];
+  return roundScore(checks.filter(Boolean).length / checks.length);
+}
+
+function scorePromptQualityCalibration({ list, details }) {
+  const listItems = list.data.items;
+  const detailItems = details.map((detail) => detail.data);
+  const scores = detailItems
+    .map((detail) => detail.analysis?.quality_score?.value)
+    .filter((value) => typeof value === "number");
+  const vagueId = listItems.find((item) =>
+    item.snippet.includes("Make this better"),
+  )?.id;
+  const vagueScore = detailItems.find((item) => item.id === vagueId)?.analysis
+    ?.quality_score?.value;
+  const listScoresMatchDetails = listItems.every((item) => {
+    const detail = detailItems.find((candidate) => candidate.id === item.id);
+    return (
+      detail &&
+      item.quality_score === detail.analysis?.quality_score?.value &&
+      item.quality_score_band === detail.analysis?.quality_score?.band
+    );
+  });
+  const checks = [
+    scores.length === fixtures.length,
+    scores.every((score) => score >= 0 && score <= 100),
+    listScoresMatchDetails,
+    typeof vagueScore === "number" && vagueScore <= 20,
+    Math.max(...scores) - Math.min(...scores) >= 50,
+  ];
+
   return roundScore(checks.filter(Boolean).length / checks.length);
 }
 
@@ -423,6 +456,8 @@ function passes(scores) {
     scores.privacy_leak_count === thresholds.privacy_leak_count &&
     scores.retrieval_top3 >= thresholds.retrieval_top3 &&
     scores.coach_gap_fix_rate >= thresholds.coach_gap_fix_rate &&
+    scores.prompt_quality_score_calibration >=
+      thresholds.prompt_quality_score_calibration &&
     scores.analytics_score >= thresholds.analytics_score &&
     scores.ingest_p95_ms <= thresholds.ingest_p95_ms &&
     scores.search_p95_ms <= thresholds.search_p95_ms &&

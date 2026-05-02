@@ -112,6 +112,7 @@ try {
   await page
     .getByRole("heading", { name: "Improvement draft for manual resubmission" })
     .waitFor();
+  await assertText(page, "Prompt score", "Detail should show prompt score.");
   await assertBrowserSafe(page, "detail");
   await page.getByRole("button", { name: "Copy draft" }).click();
   await page.getByRole("button", { name: "Copied" }).waitFor();
@@ -120,6 +121,11 @@ try {
 
   await page.getByRole("button", { name: "Dashboard" }).click();
   await page.getByRole("heading", { name: "Quality dashboard" }).waitFor();
+  await assertText(
+    page,
+    "Average prompt score",
+    "Dashboard should show average prompt score.",
+  );
   await assertBrowserSafe(page, "dashboard");
 
   await page.getByRole("button", { name: "Projects", exact: true }).click();
