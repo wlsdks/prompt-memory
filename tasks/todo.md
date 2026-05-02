@@ -1,5 +1,21 @@
 # 작업 계획
 
+## 2026-05-02 Hook 재점검 및 동작 설명
+
+- [x] 현재 서버/doctor 상태 재확인
+- [x] 설치된 Claude Code/Codex hook command 재확인
+- [x] 설치된 command 그대로 stdin payload 저장 재검증
+- [x] hook 동작 방식과 사용자 등록 필요 여부 정리
+- [x] 결과 기록, 커밋 및 푸시
+
+### 점검 결과
+
+- hook 등록은 유지되어 있었다. Claude Code는 `~/.claude/settings.json`, Codex는 `~/.codex/hooks.json`에 `UserPromptSubmit` hook command가 있고, Codex는 `~/.codex/config.toml`의 `codex_hooks = true`도 켜져 있다.
+- 처음 재점검에서 서버가 내려가 있어 `doctor`의 `server.ok=false`였다. hook은 fail-open이라 도구 사용은 막지 않지만, 서버가 내려가 있으면 저장되지 않는다.
+- 서버를 foreground로 실행한 상태에서 설치된 hook command 문자열을 그대로 읽어 stdin payload를 넣었고, Claude Code/Codex 모두 새 prompt가 저장됐다.
+- 저장 확인: 최신 2건이 각각 `claude-code-v1`, `codex-v1` adapter로 `indexed` 상태였고, `password/access_token`과 API key 계열 값은 마스킹됐다.
+- 결론: hook 등록은 한 번 설치하면 유지된다. 다만 저장을 하려면 `prompt-memory server`가 떠 있어야 한다. 현재 MVP에는 OS 로그인 시 서버 자동 시작 등록 기능은 없다.
+
 ## 2026-05-02 Claude Code/Codex 실제 Hook 연동 점검
 
 - [x] 실제 `claude`/`codex` CLI 존재 여부 확인
