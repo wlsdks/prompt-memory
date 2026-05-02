@@ -5,6 +5,7 @@
 - [x] 저장소 공개 문서/라이선스/커뮤니티 파일 완비 여부 점검
 - [x] npm package allowlist와 개인정보/로컬 데이터 제외 여부 점검
 - [x] GitHub Issues/Discussions/PR 보호/CI 상태 점검
+- [x] GitHub secret scanning, push protection, Dependabot security update 상태 점검
 - [x] Claude Code/Codex용 규칙 파일과 plugin/skill 지침 점검
 - [x] 누락된 agent 규칙 보강
 - [x] 검증, 커밋, PR 업데이트
