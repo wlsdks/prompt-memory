@@ -4,7 +4,6 @@
   "description": "Local-first prompt archive for AI coding tools.",
   "author": {
     "name": "prompt-memory contributors",
-    "email": "support@example.com",
     "url": "https://github.com/wlsdks/prompt-memory"
   },
   "homepage": "https://github.com/wlsdks/prompt-memory",

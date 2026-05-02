@@ -1,5 +1,14 @@
 # 작업 계획
 
+## 2026-05-02 Full Open Source Readiness And Agent Rules Audit
+
+- [x] 저장소 공개 문서/라이선스/커뮤니티 파일 완비 여부 점검
+- [x] npm package allowlist와 개인정보/로컬 데이터 제외 여부 점검
+- [x] GitHub Issues/Discussions/PR 보호/CI 상태 점검
+- [x] Claude Code/Codex용 규칙 파일과 plugin/skill 지침 점검
+- [x] 누락된 agent 규칙 보강
+- [x] 검증, 커밋, PR 업데이트
+
 ## 2026-05-02 Open Source Bilingual Readme Review
 
 - [x] 오픈소스 준비 상태 재검토
@@ -374,7 +383,7 @@
 
 - 실제 CLI 존재: `claude --version`은 `2.1.126 (Claude Code)`, `codex --version`은 `codex-cli 0.128.0`.
 - 최초 상태: 기본 data dir 기준 `doctor claude-code`, `doctor codex` 모두 server/token/hook 미설정이었다.
-- 실제 설치: `prompt-memory init`으로 `/Users/jinan/.prompt-memory`를 초기화했고, `install-hook claude-code`, `install-hook codex`를 실행했다. Claude 설정은 `~/.claude/settings.json`, Codex 설정은 `~/.codex/hooks.json`, `~/.codex/config.toml`에 설치됐다.
+- 실제 설치: `prompt-memory init`으로 기본 prompt-memory data dir을 초기화했고, `install-hook claude-code`, `install-hook codex`를 실행했다. Claude 설정은 `~/.claude/settings.json`, Codex 설정은 `~/.codex/hooks.json`, `~/.codex/config.toml`에 설치됐다.
 - 발견/수정: 설치된 hook command가 `prompt-memory hook ...` 전역 명령을 가정해 실제 셸에서 `command not found`가 났다. installer를 수정해 `PROMPT_MEMORY_HOOK="..." "<node>" "<repo>/dist/cli/index.js" hook ...` 형태의 절대 실행 명령을 기록하고 기존 hook도 갱신하게 했다.
 - 실제 저장 검증: 설치된 설정 파일의 command 문자열을 그대로 읽어 `sh -c`로 실행했고, Claude Code payload와 Codex payload가 각각 `claude-code-v1`, `codex-v1`로 저장됐다.
 - 보안 확인: 실제 저장된 두 prompt 모두 `password/access_token` 계열은 `[REDACTED:secret_assignment]`, API key 계열은 `[REDACTED:api_key]`로 마스킹됐다.
@@ -658,7 +667,7 @@
   - [x] `pnpm build`
   - [x] `pnpm pack:dry-run`
   - [x] `git diff --check`
-- [x] `/Users/jinan/ai/awesome-design-md` 구조와 관련 예시 확인
+- [x] 로컬 디자인 가이드 구조와 관련 예시 확인
 - [x] `prompt-memory` 전용 `DESIGN.md` 재작성
   - [x] Visual Theme & Atmosphere
   - [x] Color Palette & Roles

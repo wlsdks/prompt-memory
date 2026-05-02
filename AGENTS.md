@@ -16,7 +16,7 @@
 - 계획은 `tasks/todo.md`에 체크 가능한 항목으로 남기고, 진행하면서 상태를 갱신한다.
 - 사용자가 정정하거나 반복 실수를 지적하면 `tasks/lessons.md`에 재발 방지 규칙을 추가한다.
 - 구현은 TDD를 기본으로 한다. 실패 테스트를 먼저 만들고, 최소 구현으로 통과시킨 뒤 리팩터링한다.
-- 작업 단위가 끝나면 반드시 커밋하고 `origin/main`에 푸시한다. 큰 작업은 한 번에 몰아 커밋하지 않는다.
+- 작업 단위가 끝나면 반드시 커밋하고 현재 작업 브랜치에 푸시한 뒤 PR을 열거나 갱신한다. 큰 작업은 한 번에 몰아 커밋하지 않는다.
 - 변경 전후 동작이 달라질 수 있으면 테스트, 로그, CLI 출력, Playwright MCP 점검 중 적절한 증거를 남긴다.
 
 ## 검증 명령
@@ -62,5 +62,7 @@ pnpm prompt-memory server -- --data-dir <temp-data-dir>
 
 - 사용자가 만들었을 수 있는 변경은 되돌리지 않는다.
 - 커밋 메시지는 Conventional Commits를 따른다. 예: `feat: add prompt list UI`, `docs: add agent instructions`.
-- 커밋 후 항상 `git push origin main`을 수행한다.
+- `main`은 보호 브랜치다. 변경은 새 브랜치에서 커밋하고 PR로 올린다.
+- PR은 CI `test (22)`, `test (24)` 통과, 승인 리뷰 1개, conversation resolution 없이는 머지하지 않는다.
+- 커밋 후 `main`에 직접 push하지 말고 현재 작업 브랜치를 push한다.
 - 최종 보고에는 커밋 해시, 푸시 여부, 검증 명령 결과, 남은 리스크를 짧게 포함한다.

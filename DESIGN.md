@@ -2,7 +2,7 @@
 
 `prompt-memory`의 전용 웹 UI 디자인 시스템이다. AI 에이전트는 UI 작업 전에 이 문서를 읽고, 로컬 우선 프롬프트 아카이브에 맞는 조용하고 정밀한 developer tool UI를 만든다.
 
-이 문서는 `/Users/jinan/ai/awesome-design-md` 컬렉션의 DESIGN.md 구성 방식을 참고했다. 특정 브랜드를 복제하지 않는다. 참고한 방향은 Linear 계열의 정밀한 정보 밀도와 Cursor 계열의 따뜻한 로컬 도구 톤이며, 색상과 컴포넌트 언어는 `prompt-memory` 전용이다.
+이 문서는 로컬 디자인 가이드 컬렉션의 DESIGN.md 구성 방식을 참고했다. 특정 브랜드를 복제하지 않는다. 참고한 방향은 Linear 계열의 정밀한 정보 밀도와 Cursor 계열의 따뜻한 로컬 도구 톤이며, 색상과 컴포넌트 언어는 `prompt-memory` 전용이다.
 
 ## 1. Visual Theme & Atmosphere
 
