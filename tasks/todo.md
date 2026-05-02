@@ -1,5 +1,21 @@
 # 작업 계획
 
+## 2026-05-03 Product Polish: Charts, MCP Tools, UX Review
+
+- [x] 현재 기능 표면이 실제 사용 가치와 맞는지 재점검
+- [x] 오픈소스 React chart library를 검토하고 Dashboard/Scores/Insights에 적용
+- [x] MCP tool 목록과 설명을 Claude Code/Codex 사용 맥락에 맞게 보강
+- [x] Project instruction review를 MCP에서도 호출 가능한지 검토하고 필요한 경우 추가
+- [x] UI/UX를 desktop web 기준으로 더 보기 좋고 분석 도구답게 개선
+- [x] 테스트, build, browser E2E, pack dry-run 검증 후 커밋/푸시
+
+### 판단 기준
+
+- 그래프는 장식이 아니라 품질 추세, 점수 분포, 반복 약점처럼 사용자가 다음 행동을 결정하는 데이터에만 쓴다.
+- 외부 라이브러리는 유명하고 유지보수되는 오픈소스이며 현재 React/Vite 구조와 충돌하지 않아야 한다.
+- MCP tool 설명은 에이전트가 언제 어떤 도구를 써야 하는지, 어떤 개인정보를 반환하지 않는지 분명해야 한다.
+- Project instruction 분석은 파일 원문, raw absolute path, secret을 반환하지 않는다.
+
 ## 2026-05-03 Project Instruction Analysis And Sidebar Polish
 
 - [x] `AGENTS.md` / `CLAUDE.md` 분석 기준과 저장 범위 확정

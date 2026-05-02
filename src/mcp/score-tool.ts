@@ -9,6 +9,7 @@ import type {
   PromptQualityScore,
 } from "../shared/schema.js";
 import { createSqlitePromptStorage } from "../storage/sqlite.js";
+import type { ProjectInstructionReview } from "../storage/ports.js";
 
 export type ScorePromptToolArguments = {
   prompt?: string;
@@ -29,6 +30,13 @@ export type ScorePromptArchiveToolArguments = {
   cwd_prefix?: string;
   received_from?: string;
   received_to?: string;
+};
+
+export type ReviewProjectInstructionsToolArguments = {
+  project_id?: string;
+  latest?: boolean;
+  analyze?: boolean;
+  include_suggestions?: boolean;
 };
 
 export type ScorePromptToolResult =
@@ -64,6 +72,23 @@ export type ScorePromptArchiveToolResult =
   | {
       is_error: true;
       error_code: "storage_unavailable";
+      message: string;
+    };
+
+export type ReviewProjectInstructionsToolResult =
+  | {
+      source: "project_id" | "latest";
+      project_id: string;
+      project_label: string;
+      generated_fresh: boolean;
+      review: ProjectInstructionReview;
+      suggestions?: string[];
+      next_action: string;
+      privacy: ProjectInstructionReview["privacy"];
+    }
+  | {
+      is_error: true;
+      error_code: "invalid_input" | "not_found" | "storage_unavailable";
       message: string;
     };
 
@@ -145,6 +170,38 @@ export const SCORE_PROMPT_ARCHIVE_TOOL_DEFINITION = {
   },
 } as const;
 
+export const REVIEW_PROJECT_INSTRUCTIONS_TOOL_DEFINITION = {
+  name: "review_project_instructions",
+  description:
+    "Review a local project's Claude Code/Codex instruction files such as AGENTS.md and CLAUDE.md using prompt-memory's deterministic local rubric. Use this when the user asks whether project rules are good enough, wants agent instructions scored, or wants suggestions for improving coding-agent behavior. With no project_id, set latest=true or omit project_id to review the most recently captured project. The tool can rescan local instruction files, but returns only file metadata, checklist scores, and suggestions; it never returns file bodies, raw absolute paths, or calls external LLMs.",
+  inputSchema: {
+    type: "object",
+    properties: {
+      project_id: {
+        type: "string",
+        description:
+          "Optional prompt-memory project id from the Projects UI/API. Use this for an exact project.",
+      },
+      latest: {
+        type: "boolean",
+        description:
+          "Set true to review the most recently captured local project. Defaults to true when project_id is omitted.",
+      },
+      analyze: {
+        type: "boolean",
+        description:
+          "Whether to rescan AGENTS.md/CLAUDE.md before returning the review. Defaults to true.",
+      },
+      include_suggestions: {
+        type: "boolean",
+        description:
+          "Whether to include concise instruction-file improvement suggestions. Defaults to true.",
+      },
+    },
+    additionalProperties: false,
+  },
+} as const;
+
 export function scorePromptTool(
   args: ScorePromptToolArguments,
   options: ScorePromptToolOptions = {},
@@ -213,6 +270,82 @@ export function scorePromptArchiveTool(
       error_code: "storage_unavailable",
       message: `Local prompt-memory archive is not available. Run \`prompt-memory init\` first or pass --data-dir. ${errorMessage(error)}`,
     };
+  }
+}
+
+export function reviewProjectInstructionsTool(
+  args: ReviewProjectInstructionsToolArguments,
+  options: ScorePromptToolOptions = {},
+): ReviewProjectInstructionsToolResult {
+  if (args.project_id && args.latest === true) {
+    return projectInstructionToolError(
+      "invalid_input",
+      "Provide either `project_id` or `latest: true`, not both.",
+    );
+  }
+
+  try {
+    const config = loadPromptMemoryConfig(options.dataDir);
+    const auth = loadHookAuth(options.dataDir);
+    const storage = createSqlitePromptStorage({
+      dataDir: config.data_dir,
+      hmacSecret: auth.web_session_secret,
+    });
+
+    try {
+      const project = args.project_id
+        ? storage
+            .listProjects()
+            .items.find((item) => item.project_id === args.project_id)
+        : storage.listProjects().items[0];
+
+      if (!project) {
+        return projectInstructionToolError(
+          "not_found",
+          "No stored project is available to review. Capture at least one prompt first.",
+        );
+      }
+
+      const shouldAnalyze = args.analyze !== false;
+      const review = shouldAnalyze
+        ? storage.analyzeProjectInstructions(project.project_id)
+        : storage.getProjectInstructionReview(project.project_id);
+
+      if (!review) {
+        return projectInstructionToolError(
+          "not_found",
+          `Project instruction review is not available for project_id: ${project.project_id}.`,
+        );
+      }
+
+      const missingOrWeak = review.checklist.filter(
+        (item) => item.status !== "good",
+      );
+      const nextItem = missingOrWeak[0];
+
+      return {
+        source: args.project_id ? "project_id" : "latest",
+        project_id: project.project_id,
+        project_label: project.label,
+        generated_fresh: shouldAnalyze,
+        review,
+        ...(args.include_suggestions === false
+          ? {}
+          : { suggestions: review.suggestions }),
+        next_action: nextItem
+          ? (nextItem.suggestion ??
+            `Improve the ${nextItem.label.toLowerCase()} section.`)
+          : "Project instruction files cover the core agent workflow. Keep them updated when verification or privacy rules change.",
+        privacy: review.privacy,
+      };
+    } finally {
+      storage.close();
+    }
+  } catch (error) {
+    return projectInstructionToolError(
+      "storage_unavailable",
+      `Local prompt-memory archive is not available. Run \`prompt-memory init\` first or pass --data-dir. ${errorMessage(error)}`,
+    );
   }
 }
 
@@ -312,6 +445,21 @@ function toolError(
     : never,
   message: string,
 ): ScorePromptToolResult {
+  return {
+    is_error: true,
+    error_code: errorCode,
+    message,
+  };
+}
+
+function projectInstructionToolError(
+  errorCode: ReviewProjectInstructionsToolResult extends infer TResult
+    ? TResult extends { error_code: infer TCode }
+      ? TCode
+      : never
+    : never,
+  message: string,
+): ReviewProjectInstructionsToolResult {
   return {
     is_error: true,
     error_code: errorCode,

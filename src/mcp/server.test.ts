@@ -24,6 +24,9 @@ describe("MCP stdio server", () => {
           expect.objectContaining({
             name: "score_prompt_archive",
           }),
+          expect.objectContaining({
+            name: "review_project_instructions",
+          }),
         ],
       },
     });
@@ -87,6 +90,39 @@ describe("MCP stdio server", () => {
           },
         ],
         isError: false,
+      },
+    });
+  });
+
+  it("returns text MCP content for review_project_instructions calls", () => {
+    const response = handleMcpMessage(
+      {
+        jsonrpc: "2.0",
+        id: "project-review-1",
+        method: "tools/call",
+        params: {
+          name: "review_project_instructions",
+          arguments: {
+            latest: true,
+          },
+        },
+      },
+      {
+        dataDir: join(tmpdir(), `prompt-memory-missing-${randomUUID()}`),
+      },
+    );
+
+    expect(response).toMatchObject({
+      jsonrpc: "2.0",
+      id: "project-review-1",
+      result: {
+        content: [
+          {
+            type: "text",
+            text: expect.stringContaining('"error_code"'),
+          },
+        ],
+        isError: true,
       },
     });
   });

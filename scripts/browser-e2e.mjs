@@ -155,6 +155,7 @@ try {
     "Find reuse and project patterns",
     "Dashboard should route users to insights.",
   );
+  await assertChartVisible(page, "dashboard", 1);
   await assertBrowserSafe(page, "dashboard");
 
   await page.getByRole("button", { name: "Coach", exact: true }).click();
@@ -191,6 +192,7 @@ try {
     "Prompts to review",
     "Scores should show prompts that need review.",
   );
+  await assertChartVisible(page, "scores", 3);
   await assertBrowserSafe(page, "scores");
 
   await page.getByRole("button", { name: "Benchmark", exact: true }).click();
@@ -228,6 +230,7 @@ try {
     "Reuse candidates",
     "Insights should show reuse candidates.",
   );
+  await assertChartVisible(page, "insights", 2);
   await assertBrowserSafe(page, "insights");
 
   await page.getByRole("button", { name: "Projects", exact: true }).click();
@@ -380,6 +383,15 @@ async function assertBrowserSafe(page, label) {
 async function assertText(page, expected, message) {
   const text = await page.locator("body").innerText();
   assertIncludes(text, expected, message);
+}
+
+async function assertChartVisible(page, label, minCount) {
+  await page.locator(".recharts-surface").first().waitFor();
+  const count = await page.locator(".recharts-surface").count();
+  assert(
+    count >= minCount,
+    `${label} should render at least ${minCount} Recharts SVG chart(s). Found ${count}.`,
+  );
 }
 
 async function assertNotText(page, unexpected, message) {

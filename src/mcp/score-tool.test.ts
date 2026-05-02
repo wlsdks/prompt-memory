@@ -1,5 +1,5 @@
 import { randomUUID } from "node:crypto";
-import { mkdirSync, rmSync } from "node:fs";
+import { mkdirSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { afterEach, describe, expect, it } from "vitest";
@@ -8,7 +8,11 @@ import { normalizeClaudeCodePayload } from "../adapters/claude-code.js";
 import { initializePromptMemory } from "../config/config.js";
 import { redactPrompt } from "../redaction/redact.js";
 import { createSqlitePromptStorage } from "../storage/sqlite.js";
-import { scorePromptArchiveTool, scorePromptTool } from "./score-tool.js";
+import {
+  reviewProjectInstructionsTool,
+  scorePromptArchiveTool,
+  scorePromptTool,
+} from "./score-tool.js";
 
 const tempDirs: string[] = [];
 
@@ -126,6 +130,67 @@ describe("scorePromptTool", () => {
   });
 });
 
+describe("reviewProjectInstructionsTool", () => {
+  it("reviews the latest project instruction files without returning bodies or raw paths", async () => {
+    const dataDir = createTempDir();
+    const projectDir = join(createTempDir(), "demo-project");
+    mkdirSync(projectDir, { recursive: true });
+    writeFileSync(
+      join(projectDir, "AGENTS.md"),
+      [
+        "# Agent rules",
+        "PRIVATE_RULE_BODY_SHOULD_NOT_RETURN",
+        "Describe project context, agent workflow, verification with pnpm test, privacy safety, and collaboration output.",
+      ].join("\n"),
+      "utf8",
+    );
+    const init = initializePromptMemory({ dataDir });
+    const storage = createSqlitePromptStorage({
+      dataDir,
+      hmacSecret: init.hookAuth.web_session_secret,
+      now: () => new Date("2026-05-03T10:00:00.000Z"),
+    });
+    await storeClaudePrompt(
+      storage,
+      "Review AGENTS.md quality and suggest improvements.",
+      "2026-05-03T09:59:00.000Z",
+      projectDir,
+    );
+    const project = storage.listProjects().items[0];
+    storage.close();
+
+    const result = reviewProjectInstructionsTool(
+      { project_id: project?.project_id, analyze: true },
+      { dataDir },
+    );
+    const serialized = JSON.stringify(result);
+
+    expect(result.source).toBe("project_id");
+    expect(result.project_id).toBe(project?.project_id);
+    expect(result.review.score.value).toBeGreaterThan(60);
+    expect(result.review.files_found).toBe(1);
+    expect(result.privacy).toMatchObject({
+      local_only: true,
+      external_calls: false,
+      returns_file_bodies: false,
+      returns_raw_paths: false,
+    });
+    expect(serialized).not.toContain("PRIVATE_RULE_BODY_SHOULD_NOT_RETURN");
+    expect(serialized).not.toContain(projectDir);
+  });
+
+  it("returns an actionable tool error when no project exists", () => {
+    const dataDir = createTempDir();
+    initializePromptMemory({ dataDir });
+
+    const result = reviewProjectInstructionsTool({ latest: true }, { dataDir });
+
+    expect(result.is_error).toBe(true);
+    expect(result.error_code).toBe("not_found");
+    expect(result.message).toContain("No stored project");
+  });
+});
+
 function createTempDir(): string {
   const dir = join(tmpdir(), `prompt-memory-mcp-${randomUUID()}`);
   mkdirSync(dir, { recursive: true });
@@ -137,12 +202,13 @@ async function storeClaudePrompt(
   storage: ReturnType<typeof createSqlitePromptStorage>,
   prompt: string,
   receivedAt: string,
+  cwd = "/Users/example/project",
 ) {
   const event = normalizeClaudeCodePayload(
     {
       session_id: `session-${receivedAt}`,
       transcript_path: "/Users/example/.claude/session.jsonl",
-      cwd: "/Users/example/project",
+      cwd,
       permission_mode: "default",
       hook_event_name: "UserPromptSubmit",
       prompt,

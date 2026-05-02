@@ -5,8 +5,11 @@ import { VERSION } from "../shared/version.js";
 import {
   SCORE_PROMPT_ARCHIVE_TOOL_DEFINITION,
   SCORE_PROMPT_TOOL_DEFINITION,
+  REVIEW_PROJECT_INSTRUCTIONS_TOOL_DEFINITION,
+  reviewProjectInstructionsTool,
   scorePromptArchiveTool,
   scorePromptTool,
+  type ReviewProjectInstructionsToolArguments,
   type ScorePromptArchiveToolArguments,
   type ScorePromptToolArguments,
   type ScorePromptToolOptions,
@@ -111,7 +114,7 @@ export function handleMcpMessage(
           version: VERSION,
         },
         instructions:
-          "Use score_prompt for one coding prompt and score_prompt_archive for accumulated prompt habit review. This server is local-only and does not call external LLMs.",
+          "Use score_prompt for one coding prompt, score_prompt_archive for accumulated prompt habit review, and review_project_instructions for AGENTS.md/CLAUDE.md quality checks. This server is local-only and does not call external LLMs.",
       });
     case "ping":
       return jsonRpcResult(id, {});
@@ -120,6 +123,7 @@ export function handleMcpMessage(
         tools: [
           SCORE_PROMPT_TOOL_DEFINITION,
           SCORE_PROMPT_ARCHIVE_TOOL_DEFINITION,
+          REVIEW_PROJECT_INSTRUCTIONS_TOOL_DEFINITION,
         ],
       });
     case "tools/call":
@@ -150,7 +154,12 @@ function handleToolCall(
             params.arguments as ScorePromptArchiveToolArguments,
             options,
           )
-        : undefined;
+        : params.name === REVIEW_PROJECT_INSTRUCTIONS_TOOL_DEFINITION.name
+          ? reviewProjectInstructionsTool(
+              params.arguments as ReviewProjectInstructionsToolArguments,
+              options,
+            )
+          : undefined;
 
   if (!result) {
     return jsonRpcError(id, -32602, `Unknown tool: ${params.name}`);

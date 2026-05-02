@@ -71,6 +71,12 @@ import {
   createArchiveMeasurement,
   type ArchiveMeasurement,
 } from "./measurement.js";
+import {
+  DistributionBarChart,
+  GapRateChart,
+  QualityTrendChart,
+  ScoreDistributionChart,
+} from "./charts.js";
 
 type View =
   | { name: "list" }
@@ -2284,17 +2290,11 @@ function ArchiveScoreReviewPanel({
   onRefresh(): void;
   onSelect(id: string): void;
 }) {
-  const distribution = report
-    ? ([
-        ["excellent", report.distribution.excellent],
-        ["good", report.distribution.good],
-        ["needs_work", report.distribution.needs_work],
-        ["weak", report.distribution.weak],
-      ] as const)
-    : [];
-  const maxBandCount = Math.max(1, ...distribution.map(([, count]) => count));
   const reviewPrompts =
     report?.low_score_prompts.filter(isReviewableScorePrompt).slice(0, 6) ?? [];
+  const weakOrNeedsWorkCount = report
+    ? report.distribution.weak + report.distribution.needs_work
+    : 0;
 
   return (
     <section
@@ -2319,47 +2319,50 @@ function ArchiveScoreReviewPanel({
       {report && (
         <div className="archive-score-grid">
           <div className="archive-score-summary">
-            <span className={`score-value ${report.archive_score.band}`}>
-              {report.archive_score.average}
-            </span>
-            <div>
-              <strong>Average archive score</strong>
-              <small>
-                {report.archive_score.band} / {report.archive_score.max}
-              </small>
+            <div className="archive-score-hero">
+              <span className={`score-value ${report.archive_score.band}`}>
+                {report.archive_score.average}
+              </span>
+              <div>
+                <strong>Average archive score</strong>
+                <small>
+                  {report.archive_score.band} / {report.archive_score.max}
+                </small>
+              </div>
+            </div>
+            <div className="archive-score-meter" aria-hidden="true">
+              <span
+                style={{
+                  width: `${Math.min(report.archive_score.average, 100)}%`,
+                }}
+              />
+            </div>
+            <div className="archive-summary-details">
+              <span>
+                <strong>{report.archive_score.scored_prompts}</strong>
+                scored prompts
+              </span>
+              <span>
+                <strong>{weakOrNeedsWorkCount}</strong>
+                weak / needs work
+              </span>
+              <span>
+                <strong>{reviewPrompts.length}</strong>
+                in review queue
+              </span>
+              <span>
+                <strong>{formatDate(report.generated_at)}</strong>
+                generated
+              </span>
             </div>
           </div>
           <div className="archive-distribution" aria-label="Score distribution">
             <h3>Score distribution</h3>
-            {distribution.map(([band, count]) => (
-              <div className="archive-band-row" key={band}>
-                <span>{band}</span>
-                <div aria-hidden="true">
-                  <span
-                    className={`archive-band-fill ${band}`}
-                    style={{
-                      width: `${Math.max((count / maxBandCount) * 100, count > 0 ? 8 : 0)}%`,
-                    }}
-                  />
-                </div>
-                <strong>{count}</strong>
-              </div>
-            ))}
+            <ScoreDistributionChart distribution={report.distribution} />
           </div>
           <div className="archive-gaps">
             <h3>Top quality gaps</h3>
-            {report.top_gaps.length === 0 && (
-              <p className="muted">No repeated gaps yet.</p>
-            )}
-            {report.top_gaps.slice(0, 5).map((gap) => (
-              <div className="gap-row" key={gap.label}>
-                <div>
-                  <strong>{gap.label}</strong>
-                  <p>{gap.count} prompts</p>
-                </div>
-                <span>{Math.round(gap.rate * 100)}%</span>
-              </div>
-            ))}
+            <GapRateChart gaps={report.top_gaps.slice(0, 5)} />
           </div>
           <div className="archive-low-scores">
             <h3>Prompts to review</h3>
@@ -2525,14 +2528,13 @@ function TrendPanel({
   daily: QualityDashboard["trend"]["daily"];
   onSelectDay(date: string): void;
 }) {
-  const maxPromptCount = Math.max(1, ...daily.map((item) => item.prompt_count));
-
   return (
     <section className="panel trend-panel" aria-label="Recent quality trend">
       <div className="panel-heading-row">
         <h2>Recent quality trend</h2>
         <span>7 days</span>
       </div>
+      <QualityTrendChart daily={daily} />
       <div className="trend-list">
         {daily.length === 0 && <p className="muted">No trend data yet.</p>}
         {daily.map((day) => (
@@ -2544,20 +2546,6 @@ function TrendPanel({
             type="button"
           >
             <span>{formatTrendDate(day.date)}</span>
-            <div className="trend-bars" aria-hidden="true">
-              <span
-                className="trend-bar prompts"
-                style={{
-                  width: `${Math.max((day.prompt_count / maxPromptCount) * 100, day.prompt_count > 0 ? 8 : 0)}%`,
-                }}
-              />
-              <span
-                className="trend-bar gaps"
-                style={{
-                  width: `${Math.max(day.quality_gap_rate * 100, day.quality_gap_count > 0 ? 8 : 0)}%`,
-                }}
-              />
-            </div>
             <span className="trend-meta">
               <strong>{day.prompt_count}</strong>
               <small>{Math.round(day.quality_gap_rate * 100)}% gap</small>
@@ -2607,8 +2595,9 @@ function DistributionPanel({
   title: string;
 }) {
   return (
-    <div className="panel">
+    <div className="panel distribution-panel">
       <h2>{title}</h2>
+      <DistributionBarChart buckets={buckets} />
       <div className="distribution-list">
         {buckets.length === 0 && <p className="muted">No data.</p>}
         {buckets.map((bucket) => (
@@ -2622,9 +2611,7 @@ function DistributionPanel({
               <strong>{bucket.label}</strong>
               <span>{bucket.count}</span>
             </div>
-            <div className="bar-track">
-              <span style={{ width: `${Math.max(bucket.ratio * 100, 4)}%` }} />
-            </div>
+            <small>{Math.round(bucket.ratio * 100)}%</small>
           </button>
         ))}
       </div>

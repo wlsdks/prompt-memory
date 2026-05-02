@@ -132,7 +132,8 @@ Hard delete removes:
 1. User registers `prompt-memory mcp` with a local MCP client such as Claude Code
    or Codex.
 2. The client launches the command as a stdio subprocess.
-3. The MCP server exposes `score_prompt` and `score_prompt_archive`.
+3. The MCP server exposes `score_prompt`, `score_prompt_archive`, and
+   `review_project_instructions`.
 4. `score_prompt` accepts exactly one of direct prompt text, a stored prompt id,
    or `latest: true`.
 5. Direct prompt text is analyzed locally and is not stored.
@@ -141,6 +142,9 @@ Hard delete removes:
 7. Archive scoring reads recent prompt summaries from SQLite and returns an
    aggregate score, distribution, recurring quality gaps, and low-score prompt
    ids without prompt bodies or raw paths.
+8. Project instruction review reads local project metadata from SQLite, can
+   rescan `AGENTS.md` / `CLAUDE.md`, and returns checklist metadata without
+   instruction file bodies or raw paths.
 
 Important rules:
 
@@ -150,6 +154,8 @@ Important rules:
 - MCP tool results return score metadata and checklist explanations, not prompt
   bodies
 - archive MCP results are metadata-only and bounded by `max_prompts`
+- project instruction MCP results are metadata-only and never include file
+  bodies or raw absolute paths
 
 ## 6. Adapter Contract
 

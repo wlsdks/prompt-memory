@@ -452,12 +452,15 @@ Codex, or any MCP client through a stdio MCP server:
 prompt-memory mcp
 ```
 
-The MCP server exposes two tools:
+The MCP server exposes three tools:
 
 - `score_prompt`: score either direct prompt text, a stored `prompt_id`, or the
   latest stored prompt.
 - `score_prompt_archive`: score accumulated prompt habits across recent stored
   prompts and return aggregate score, recurring gaps, and low-score prompt ids.
+- `review_project_instructions`: review local `AGENTS.md` / `CLAUDE.md`
+  instruction files for the latest or selected project and return score,
+  checklist status, and improvement hints.
 
 Practical agent prompts:
 
@@ -467,12 +470,16 @@ my last request.
 
 Use prompt-memory score_prompt_archive for recent Codex prompts and summarize my
 top recurring prompt habit gaps.
+
+Use prompt-memory review_project_instructions with latest=true and tell me
+whether my AGENTS.md/CLAUDE.md rules are strong enough for coding agents.
 ```
 
 The tools return score metadata, checklist breakdowns, warnings, recurring gaps,
 and improvement hints. They do not store direct prompt text, do not call
 external LLMs, and do not return prompt bodies. The archive scoring tool also
-avoids raw absolute paths.
+avoids raw absolute paths. The project instruction review tool also avoids
+instruction file bodies and raw absolute paths.
 
 Example Claude Code registration:
 
