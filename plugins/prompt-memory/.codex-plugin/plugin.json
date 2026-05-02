@@ -1,0 +1,44 @@
+{
+  "name": "prompt-memory",
+  "version": "0.0.0",
+  "description": "Local-first prompt archive for AI coding tools.",
+  "author": {
+    "name": "prompt-memory contributors",
+    "email": "support@example.com",
+    "url": "https://github.com/wlsdks/prompt-memory"
+  },
+  "homepage": "https://github.com/wlsdks/prompt-memory",
+  "repository": "https://github.com/wlsdks/prompt-memory",
+  "license": "MIT",
+  "keywords": [
+    "prompt-memory",
+    "prompt-archive",
+    "codex",
+    "claude-code",
+    "local-first"
+  ],
+  "skills": "./skills/",
+  "hooks": "./hooks.json",
+  "interface": {
+    "displayName": "Prompt Memory",
+    "shortDescription": "Capture and search local coding-agent prompts",
+    "longDescription": "Prompt Memory captures prompts from supported coding agents through local hooks, redacts sensitive values before storage, indexes Markdown in SQLite, and serves a local web UI for search, review, and deletion.",
+    "developerName": "prompt-memory contributors",
+    "category": "Coding",
+    "capabilities": [
+      "Interactive",
+      "Read",
+      "Write"
+    ],
+    "websiteURL": "https://github.com/wlsdks/prompt-memory",
+    "privacyPolicyURL": "https://github.com/wlsdks/prompt-memory/blob/main/SECURITY.md",
+    "termsOfServiceURL": "https://github.com/wlsdks/prompt-memory/blob/main/README.md",
+    "defaultPrompt": [
+      "Set up prompt-memory for this machine",
+      "Check whether prompt-memory is capturing Codex prompts",
+      "Open my local prompt-memory archive"
+    ],
+    "brandColor": "#2563EB",
+    "screenshots": []
+  }
+}

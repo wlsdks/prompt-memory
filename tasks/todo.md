@@ -1,5 +1,23 @@
 # 작업 계획
 
+## 2026-05-02 Claude/Codex Plugin Packaging
+
+- [x] 공식 확장 방식과 로컬 plugin manifest 스펙 확인
+- [x] Codex repo-local plugin manifest/hook 패키지 추가
+- [x] Claude Code 호환 방식과 plugin 한계 문서화
+- [x] npm package 포함 파일과 검증 보강
+- [x] 검증 명령 실행
+- [x] 커밋 및 푸시
+
+### 점검 결과
+
+- Codex용 repo-local plugin 패키지를 `plugins/prompt-memory`에 추가했다. 구성은 `.codex-plugin/plugin.json`, `hooks.json`, `skills/prompt-memory/SKILL.md`다.
+- Codex plugin hook은 `UserPromptSubmit`에서 `prompt-memory hook codex`를 실행하며, CLI가 `PATH`에 없거나 실패하면 `|| true`로 fail-open한다. hook command에는 ingest token을 넣지 않았다.
+- Claude Code는 공식 확장 지점이 settings hook이라 `integrations/claude-code/settings.example.json`과 설명 문서를 추가했다. 일반 사용자는 `prompt-memory setup` 또는 `install-hook claude-code`가 더 안전하다.
+- README와 `docs/PLUGINS.md`에 plugin 패키징과 명시적 setup이 여전히 필요한 이유를 문서화했다.
+- `package.json` `files`에 `docs/PLUGINS.md`, `plugins`, `integrations`를 추가했고, `pnpm pack:dry-run`에서 tarball 포함을 확인했다.
+- 검증 명령: `pnpm format`, `pnpm test`, `pnpm lint`, `pnpm build`, `pnpm pack:dry-run`, `pnpm smoke:release`, `git diff --check` 통과. Node 20.20.0에서 실행되어 `engines.node >=22 <25` 경고는 계속 발생한다.
+
 ## 2026-05-02 One-command Setup UX
 
 - [x] `setup`/service 설계 범위 확정

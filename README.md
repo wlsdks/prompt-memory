@@ -198,6 +198,32 @@ codex_hooks = true
 
 Uninstall removes the prompt-memory hook entry but leaves the Codex feature flag in place.
 
+## Plugin Packaging
+
+This repository also ships plugin packaging artifacts:
+
+```text
+plugins/prompt-memory
+integrations/claude-code
+docs/PLUGINS.md
+```
+
+The Codex package under `plugins/prompt-memory` contains a `.codex-plugin`
+manifest, a fail-open `UserPromptSubmit` hook, and a small skill that helps
+Codex install, diagnose, and use the local archive.
+
+Claude Code prompt capture is exposed through its documented hook settings, so
+`integrations/claude-code/settings.example.json` is provided as a manual example.
+For normal use, prefer:
+
+```sh
+pnpm prompt-memory setup
+```
+
+The explicit setup command is still required because plugin discovery should not
+silently edit user settings, install a login service, or start a local server.
+See `docs/PLUGINS.md` for the packaging boundary and manual configuration notes.
+
 ## CLI
 
 List prompts:

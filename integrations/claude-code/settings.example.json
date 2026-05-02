@@ -1,0 +1,15 @@
+{
+  "hooks": {
+    "UserPromptSubmit": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "PROMPT_MEMORY_HOOK=\"prompt-memory hook claude-code\" /bin/sh -lc 'command -v prompt-memory >/dev/null 2>&1 && prompt-memory hook claude-code || true'",
+            "timeout": 2
+          }
+        ]
+      }
+    ]
+  }
+}

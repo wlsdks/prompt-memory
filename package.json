@@ -23,7 +23,10 @@
     "docs/TECH_SPEC.md",
     "docs/IMPLEMENTATION_PLAN.md",
     "docs/ADAPTERS.md",
+    "docs/PLUGINS.md",
     "docs/RELEASE_CHECKLIST.md",
+    "plugins",
+    "integrations",
     "scripts/release-smoke.mjs"
   ],
   "scripts": {
