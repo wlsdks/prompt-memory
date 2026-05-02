@@ -27,6 +27,9 @@ export function registerStaticRoutes(
   );
   server.get("/coach", async (_request, reply) => sendIndex(reply, options));
   server.get("/scores", async (_request, reply) => sendIndex(reply, options));
+  server.get("/benchmark", async (_request, reply) =>
+    sendIndex(reply, options),
+  );
   server.get("/insights", async (_request, reply) => sendIndex(reply, options));
   server.get("/projects", async (_request, reply) => sendIndex(reply, options));
   server.get("/exports", async (_request, reply) => sendIndex(reply, options));

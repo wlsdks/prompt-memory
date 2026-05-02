@@ -122,6 +122,24 @@ function translateDynamic(value: string): string | undefined {
       "$1개 프롬프트 평가됨 / $2",
     );
   }
+  if (/^\d+ scored \/ \d+ stored$/.test(value)) {
+    return value.replace(
+      /^(\d+) scored \/ (\d+) stored$/,
+      "$1개 평가됨 / $2개 저장됨",
+    );
+  }
+  if (/^archive score \/ \d+$/.test(value)) {
+    return value.replace(/^archive score \/ (\d+)$/, "아카이브 점수 / $1");
+  }
+  if (/^\d+% of measured prompts$/.test(value)) {
+    return value.replace(
+      /^(\d+)% of measured prompts$/,
+      "측정된 프롬프트의 $1%",
+    );
+  }
+  if (/^Measured .+$/.test(value)) {
+    return value.replace(/^Measured (.+)$/, "$1 측정");
+  }
   if (/^recent \d+ \/ previous \d+$/.test(value)) {
     return value.replace(
       /^recent (\d+) \/ previous (\d+)$/,
@@ -222,6 +240,17 @@ function translateDynamic(value: string): string | undefined {
       "리뷰 필요한 프롬프트 $1개",
     );
   }
+  if (/^Review \d+ low-score prompt(s)?$/.test(value)) {
+    return value.replace(
+      /^Review (\d+) low-score prompt(s)?$/,
+      "낮은 점수 프롬프트 $1개 리뷰",
+    );
+  }
+  if (/^Fix .+$/.test(value)) {
+    return value.replace(/^Fix (.+)$/, (_match, gap: string) => {
+      return `${translateKnown(gap)} 고치기`;
+    });
+  }
   if (/^\d+ projects · \d+ duplicate groups$/.test(value)) {
     return value.replace(
       /^(\d+) projects · (\d+) duplicate groups$/,
@@ -266,6 +295,7 @@ const UI_TRANSLATIONS: Record<string, string> = {
   Dashboard: "대시보드",
   Coach: "코치",
   Scores: "점수",
+  Benchmark: "벤치마크",
   Insights: "인사이트",
   Projects: "프로젝트",
   Export: "내보내기",
@@ -279,6 +309,7 @@ const UI_TRANSLATIONS: Record<string, string> = {
   "Quality dashboard": "품질 대시보드",
   "Prompt coach": "프롬프트 코치",
   "Prompt scores": "프롬프트 점수",
+  "Prompt benchmark": "프롬프트 벤치마크",
   "Prompt insights": "프롬프트 인사이트",
   "Anonymized export": "익명화 Export",
   "Prompts Search": "프롬프트 검색",
@@ -352,6 +383,53 @@ const UI_TRANSLATIONS: Record<string, string> = {
   "Improvement hints": "개선 힌트",
   "Loading dashboard.": "대시보드를 불러오는 중입니다.",
   "Workspace areas": "작업 영역",
+  "Live archive measurement": "실시간 아카이브 측정",
+  "Live prompt benchmark": "실시간 프롬프트 벤치마크",
+  "Measure your prompt habits": "프롬프트 습관 측정",
+  "Measure now": "지금 측정하기",
+  "Measuring...": "측정 중...",
+  "Open review queue": "리뷰 큐 열기",
+  "View gap prompts": "부족 항목 프롬프트 보기",
+  "Review backlog": "리뷰 백로그",
+  "Biggest gap": "가장 큰 부족 항목",
+  Coverage: "측정 범위",
+  Privacy: "개인정보 보호",
+  "Local-only": "로컬 전용",
+  "Privacy check needed": "개인정보 점검 필요",
+  "No review backlog": "리뷰 백로그 없음",
+  "No repeated gap": "반복 부족 항목 없음",
+  "Keep capturing more samples": "표본을 더 수집하세요",
+  "Current archive sample is fully covered.":
+    "현재 아카이브 표본이 모두 측정되었습니다.",
+  "Recent sample measured; more prompts are available.":
+    "최근 표본만 측정했습니다. 더 많은 프롬프트가 있습니다.",
+  "No external calls, prompt bodies, or raw paths in this report.":
+    "이 리포트에는 외부 호출, 프롬프트 본문, 원본 경로가 없습니다.",
+  "Review measurement output before sharing it.":
+    "공유하기 전에 측정 결과를 점검하세요.",
+  "Not measured in this session yet": "이번 세션에서 아직 측정하지 않았습니다",
+  "Capture prompts first": "먼저 프롬프트를 수집하세요",
+  "Run prompt-memory setup, then send a few real coding requests.":
+    "prompt-memory setup을 실행한 뒤 실제 코딩 요청을 몇 개 보내세요.",
+  "Open the review queue and rewrite one weak prompt into a reusable request.":
+    "리뷰 큐를 열고 약한 프롬프트 하나를 재사용 가능한 요청으로 고쳐 쓰세요.",
+  "Capture a few Claude Code or Codex prompts before measuring.":
+    "측정 전에 Claude Code 또는 Codex 프롬프트를 몇 개 수집하세요.",
+  "Review the backlog and fix the most repeated quality gap next.":
+    "백로그를 보고 가장 반복되는 부족 항목을 다음에 고치세요.",
+  "The archive is scoring well; keep capturing and reusing prompts.":
+    "아카이브 점수가 좋습니다. 계속 수집하고 재사용하세요.",
+  "Keep measuring weekly": "매주 계속 측정하세요",
+  "The archive is healthy; watch for new gaps as projects change.":
+    "아카이브 상태가 좋습니다. 프로젝트가 바뀔 때 새 부족 항목을 확인하세요.",
+  "What this measures": "무엇을 측정하나",
+  "This is your live archive measurement: it scores recent Claude Code and Codex prompts stored locally, finds repeated gaps, and points to the next review action.":
+    "로컬에 저장된 최근 Claude Code/Codex 프롬프트를 점수화하고, 반복 부족 항목과 다음 리뷰 행동을 보여주는 실시간 아카이브 측정입니다.",
+  "Benchmark v1": "Benchmark v1",
+  "The development benchmark still lives in the CLI as":
+    "개발용 벤치마크는 여전히 CLI에 있습니다:",
+  "It is a regression gate, not a replacement for measuring your real prompt archive here.":
+    "이것은 회귀 방지 게이트이며, 여기서 실제 프롬프트 아카이브를 측정하는 흐름을 대체하지 않습니다.",
   "Improve the next prompt": "다음 프롬프트 개선",
   "Review archive quality": "아카이브 품질 검토",
   "Find reuse and project patterns": "재사용과 프로젝트 패턴 찾기",
@@ -365,6 +443,7 @@ const UI_TRANSLATIONS: Record<string, string> = {
   "Your prompting pattern": "나의 프롬프트 패턴",
   "Strong habits": "좋은 습관",
   Improving: "개선 중",
+  "Needs work": "보강 필요",
   "Needs practice": "연습 필요",
   "No data yet": "아직 데이터 없음",
   "Your Prompt Habit Score": "나의 프롬프트 습관 점수",

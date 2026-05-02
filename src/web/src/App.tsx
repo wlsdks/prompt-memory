@@ -9,6 +9,7 @@ import {
   Download,
   FileText,
   FolderCog,
+  Gauge,
   GitCompare,
   ListChecks,
   RefreshCw,
@@ -65,6 +66,10 @@ import {
   type PromptHabitCoach,
 } from "./habit-coach.js";
 import { SafeMarkdown } from "./markdown.js";
+import {
+  createArchiveMeasurement,
+  type ArchiveMeasurement,
+} from "./measurement.js";
 
 type View =
   | { name: "list" }
@@ -72,6 +77,7 @@ type View =
   | { name: "dashboard" }
   | { name: "coach" }
   | { name: "scores" }
+  | { name: "benchmark" }
   | { name: "insights" }
   | { name: "projects" }
   | { name: "exports" }
@@ -98,6 +104,10 @@ export function App() {
   const [archiveScore, setArchiveScore] = useState<
     ArchiveScoreReport | undefined
   >();
+  const [measurementCheckedAt, setMeasurementCheckedAt] = useState<
+    string | undefined
+  >();
+  const [measurementBusy, setMeasurementBusy] = useState(false);
   const [projects, setProjects] = useState<ProjectSummary[]>([]);
   const [exportPreset, setExportPreset] =
     useState<ExportPreset>("anonymized_review");
@@ -216,6 +226,7 @@ export function App() {
     if (view.name === "exports") return "Anonymized export";
     if (view.name === "projects") return "Projects";
     if (view.name === "insights") return "Prompt insights";
+    if (view.name === "benchmark") return "Prompt benchmark";
     if (view.name === "scores") return "Prompt scores";
     if (view.name === "coach") return "Prompt coach";
     if (view.name === "detail") return "Prompt detail";
@@ -386,8 +397,27 @@ export function App() {
     try {
       const report = await getArchiveScoreReport();
       setArchiveScore(report);
+      setMeasurementCheckedAt(new Date().toISOString());
     } catch {
       setError("Could not evaluate the prompt archive.");
+    }
+  }
+
+  async function measureArchive(): Promise<void> {
+    setMeasurementBusy(true);
+    setError(undefined);
+    try {
+      const [nextDashboard, nextArchiveScore] = await Promise.all([
+        getQualityDashboard(),
+        getArchiveScoreReport(),
+      ]);
+      setDashboard(nextDashboard);
+      setArchiveScore(nextArchiveScore);
+      setMeasurementCheckedAt(new Date().toISOString());
+    } catch {
+      setError("Could not measure the prompt archive.");
+    } finally {
+      setMeasurementBusy(false);
     }
   }
 
@@ -481,15 +511,17 @@ export function App() {
             ? "/coach"
             : next.name === "scores"
               ? "/scores"
-              : next.name === "insights"
-                ? "/insights"
-                : next.name === "projects"
-                  ? "/projects"
-                  : next.name === "exports"
-                    ? "/exports"
-                    : next.name === "settings"
-                      ? "/settings"
-                      : "/";
+              : next.name === "benchmark"
+                ? "/benchmark"
+                : next.name === "insights"
+                  ? "/insights"
+                  : next.name === "projects"
+                    ? "/projects"
+                    : next.name === "exports"
+                      ? "/exports"
+                      : next.name === "settings"
+                        ? "/settings"
+                        : "/";
     window.history.pushState({}, "", path);
     setView(next);
   }
@@ -527,6 +559,12 @@ export function App() {
           onClick={() => navigate({ name: "scores" })}
         >
           <ListChecks size={16} /> Scores
+        </button>
+        <button
+          className={`nav-button ${view.name === "benchmark" ? "active" : ""}`}
+          onClick={() => navigate({ name: "benchmark" })}
+        >
+          <Gauge size={16} /> Benchmark
         </button>
         <button
           className={`nav-button ${view.name === "insights" ? "active" : ""}`}
@@ -764,10 +802,13 @@ export function App() {
             archiveScore={archiveScore}
             dashboard={dashboard}
             loading={!dashboard}
+            measurementBusy={measurementBusy}
+            measurementCheckedAt={measurementCheckedAt}
             onOpenFilteredList={(nextFilters) => {
               setFilters({ isSensitive: "all", ...nextFilters });
               navigate({ name: "list" });
             }}
+            onMeasure={() => void measureArchive()}
             onNavigateSection={(section) => navigate({ name: section })}
           />
         )}
@@ -794,6 +835,21 @@ export function App() {
             }}
             onRefreshArchiveScore={() => void refreshArchiveScore()}
             onSelect={(id) => navigate({ name: "detail", id })}
+          />
+        )}
+        {view.name === "benchmark" && (
+          <BenchmarkView
+            archiveScore={archiveScore}
+            dashboard={dashboard}
+            loading={!dashboard}
+            measurementBusy={measurementBusy}
+            measurementCheckedAt={measurementCheckedAt}
+            onMeasure={() => void measureArchive()}
+            onNavigateScores={() => navigate({ name: "scores" })}
+            onOpenFilteredList={(nextFilters) => {
+              setFilters({ isSensitive: "all", ...nextFilters });
+              navigate({ name: "list" });
+            }}
           />
         )}
         {view.name === "insights" && (
@@ -1307,13 +1363,19 @@ function DashboardView({
   archiveScore,
   dashboard,
   loading,
+  measurementBusy,
+  measurementCheckedAt,
   onOpenFilteredList,
+  onMeasure,
   onNavigateSection,
 }: {
   archiveScore?: ArchiveScoreReport;
   dashboard?: QualityDashboard;
   loading: boolean;
+  measurementBusy: boolean;
+  measurementCheckedAt?: string;
   onOpenFilteredList(filters: PromptFilters): void;
+  onMeasure(): void;
   onNavigateSection(section: WorkspaceSection): void;
 }) {
   if (loading || !dashboard) {
@@ -1330,6 +1392,18 @@ function DashboardView({
 
   return (
     <div className="dashboard-layout dashboard-overview">
+      <ArchiveMeasurementPanel
+        compact
+        measurement={createArchiveMeasurement({
+          archiveScore,
+          dashboard,
+          measuredAt: measurementCheckedAt,
+        })}
+        measurementBusy={measurementBusy}
+        onMeasure={onMeasure}
+        onOpenFilteredList={onOpenFilteredList}
+        onOpenScores={() => onNavigateSection("scores")}
+      />
       <DashboardMetricStrip
         dashboard={dashboard}
         onOpenFilteredList={onOpenFilteredList}
@@ -1376,6 +1450,69 @@ function DashboardView({
           })
         }
       />
+    </div>
+  );
+}
+
+function BenchmarkView({
+  archiveScore,
+  dashboard,
+  loading,
+  measurementBusy,
+  measurementCheckedAt,
+  onMeasure,
+  onNavigateScores,
+  onOpenFilteredList,
+}: {
+  archiveScore?: ArchiveScoreReport;
+  dashboard?: QualityDashboard;
+  loading: boolean;
+  measurementBusy: boolean;
+  measurementCheckedAt?: string;
+  onMeasure(): void;
+  onNavigateScores(): void;
+  onOpenFilteredList(filters: PromptFilters): void;
+}) {
+  if (loading || !dashboard) {
+    return <div className="panel empty">Loading dashboard.</div>;
+  }
+
+  const measurement = createArchiveMeasurement({
+    archiveScore,
+    dashboard,
+    measuredAt: measurementCheckedAt,
+  });
+
+  return (
+    <div className="dashboard-layout benchmark-layout">
+      <ArchiveMeasurementPanel
+        measurement={measurement}
+        measurementBusy={measurementBusy}
+        onMeasure={onMeasure}
+        onOpenFilteredList={onOpenFilteredList}
+        onOpenScores={onNavigateScores}
+      />
+      <section className="panel measurement-explainer">
+        <div>
+          <h2>What this measures</h2>
+          <p>
+            This is your live archive measurement: it scores recent Claude Code
+            and Codex prompts stored locally, finds repeated gaps, and points to
+            the next review action.
+          </p>
+        </div>
+        <div>
+          <h2>Benchmark v1</h2>
+          <p>
+            <span>The development benchmark still lives in the CLI as</span>
+            <code>pnpm benchmark -- --json</code>
+            <span>
+              It is a regression gate, not a replacement for measuring your real
+              prompt archive here.
+            </span>
+          </p>
+        </div>
+      </section>
     </div>
   );
 }
@@ -1508,6 +1645,137 @@ function InsightsView({
         />
         <DuplicateCandidatesPanel dashboard={dashboard} onSelect={onSelect} />
       </section>
+    </div>
+  );
+}
+
+function ArchiveMeasurementPanel({
+  compact = false,
+  measurement,
+  measurementBusy,
+  onMeasure,
+  onOpenFilteredList,
+  onOpenScores,
+}: {
+  compact?: boolean;
+  measurement: ArchiveMeasurement;
+  measurementBusy: boolean;
+  onMeasure(): void;
+  onOpenFilteredList(filters: PromptFilters): void;
+  onOpenScores(): void;
+}) {
+  return (
+    <section
+      aria-label="Live archive measurement"
+      className={`archive-measurement ${compact ? "compact" : ""}`}
+    >
+      <div className="measurement-primary">
+        <div className="measurement-heading">
+          <span className={`measurement-status ${measurement.status.tone}`}>
+            {measurement.status.label}
+          </span>
+          <p className="eyebrow">Live prompt benchmark</p>
+          <h2>Measure your prompt habits</h2>
+          <p>{measurement.status.detail}</p>
+        </div>
+        <div className="measurement-score-block">
+          <span className={`score-value ${measurement.score.band}`}>
+            {measurement.score.value}
+          </span>
+          <small>{`archive score / ${measurement.score.max}`}</small>
+        </div>
+      </div>
+
+      <div className="measurement-grid">
+        <MeasurementSignal
+          label="Review backlog"
+          value={measurement.reviewBacklog.label}
+          detail={`${Math.round(measurement.reviewBacklog.rate * 100)}% of measured prompts`}
+        />
+        <MeasurementSignal
+          label="Biggest gap"
+          value={measurement.biggestGap?.label ?? "No repeated gap"}
+          detail={
+            measurement.biggestGap
+              ? `${measurement.biggestGap.count} prompts / ${Math.round(
+                  measurement.biggestGap.rate * 100,
+                )}%`
+              : "Keep capturing more samples"
+          }
+        />
+        <MeasurementSignal
+          label="Coverage"
+          value={measurement.coverage.label}
+          detail={measurement.coverage.detail}
+        />
+        <MeasurementSignal
+          label="Privacy"
+          value={measurement.privacy.label}
+          detail={measurement.privacy.detail}
+        />
+      </div>
+
+      <div className="measurement-action-bar">
+        <div>
+          <strong>{measurement.nextAction.label}</strong>
+          <span>{measurement.nextAction.detail}</span>
+          <small>
+            {measurement.measuredAt
+              ? `Measured ${formatDate(measurement.measuredAt)}`
+              : "Not measured in this session yet"}
+          </small>
+        </div>
+        <div className="measurement-buttons">
+          <button
+            className="primary-action"
+            disabled={measurementBusy}
+            onClick={onMeasure}
+            type="button"
+          >
+            <RefreshCw size={14} />{" "}
+            {measurementBusy ? "Measuring..." : "Measure now"}
+          </button>
+          {measurement.nextAction.target === "review" && (
+            <button onClick={onOpenScores} type="button">
+              Open review queue
+            </button>
+          )}
+          {measurement.nextAction.target === "gap" &&
+            measurement.biggestGap && (
+              <button
+                onClick={() =>
+                  onOpenFilteredList({
+                    focus: "quality-gap",
+                    qualityGap: qualityGapKeyFromLabel(
+                      measurement.biggestGap?.label,
+                    ),
+                  })
+                }
+                type="button"
+              >
+                View gap prompts
+              </button>
+            )}
+        </div>
+      </div>
+    </section>
+  );
+}
+
+function MeasurementSignal({
+  detail,
+  label,
+  value,
+}: {
+  detail: string;
+  label: string;
+  value: string;
+}) {
+  return (
+    <div className="measurement-signal">
+      <span>{label}</span>
+      <strong>{value}</strong>
+      <small>{detail}</small>
     </div>
   );
 }
@@ -2741,6 +3009,10 @@ function routeFromLocation(): View {
     return { name: "scores" };
   }
 
+  if (window.location.pathname === "/benchmark") {
+    return { name: "benchmark" };
+  }
+
   if (window.location.pathname === "/insights") {
     return { name: "insights" };
   }
@@ -2770,6 +3042,7 @@ function needsDashboardData(viewName: View["name"]): boolean {
     "dashboard",
     "coach",
     "scores",
+    "benchmark",
     "insights",
     "exports",
     "settings",
@@ -2777,7 +3050,7 @@ function needsDashboardData(viewName: View["name"]): boolean {
 }
 
 function needsArchiveScoreData(viewName: View["name"]): boolean {
-  return ["dashboard", "coach", "scores"].includes(viewName);
+  return ["dashboard", "coach", "scores", "benchmark"].includes(viewName);
 }
 
 function filtersFromLocation(): PromptFilters {
@@ -3051,6 +3324,10 @@ function isQualityGapKey(value: string | null): value is PromptQualityGap {
 
 function qualityGapLabel(key?: PromptQualityGap): string | undefined {
   return QUALITY_GAP_OPTIONS.find((item) => item.key === key)?.label;
+}
+
+function qualityGapKeyFromLabel(label?: string): PromptQualityGap | undefined {
+  return QUALITY_GAP_OPTIONS.find((item) => item.label === label)?.key;
 }
 
 function exportFieldLabel(value: string): string {

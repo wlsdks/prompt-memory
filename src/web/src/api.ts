@@ -343,17 +343,25 @@ export type AnonymizedExportPayload = {
 };
 
 let csrfToken: string | undefined;
+let sessionPromise: Promise<void> | undefined;
 
 export async function ensureSession(): Promise<void> {
   if (csrfToken) {
     return;
   }
 
-  const response = await fetch("/api/v1/session", {
+  sessionPromise ??= fetch("/api/v1/session", {
     credentials: "same-origin",
-  });
-  const body = (await response.json()) as { data: { csrf_token: string } };
-  csrfToken = body.data.csrf_token;
+  })
+    .then(async (response) => {
+      const body = (await response.json()) as { data: { csrf_token: string } };
+      csrfToken = body.data.csrf_token;
+    })
+    .finally(() => {
+      sessionPromise = undefined;
+    });
+
+  await sessionPromise;
 }
 
 export async function listPrompts(

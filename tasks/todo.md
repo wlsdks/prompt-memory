@@ -1,5 +1,20 @@
 # 작업 계획
 
+## 2026-05-02 Live Archive Measurement UX
+
+- [x] 현재 benchmark/score 기능이 웹에서 바로 보이는지 점검
+- [x] 실사용 archive measurement 모델과 우선 표시 데이터 확정
+- [x] Dashboard/Scores 또는 별도 화면에 `Measure now` 흐름 구현
+- [x] 한국어/영어 문구, 테스트, browser E2E 보강
+- [x] 에이전트 병렬 점검 결과 반영 후 검증, 커밋 및 푸시
+
+### 판단 기준
+
+- Benchmark v1은 개발 회귀 측정이고, 사용자의 실제 archive 측정과 혼동되지 않아야 한다.
+- 사용자는 버튼 하나로 현재 프롬프트 습관 점수, review backlog, biggest gap, privacy 상태, next action을 볼 수 있어야 한다.
+- 측정 결과는 raw prompt body, raw path, secret을 표시하지 않는다.
+- 측정 화면은 정보를 늘리기보다 다음 행동을 분명하게 해야 한다.
+
 ## 2026-05-02 Display Data Usefulness And Query Audit
 
 - [x] Dashboard/Coach/Scores/Insights에 표시되는 데이터 목록과 필요성 평가

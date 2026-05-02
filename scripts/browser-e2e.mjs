@@ -180,6 +180,23 @@ try {
   );
   await assertBrowserSafe(page, "scores");
 
+  await page.getByRole("button", { name: "Benchmark", exact: true }).click();
+  await page.getByRole("heading", { name: "Prompt benchmark" }).waitFor();
+  await page.getByText("Measure your prompt habits").waitFor();
+  await assertText(
+    page,
+    "Measure now",
+    "Benchmark should expose a live measurement action.",
+  );
+  await page.getByRole("button", { name: "Measure now" }).click();
+  await page.getByText(/^Measured /).waitFor();
+  await assertText(
+    page,
+    "What this measures",
+    "Benchmark should explain the live archive measurement.",
+  );
+  await assertBrowserSafe(page, "benchmark");
+
   await page.getByRole("button", { name: "Insights", exact: true }).click();
   await page.getByRole("heading", { name: "Prompt insights" }).waitFor();
   await page.getByText("Project quality profile").waitFor();

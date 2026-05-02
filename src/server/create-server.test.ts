@@ -374,6 +374,7 @@ describe("createServer P2 ingest boundary", () => {
       "/dashboard",
       "/coach",
       "/scores",
+      "/benchmark",
       "/insights",
       "/projects",
     ]) {

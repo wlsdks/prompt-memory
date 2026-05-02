@@ -11,6 +11,48 @@ beforeEach(() => {
 });
 
 describe("web api export client", () => {
+  it("shares an in-flight csrf session request across parallel API calls", async () => {
+    fetchMock.mockImplementation(async (url: string) => {
+      if (url === "/api/v1/session") {
+        await Promise.resolve();
+        return jsonResponse({ data: { csrf_token: "csrf-1" } });
+      }
+
+      if (url === "/api/v1/settings") {
+        return jsonResponse({
+          data: {
+            data_dir: "/Users/example/.prompt-memory",
+            excluded_project_roots: [],
+            redaction_mode: "mask",
+            server: { host: "127.0.0.1", port: 17373 },
+          },
+        });
+      }
+
+      if (url === "/api/v1/quality") {
+        return jsonResponse({ data: { total_prompts: 0 } });
+      }
+
+      if (url === "/api/v1/score?limit=200&low_score_limit=8") {
+        return jsonResponse({ data: { low_score_prompts: [] } });
+      }
+
+      throw new Error(`Unexpected URL: ${url}`);
+    });
+    const { getArchiveScoreReport, getQualityDashboard, getSettings } =
+      await import("./api.js");
+
+    await Promise.all([
+      getSettings(),
+      getQualityDashboard(),
+      getArchiveScoreReport(),
+    ]);
+
+    expect(
+      fetchMock.mock.calls.filter(([url]) => url === "/api/v1/session"),
+    ).toHaveLength(1);
+  });
+
   it("creates anonymized export previews with csrf and returns raw-free job data", async () => {
     const job: ExportJob = {
       id: "exp_abcdef123456",
