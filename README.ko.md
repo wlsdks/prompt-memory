@@ -339,6 +339,16 @@ pnpm prompt-memory score --tool codex --json
 
 이 preview는 저장된 redacted prompt body를 로컬에서만 분석합니다. 외부 LLM provider를 호출하지 않습니다.
 
+## 프로젝트 규칙 파일 리뷰
+
+Projects 화면에서 프로젝트별 `AGENTS.md`와 `CLAUDE.md`를 분석할 수
+있습니다. 리뷰 결과는 파일명, 해시, 수정 시각, checklist 상태, 점수,
+개선 힌트를 로컬 snapshot으로 저장합니다.
+
+instruction file 본문, raw absolute path, 외부 LLM 결과는 저장하거나
+반환하지 않습니다. 점수는 프로젝트 맥락, 에이전트 작업 방식, 검증 명령,
+privacy/safety, 보고 규칙을 보는 deterministic local rubric입니다.
+
 ## MCP 프롬프트 점수 측정
 
 `prompt-memory`는 같은 로컬 Prompt Quality Score를 Claude Code, Codex 또는

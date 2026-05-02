@@ -18,7 +18,8 @@ const cliPath = join(repoRoot, "dist", "cli", "index.js");
 const tempRoot = mkdtempSync(join(tmpdir(), "prompt-memory-browser-e2e-"));
 const dataDir = join(tempRoot, "data");
 const homeDir = join(tempRoot, "home");
-const rawPathPrefix = "/Users/example";
+const rawPathPrefix = join(tempRoot, "workspace");
+const privateProjectDir = join(rawPathPrefix, "private-project");
 const rawSecret = "sk-proj-1234567890abcdef";
 const cliEnv = {
   ...process.env,
@@ -32,6 +33,18 @@ let browser;
 try {
   assert(existsSync(cliPath), "Run `pnpm build` before browser E2E.");
   mkdirSync(homeDir, { recursive: true });
+  mkdirSync(privateProjectDir, { recursive: true });
+  writeFileSync(
+    join(privateProjectDir, "AGENTS.md"),
+    [
+      "# prompt-memory",
+      "prompt-memory is a local-first developer tool built with TypeScript and SQLite.",
+      "Agents plan in tasks/todo.md, avoid reverting user changes, commit, and push.",
+      "Run pnpm test, pnpm lint, pnpm build, and Playwright E2E after UI changes.",
+      "Never expose secrets, prompt bodies, raw paths, tokens, stdout, or stderr leaks.",
+      "Respond with concise verification evidence.",
+    ].join("\n"),
+  );
   const serverPort = await freePort();
   const serverBaseUrl = `http://127.0.0.1:${serverPort}`;
 
@@ -47,7 +60,7 @@ try {
   await ingest(serverBaseUrl, "/api/v1/ingest/claude-code", {
     session_id: "browser-e2e-claude",
     transcript_path: `${rawPathPrefix}/.claude/session.jsonl`,
-    cwd: `${rawPathPrefix}/private-project`,
+    cwd: privateProjectDir,
     permission_mode: "default",
     hook_event_name: "UserPromptSubmit",
     prompt: `Fix ${rawPathPrefix}/private-project/src/secret.ts with token ${rawSecret}. Run pnpm test.`,
@@ -56,7 +69,7 @@ try {
     session_id: "browser-e2e-codex",
     turn_id: "turn-1",
     transcript_path: `${rawPathPrefix}/.codex/sessions/session.jsonl`,
-    cwd: `${rawPathPrefix}/private-project`,
+    cwd: privateProjectDir,
     hook_event_name: "UserPromptSubmit",
     model: "gpt-5.5",
     prompt: `Review ${rawPathPrefix}/private-project/src/web/App.tsx and return Markdown summary.`,
@@ -219,6 +232,9 @@ try {
 
   await page.getByRole("button", { name: "Projects", exact: true }).click();
   await page.getByRole("heading", { name: "Projects" }).waitFor();
+  await page.getByText("Agent rules").waitFor();
+  await page.getByRole("button", { name: "Analyze rules" }).click();
+  await page.getByText("rules file").waitFor();
   await assertBrowserSafe(page, "projects");
   await page.getByRole("button", { name: "capture on" }).click();
   await page.getByRole("button", { name: "paused" }).waitFor();

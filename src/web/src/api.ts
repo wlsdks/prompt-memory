@@ -278,6 +278,45 @@ export type ProjectPolicy = {
   updated_at?: string;
 };
 
+export type ProjectInstructionReview = {
+  generated_at: string;
+  analyzer: string;
+  score: {
+    value: number;
+    max: 100;
+    band: PromptQualityScoreBand;
+  };
+  files_found: number;
+  files: Array<{
+    file_name: string;
+    bytes: number;
+    modified_at: string;
+    content_hash: string;
+    truncated: boolean;
+  }>;
+  checklist: Array<{
+    key:
+      | "project_context"
+      | "agent_workflow"
+      | "verification"
+      | "privacy_safety"
+      | "collaboration_output";
+    label: string;
+    status: "good" | "weak" | "missing";
+    weight: number;
+    earned: number;
+    suggestion?: string;
+  }>;
+  suggestions: string[];
+  privacy: {
+    local_only: true;
+    external_calls: false;
+    stores_file_bodies: false;
+    returns_file_bodies: false;
+    returns_raw_paths: false;
+  };
+};
+
 export type ProjectSummary = {
   project_id: string;
   label: string;
@@ -290,6 +329,7 @@ export type ProjectSummary = {
   copied_count: number;
   bookmarked_count: number;
   policy: ProjectPolicy;
+  instruction_review?: ProjectInstructionReview;
 };
 
 export type ProjectPolicyPatch = {
@@ -472,6 +512,29 @@ export async function updateProjectPolicy(
   }
 
   const body = (await response.json()) as { data: ProjectSummary };
+  return body.data;
+}
+
+export async function analyzeProjectInstructions(
+  projectId: string,
+): Promise<ProjectInstructionReview> {
+  await ensureSession();
+  const response = await fetch(
+    `/api/v1/projects/${encodeURIComponent(projectId)}/instructions/analyze`,
+    {
+      method: "POST",
+      credentials: "same-origin",
+      headers: {
+        "x-csrf-token": csrfToken ?? "",
+      },
+    },
+  );
+
+  if (!response.ok) {
+    throw new Error("Project instruction analysis failed");
+  }
+
+  const body = (await response.json()) as { data: ProjectInstructionReview };
   return body.data;
 }
 

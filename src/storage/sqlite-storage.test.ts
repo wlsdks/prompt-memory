@@ -67,6 +67,7 @@ describe("SQLite prompt storage", () => {
       { version: 7, name: "007_prompt_improvement_drafts" },
       { version: 8, name: "008_export_jobs" },
       { version: 9, name: "009_dashboard_query_indexes" },
+      { version: 10, name: "010_project_instruction_reviews" },
     ]);
     const db = new Database(join(dataDir, "prompt-memory.sqlite"));
     try {
@@ -1048,6 +1049,59 @@ describe("SQLite prompt storage", () => {
       "/Users/example/private-project",
     );
     expect(JSON.stringify(auditRows)).not.toContain("sk-proj-1234567890abcdef");
+  });
+
+  it("analyzes and stores project instruction files without returning bodies or raw paths", async () => {
+    const dataDir = createTempDir();
+    const projectDir = createTempDir();
+    writeFileSync(
+      join(projectDir, "AGENTS.md"),
+      [
+        "# Project",
+        "prompt-memory is a local-first developer tool built with TypeScript and SQLite.",
+        "Agents must plan in tasks/todo.md, avoid reverting user changes, commit, and push.",
+        "Run pnpm test, pnpm lint, pnpm build, and Playwright E2E after UI changes.",
+        "Never log secrets, prompt bodies, raw paths, tokens, stdout, or stderr leaks.",
+        "Respond in Korean and report verification evidence in the final summary.",
+      ].join("\n"),
+    );
+    initializePromptMemory({ dataDir });
+    const storage = createSqlitePromptStorage({
+      dataDir,
+      hmacSecret: "test-secret",
+      now: nextDate(["2026-05-03T00:10:00.000Z", "2026-05-03T00:11:00.000Z"]),
+    });
+    await storeClaudePrompt(storage, {
+      prompt: "Update project instructions and run pnpm test.",
+      receivedAt: "2026-05-03T00:10:00.000Z",
+      cwd: projectDir,
+    });
+
+    const project = storage.listProjects().items[0]!;
+    const review = storage.analyzeProjectInstructions(project.project_id);
+    const updatedProject = storage.listProjects().items[0]!;
+
+    expect(review).toMatchObject({
+      generated_at: "2026-05-03T00:11:00.000Z",
+      analyzer: "local-project-instructions-v1",
+      files_found: 1,
+      score: { value: 100, max: 100, band: "excellent" },
+      files: [expect.objectContaining({ file_name: "AGENTS.md" })],
+      privacy: {
+        local_only: true,
+        external_calls: false,
+        stores_file_bodies: false,
+        returns_file_bodies: false,
+        returns_raw_paths: false,
+      },
+    });
+    expect(updatedProject.instruction_review).toMatchObject({
+      score: { value: 100, band: "excellent" },
+      files_found: 1,
+    });
+    expect(JSON.stringify(review)).not.toContain(projectDir);
+    expect(JSON.stringify(review)).not.toContain("local-first developer tool");
+    expect(JSON.stringify(updatedProject)).not.toContain(projectDir);
   });
 
   it("stores import dry-run jobs without prompt bodies or raw source paths", async () => {

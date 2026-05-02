@@ -2,6 +2,7 @@ import type { FastifyInstance } from "fastify";
 import { z } from "zod";
 
 import type {
+  ProjectInstructionStoragePort,
   ProjectPolicyActor,
   ProjectPolicyPatch,
   ProjectPolicyStoragePort,
@@ -11,7 +12,7 @@ import { problem } from "../errors.js";
 
 export type ProjectRouteOptions = {
   auth: ServerAuthConfig;
-  storage: Partial<ProjectPolicyStoragePort>;
+  storage: Partial<ProjectPolicyStoragePort & ProjectInstructionStoragePort>;
 };
 
 const ProjectParamsSchema = z.object({
@@ -55,6 +56,43 @@ export function registerProjectRoutes(
 
     return { data: result };
   });
+
+  server.post("/api/v1/projects/:id/instructions/analyze", async (request) => {
+    requireAppAccess(request, options.auth, { csrf: true });
+    const storage = requireProjectInstructionStorage(
+      options.storage,
+      request.url,
+    );
+    const params = ProjectParamsSchema.parse(request.params);
+    const result = storage.analyzeProjectInstructions(params.id);
+
+    if (!result) {
+      throw problem(404, "Not Found", "Project not found.", request.url);
+    }
+
+    return { data: result };
+  });
+
+  server.get("/api/v1/projects/:id/instructions", async (request) => {
+    requireAppAccess(request, options.auth);
+    const storage = requireProjectInstructionStorage(
+      options.storage,
+      request.url,
+    );
+    const params = ProjectParamsSchema.parse(request.params);
+    const result = storage.getProjectInstructionReview(params.id);
+
+    if (!result) {
+      throw problem(
+        404,
+        "Not Found",
+        "Project instruction review not found.",
+        request.url,
+      );
+    }
+
+    return { data: result };
+  });
 }
 
 function requireProjectStorage(
@@ -75,4 +113,23 @@ function requireProjectStorage(
   }
 
   return storage as ProjectPolicyStoragePort;
+}
+
+function requireProjectInstructionStorage(
+  storage: ProjectRouteOptions["storage"],
+  instance: string,
+): ProjectInstructionStoragePort {
+  if (
+    !storage.getProjectInstructionReview ||
+    !storage.analyzeProjectInstructions
+  ) {
+    throw problem(
+      500,
+      "Internal Server Error",
+      "Project instruction storage is not configured.",
+      instance,
+    );
+  }
+
+  return storage as ProjectInstructionStoragePort;
 }

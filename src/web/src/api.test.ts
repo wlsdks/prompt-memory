@@ -131,6 +131,43 @@ describe("web api export client", () => {
       body: JSON.stringify({ job_id: "exp_abcdef123456" }),
     });
   });
+
+  it("analyzes project instruction files with csrf", async () => {
+    const review = {
+      generated_at: "2026-05-03T00:00:00.000Z",
+      analyzer: "local-project-instructions-v1",
+      score: { value: 80, max: 100, band: "good" },
+      files_found: 1,
+      files: [],
+      checklist: [],
+      suggestions: [],
+      privacy: {
+        local_only: true,
+        external_calls: false,
+        stores_file_bodies: false,
+        returns_file_bodies: false,
+        returns_raw_paths: false,
+      },
+    };
+    fetchMock
+      .mockResolvedValueOnce(jsonResponse({ data: { csrf_token: "csrf-1" } }))
+      .mockResolvedValueOnce(jsonResponse({ data: review }));
+    const { analyzeProjectInstructions } = await import("./api.js");
+
+    const result = await analyzeProjectInstructions("proj_abcdef123456");
+
+    expect(result).toEqual(review);
+    expect(fetchMock).toHaveBeenLastCalledWith(
+      "/api/v1/projects/proj_abcdef123456/instructions/analyze",
+      {
+        method: "POST",
+        credentials: "same-origin",
+        headers: {
+          "x-csrf-token": "csrf-1",
+        },
+      },
+    );
+  });
 });
 
 function jsonResponse(body: unknown): Response {

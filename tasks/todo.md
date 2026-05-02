@@ -1,5 +1,20 @@
 # 작업 계획
 
+## 2026-05-03 Project Instruction Analysis And Sidebar Polish
+
+- [x] `AGENTS.md` / `CLAUDE.md` 분석 기준과 저장 범위 확정
+- [x] 로컬 파일 원문/경로를 노출하지 않는 project instruction snapshot 저장소 구현
+- [x] Projects API와 Web UI에서 분석 실행/결과 표시 추가
+- [x] 좌측 navigation rail 크기, 타이포그래피, 터치 영역 개선
+- [x] 테스트, browser E2E, 빌드 검증 후 커밋/푸시
+
+### 판단 기준
+
+- 프로젝트 규칙 파일 원문과 raw absolute path는 API/UI에 반환하지 않는다.
+- 점수는 deterministic local rubric으로 계산하고 외부 LLM을 호출하지 않는다.
+- 사용자는 Projects 화면에서 프로젝트별 규칙 파일 상태, 점수, 부족 항목, 다음 수정 힌트를 바로 볼 수 있어야 한다.
+- Sidebar는 desktop web 기준으로 현재보다 넓고 큰 글자/아이콘/클릭 영역을 제공해야 한다.
+
 ## 2026-05-02 Agent Measurement Verification And Live Refresh
 
 - [x] MCP `score_prompt` / `score_prompt_archive`가 Claude Code/Codex에서 쓸 수 있는지 실제 호출로 점검

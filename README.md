@@ -432,6 +432,17 @@ Prompt detail views include a local rule-based analysis preview. It summarizes w
 
 This preview runs locally against the stored, redacted prompt body. It does not call an external LLM provider.
 
+## Project Instruction Review
+
+The Projects screen can analyze project-local `AGENTS.md` and `CLAUDE.md`
+files. The review stores a local snapshot with file names, hashes, timestamps,
+checklist status, score, and improvement hints.
+
+It does not store or return instruction file bodies, raw absolute paths, or
+external LLM results. The score is a deterministic local rubric for project
+context, agent workflow, verification commands, privacy/safety, and reporting
+rules.
+
 ## MCP Prompt Scoring
 
 `prompt-memory` can expose the same local Prompt Quality Score to Claude Code,

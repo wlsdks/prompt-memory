@@ -106,6 +106,9 @@ function translateDynamic(value: string): string | undefined {
   if (/^\d+ prompts$/.test(value)) {
     return value.replace(/^(\d+) prompts$/, "프롬프트 $1개");
   }
+  if (/^\d+ rules file(s)?$/.test(value)) {
+    return value.replace(/^(\d+) rules file(s)?$/, "규칙 파일 $1개");
+  }
   if (/^\d+ stored$/.test(value)) {
     return value.replace(/^(\d+) stored$/, "$1개 저장됨");
   }
@@ -552,6 +555,39 @@ const UI_TRANSLATIONS: Record<string, string> = {
   "Latest capture": "최근 수집",
   "Quality/sensitivity": "품질/민감도",
   Reuse: "재사용",
+  "Agent rules": "에이전트 규칙",
+  "Not analyzed yet": "아직 분석하지 않음",
+  "Analyze rules": "규칙 분석",
+  Analyzing: "분석 중",
+  "rules file": "규칙 파일",
+  "rules files": "규칙 파일",
+  "Project context": "프로젝트 맥락",
+  "Agent workflow": "에이전트 작업 방식",
+  Verification: "검증",
+  "Privacy and safety": "개인정보와 안전",
+  "Collaboration and output": "협업과 출력",
+  "Add AGENTS.md or CLAUDE.md at the project root so coding agents can follow project-specific rules.":
+    "코딩 에이전트가 프로젝트별 규칙을 따를 수 있도록 프로젝트 루트에 AGENTS.md 또는 CLAUDE.md를 추가하세요.",
+  "Add a short project summary, stack, and the product identity agents must preserve.":
+    "에이전트가 지켜야 할 프로젝트 요약, 스택, 제품 정체성을 짧게 추가하세요.",
+  "Make the project context more concrete: product goal, stack, and key boundaries.":
+    "제품 목표, 스택, 핵심 경계를 더 구체적으로 적으세요.",
+  "Document how agents should plan, edit, commit, and avoid reverting user changes.":
+    "에이전트가 계획, 수정, 커밋, 사용자 변경 보호를 어떻게 해야 하는지 적으세요.",
+  "Clarify the expected agent workflow: planning, task tracking, commit cadence, and git safety.":
+    "계획, 작업 추적, 커밋 주기, git 안전 규칙을 더 명확히 하세요.",
+  "List the exact verification commands agents must run after code or UI changes.":
+    "코드/UI 변경 후 에이전트가 실행해야 할 검증 명령을 정확히 적으세요.",
+  "Replace broad verification wording with concrete commands and when to run each one.":
+    "넓은 검증 문구 대신 구체적인 명령과 실행 조건을 적으세요.",
+  "Add rules for secrets, prompt bodies, raw paths, logs, and local-only storage boundaries.":
+    "비밀정보, 프롬프트 본문, 원본 경로, 로그, 로컬 저장 경계 규칙을 추가하세요.",
+  "Make privacy rules operational: what must never be logged, returned, or committed.":
+    "로그/응답/커밋에 절대 포함하면 안 되는 항목을 운영 규칙으로 적으세요.",
+  "Specify response language, reporting shape, and what evidence agents should include.":
+    "응답 언어, 보고 형식, 포함해야 할 증거를 지정하세요.",
+  "Clarify how agents should report work, verification evidence, and remaining risks.":
+    "작업 결과, 검증 증거, 남은 리스크를 어떻게 보고할지 명확히 하세요.",
   "capture on": "수집 중",
   paused: "중지됨",
   "Create JSON from the local archive without raw paths or stable prompt ids.":

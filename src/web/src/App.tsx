@@ -29,6 +29,7 @@ import {
   type PromptImprovement,
 } from "../../analysis/improve.js";
 import {
+  analyzeProjectInstructions,
   createExportPreview,
   deletePrompt,
   executeExportJob,
@@ -111,6 +112,9 @@ export function App() {
   >();
   const [measurementBusy, setMeasurementBusy] = useState(false);
   const [projects, setProjects] = useState<ProjectSummary[]>([]);
+  const [projectInstructionBusy, setProjectInstructionBusy] = useState<
+    Record<string, boolean>
+  >({});
   const [exportPreset, setExportPreset] =
     useState<ExportPreset>("anonymized_review");
   const [exportPreview, setExportPreview] = useState<ExportJob | undefined>();
@@ -418,6 +422,30 @@ export function App() {
       );
     } catch {
       setError("Could not save the project capture policy.");
+    }
+  }
+
+  async function analyzeProjectRules(project: ProjectSummary): Promise<void> {
+    setProjectInstructionBusy((current) => ({
+      ...current,
+      [project.project_id]: true,
+    }));
+    try {
+      const review = await analyzeProjectInstructions(project.project_id);
+      setProjects((current) =>
+        current.map((item) =>
+          item.project_id === project.project_id
+            ? { ...item, instruction_review: review }
+            : item,
+        ),
+      );
+    } catch {
+      setError("Could not analyze project instruction files.");
+    } finally {
+      setProjectInstructionBusy((current) => ({
+        ...current,
+        [project.project_id]: false,
+      }));
     }
   }
 
@@ -893,6 +921,10 @@ export function App() {
         )}
         {view.name === "projects" && (
           <ProjectsView
+            instructionBusy={projectInstructionBusy}
+            onAnalyzeInstructions={(project) =>
+              void analyzeProjectRules(project)
+            }
             onToggleCapture={(project) => void toggleProjectCapture(project)}
             projects={projects}
           />
@@ -2679,9 +2711,13 @@ function SettingsView({
 }
 
 function ProjectsView({
+  instructionBusy,
+  onAnalyzeInstructions,
   onToggleCapture,
   projects,
 }: {
+  instructionBusy: Record<string, boolean>;
+  onAnalyzeInstructions(project: ProjectSummary): void;
   onToggleCapture(project: ProjectSummary): void;
   projects: ProjectSummary[];
 }) {
@@ -2702,6 +2738,7 @@ function ProjectsView({
           <span>Latest capture</span>
           <span>Quality/sensitivity</span>
           <span>Reuse</span>
+          <span>Agent rules</span>
           <span>Capture</span>
         </div>
         {projects.map((project) => (
@@ -2733,6 +2770,41 @@ function ProjectsView({
               <span className="badge saved-badge">
                 saved {project.bookmarked_count}
               </span>
+            </span>
+            <span className="project-instruction-cell">
+              {project.instruction_review ? (
+                <span className="instruction-review-summary">
+                  <span
+                    className={`badge score-badge ${project.instruction_review.score.band}`}
+                  >
+                    {project.instruction_review.score.value}
+                  </span>
+                  <small>
+                    {formatRulesFileCount(
+                      project.instruction_review.files_found,
+                    )}
+                  </small>
+                  {project.instruction_review.suggestions[0] && (
+                    <small>{project.instruction_review.suggestions[0]}</small>
+                  )}
+                </span>
+              ) : (
+                <span className="instruction-review-summary">
+                  <small>Not analyzed yet</small>
+                  <small>AGENTS.md / CLAUDE.md</small>
+                </span>
+              )}
+              <button
+                className="secondary-button compact-action"
+                disabled={instructionBusy[project.project_id]}
+                onClick={() => onAnalyzeInstructions(project)}
+                type="button"
+              >
+                <RefreshCw size={14} />
+                {instructionBusy[project.project_id]
+                  ? "Analyzing"
+                  : "Analyze rules"}
+              </button>
             </span>
             <span>
               <button
@@ -3215,6 +3287,10 @@ const FOCUS_LABELS: Record<NonNullable<PromptFilters["focus"]>, string> = {
   duplicated: "Duplicate candidates",
   "quality-gap": "Quality gaps",
 };
+
+function formatRulesFileCount(count: number): string {
+  return `${count} rules file${count === 1 ? "" : "s"}`;
+}
 
 function formatDate(value: string): string {
   return new Intl.DateTimeFormat("ko-KR", {

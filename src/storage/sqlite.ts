@@ -3,17 +3,23 @@ import { createHmac, randomUUID } from "node:crypto";
 import {
   existsSync,
   mkdirSync,
+  readFileSync,
   readdirSync,
   statSync,
   unlinkSync,
 } from "node:fs";
-import { join } from "node:path";
+import { basename, dirname, join } from "node:path";
 
 import {
   analyzePrompt,
   calculatePromptQualityScore,
   qualityScoreBand,
 } from "../analysis/analyze.js";
+import {
+  analyzeProjectInstructionFiles,
+  PROJECT_INSTRUCTION_FILENAMES,
+  type ProjectInstructionSourceFile,
+} from "../analysis/project-instructions.js";
 import { redactPrompt } from "../redaction/redact.js";
 import { createPromptId } from "../shared/ids.js";
 import { createStoredContentHash } from "../shared/hashing.js";
@@ -42,6 +48,8 @@ import type {
   ListPromptsOptions,
   PromptDetail,
   ProjectListResult,
+  ProjectInstructionReview,
+  ProjectInstructionStoragePort,
   ProjectPolicy,
   ProjectPolicyActor,
   ProjectPolicyPatch,
@@ -150,6 +158,19 @@ type ProjectPromptRow = {
   bookmarked_count: number;
 };
 
+type ProjectInstructionReviewRow = {
+  project_key: string;
+  generated_at: string;
+  analyzer: string;
+  score: number;
+  score_band: string;
+  files_found: number;
+  files_json: string;
+  checklist_json: string;
+  suggestions_json: string;
+  privacy_json: string;
+};
+
 type ImportJobRow = {
   id: string;
   source_type: string;
@@ -211,6 +232,7 @@ export type AppliedMigration = {
 export type SqlitePromptStorage = PromptStoragePort &
   PromptReadStoragePort &
   ProjectPolicyStoragePort &
+  ProjectInstructionStoragePort &
   ImportJobStoragePort &
   ExportJobStoragePort & {
     close(): void;
@@ -293,6 +315,17 @@ export function createSqlitePromptStorage(
     },
     listProjects() {
       return listProjectsForPolicy(db, options.hmacSecret);
+    },
+    getProjectInstructionReview(projectId) {
+      return readProjectInstructionReview(db, projectId);
+    },
+    analyzeProjectInstructions(projectId) {
+      return analyzeProjectInstructions(
+        db,
+        options.hmacSecret,
+        projectId,
+        options.now?.() ?? new Date(),
+      );
     },
     updateProjectPolicy(projectId, patch, actor) {
       return updateProjectPolicy(
@@ -384,6 +417,7 @@ function applyMigrations(db: Database.Database): void {
   applyPromptImprovementDraftMigration(db);
   applyExportJobMigration(db);
   applyDashboardQueryIndexMigration(db);
+  applyProjectInstructionReviewMigration(db);
 }
 
 function applyAnalysisChecklistTagsMigration(db: Database.Database): void {
@@ -634,6 +668,36 @@ function applyDashboardQueryIndexMigration(db: Database.Database): void {
     db.prepare(
       "INSERT INTO schema_migrations(version, name, applied_at) VALUES (?, ?, ?)",
     ).run(9, "009_dashboard_query_indexes", new Date().toISOString());
+  }
+}
+
+function applyProjectInstructionReviewMigration(db: Database.Database): void {
+  const applied = db
+    .prepare("SELECT 1 FROM schema_migrations WHERE version = ?")
+    .get(10);
+
+  db.exec(`
+    CREATE TABLE IF NOT EXISTS project_instruction_reviews (
+      project_key TEXT PRIMARY KEY,
+      generated_at TEXT NOT NULL,
+      analyzer TEXT NOT NULL,
+      score INTEGER NOT NULL,
+      score_band TEXT NOT NULL,
+      files_found INTEGER NOT NULL,
+      files_json TEXT NOT NULL,
+      checklist_json TEXT NOT NULL,
+      suggestions_json TEXT NOT NULL,
+      privacy_json TEXT NOT NULL
+    );
+
+    CREATE INDEX IF NOT EXISTS idx_project_instruction_reviews_generated_at
+      ON project_instruction_reviews(generated_at DESC);
+  `);
+
+  if (!applied) {
+    db.prepare(
+      "INSERT INTO schema_migrations(version, name, applied_at) VALUES (?, ?, ?)",
+    ).run(10, "010_project_instruction_reviews", new Date().toISOString());
   }
 }
 
@@ -1566,6 +1630,14 @@ function parseJsonValue(value: string): unknown {
     return JSON.parse(value) as unknown;
   } catch {
     return {};
+  }
+}
+
+function parseJson<T>(value: string, fallback: T): T {
+  try {
+    return JSON.parse(value) as T;
+  } catch {
+    return fallback;
   }
 }
 
@@ -2920,6 +2992,10 @@ function listProjectsForPolicy(
           copied_count: project.copiedCount,
           bookmarked_count: project.bookmarkedCount,
           policy: policy.policy,
+          instruction_review: readProjectInstructionReview(
+            db,
+            project.projectId,
+          ),
         };
       })
       .sort((a, b) =>
@@ -3037,6 +3113,177 @@ function getProjectPolicyForEvent(
   );
 
   return readProjectPolicy(db, descriptor.projectId).policy;
+}
+
+function analyzeProjectInstructions(
+  db: Database.Database,
+  hmacSecret: string,
+  projectId: string,
+  now: Date,
+): ProjectInstructionReview | undefined {
+  const sourcePath = findProjectSourcePath(db, hmacSecret, projectId);
+  if (!sourcePath) {
+    return undefined;
+  }
+
+  const review = analyzeProjectInstructionFiles(
+    readProjectInstructionFiles(sourcePath),
+    now.toISOString(),
+  );
+
+  db.prepare(
+    `
+    INSERT INTO project_instruction_reviews(
+      project_key, generated_at, analyzer, score, score_band, files_found,
+      files_json, checklist_json, suggestions_json, privacy_json
+    )
+    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+    ON CONFLICT(project_key) DO UPDATE SET
+      generated_at = excluded.generated_at,
+      analyzer = excluded.analyzer,
+      score = excluded.score,
+      score_band = excluded.score_band,
+      files_found = excluded.files_found,
+      files_json = excluded.files_json,
+      checklist_json = excluded.checklist_json,
+      suggestions_json = excluded.suggestions_json,
+      privacy_json = excluded.privacy_json
+    `,
+  ).run(
+    projectId,
+    review.generated_at,
+    review.analyzer,
+    review.score.value,
+    review.score.band,
+    review.files_found,
+    JSON.stringify(review.files),
+    JSON.stringify(review.checklist),
+    JSON.stringify(review.suggestions),
+    JSON.stringify(review.privacy),
+  );
+
+  return review;
+}
+
+function readProjectInstructionReview(
+  db: Database.Database,
+  projectId: string,
+): ProjectInstructionReview | undefined {
+  const row = db
+    .prepare("SELECT * FROM project_instruction_reviews WHERE project_key = ?")
+    .get(projectId) as ProjectInstructionReviewRow | undefined;
+
+  if (!row) {
+    return undefined;
+  }
+
+  return {
+    generated_at: row.generated_at,
+    analyzer: row.analyzer,
+    score: {
+      value: row.score,
+      max: 100,
+      band: row.score_band as ProjectInstructionReview["score"]["band"],
+    },
+    files: parseJson(row.files_json, []),
+    files_found: row.files_found,
+    checklist: parseJson(row.checklist_json, []),
+    suggestions: parseJson(row.suggestions_json, []),
+    privacy: parseJson(row.privacy_json, {
+      local_only: true,
+      external_calls: false,
+      stores_file_bodies: false,
+      returns_file_bodies: false,
+      returns_raw_paths: false,
+    }),
+  };
+}
+
+function findProjectSourcePath(
+  db: Database.Database,
+  hmacSecret: string,
+  projectId: string,
+): string | undefined {
+  const rows = db
+    .prepare(
+      `
+      SELECT cwd, project_root
+      FROM prompts
+      WHERE deleted_at IS NULL
+      ORDER BY received_at DESC, id DESC
+      `,
+    )
+    .all() as Array<{ cwd: string; project_root: string | null }>;
+
+  for (const row of rows) {
+    const descriptor = projectDescriptor(row, hmacSecret);
+    if (descriptor.projectId === projectId) {
+      return descriptor.sourcePath;
+    }
+  }
+
+  return undefined;
+}
+
+function readProjectInstructionFiles(
+  sourcePath: string,
+): ProjectInstructionSourceFile[] {
+  const files: ProjectInstructionSourceFile[] = [];
+  const seen = new Set<string>();
+  const maxBytes = 128 * 1024;
+
+  for (const dir of candidateInstructionDirs(sourcePath)) {
+    for (const fileName of PROJECT_INSTRUCTION_FILENAMES) {
+      const path = join(dir, fileName);
+      const seenKey = path.toLowerCase();
+      if (seen.has(seenKey) || !existsSync(path)) {
+        continue;
+      }
+      const stats = statSync(path);
+      if (!stats.isFile()) {
+        continue;
+      }
+      const buffer = readFileSync(path);
+      const truncated = buffer.byteLength > maxBytes;
+      const content = buffer.subarray(0, maxBytes).toString("utf8");
+      seen.add(seenKey);
+      files.push({
+        file_name: basename(path),
+        content,
+        bytes: stats.size,
+        modified_at: stats.mtime.toISOString(),
+        truncated,
+      });
+    }
+
+    if (files.length > 0) {
+      return files;
+    }
+  }
+
+  return files;
+}
+
+function candidateInstructionDirs(sourcePath: string): string[] {
+  const dirs: string[] = [];
+  let current =
+    existsSync(sourcePath) && statSync(sourcePath).isFile()
+      ? dirname(sourcePath)
+      : sourcePath;
+
+  for (let depth = 0; depth < 8; depth += 1) {
+    if (!current || dirs.includes(current)) {
+      break;
+    }
+    dirs.push(current);
+    const next = dirname(current);
+    if (next === current) {
+      break;
+    }
+    current = next;
+  }
+
+  return dirs;
 }
 
 function projectDescriptor(

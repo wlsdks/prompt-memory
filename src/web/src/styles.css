@@ -100,7 +100,7 @@ pre {
 
 .app-shell {
   display: grid;
-  grid-template-columns: 232px minmax(0, 1fr);
+  grid-template-columns: 288px minmax(0, 1fr);
   min-height: 100vh;
 }
 
@@ -125,7 +125,7 @@ pre {
 
 .sidebar {
   border-right: 1px solid var(--color-border-soft);
-  padding: 18px 14px;
+  padding: 28px 26px;
   background: var(--pm-rail);
 }
 
@@ -134,25 +134,32 @@ pre {
 .capture-status {
   align-items: center;
   display: flex;
-  gap: 8px;
+  gap: 14px;
 }
 
 .brand {
-  font-size: 15px;
-  font-weight: 510;
-  margin-bottom: 24px;
+  font-size: 22px;
+  font-weight: 760;
+  letter-spacing: 0;
+  margin-bottom: 34px;
+}
+
+.brand svg {
+  height: 26px;
+  width: 26px;
 }
 
 .nav-button {
   width: 100%;
-  height: 36px;
+  height: 52px;
   border: 0;
-  border-radius: 8px;
+  border-radius: 12px;
   color: var(--pm-text-muted);
   background: transparent;
-  font-size: 13px;
-  font-weight: 650;
-  padding: 0 10px;
+  font-size: 16px;
+  font-weight: 720;
+  margin-bottom: 6px;
+  padding: 0 18px;
   text-align: left;
 }
 
@@ -167,33 +174,41 @@ pre {
   color: var(--pm-text);
 }
 
+.nav-button svg {
+  flex: 0 0 auto;
+  height: 21px;
+  width: 21px;
+}
+
 .capture-status {
-  margin-top: 24px;
+  gap: 12px;
+  margin-top: 34px;
   color: var(--pm-text-muted);
-  font-size: 12px;
+  font-size: 14px;
+  font-weight: 520;
 }
 
 .language-switch {
   align-items: center;
   background: var(--pm-surface);
   border: 1px solid var(--pm-border);
-  border-radius: 10px;
+  border-radius: 14px;
   display: grid;
   grid-template-columns: 1fr 1fr;
   gap: 2px;
-  margin-top: 14px;
-  padding: 2px;
+  margin-top: 20px;
+  padding: 4px;
   width: 100%;
 }
 
 .language-switch button {
   background: transparent;
   border: 0;
-  border-radius: 8px;
+  border-radius: 10px;
   color: var(--pm-text-muted);
-  font-size: 12px;
+  font-size: 15px;
   font-weight: 700;
-  height: 28px;
+  height: 40px;
 }
 
 .language-switch button.active {
@@ -2215,10 +2230,10 @@ dd {
   display: grid;
   gap: 12px;
   grid-template-columns:
-    minmax(220px, 1fr) 156px minmax(150px, 190px) minmax(130px, 170px)
-    116px;
-  min-height: 64px;
-  padding: 10px 12px;
+    minmax(220px, 1fr) 146px minmax(150px, 180px) minmax(120px, 150px)
+    minmax(220px, 300px) 116px;
+  min-height: 82px;
+  padding: 14px 16px;
 }
 
 .project-row:last-child {
@@ -2250,6 +2265,48 @@ dd {
   color: var(--pm-text-subtle);
   font-size: 12px;
   line-height: 18px;
+}
+
+.project-instruction-cell,
+.instruction-review-summary {
+  display: grid;
+  gap: 7px;
+  min-width: 0;
+}
+
+.project-instruction-cell {
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: center;
+}
+
+.instruction-review-summary small {
+  color: var(--pm-text-subtle);
+  font-size: 12px;
+  line-height: 17px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.compact-action {
+  align-items: center;
+  background: var(--pm-surface);
+  border: 1px solid var(--pm-border);
+  border-radius: 7px;
+  color: var(--pm-text);
+  display: inline-flex;
+  gap: 6px;
+  font-size: 12px;
+  font-weight: 650;
+  min-height: 34px;
+  padding: 0 10px;
+  white-space: nowrap;
+}
+
+.compact-action:disabled {
+  color: var(--pm-text-subtle);
+  cursor: wait;
+  opacity: 0.72;
 }
 
 .toggle-button {
@@ -2699,6 +2756,14 @@ dd {
 
   .project-name-cell strong,
   .project-name-cell small {
+    white-space: normal;
+  }
+
+  .project-instruction-cell {
+    grid-template-columns: 1fr;
+  }
+
+  .instruction-review-summary small {
     white-space: normal;
   }
 
