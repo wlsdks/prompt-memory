@@ -1,5 +1,14 @@
 # 작업 계획
 
+## 2026-05-02 Full Feature Audit Plan
+
+- [x] CLI command surface 점검: setup/init/hook/doctor/server/service/statusline/list/search/show/delete/rebuild/import/export/improve
+- [x] API surface 점검: ingest, prompts, quality, projects, exports, settings, session, health
+- [x] Web UI 흐름 점검: archive/detail/coach/projects/export/mobile
+- [x] Storage/privacy 점검: Markdown source of truth, SQLite/FTS, delete cleanup, privacy regression
+- [x] Benchmark/release smoke 재실행: 기능 동작과 usefulness regression 확인
+- [x] 기능별 완료/제외/남은 리스크 정리
+
 ## 2026-05-02 Post-PRD2 Public Beta Hardening Plan
 
 - [x] PRD2 core 완료 판정 audit: PRD_PHASE2 수용 기준과 실제 구현 차이 목록화
