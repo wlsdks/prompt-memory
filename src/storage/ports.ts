@@ -196,6 +196,45 @@ export type PromptQualityDashboard = {
   project_profiles: ProjectQualityProfile[];
 };
 
+export type ProjectPolicy = {
+  capture_disabled: boolean;
+  analysis_disabled: boolean;
+  retention_candidate_days?: number;
+  external_analysis_opt_in: boolean;
+  export_disabled: boolean;
+  version: number;
+  updated_at?: string;
+};
+
+export type ProjectSummary = {
+  project_id: string;
+  label: string;
+  alias?: string;
+  path_kind: "project_root" | "cwd";
+  prompt_count: number;
+  latest_ingest?: string;
+  sensitive_count: number;
+  quality_gap_rate: number;
+  copied_count: number;
+  bookmarked_count: number;
+  policy: ProjectPolicy;
+};
+
+export type ProjectListResult = {
+  items: ProjectSummary[];
+};
+
+export type ProjectPolicyPatch = {
+  alias?: string | null;
+  capture_disabled?: boolean;
+  analysis_disabled?: boolean;
+  retention_candidate_days?: number | null;
+  external_analysis_opt_in?: boolean;
+  export_disabled?: boolean;
+};
+
+export type ProjectPolicyActor = "cli" | "web" | "system";
+
 export type PromptStoragePort = {
   storePrompt(input: StorePromptInput): Promise<StorePromptResult>;
 };
@@ -211,4 +250,17 @@ export type PromptReadStoragePort = {
   getQualityDashboard(): PromptQualityDashboard;
   recordPromptUsage(id: string, type: PromptUsageEventType): PromptUsageResult;
   setPromptBookmark(id: string, bookmarked: boolean): PromptBookmarkResult;
+};
+
+export type ProjectPolicyStoragePort = {
+  listProjects(): ProjectListResult;
+  updateProjectPolicy(
+    projectId: string,
+    patch: ProjectPolicyPatch,
+    actor: ProjectPolicyActor,
+  ): ProjectSummary | undefined;
+  getProjectPolicyForEvent(event: {
+    cwd: string;
+    project_root?: string | null;
+  }): ProjectPolicy | undefined;
 };

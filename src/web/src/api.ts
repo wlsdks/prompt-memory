@@ -178,6 +178,39 @@ export type SettingsResponse = {
   };
 };
 
+export type ProjectPolicy = {
+  capture_disabled: boolean;
+  analysis_disabled: boolean;
+  retention_candidate_days?: number;
+  external_analysis_opt_in: boolean;
+  export_disabled: boolean;
+  version: number;
+  updated_at?: string;
+};
+
+export type ProjectSummary = {
+  project_id: string;
+  label: string;
+  alias?: string;
+  path_kind: "project_root" | "cwd";
+  prompt_count: number;
+  latest_ingest?: string;
+  sensitive_count: number;
+  quality_gap_rate: number;
+  copied_count: number;
+  bookmarked_count: number;
+  policy: ProjectPolicy;
+};
+
+export type ProjectPolicyPatch = {
+  alias?: string | null;
+  capture_disabled?: boolean;
+  analysis_disabled?: boolean;
+  retention_candidate_days?: number | null;
+  external_analysis_opt_in?: boolean;
+  export_disabled?: boolean;
+};
+
 let csrfToken: string | undefined;
 
 export async function ensureSession(): Promise<void> {
@@ -251,6 +284,43 @@ export async function getSettings(): Promise<SettingsResponse> {
     credentials: "same-origin",
   });
   const body = (await response.json()) as { data: SettingsResponse };
+  return body.data;
+}
+
+export async function listProjects(): Promise<ProjectSummary[]> {
+  await ensureSession();
+  const response = await fetch("/api/v1/projects", {
+    credentials: "same-origin",
+  });
+  const body = (await response.json()) as {
+    data: { items: ProjectSummary[] };
+  };
+  return body.data.items;
+}
+
+export async function updateProjectPolicy(
+  projectId: string,
+  patch: ProjectPolicyPatch,
+): Promise<ProjectSummary> {
+  await ensureSession();
+  const response = await fetch(
+    `/api/v1/projects/${encodeURIComponent(projectId)}/policy`,
+    {
+      method: "PATCH",
+      credentials: "same-origin",
+      headers: {
+        "content-type": "application/json",
+        "x-csrf-token": csrfToken ?? "",
+      },
+      body: JSON.stringify(patch),
+    },
+  );
+
+  if (!response.ok) {
+    throw new Error("Project policy update failed");
+  }
+
+  const body = (await response.json()) as { data: ProjectSummary };
   return body.data;
 }
 

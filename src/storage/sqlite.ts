@@ -1,5 +1,5 @@
 import Database from "better-sqlite3";
-import { randomUUID } from "node:crypto";
+import { createHmac, randomUUID } from "node:crypto";
 import {
   existsSync,
   mkdirSync,
@@ -24,8 +24,14 @@ import type {
   DeletePromptResult,
   DuplicatePromptGroup,
   ListPromptsOptions,
-  PromptDetail,
-  PromptListResult,
+	  PromptDetail,
+	  ProjectListResult,
+	  ProjectPolicy,
+	  ProjectPolicyActor,
+	  ProjectPolicyPatch,
+	  ProjectPolicyStoragePort,
+	  ProjectSummary,
+	  PromptListResult,
   PromptQualityDashboard,
   PromptReadStoragePort,
   PromptSummary,
@@ -97,6 +103,29 @@ type PromptUsefulnessRow = {
 
 type UsefulPromptRow = PromptRow & PromptUsefulnessRow;
 
+type ProjectPolicyRow = {
+  project_key: string;
+  display_alias: string | null;
+  capture_disabled: number;
+  analysis_disabled: number;
+  retention_candidate_days: number | null;
+  external_analysis_opt_in: number;
+  export_disabled: number;
+  version: number;
+  updated_at: string;
+};
+
+type ProjectPromptRow = {
+  id: string;
+  cwd: string;
+  project_root: string | null;
+  received_at: string;
+  is_sensitive: number;
+  checklist_json: string | null;
+  copied_count: number;
+  bookmarked_count: number;
+};
+
 type RebuildPromptRow = {
   id: string;
   markdown_path: string;
@@ -109,8 +138,9 @@ export type AppliedMigration = {
 };
 
 export type SqlitePromptStorage = PromptStoragePort &
-  PromptReadStoragePort & {
-    close(): void;
+  PromptReadStoragePort &
+  ProjectPolicyStoragePort & {
+	    close(): void;
     getAppliedMigrations(): AppliedMigration[];
     listPromptRows(): PromptRow[];
     searchPromptIds(query: string): string[];
@@ -172,15 +202,31 @@ export function createSqlitePromptStorage(
     recordPromptUsage(id, type) {
       return recordPromptUsage(db, id, type, options.now?.() ?? new Date());
     },
-    setPromptBookmark(id, bookmarked) {
-      return setPromptBookmark(
-        db,
-        id,
-        bookmarked,
-        options.now?.() ?? new Date(),
-      );
-    },
-    searchPromptIds(query) {
+	    setPromptBookmark(id, bookmarked) {
+	      return setPromptBookmark(
+	        db,
+	        id,
+	        bookmarked,
+	        options.now?.() ?? new Date(),
+	      );
+	    },
+	    listProjects() {
+	      return listProjectsForPolicy(db, options.hmacSecret);
+	    },
+	    updateProjectPolicy(projectId, patch, actor) {
+	      return updateProjectPolicy(
+	        db,
+	        options.hmacSecret,
+	        projectId,
+	        patch,
+	        actor,
+	        options.now?.() ?? new Date(),
+	      );
+	    },
+	    getProjectPolicyForEvent(event) {
+	      return getProjectPolicyForEvent(db, options.hmacSecret, event);
+	    },
+	    searchPromptIds(query) {
       const match = toSafeFtsQuery(query);
       if (!match) {
         return [];
@@ -216,10 +262,11 @@ function applyMigrations(db: Database.Database): void {
     ).run(1, "001_initial", new Date().toISOString());
   }
 
-  applyAnalysisChecklistTagsMigration(db);
-  applyPromptUsefulnessMigration(db);
-  applyDuplicatePromptIndexMigration(db);
-}
+	  applyAnalysisChecklistTagsMigration(db);
+	  applyPromptUsefulnessMigration(db);
+	  applyDuplicatePromptIndexMigration(db);
+	  applyProjectPolicyMigration(db);
+	}
 
 function applyAnalysisChecklistTagsMigration(db: Database.Database): void {
   const applied = db
@@ -290,6 +337,45 @@ function applyDuplicatePromptIndexMigration(db: Database.Database): void {
     db.prepare(
       "INSERT INTO schema_migrations(version, name, applied_at) VALUES (?, ?, ?)",
     ).run(4, "004_duplicate_prompt_index", new Date().toISOString());
+  }
+}
+
+function applyProjectPolicyMigration(db: Database.Database): void {
+  const applied = db
+    .prepare("SELECT 1 FROM schema_migrations WHERE version = ?")
+    .get(5);
+
+  db.exec(`
+    CREATE TABLE IF NOT EXISTS project_policies (
+      project_key TEXT PRIMARY KEY,
+      display_alias TEXT,
+      capture_disabled INTEGER NOT NULL DEFAULT 0,
+      analysis_disabled INTEGER NOT NULL DEFAULT 0,
+      retention_candidate_days INTEGER,
+      external_analysis_opt_in INTEGER NOT NULL DEFAULT 0,
+      export_disabled INTEGER NOT NULL DEFAULT 0,
+      version INTEGER NOT NULL DEFAULT 1,
+      updated_at TEXT NOT NULL
+    );
+
+    CREATE TABLE IF NOT EXISTS policy_audit_events (
+      id TEXT PRIMARY KEY,
+      project_key TEXT NOT NULL,
+      changed_fields_json TEXT NOT NULL,
+      previous_policy_hash TEXT NOT NULL,
+      next_policy_hash TEXT NOT NULL,
+      actor TEXT NOT NULL,
+      created_at TEXT NOT NULL
+    );
+
+    CREATE INDEX IF NOT EXISTS idx_policy_audit_events_project_key
+      ON policy_audit_events(project_key, created_at DESC);
+  `);
+
+  if (!applied) {
+    db.prepare(
+      "INSERT INTO schema_migrations(version, name, applied_at) VALUES (?, ?, ?)",
+    ).run(5, "005_project_policies", new Date().toISOString());
   }
 }
 
@@ -1958,6 +2044,304 @@ function ratio(count: number, total: number): number {
 function projectLabel(value: string): string {
   const trimmed = value.replace(/\/+$/, "");
   return trimmed.split("/").at(-1) || trimmed || "unknown";
+}
+
+function listProjectsForPolicy(
+  db: Database.Database,
+  hmacSecret: string,
+): ProjectListResult {
+  const rows = db
+    .prepare(
+      `
+      SELECT
+        p.id,
+        p.cwd,
+        p.project_root,
+        p.received_at,
+        p.is_sensitive,
+        pa.checklist_json,
+        COUNT(pue.id) AS copied_count,
+        CASE WHEN pb.prompt_id IS NULL THEN 0 ELSE 1 END AS bookmarked_count
+      FROM prompts p
+      LEFT JOIN prompt_analyses pa ON pa.prompt_id = p.id
+      LEFT JOIN prompt_usage_events pue
+        ON pue.prompt_id = p.id AND pue.event_type = 'prompt_copied'
+      LEFT JOIN prompt_bookmarks pb ON pb.prompt_id = p.id
+      WHERE p.deleted_at IS NULL
+      GROUP BY p.id
+      ORDER BY p.received_at DESC, p.id DESC
+      `,
+    )
+    .all() as ProjectPromptRow[];
+  const projects = new Map<
+    string,
+    {
+      projectId: string;
+      sourcePath: string;
+      pathKind: "project_root" | "cwd";
+      promptCount: number;
+      latestIngest?: string;
+      sensitiveCount: number;
+      qualityGapCount: number;
+      copiedCount: number;
+      bookmarkedCount: number;
+    }
+  >();
+
+  for (const row of rows) {
+    const descriptor = projectDescriptor(row, hmacSecret);
+    const current =
+      projects.get(descriptor.projectId) ??
+      {
+        projectId: descriptor.projectId,
+        sourcePath: descriptor.sourcePath,
+        pathKind: descriptor.pathKind,
+        promptCount: 0,
+        latestIngest: undefined,
+        sensitiveCount: 0,
+        qualityGapCount: 0,
+        copiedCount: 0,
+        bookmarkedCount: 0,
+      };
+
+    current.promptCount += 1;
+    current.latestIngest =
+      !current.latestIngest || row.received_at > current.latestIngest
+        ? row.received_at
+        : current.latestIngest;
+    current.sensitiveCount += row.is_sensitive === 1 ? 1 : 0;
+    current.qualityGapCount += hasQualityGap(row.checklist_json) ? 1 : 0;
+    current.copiedCount += row.copied_count;
+    current.bookmarkedCount += row.bookmarked_count;
+    projects.set(descriptor.projectId, current);
+  }
+
+  return {
+    items: [...projects.values()]
+      .map((project) => {
+        const policy = readProjectPolicy(db, project.projectId);
+        const alias = policy.alias ?? undefined;
+        return {
+          project_id: project.projectId,
+          label: alias ?? projectLabel(project.sourcePath),
+          alias,
+          path_kind: project.pathKind,
+          prompt_count: project.promptCount,
+          latest_ingest: project.latestIngest,
+          sensitive_count: project.sensitiveCount,
+          quality_gap_rate: ratio(project.qualityGapCount, project.promptCount),
+          copied_count: project.copiedCount,
+          bookmarked_count: project.bookmarkedCount,
+          policy: policy.policy,
+        };
+      })
+      .sort((a, b) => (b.latest_ingest ?? "").localeCompare(a.latest_ingest ?? "")),
+  };
+}
+
+function updateProjectPolicy(
+  db: Database.Database,
+  hmacSecret: string,
+  projectId: string,
+  patch: ProjectPolicyPatch,
+  actor: ProjectPolicyActor,
+  now: Date,
+): ProjectSummary | undefined {
+  const existingSummary = listProjectsForPolicy(db, hmacSecret).items.find(
+    (project) => project.project_id === projectId,
+  );
+  if (!existingSummary) {
+    return undefined;
+  }
+
+  if (patch.alias) {
+    const aliasConflict = db
+      .prepare(
+        `
+        SELECT project_key
+        FROM project_policies
+        WHERE display_alias = ? AND project_key != ?
+        `,
+      )
+      .get(patch.alias, projectId) as { project_key: string } | undefined;
+    if (aliasConflict) {
+      return undefined;
+    }
+  }
+
+  const previous = readProjectPolicy(db, projectId);
+  const nextPolicy = applyPolicyPatch(previous.policy, patch, now);
+  const nextAlias =
+    patch.alias === null
+      ? undefined
+      : patch.alias !== undefined
+        ? patch.alias
+        : previous.alias;
+  const changedFields = Object.keys(patch).sort();
+
+  db.transaction(() => {
+    db.prepare(
+      `
+      INSERT INTO project_policies(
+        project_key, display_alias, capture_disabled, analysis_disabled,
+        retention_candidate_days, external_analysis_opt_in, export_disabled,
+        version, updated_at
+      )
+      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+      ON CONFLICT(project_key) DO UPDATE SET
+        display_alias = excluded.display_alias,
+        capture_disabled = excluded.capture_disabled,
+        analysis_disabled = excluded.analysis_disabled,
+        retention_candidate_days = excluded.retention_candidate_days,
+        external_analysis_opt_in = excluded.external_analysis_opt_in,
+        export_disabled = excluded.export_disabled,
+        version = excluded.version,
+        updated_at = excluded.updated_at
+      `,
+    ).run(
+      projectId,
+      nextAlias ?? null,
+      nextPolicy.capture_disabled ? 1 : 0,
+      nextPolicy.analysis_disabled ? 1 : 0,
+      nextPolicy.retention_candidate_days ?? null,
+      nextPolicy.external_analysis_opt_in ? 1 : 0,
+      nextPolicy.export_disabled ? 1 : 0,
+      nextPolicy.version,
+      nextPolicy.updated_at,
+    );
+
+    db.prepare(
+      `
+      INSERT INTO policy_audit_events(
+        id, project_key, changed_fields_json, previous_policy_hash,
+        next_policy_hash, actor, created_at
+      )
+      VALUES (?, ?, ?, ?, ?, ?, ?)
+      `,
+    ).run(
+      `${projectId}:${now.toISOString()}:${randomUUID()}`,
+      projectId,
+      JSON.stringify(changedFields),
+      policyHash(previous.policy),
+      policyHash(nextPolicy),
+      actor,
+      now.toISOString(),
+    );
+  })();
+
+  return listProjectsForPolicy(db, hmacSecret).items.find(
+    (project) => project.project_id === projectId,
+  );
+}
+
+function getProjectPolicyForEvent(
+  db: Database.Database,
+  hmacSecret: string,
+  event: { cwd: string; project_root?: string | null },
+): ProjectPolicy | undefined {
+  const descriptor = projectDescriptor(
+    {
+      cwd: event.cwd,
+      project_root: event.project_root ?? null,
+    },
+    hmacSecret,
+  );
+
+  return readProjectPolicy(db, descriptor.projectId).policy;
+}
+
+function projectDescriptor(
+  row: { cwd: string; project_root: string | null },
+  hmacSecret: string,
+): {
+  projectId: string;
+  sourcePath: string;
+  pathKind: "project_root" | "cwd";
+} {
+  const sourcePath = row.project_root ?? row.cwd;
+  return {
+    projectId: createProjectKey(sourcePath, hmacSecret),
+    sourcePath,
+    pathKind: row.project_root ? "project_root" : "cwd",
+  };
+}
+
+function createProjectKey(sourcePath: string, hmacSecret: string): string {
+  return `proj_${createHmac("sha256", hmacSecret)
+    .update(sourcePath)
+    .digest("hex")
+    .slice(0, 24)}`;
+}
+
+function readProjectPolicy(
+  db: Database.Database,
+  projectKey: string,
+): { alias?: string; policy: ProjectPolicy } {
+  const row = db
+    .prepare("SELECT * FROM project_policies WHERE project_key = ?")
+    .get(projectKey) as ProjectPolicyRow | undefined;
+
+  if (!row) {
+    return { policy: defaultProjectPolicy() };
+  }
+
+  return {
+    alias: row.display_alias ?? undefined,
+    policy: {
+      capture_disabled: row.capture_disabled === 1,
+      analysis_disabled: row.analysis_disabled === 1,
+      retention_candidate_days: row.retention_candidate_days ?? undefined,
+      external_analysis_opt_in: row.external_analysis_opt_in === 1,
+      export_disabled: row.export_disabled === 1,
+      version: row.version,
+      updated_at: row.updated_at,
+    },
+  };
+}
+
+function defaultProjectPolicy(): ProjectPolicy {
+  return {
+    capture_disabled: false,
+    analysis_disabled: false,
+    external_analysis_opt_in: false,
+    export_disabled: false,
+    version: 1,
+  };
+}
+
+function applyPolicyPatch(
+  current: ProjectPolicy,
+  patch: ProjectPolicyPatch,
+  now: Date,
+): ProjectPolicy {
+  return {
+    capture_disabled: patch.capture_disabled ?? current.capture_disabled,
+    analysis_disabled: patch.analysis_disabled ?? current.analysis_disabled,
+    retention_candidate_days:
+      patch.retention_candidate_days === null
+        ? undefined
+        : (patch.retention_candidate_days ?? current.retention_candidate_days),
+    external_analysis_opt_in:
+      patch.external_analysis_opt_in ?? current.external_analysis_opt_in,
+    export_disabled: patch.export_disabled ?? current.export_disabled,
+    version: current.version + 1,
+    updated_at: now.toISOString(),
+  };
+}
+
+function policyHash(policy: ProjectPolicy): string {
+  return createHmac("sha256", "policy-audit")
+    .update(
+      JSON.stringify({
+        capture_disabled: policy.capture_disabled,
+        analysis_disabled: policy.analysis_disabled,
+        retention_candidate_days: policy.retention_candidate_days ?? null,
+        external_analysis_opt_in: policy.external_analysis_opt_in,
+        export_disabled: policy.export_disabled,
+        version: policy.version,
+      }),
+    )
+    .digest("hex");
 }
 
 const INITIAL_DDL = `

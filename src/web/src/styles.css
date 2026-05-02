@@ -1233,6 +1233,83 @@ dd {
   grid-template-columns: repeat(2, minmax(0, 1fr));
 }
 
+.project-panel {
+  padding: 0;
+  overflow: hidden;
+}
+
+.project-table {
+  display: grid;
+}
+
+.project-row {
+  align-items: center;
+  border-bottom: 1px solid var(--pm-border);
+  display: grid;
+  gap: 12px;
+  grid-template-columns: minmax(220px, 1fr) 156px minmax(150px, 190px) minmax(
+      130px,
+      170px
+    ) 116px;
+  min-height: 64px;
+  padding: 10px 12px;
+}
+
+.project-row:last-child {
+  border-bottom: 0;
+}
+
+.project-head {
+  background: var(--pm-surface-muted);
+  color: var(--pm-text-muted);
+  font-size: 12px;
+  font-weight: 500;
+  min-height: 40px;
+}
+
+.project-name-cell {
+  display: grid;
+  gap: 2px;
+  min-width: 0;
+}
+
+.project-name-cell strong,
+.project-name-cell small {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.project-name-cell small {
+  color: var(--pm-text-subtle);
+  font-size: 12px;
+  line-height: 18px;
+}
+
+.toggle-button {
+  background: var(--pm-surface);
+  border: 1px solid var(--pm-border);
+  border-radius: 6px;
+  color: var(--pm-text);
+  font-size: 12px;
+  font-weight: 650;
+  min-height: 34px;
+  padding: 0 10px;
+  width: 100%;
+}
+
+.toggle-button.on {
+  background: var(--pm-accent-weak);
+  border-color: var(--pm-border-strong);
+  color: var(--pm-accent-strong);
+}
+
+.toggle-button.off,
+.danger-badge {
+  background: var(--pm-danger-weak);
+  color: var(--pm-danger);
+}
+
 .setup-panel {
   grid-column: 1 / -1;
 }
@@ -1428,12 +1505,18 @@ dd {
     width: 100%;
   }
 
-  .prompt-table {
-    border: 0;
-    background: transparent;
-  }
+	  .prompt-table {
+	    border: 0;
+	    background: transparent;
+	  }
 
-  .table-row {
+	  .project-panel {
+	    border: 0;
+	    background: transparent;
+	    box-shadow: none;
+	  }
+
+	  .table-row {
     border: 1px solid var(--pm-border);
     border-radius: 8px;
     display: grid;
@@ -1448,9 +1531,30 @@ dd {
     white-space: normal;
   }
 
-  .table-row.table-head {
-    display: none;
-  }
+	  .table-row.table-head {
+	    display: none;
+	  }
+
+	  .project-row {
+	    background: var(--pm-surface);
+	    border: 1px solid var(--pm-border);
+	    border-radius: 8px;
+	    display: grid;
+	    gap: 8px;
+	    grid-template-columns: 1fr;
+	    margin-bottom: 8px;
+	    min-height: 0;
+	    padding: 12px;
+	  }
+
+	  .project-row.project-head {
+	    display: none;
+	  }
+
+	  .project-name-cell strong,
+	  .project-name-cell small {
+	    white-space: normal;
+	  }
 
   .metadata-panel {
     margin-bottom: 12px;

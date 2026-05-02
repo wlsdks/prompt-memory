@@ -124,6 +124,116 @@ describe("createServer P2 ingest boundary", () => {
     expect(response.body).not.toContain("web-session-secret");
   });
 
+  it("returns browser-safe projects without exposing raw paths or tokens", async () => {
+    const server = createTestServer();
+
+    const response = await server.inject({
+      method: "GET",
+      url: "/api/v1/projects",
+      headers: {
+        host: "127.0.0.1:17373",
+        authorization: "Bearer app-token",
+      },
+    });
+
+    expect(response.statusCode).toBe(200);
+    expect(response.json()).toMatchObject({
+      data: {
+        items: [
+          {
+            project_id: "proj_memory",
+            label: "prompt-memory",
+            alias: "workbench",
+            path_kind: "project_root",
+            prompt_count: 2,
+            latest_ingest: "2026-05-02T09:00:00.000Z",
+            sensitive_count: 1,
+            quality_gap_rate: 0.5,
+            copied_count: 1,
+            bookmarked_count: 1,
+            policy: {
+              capture_disabled: false,
+              analysis_disabled: false,
+              export_disabled: false,
+              external_analysis_opt_in: false,
+              version: 1,
+            },
+          },
+        ],
+      },
+    });
+    expect(response.body).not.toContain("/Users/example/private-project");
+    expect(response.body).not.toContain("app-token");
+    expect(response.body).not.toContain("ingest-token");
+    expect(response.body).not.toContain("web-session-secret");
+  });
+
+  it("requires app access and csrf before updating project policy", async () => {
+    const storage = createMemoryStorage();
+    const server = createTestServer({ storage });
+    const session = await server.inject({
+      method: "GET",
+      url: "/api/v1/session",
+      headers: { host: "127.0.0.1:17373" },
+    });
+    const cookie = String(session.headers["set-cookie"]);
+    const csrfToken = session.json<{ data: { csrf_token: string } }>().data
+      .csrf_token;
+
+    const ingestToken = await server.inject({
+      method: "PATCH",
+      url: "/api/v1/projects/proj_memory/policy",
+      headers: {
+        host: "127.0.0.1:17373",
+        authorization: "Bearer ingest-token",
+      },
+      payload: { capture_disabled: true },
+    });
+    expect(ingestToken.statusCode).toBe(401);
+
+    const noCsrf = await server.inject({
+      method: "PATCH",
+      url: "/api/v1/projects/proj_memory/policy",
+      headers: {
+        host: "127.0.0.1:17373",
+        cookie,
+      },
+      payload: { capture_disabled: true },
+    });
+    expect(noCsrf.statusCode).toBe(403);
+
+    const updated = await server.inject({
+      method: "PATCH",
+      url: "/api/v1/projects/proj_memory/policy",
+      headers: {
+        host: "127.0.0.1:17373",
+        cookie,
+        "x-csrf-token": csrfToken,
+      },
+      payload: { capture_disabled: true, alias: "local-only" },
+    });
+
+    expect(updated.statusCode).toBe(200);
+    expect(updated.json()).toMatchObject({
+      data: {
+        project_id: "proj_memory",
+        alias: "local-only",
+        policy: {
+          capture_disabled: true,
+          version: 2,
+        },
+      },
+    });
+    expect(storage.policyUpdates).toEqual([
+      {
+        projectId: "proj_memory",
+        patch: { capture_disabled: true, alias: "local-only" },
+        actor: "web",
+      },
+    ]);
+    expect(updated.body).not.toContain("/Users/example/private-project");
+  });
+
   it("serves built web assets with csp and spa fallback", async () => {
     const server = createTestServer({
       webAssets: {
@@ -159,6 +269,14 @@ describe("createServer P2 ingest boundary", () => {
     });
     expect(dashboard.statusCode).toBe(200);
     expect(dashboard.body).toContain('<div id="root"></div>');
+
+    const projects = await server.inject({
+      method: "GET",
+      url: "/projects",
+      headers: { host: "127.0.0.1:17373" },
+    });
+    expect(projects.statusCode).toBe(200);
+    expect(projects.body).toContain('<div id="root"></div>');
 
     const asset = await server.inject({
       method: "GET",
@@ -353,6 +471,60 @@ describe("createServer P2 ingest boundary", () => {
     expect(storage.events).toHaveLength(0);
   });
 
+  it("does not call storage when project policy disables capture", async () => {
+    const storage = createMemoryStorage();
+    storage.policyForIngest = {
+      capture_disabled: true,
+      analysis_disabled: false,
+      export_disabled: false,
+      external_analysis_opt_in: false,
+      version: 1,
+    };
+    const server = createTestServer({ storage });
+
+    const response = await server.inject({
+      method: "POST",
+      url: "/api/v1/ingest/claude-code",
+      headers: {
+        host: "127.0.0.1:17373",
+        authorization: "Bearer ingest-token",
+      },
+      payload: claudeFixture,
+    });
+
+    expect(response.statusCode).toBe(200);
+    expect(response.json()).toMatchObject({
+      data: { stored: false, excluded: true, reason: "project_policy" },
+    });
+    expect(storage.events).toHaveLength(0);
+  });
+
+  it("fails open without storing when project policy lookup fails", async () => {
+    const storage = createMemoryStorage();
+    storage.failPolicyLookup = true;
+    const server = createTestServer({ storage });
+
+    const response = await server.inject({
+      method: "POST",
+      url: "/api/v1/ingest/claude-code",
+      headers: {
+        host: "127.0.0.1:17373",
+        authorization: "Bearer ingest-token",
+      },
+      payload: claudeFixture,
+    });
+
+    expect(response.statusCode).toBe(200);
+    expect(response.json()).toMatchObject({
+      data: {
+        stored: false,
+        excluded: true,
+        reason: "policy_lookup_failed",
+      },
+    });
+    expect(storage.events).toHaveLength(0);
+  });
+
   it("rejects invalid host and cross-origin browser requests", async () => {
     const server = createTestServer();
 
@@ -535,15 +707,88 @@ function createTestServer(options: TestServerOptions = {}) {
 
 function createMemoryStorage() {
   const events: Array<Parameters<PromptStoragePort["storePrompt"]>[0]> = [];
+  const policyUpdates: Array<{
+    projectId: string;
+    patch: Record<string, unknown>;
+    actor: "cli" | "web" | "system";
+  }> = [];
 
   return {
     events,
+    policyUpdates,
+    policyForIngest: undefined as
+      | {
+          capture_disabled: boolean;
+          analysis_disabled: boolean;
+          export_disabled: boolean;
+          external_analysis_opt_in: boolean;
+          version: number;
+        }
+      | undefined,
+    failPolicyLookup: false,
     async storePrompt(input: Parameters<PromptStoragePort["storePrompt"]>[0]) {
       events.push(input);
       return {
         id: "stored-1",
         duplicate: false,
       };
+    },
+    listProjects() {
+      return {
+        items: [
+          {
+            project_id: "proj_memory",
+            label: "prompt-memory",
+            alias: "workbench",
+            path_kind: "project_root" as const,
+            prompt_count: 2,
+            latest_ingest: "2026-05-02T09:00:00.000Z",
+            sensitive_count: 1,
+            quality_gap_rate: 0.5,
+            copied_count: 1,
+            bookmarked_count: 1,
+            policy: {
+              capture_disabled: false,
+              analysis_disabled: false,
+              export_disabled: false,
+              external_analysis_opt_in: false,
+              version: 1,
+            },
+          },
+        ],
+      };
+    },
+    updateProjectPolicy(
+      projectId: string,
+      patch: Record<string, unknown>,
+      actor: "cli" | "web" | "system",
+    ) {
+      policyUpdates.push({ projectId, patch, actor });
+      return {
+        project_id: projectId,
+        label: "prompt-memory",
+        alias: typeof patch.alias === "string" ? patch.alias : "workbench",
+        path_kind: "project_root" as const,
+        prompt_count: 2,
+        latest_ingest: "2026-05-02T09:00:00.000Z",
+        sensitive_count: 1,
+        quality_gap_rate: 0.5,
+        copied_count: 1,
+        bookmarked_count: 1,
+        policy: {
+          capture_disabled: patch.capture_disabled === true,
+          analysis_disabled: false,
+          export_disabled: false,
+          external_analysis_opt_in: false,
+          version: 2,
+        },
+      };
+    },
+    getProjectPolicyForEvent() {
+      if (this.failPolicyLookup) {
+        throw new Error("lookup failed");
+      }
+      return this.policyForIngest;
     },
     listPrompts() {
       return { items: [] };
@@ -587,5 +832,20 @@ function createMemoryStorage() {
     },
   } satisfies PromptStoragePort & {
     events: Array<Parameters<PromptStoragePort["storePrompt"]>[0]>;
+    policyUpdates: Array<{
+      projectId: string;
+      patch: Record<string, unknown>;
+      actor: "cli" | "web" | "system";
+    }>;
+    policyForIngest:
+      | {
+          capture_disabled: boolean;
+          analysis_disabled: boolean;
+          export_disabled: boolean;
+          external_analysis_opt_in: boolean;
+          version: number;
+        }
+      | undefined;
+    failPolicyLookup: boolean;
   };
 }

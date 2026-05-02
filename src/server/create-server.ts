@@ -3,12 +3,16 @@ import type { FastifyInstance, FastifyReply, FastifyRequest } from "fastify";
 import { ZodError } from "zod";
 
 import type { RedactionPolicy } from "../shared/schema.js";
-import type { PromptStoragePort } from "../storage/ports.js";
+import type {
+  ProjectPolicyStoragePort,
+  PromptStoragePort,
+} from "../storage/ports.js";
 import type { ServerAuthConfig } from "./auth.js";
 import { HttpProblem, problem } from "./errors.js";
 import { registerHealthRoutes } from "./routes/health.js";
 import { registerIngestRoutes } from "./routes/ingest.js";
 import { registerPromptRoutes } from "./routes/prompts.js";
+import { registerProjectRoutes } from "./routes/projects.js";
 import { registerSessionRoutes } from "./routes/session.js";
 import { registerSettingsRoutes } from "./routes/settings.js";
 import { registerStaticRoutes, type WebAssets } from "./routes/static.js";
@@ -16,7 +20,7 @@ import { registerStaticRoutes, type WebAssets } from "./routes/static.js";
 export type CreateServerOptions = {
   dataDir: string;
   auth: ServerAuthConfig;
-  storage: PromptStoragePort;
+  storage: PromptStoragePort & Partial<ProjectPolicyStoragePort>;
   redactionMode: RedactionPolicy;
   excludedProjectRoots?: string[];
   maxBodyBytes?: number;
@@ -107,6 +111,10 @@ export function createServer(options: CreateServerOptions): FastifyInstance {
     redactionMode: options.redactionMode,
     excludedProjectRoots: options.excludedProjectRoots ?? [],
     maxPromptLength: options.maxPromptLength ?? 100_000,
+  });
+  registerProjectRoutes(server, {
+    auth: options.auth,
+    storage: options.storage,
   });
   registerPromptRoutes(server, {
     auth: options.auth,

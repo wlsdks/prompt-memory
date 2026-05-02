@@ -8,13 +8,16 @@ import type {
   NormalizedPromptEvent,
   RedactionPolicy,
 } from "../../shared/schema.js";
-import type { PromptStoragePort } from "../../storage/ports.js";
+import type {
+  ProjectPolicyStoragePort,
+  PromptStoragePort,
+} from "../../storage/ports.js";
 import { requireBearerToken, type ServerAuthConfig } from "../auth.js";
 import { problem } from "../errors.js";
 
 export type IngestRouteOptions = {
   auth: ServerAuthConfig;
-  storage: PromptStoragePort;
+  storage: PromptStoragePort & Partial<ProjectPolicyStoragePort>;
   redactionMode: RedactionPolicy;
   excludedProjectRoots: string[];
   maxPromptLength: number;
@@ -79,6 +82,29 @@ async function handlePromptIngest(
     };
   }
 
+  const projectPolicy = readProjectPolicyForEvent(options.storage, event);
+  if (projectPolicy === "lookup_failed") {
+    return {
+      data: {
+        stored: false,
+        excluded: true,
+        redacted: false,
+        reason: "policy_lookup_failed",
+      },
+    };
+  }
+
+  if (projectPolicy?.capture_disabled) {
+    return {
+      data: {
+        stored: false,
+        excluded: true,
+        redacted: false,
+        reason: "project_policy",
+      },
+    };
+  }
+
   const redaction = redactPrompt(event.prompt, options.redactionMode);
 
   if (options.redactionMode === "reject" && redaction.is_sensitive) {
@@ -137,4 +163,24 @@ function isExcluded(cwd: string, excludedRoots: string[]): boolean {
   return excludedRoots.some(
     (root) => cwd === root || cwd.startsWith(`${root}/`),
   );
+}
+
+function readProjectPolicyForEvent(
+  storage: IngestRouteOptions["storage"],
+  event: NormalizedPromptEvent,
+):
+  | ReturnType<ProjectPolicyStoragePort["getProjectPolicyForEvent"]>
+  | "lookup_failed" {
+  if (!storage.getProjectPolicyForEvent) {
+    return undefined;
+  }
+
+  try {
+    return storage.getProjectPolicyForEvent({
+      cwd: event.cwd,
+      project_root: event.project_root,
+    });
+  } catch {
+    return "lookup_failed";
+  }
 }

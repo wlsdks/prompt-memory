@@ -59,10 +59,11 @@ describe("SQLite prompt storage", () => {
     expect(duplicate).toEqual({ id: first.id, duplicate: true });
     expect(storage.getAppliedMigrations()).toEqual([
       { version: 1, name: "001_initial" },
-      { version: 2, name: "002_analysis_checklist_tags" },
-      { version: 3, name: "003_prompt_usefulness" },
-      { version: 4, name: "004_duplicate_prompt_index" },
-    ]);
+	      { version: 2, name: "002_analysis_checklist_tags" },
+	      { version: 3, name: "003_prompt_usefulness" },
+	      { version: 4, name: "004_duplicate_prompt_index" },
+	      { version: 5, name: "005_project_policies" },
+	    ]);
 
     const prompts = storage.listPromptRows();
     expect(prompts).toHaveLength(1);
@@ -904,8 +905,89 @@ describe("SQLite prompt storage", () => {
     expect(
       storage
         .searchPrompts("Refactor", { qualityGap: "verification_criteria" })
-        .items.map((item) => item.id),
+      .items.map((item) => item.id),
     ).toEqual([]);
+  });
+
+  it("stores project policies with raw-free audit events and browser-safe project summaries", async () => {
+    const dataDir = createTempDir();
+    initializePromptMemory({ dataDir });
+    const storage = createSqlitePromptStorage({
+      dataDir,
+      hmacSecret: "test-secret",
+      now: nextDate([
+        "2026-05-02T09:00:00.000Z",
+        "2026-05-02T09:01:00.000Z",
+        "2026-05-02T09:02:00.000Z",
+      ]),
+    });
+
+    await storeClaudePrompt(storage, {
+      prompt: "Review backend test coverage with token sk-proj-1234567890abcdef",
+      receivedAt: "2026-05-02T09:00:00.000Z",
+      cwd: "/Users/example/private-project",
+    });
+    const useful = await storeClaudePrompt(storage, {
+      prompt: "Update docs and run pnpm test. Return Markdown summary.",
+      receivedAt: "2026-05-02T09:01:00.000Z",
+      cwd: "/Users/example/private-project",
+    });
+    storage.recordPromptUsage(useful.id, "prompt_copied");
+    storage.setPromptBookmark(useful.id, true);
+
+    const initial = storage.listProjects().items[0]!;
+    expect(initial).toMatchObject({
+      label: "private-project",
+      alias: undefined,
+      path_kind: "cwd",
+      prompt_count: 2,
+      latest_ingest: "2026-05-02T09:01:00.000Z",
+      sensitive_count: 1,
+      copied_count: 1,
+      bookmarked_count: 1,
+      policy: {
+        capture_disabled: false,
+        analysis_disabled: false,
+        export_disabled: false,
+        external_analysis_opt_in: false,
+        version: 1,
+      },
+    });
+    expect(JSON.stringify(initial)).not.toContain("/Users/example/private-project");
+    expect(JSON.stringify(initial)).not.toContain("sk-proj-1234567890abcdef");
+
+    const updated = storage.updateProjectPolicy(
+      initial.project_id,
+      { alias: "client-a", capture_disabled: true },
+      "web",
+    );
+
+    expect(updated).toMatchObject({
+      project_id: initial.project_id,
+      label: "client-a",
+      alias: "client-a",
+      policy: {
+        capture_disabled: true,
+        version: 2,
+      },
+    });
+    expect(
+      storage.getProjectPolicyForEvent({
+        cwd: "/Users/example/private-project",
+      }),
+    ).toMatchObject({
+      capture_disabled: true,
+      version: 2,
+    });
+
+    const db = new Database(join(dataDir, "prompt-memory.sqlite"));
+    const auditRows = db.prepare("SELECT * FROM policy_audit_events").all();
+    db.close();
+
+    expect(auditRows).toHaveLength(1);
+    expect(JSON.stringify(auditRows)).toContain("capture_disabled");
+    expect(JSON.stringify(auditRows)).not.toContain("/Users/example/private-project");
+    expect(JSON.stringify(auditRows)).not.toContain("sk-proj-1234567890abcdef");
   });
 
   it("rebuilds missing database rows from Markdown files", async () => {

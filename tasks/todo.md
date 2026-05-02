@@ -8,11 +8,11 @@
 - [x] external analysis를 core 범위에서 분리
 - [x] 문서 변경 검증
 - [x] 문서 커밋 및 푸시
-- [ ] Project Control Plane 최소 구현 실패 테스트 작성
-- [ ] project policy storage/API/ingest capture-disabled 구현
-- [ ] UI project list와 capture-disabled toggle 구현
-- [ ] 서버/UI 브라우저 검증
-- [ ] 전체 검증, 커밋 및 푸시
+- [x] Project Control Plane 최소 구현 실패 테스트 작성
+- [x] project policy storage/API/ingest capture-disabled 구현
+- [x] UI project list와 capture-disabled toggle 구현
+- [x] 서버/UI 브라우저 검증
+- [x] 전체 검증, 커밋 및 푸시
 
 ### 첫 구현 범위
 

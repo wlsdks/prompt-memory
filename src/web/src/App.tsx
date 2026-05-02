@@ -7,6 +7,7 @@ import {
   Copy,
   Database,
   FileText,
+  FolderCog,
   GitCompare,
   Search,
   Settings,
@@ -23,9 +24,12 @@ import {
   getPrompt,
   getQualityDashboard,
   getSettings,
+  listProjects,
   listPrompts,
   recordPromptCopied,
   setPromptBookmark,
+  updateProjectPolicy,
+  type ProjectSummary,
   type QualityDashboard,
   type PromptFilters,
   type PromptDetail,
@@ -39,6 +43,7 @@ type View =
   | { name: "list" }
   | { name: "detail"; id: string }
   | { name: "dashboard" }
+  | { name: "projects" }
   | { name: "settings" };
 
 export function App() {
@@ -54,6 +59,7 @@ export function App() {
   >();
   const [settings, setSettings] = useState<SettingsResponse | undefined>();
   const [dashboard, setDashboard] = useState<QualityDashboard | undefined>();
+  const [projects, setProjects] = useState<ProjectSummary[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | undefined>();
   const [pendingDelete, setPendingDelete] = useState<
@@ -101,6 +107,9 @@ export function App() {
     void getQualityDashboard()
       .then(setDashboard)
       .catch(() => undefined);
+    void listProjects()
+      .then(setProjects)
+      .catch(() => undefined);
   }, []);
 
   useEffect(() => {
@@ -116,6 +125,7 @@ export function App() {
 
   const visibleTitle = useMemo(() => {
     if (view.name === "settings") return "설정";
+    if (view.name === "projects") return "프로젝트";
     if (view.name === "detail") return "프롬프트 상세";
     if (view.name === "dashboard") return "품질 대시보드";
     return "프롬프트 아카이브";
@@ -212,6 +222,21 @@ export function App() {
     }
   }
 
+  async function toggleProjectCapture(project: ProjectSummary): Promise<void> {
+    try {
+      const updated = await updateProjectPolicy(project.project_id, {
+        capture_disabled: !project.policy.capture_disabled,
+      });
+      setProjects((current) =>
+        current.map((item) =>
+          item.project_id === updated.project_id ? updated : item,
+        ),
+      );
+    } catch {
+      setError("프로젝트 수집 정책을 저장하지 못했습니다.");
+    }
+  }
+
   function updatePromptUsefulness(
     id: string,
     usefulness: PromptDetail["usefulness"],
@@ -227,14 +252,16 @@ export function App() {
   }
 
   function navigate(next: View): void {
-    const path =
-      next.name === "detail"
-        ? `/prompts/${next.id}`
-        : next.name === "dashboard"
-          ? "/dashboard"
-          : next.name === "settings"
-            ? "/settings"
-            : "/";
+	  const path =
+	    next.name === "detail"
+	      ? `/prompts/${next.id}`
+	      : next.name === "dashboard"
+	        ? "/dashboard"
+	        : next.name === "projects"
+	          ? "/projects"
+	          : next.name === "settings"
+	            ? "/settings"
+	            : "/";
     window.history.pushState({}, "", path);
     setView(next);
   }
@@ -255,13 +282,19 @@ export function App() {
         >
           <FileText size={16} /> 프롬프트
         </button>
-        <button
-          className={`nav-button ${view.name === "dashboard" ? "active" : ""}`}
-          onClick={() => navigate({ name: "dashboard" })}
-        >
-          <BarChart3 size={16} /> 대시보드
-        </button>
-        <button
+	        <button
+	          className={`nav-button ${view.name === "dashboard" ? "active" : ""}`}
+	          onClick={() => navigate({ name: "dashboard" })}
+	        >
+	          <BarChart3 size={16} /> 대시보드
+	        </button>
+	        <button
+	          className={`nav-button ${view.name === "projects" ? "active" : ""}`}
+	          onClick={() => navigate({ name: "projects" })}
+	        >
+	          <FolderCog size={16} /> 프로젝트
+	        </button>
+	        <button
           className={`nav-button ${view.name === "settings" ? "active" : ""}`}
           onClick={() => navigate({ name: "settings" })}
         >
@@ -451,8 +484,8 @@ export function App() {
             queueNavigation={queueNavigation}
           />
         )}
-        {view.name === "dashboard" && (
-          <DashboardView
+	        {view.name === "dashboard" && (
+	          <DashboardView
             dashboard={dashboard}
             loading={!dashboard}
             onOpenFilteredList={(nextFilters) => {
@@ -460,9 +493,15 @@ export function App() {
               navigate({ name: "list" });
             }}
             onSelect={(id) => navigate({ name: "detail", id })}
-          />
-        )}
-        {view.name === "settings" && (
+	          />
+	        )}
+	        {view.name === "projects" && (
+	          <ProjectsView
+	            onToggleCapture={(project) => void toggleProjectCapture(project)}
+	            projects={projects}
+	          />
+	        )}
+	        {view.name === "settings" && (
           <SettingsView
             dashboard={dashboard}
             health={health}
@@ -1372,6 +1411,79 @@ function SettingsView({
   );
 }
 
+function ProjectsView({
+  onToggleCapture,
+  projects,
+}: {
+  onToggleCapture(project: ProjectSummary): void;
+  projects: ProjectSummary[];
+}) {
+  if (projects.length === 0) {
+    return (
+      <div className="panel empty">
+        <h2>프로젝트 기록이 없습니다.</h2>
+        <code>prompt-memory setup</code>
+      </div>
+    );
+  }
+
+  return (
+    <section className="project-panel panel" aria-label="프로젝트 정책">
+      <div className="project-table" role="table">
+        <div className="project-row project-head" role="row">
+          <span>프로젝트</span>
+          <span>최근 수집</span>
+          <span>품질/민감도</span>
+          <span>재사용</span>
+          <span>수집</span>
+        </div>
+        {projects.map((project) => (
+          <div className="project-row" key={project.project_id} role="row">
+            <span className="project-name-cell">
+              <strong>{project.label}</strong>
+              <small>
+                {project.path_kind === "project_root" ? "project root" : "cwd"} ·{" "}
+                {project.project_id}
+              </small>
+            </span>
+            <span>
+              {project.latest_ingest ? formatDate(project.latest_ingest) : "-"}
+            </span>
+            <span className="status-cell">
+              <span className="badge gap-badge">
+                gap {Math.round(project.quality_gap_rate * 100)}%
+              </span>
+              {project.sensitive_count > 0 && (
+                <span className="badge danger-badge">
+                  sensitive {project.sensitive_count}
+                </span>
+              )}
+            </span>
+            <span className="status-cell">
+              <span className="badge reuse-badge">copy {project.copied_count}</span>
+              <span className="badge saved-badge">
+                saved {project.bookmarked_count}
+              </span>
+            </span>
+            <span>
+              <button
+                aria-pressed={project.policy.capture_disabled}
+                className={`toggle-button ${
+                  project.policy.capture_disabled ? "off" : "on"
+                }`}
+                onClick={() => onToggleCapture(project)}
+                type="button"
+              >
+                {project.policy.capture_disabled ? "paused" : "capture on"}
+              </button>
+            </span>
+          </div>
+        ))}
+      </div>
+    </section>
+  );
+}
+
 type SetupCheckStatus = "good" | "attention" | "pending";
 
 type SetupCheck = {
@@ -1461,6 +1573,10 @@ function StatusBadge({ prompt }: { prompt: PromptSummary }) {
 function routeFromLocation(): View {
   if (window.location.pathname === "/dashboard") {
     return { name: "dashboard" };
+  }
+
+  if (window.location.pathname === "/projects") {
+    return { name: "projects" };
   }
 
   if (window.location.pathname === "/settings") {
