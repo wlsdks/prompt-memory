@@ -66,6 +66,7 @@ export type ListPromptsOptions = {
   cursor?: string;
   tool?: string;
   cwdPrefix?: string;
+  importJobId?: string;
   isSensitive?: boolean;
   receivedFrom?: string;
   receivedTo?: string;
@@ -256,6 +257,17 @@ export type ImportJob = {
   summary: unknown;
 };
 
+export type ImportRecordStatus = "imported" | "duplicate" | "skipped" | "error";
+
+export type ImportRecord = {
+  job_id: string;
+  record_key: string;
+  record_offset?: number;
+  status: ImportRecordStatus;
+  prompt_id?: string;
+  error_code?: string;
+};
+
 export type CreateImportJobInput = {
   source_type: string;
   source_path_hash: string;
@@ -263,6 +275,15 @@ export type CreateImportJobInput = {
   status: ImportJobStatus;
   project_policy_version?: number;
   summary: unknown;
+};
+
+export type CreateImportRecordInput = {
+  job_id: string;
+  record_key: string;
+  record_offset?: number;
+  status: ImportRecordStatus;
+  prompt_id?: string;
+  error_code?: string;
 };
 
 export type ImportJobListResult = {
@@ -328,6 +349,13 @@ export type ProjectPolicyStoragePort = {
 
 export type ImportJobStoragePort = {
   createImportJob(input: CreateImportJobInput): ImportJob;
+  completeImportJob(
+    id: string,
+    status: ImportJobStatus,
+    summary: unknown,
+  ): ImportJob | undefined;
+  createImportRecord(input: CreateImportRecordInput): ImportRecord;
   getImportJob(id: string): ImportJob | undefined;
   listImportJobs(options?: { limit?: number }): ImportJobListResult;
+  listImportRecords(jobId: string): ImportRecord[];
 };

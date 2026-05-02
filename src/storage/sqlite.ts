@@ -23,11 +23,13 @@ import type {
 import { getPromptMemoryPaths } from "./paths.js";
 import type {
   CreateImportJobInput,
+  CreateImportRecordInput,
   CreatePromptImprovementDraftInput,
   DeletePromptResult,
   DuplicatePromptGroup,
   ImportJob,
   ImportJobListResult,
+  ImportRecord,
   ImportJobStoragePort,
   ListPromptsOptions,
   PromptDetail,
@@ -143,6 +145,15 @@ type ImportJobRow = {
   completed_at: string | null;
   project_policy_version: number | null;
   summary_json: string;
+};
+
+type ImportRecordRow = {
+  job_id: string;
+  record_key: string;
+  record_offset: number | null;
+  status: string;
+  prompt_id: string | null;
+  error_code: string | null;
 };
 
 type PromptImprovementDraftRow = {
@@ -271,11 +282,26 @@ export function createSqlitePromptStorage(
     createImportJob(input) {
       return createImportJob(db, input, options.now?.() ?? new Date());
     },
+    completeImportJob(id, status, summary) {
+      return completeImportJob(
+        db,
+        id,
+        status,
+        summary,
+        options.now?.() ?? new Date(),
+      );
+    },
+    createImportRecord(input) {
+      return createImportRecord(db, input);
+    },
     getImportJob(id) {
       return getImportJob(db, id);
     },
     listImportJobs(options) {
       return listImportJobs(db, options);
+    },
+    listImportRecords(jobId) {
+      return listImportRecords(db, jobId);
     },
     searchPromptIds(query) {
       const match = toSafeFtsQuery(query);
@@ -760,6 +786,20 @@ function buildPromptFilters(
     values.push(options.cwdPrefix, `${escapeLike(options.cwdPrefix)}/%`);
   }
 
+  if (options.importJobId) {
+    const idExpression = tableAlias ? `${prefix}id` : "prompts.id";
+    clauses.push(
+      `EXISTS (
+        SELECT 1
+        FROM import_records ir
+        WHERE ir.prompt_id = ${idExpression}
+          AND ir.job_id = ?
+          AND ir.status IN ('imported', 'duplicate')
+      )`,
+    );
+    values.push(options.importJobId);
+  }
+
   if (options.isSensitive !== undefined) {
     clauses.push(`${prefix}is_sensitive = ?`);
     values.push(options.isSensitive ? 1 : 0);
@@ -1118,6 +1158,88 @@ function createImportJob(
   );
 
   return job;
+}
+
+function completeImportJob(
+  db: Database.Database,
+  id: string,
+  status: ImportJob["status"],
+  summary: unknown,
+  now: Date,
+): ImportJob | undefined {
+  const completedAt = isTerminalImportJobStatus(status)
+    ? now.toISOString()
+    : null;
+  const result = db
+    .prepare(
+      `
+      UPDATE import_jobs
+      SET status = ?, completed_at = ?, summary_json = ?
+      WHERE id = ?
+      `,
+    )
+    .run(status, completedAt, JSON.stringify(summary), id);
+
+  return result.changes > 0 ? getImportJob(db, id) : undefined;
+}
+
+function createImportRecord(
+  db: Database.Database,
+  input: CreateImportRecordInput,
+): ImportRecord {
+  db.prepare(
+    `
+    INSERT INTO import_records(
+      job_id, record_key, record_offset, status, prompt_id, error_code
+    )
+    VALUES (?, ?, ?, ?, ?, ?)
+    ON CONFLICT(job_id, record_key) DO UPDATE SET
+      status = excluded.status,
+      prompt_id = excluded.prompt_id,
+      error_code = excluded.error_code
+    `,
+  ).run(
+    input.job_id,
+    input.record_key,
+    input.record_offset ?? null,
+    input.status,
+    input.prompt_id ?? null,
+    input.error_code ?? null,
+  );
+
+  return {
+    job_id: input.job_id,
+    record_key: input.record_key,
+    record_offset: input.record_offset,
+    status: input.status,
+    prompt_id: input.prompt_id,
+    error_code: input.error_code,
+  };
+}
+
+function listImportRecords(
+  db: Database.Database,
+  jobId: string,
+): ImportRecord[] {
+  const rows = db
+    .prepare(
+      `
+      SELECT *
+      FROM import_records
+      WHERE job_id = ?
+      ORDER BY record_offset ASC, record_key ASC
+      `,
+    )
+    .all(jobId) as ImportRecordRow[];
+
+  return rows.map((row) => ({
+    job_id: row.job_id,
+    record_key: row.record_key,
+    record_offset: row.record_offset ?? undefined,
+    status: row.status as ImportRecord["status"],
+    prompt_id: row.prompt_id ?? undefined,
+    error_code: row.error_code ?? undefined,
+  }));
 }
 
 function createPromptImprovementDraft(

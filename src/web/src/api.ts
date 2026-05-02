@@ -69,6 +69,7 @@ export type PromptFilters = {
   query?: string;
   tool?: string;
   cwdPrefix?: string;
+  importJobId?: string;
   isSensitive?: "all" | "true" | "false";
   tag?: string;
   focus?: "saved" | "reused" | "duplicated" | "quality-gap";
@@ -257,6 +258,9 @@ export async function listPrompts(
   }
   if (filters.cwdPrefix?.trim()) {
     params.set("cwd_prefix", filters.cwdPrefix.trim());
+  }
+  if (filters.importJobId?.trim()) {
+    params.set("import_job_id", filters.importJobId.trim());
   }
   if (filters.isSensitive && filters.isSensitive !== "all") {
     params.set("is_sensitive", filters.isSensitive);

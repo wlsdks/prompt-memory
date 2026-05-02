@@ -5,6 +5,8 @@ import { createSqlitePromptStorage } from "../../storage/sqlite.js";
 
 type PromptCliOptions = {
   dataDir?: string;
+  importJob?: string;
+  importJobId?: string;
   limit?: string | number;
   json?: boolean;
 };
@@ -18,6 +20,7 @@ export function registerPromptCommands(program: Command): void {
   program
     .command("list")
     .option("--data-dir <path>", "Override the prompt-memory data directory.")
+    .option("--import-job <id>", "Only show prompts produced by an import job.")
     .option("--limit <count>", "Maximum number of prompts to show.")
     .option("--json", "Print JSON.")
     .action((options: PromptCliOptions) => {
@@ -28,6 +31,10 @@ export function registerPromptCommands(program: Command): void {
     .command("search")
     .argument("<query>", "FTS query.")
     .option("--data-dir <path>", "Override the prompt-memory data directory.")
+    .option(
+      "--import-job <id>",
+      "Only search prompts produced by an import job.",
+    )
     .option("--limit <count>", "Maximum number of prompts to show.")
     .option("--json", "Print JSON.")
     .action((query: string, options: PromptCliOptions) => {
@@ -71,7 +78,10 @@ export function registerPromptCommands(program: Command): void {
 
 export function listPromptsForCli(options: PromptCliOptions = {}): string {
   return withStorage(options.dataDir, (storage) => {
-    const result = storage.listPrompts({ limit: parseLimit(options.limit) });
+    const result = storage.listPrompts({
+      importJobId: options.importJobId ?? options.importJob,
+      limit: parseLimit(options.limit),
+    });
     return options.json
       ? JSON.stringify(result, null, 2)
       : formatPromptRows(result.items);
@@ -84,6 +94,7 @@ export function searchPromptsForCli(
 ): string {
   return withStorage(options.dataDir, (storage) => {
     const result = storage.searchPrompts(query, {
+      importJobId: options.importJobId ?? options.importJob,
       limit: parseLimit(options.limit),
     });
     return options.json

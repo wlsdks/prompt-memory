@@ -7,7 +7,12 @@ import { afterEach, describe, expect, it } from "vitest";
 import { initializePromptMemory } from "../../config/config.js";
 import { createSqlitePromptStorage } from "../../storage/sqlite.js";
 import { createProgram } from "../index.js";
-import { importDryRunForCli, showImportJobForCli } from "./import.js";
+import { listPromptsForCli } from "./prompts.js";
+import {
+  importForCli,
+  importDryRunForCli,
+  showImportJobForCli,
+} from "./import.js";
 
 const tempDirs: string[] = [];
 
@@ -25,7 +30,7 @@ describe("import CLI", () => {
     const help = createProgram().helpInformation();
 
     expect(help).toMatch(
-      /import \[options\]\s+Preview transcript imports without storing prompts\./,
+      /import \[options\]\s+Preview or execute transcript imports\./,
     );
     expect(help).toMatch(
       /import-job \[options\] <id>\s+Show a saved import dry-run job\./,
@@ -126,6 +131,86 @@ describe("import CLI", () => {
     expect(shown).toContain('"prompt_candidates": 1');
     expect(shown).not.toContain(rawSecret);
     expect(shown).not.toContain("/Users/example/project");
+  });
+
+  it("resumes a saved dry-run job, imports prompts, and filters imported prompts", async () => {
+    const rawSecret = "sk-proj-1234567890abcdef";
+    const dataDir = createTempDir("prompt-memory-import-execute-");
+    initializePromptMemory({ dataDir });
+    const file = writeJsonl([
+      {
+        hook_event_name: "UserPromptSubmit",
+        session_id: "session-1",
+        cwd: "/Users/example/project",
+        prompt: `Import this prompt and mask ${rawSecret}`,
+      },
+      {
+        role: "assistant",
+        content: "assistant output should be skipped",
+      },
+      {
+        hook_event_name: "UserPromptSubmit",
+        session_id: "session-2",
+        cwd: "/Users/example/project",
+        prompt: "Second imported prompt with 검증 기준: pnpm test.",
+      },
+    ]);
+    const dryRun = JSON.parse(
+      importDryRunForCli({
+        dataDir,
+        dryRun: true,
+        file,
+        json: true,
+        saveJob: true,
+        source: "manual-jsonl",
+      }),
+    ) as { job_id: string };
+
+    const executed = JSON.parse(
+      await importForCli({
+        dataDir,
+        file,
+        json: true,
+        resume: dryRun.job_id,
+        source: "manual-jsonl",
+      }),
+    ) as {
+      job_id: string;
+      status: string;
+      imported_count: number;
+      skipped_count: number;
+    };
+    const importedOnly = listPromptsForCli({
+      dataDir,
+      importJob: dryRun.job_id,
+      json: true,
+    });
+    const shown = showImportJobForCli(dryRun.job_id, { dataDir, json: true });
+
+    expect(executed).toMatchObject({
+      job_id: dryRun.job_id,
+      status: "completed",
+      imported_count: 2,
+      skipped_count: 1,
+    });
+    expect(importedOnly).toContain('"items"');
+    expect(importedOnly).toContain("Second imported prompt");
+    expect(importedOnly).not.toContain(rawSecret);
+    expect(shown).toContain('"status": "completed"');
+    expect(shown).not.toContain(rawSecret);
+    expect(shown).not.toContain("/Users/example/project");
+
+    const storage = createSqlitePromptStorage({
+      dataDir,
+      hmacSecret: "test-secret",
+    });
+    try {
+      expect(
+        storage.listPrompts({ importJobId: dryRun.job_id }).items,
+      ).toHaveLength(2);
+    } finally {
+      storage.close();
+    }
   });
 });
 

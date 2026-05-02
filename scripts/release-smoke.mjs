@@ -115,6 +115,80 @@ try {
     "Rebuild should not quarantine clean prompts.",
   );
 
+  step("Execute transcript import and verify imported-only filter");
+  const importFile = join(tempRoot, "import.jsonl");
+  const importSecret = "sk-proj-import1234567890abcdef";
+  writeFileSync(
+    importFile,
+    [
+      JSON.stringify({
+        hook_event_name: "UserPromptSubmit",
+        session_id: "release-smoke-import-session",
+        cwd: join(homeDir, "project"),
+        prompt: `Imported release smoke prompt with ${importSecret}`,
+      }),
+      JSON.stringify({
+        role: "assistant",
+        content: "assistant output should not import",
+      }),
+    ].join("\n"),
+  );
+  const importDryRun = parseJson(
+    runCli([
+      "import",
+      "--data-dir",
+      dataDir,
+      "--dry-run",
+      "--file",
+      importFile,
+      "--save-job",
+      "--json",
+    ]),
+  );
+  const executedImport = parseJson(
+    runCli([
+      "import",
+      "--data-dir",
+      dataDir,
+      "--resume",
+      importDryRun.job_id,
+      "--file",
+      importFile,
+      "--json",
+    ]),
+  );
+  assertEqual(
+    executedImport.imported_count,
+    1,
+    "Import execution should store one prompt.",
+  );
+  assertEqual(
+    executedImport.skipped_count,
+    1,
+    "Import execution should skip assistant output.",
+  );
+  const importedOnly = parseJson(
+    runCli([
+      "list",
+      "--data-dir",
+      dataDir,
+      "--import-job",
+      importDryRun.job_id,
+      "--json",
+    ]),
+  );
+  assertEqual(
+    importedOnly.items.length,
+    1,
+    "Imported-only list should show one prompt.",
+  );
+  assertNotIncludes(
+    JSON.stringify(importedOnly),
+    importSecret,
+    "Imported-only output must not contain raw import secret.",
+  );
+  verifyImportRecords(importDryRun.job_id, importSecret);
+
   step("Verify SQLite, Markdown, FTS, and delete cleanup");
   verifyDatabaseBeforeDelete(claudeId);
   const claudeMarkdownPath = getMarkdownPath(claudeId);
@@ -260,6 +334,29 @@ function verifyDatabaseBeforeDelete(promptId) {
       JSON.stringify(db.prepare("SELECT * FROM prompt_analyses").all()),
       "sk-proj-1234567890abcdef",
       "Analysis rows must not contain raw secret.",
+    );
+  } finally {
+    db.close();
+  }
+}
+
+function verifyImportRecords(jobId, rawSecret) {
+  const db = openDb();
+  try {
+    assertEqual(
+      scalar(db, "SELECT COUNT(*) FROM import_records WHERE job_id = ?", jobId),
+      1,
+      "Import records should track imported prompt.",
+    );
+    assertNotIncludes(
+      JSON.stringify(db.prepare("SELECT * FROM import_jobs").all()),
+      rawSecret,
+      "Import jobs must not contain raw import secret.",
+    );
+    assertNotIncludes(
+      JSON.stringify(db.prepare("SELECT * FROM import_records").all()),
+      rawSecret,
+      "Import records must not contain raw import secret.",
     );
   } finally {
     db.close();

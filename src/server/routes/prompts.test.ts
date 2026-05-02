@@ -299,6 +299,40 @@ describe("prompt read/delete API", () => {
     ]);
   });
 
+  it("filters prompt lists by import job id without returning other prompts", async () => {
+    const { server, ids, storage } = await createPromptApiFixture();
+    const job = storage.createImportJob({
+      source_type: "manual-jsonl",
+      source_path_hash: "path_abcdef12",
+      dry_run: false,
+      status: "completed",
+      summary: { imported_count: 1 },
+    });
+    storage.createImportRecord({
+      job_id: job.id,
+      record_key: "record-alpha",
+      record_offset: 0,
+      status: "imported",
+      prompt_id: ids.alpha,
+    });
+
+    const filtered = await server.inject({
+      method: "GET",
+      url: `/api/v1/prompts?import_job_id=${encodeURIComponent(job.id)}`,
+      headers: {
+        host: "127.0.0.1:17373",
+        authorization: "Bearer app-token",
+      },
+    });
+
+    expect(filtered.statusCode).toBe(200);
+    expect(
+      filtered
+        .json<{ data: { items: Array<{ id: string }> } }>()
+        .data.items.map((item) => item.id),
+    ).toEqual([ids.alpha]);
+  });
+
   it("records copy events and bookmark state for local usefulness signals", async () => {
     const { server, ids } = await createPromptApiFixture();
 
@@ -587,6 +621,7 @@ async function createPromptApiFixture() {
 
   return {
     server,
+    storage,
     ids: {
       alpha: alpha.id,
       beta: beta.id,

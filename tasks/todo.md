@@ -1,5 +1,22 @@
 # 작업 계획
 
+## 2026-05-02 Import Execution And Imported-Only Filter
+
+- [x] import 실행/resume 실패 테스트 작성
+- [x] dry-run parser를 실행 import에서도 재사용 가능하게 분리
+- [x] import job 실행, import_records 저장, idempotency/resume 처리 구현
+- [x] CLI `import --execute`와 `import --resume <job-id>` 추가
+- [x] list/search/API에 imported-only job filter 추가
+- [x] targeted/full 검증, 커밋 및 푸시
+
+### 첫 구현 범위
+
+- 단일 JSONL 파일 import 실행만 지원한다.
+- assistant/tool/command/file content는 계속 저장하지 않는다.
+- import 대상 prompt는 저장 전 redaction pipeline을 다시 통과한다.
+- raw source path, raw prompt, raw secret은 import job/record 출력에 저장하지 않는다.
+- import 실행은 기존 Markdown/SQLite 데이터를 손상시키지 않고, 같은 record 재실행은 중복 저장하지 않는다.
+
 ## 2026-05-02 Prompt Improvement Draft Storage
 
 - [x] 저장소/API 실패 테스트 작성

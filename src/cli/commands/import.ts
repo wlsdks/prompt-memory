@@ -7,14 +7,17 @@ import {
   type ImportDryRunResult,
   type ImportSourceType,
 } from "../../importer/dry-run.js";
+import { executeImport } from "../../importer/execute.js";
 import { createSqlitePromptStorage } from "../../storage/sqlite.js";
 import type { ImportJob } from "../../storage/ports.js";
 
 type ImportCliOptions = {
   dataDir?: string;
   dryRun?: boolean;
+  execute?: boolean;
   file?: string;
   json?: boolean;
+  resume?: string;
   saveJob?: boolean;
   source?: string;
 };
@@ -27,10 +30,12 @@ type ImportJobCliOptions = {
 export function registerImportCommand(program: Command): void {
   program
     .command("import")
-    .description("Preview transcript imports without storing prompts.")
+    .description("Preview or execute transcript imports.")
     .option("--data-dir <path>", "Override the prompt-memory data directory.")
     .option("--dry-run", "Preview import without writing Markdown or SQLite.")
+    .option("--execute", "Import prompt candidates into local storage.")
     .option("--file <path>", "JSONL transcript file to preview.")
+    .option("--resume <job-id>", "Resume a saved import dry-run job.")
     .option("--save-job", "Persist a raw-free dry-run job summary.")
     .option(
       "--source <type>",
@@ -38,8 +43,8 @@ export function registerImportCommand(program: Command): void {
       "manual-jsonl",
     )
     .option("--json", "Print JSON.")
-    .action((options: ImportCliOptions) => {
-      console.log(importDryRunForCli(options));
+    .action(async (options: ImportCliOptions) => {
+      console.log(await importForCli(options));
     });
 
   program
@@ -54,6 +59,20 @@ export function registerImportCommand(program: Command): void {
 }
 
 export function importDryRunForCli(options: ImportCliOptions): string {
+  return importForCliSync(options);
+}
+
+export function importForCli(
+  options: ImportCliOptions,
+): Promise<string> | string {
+  if (options.execute || options.resume) {
+    return importExecuteForCli(options);
+  }
+
+  return importForCliSync(options);
+}
+
+function importForCliSync(options: ImportCliOptions): string {
   if (!options.dryRun) {
     throw new Error("--dry-run is required for import preview.");
   }
@@ -91,6 +110,45 @@ export function importDryRunForCli(options: ImportCliOptions): string {
   return options.json
     ? JSON.stringify({ job_id: job.id, ...result }, null, 2)
     : `${formatDryRunSummary(result)}\njob ${job.id}`;
+}
+
+async function importExecuteForCli(options: ImportCliOptions): Promise<string> {
+  if (!options.file) {
+    throw new Error("--file is required for import execution.");
+  }
+
+  const sourceType = parseImportSourceType(
+    options.source ?? "manual-jsonl",
+  ) as ImportSourceType;
+  const config = loadPromptMemoryConfig(options.dataDir);
+  const hookAuth = loadHookAuth(options.dataDir);
+  const storage = createSqlitePromptStorage({
+    dataDir: config.data_dir,
+    hmacSecret: hookAuth.web_session_secret,
+  });
+
+  try {
+    const result = await executeImport(storage, {
+      defaultCwd: process.cwd(),
+      file: options.file!,
+      redactionMode: config.redaction_mode,
+      resumeJobId: options.resume,
+      sourceType,
+    });
+
+    return options.json
+      ? JSON.stringify(result, null, 2)
+      : [
+          `job ${result.job_id}`,
+          `status ${result.status}`,
+          `imported ${result.imported_count}`,
+          `duplicates ${result.duplicate_count}`,
+          `skipped ${result.skipped_count}`,
+          `errors ${result.error_count}`,
+        ].join("\n");
+  } finally {
+    storage.close();
+  }
 }
 
 export function showImportJobForCli(

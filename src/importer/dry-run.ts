@@ -47,11 +47,25 @@ export type ImportDryRunSample = {
   is_sensitive: boolean;
 };
 
+export type ImportCandidate = {
+  record_key: string;
+  record_offset: number;
+  prompt: string;
+  session_id?: string;
+  turn_id?: string;
+  cwd?: string;
+};
+
 type PromptCandidate = {
   prompt: string;
   sessionId?: string;
   turnId?: string;
   cwd?: string;
+};
+
+export type ImportSourceScanResult = {
+  summary: ImportDryRunResult;
+  candidates: ImportCandidate[];
 };
 
 type SkipReason =
@@ -66,6 +80,12 @@ const DEFAULT_MAX_LINE_BYTES = 256 * 1024;
 export function runImportDryRun(
   options: ImportDryRunOptions,
 ): ImportDryRunResult {
+  return scanImportSource(options).summary;
+}
+
+export function scanImportSource(
+  options: ImportDryRunOptions,
+): ImportSourceScanResult {
   const maxFileBytes = options.maxFileBytes ?? DEFAULT_MAX_FILE_BYTES;
   const maxLineBytes = options.maxLineBytes ?? DEFAULT_MAX_LINE_BYTES;
   const sampleLimit = options.sampleLimit ?? 5;
@@ -95,6 +115,7 @@ export function runImportDryRun(
     },
     samples: [],
   };
+  const candidates: ImportCandidate[] = [];
 
   const lines = readFileSync(sourcePath, "utf8").split(/\r?\n/);
   for (let index = 0; index < lines.length; index += 1) {
@@ -124,6 +145,18 @@ export function runImportDryRun(
     const redaction = redactPrompt(candidate.prompt, options.redactionMode);
     result.prompt_candidates += 1;
     result.sensitive_prompt_count += redaction.is_sensitive ? 1 : 0;
+    candidates.push({
+      record_key: buildRecordKey(
+        result.source_path_hash,
+        index,
+        candidate.prompt,
+      ),
+      record_offset: index,
+      prompt: candidate.prompt,
+      session_id: candidate.sessionId,
+      turn_id: candidate.turnId,
+      cwd: candidate.cwd,
+    });
 
     if (result.samples.length < sampleLimit) {
       result.samples.push({
@@ -137,7 +170,7 @@ export function runImportDryRun(
     }
   }
 
-  return result;
+  return { summary: result, candidates };
 }
 
 export function parseImportSourceType(value: string): ImportSourceType {
@@ -277,4 +310,17 @@ function hashPathForPreview(path: string): string {
     hash = (hash * 31 + path.charCodeAt(index)) >>> 0;
   }
   return `path_${hash.toString(16).padStart(8, "0")}`;
+}
+
+function buildRecordKey(
+  sourcePathHash: string,
+  recordOffset: number,
+  prompt: string,
+): string {
+  let hash = 0;
+  for (let index = 0; index < prompt.length; index += 1) {
+    hash = (hash * 33 + prompt.charCodeAt(index)) >>> 0;
+  }
+
+  return `${sourcePathHash}:${recordOffset}:${hash.toString(16).padStart(8, "0")}`;
 }
