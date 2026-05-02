@@ -358,16 +358,17 @@ privacy/safety, 보고 규칙을 보는 deterministic local rubric입니다.
 prompt-memory mcp
 ```
 
-MCP server는 네 개의 tool을 제공합니다.
+MCP server는 다섯 개의 tool을 제공합니다.
 
 - `get_prompt_memory_status`: 로컬 archive가 초기화되었는지, prompt가 캡처되었는지, 다음에 어떤 MCP tool을 호출하면 좋은지 확인합니다.
 - `score_prompt`: 직접 전달한 prompt text, 저장된 `prompt_id`, 또는 최신 저장 prompt를 점수화합니다.
+- `improve_prompt`: 직접 전달한 prompt text, 저장된 `prompt_id`, 또는 최신 저장 prompt를 승인 가능한 개선 prompt 초안으로 재작성합니다.
 - `score_prompt_archive`: 최근 저장 prompt 전체를 대상으로 누적 prompt 습관을 점수화하고, 평균 점수, 반복 부족 항목, 낮은 점수 prompt id를 반환합니다.
 - `review_project_instructions`: 최신 또는 선택한 프로젝트의 `AGENTS.md` / `CLAUDE.md` 규칙 파일을 리뷰하고 점수, checklist 상태, 개선 힌트를 반환합니다.
 
 모든 tool은 read-only, idempotent, local-only로 선언되며 구조화 JSON
-metadata와 text JSON fallback을 함께 반환합니다. prompt 본문, raw absolute
-path, secret, 외부 LLM 결과는 반환하지 않습니다.
+metadata와 text JSON fallback을 함께 반환합니다. archive 기반 tool은 저장된
+prompt 본문, raw absolute path, secret, 외부 LLM 결과를 반환하지 않습니다.
 
 Agent에게 이렇게 요청할 수 있습니다.
 
@@ -376,13 +377,15 @@ prompt-memory get_prompt_memory_status를 사용해서 점수 측정 전에 prom
 
 prompt-memory score_prompt를 latest=true로 사용해서 방금 내 요청에서 고칠 점을 알려줘.
 
+prompt-memory improve_prompt를 latest=true로 사용해서 내가 복사해 다시 입력할 수 있는 승인용 개선안을 만들어줘.
+
 최근 Codex 프롬프트를 prompt-memory score_prompt_archive로 측정하고 반복되는 프롬프트 습관 약점을 요약해줘.
 
 prompt-memory review_project_instructions를 latest=true로 사용해서 내 AGENTS.md/CLAUDE.md 규칙이 코딩 에이전트에게 충분한지 평가해줘.
 ```
 
-이 tool들은 점수, band, checklist breakdown, warning, 반복 부족 항목, 개선 힌트를 반환합니다.
-직접 전달한 prompt text는 저장하지 않고, 외부 LLM을 호출하지 않으며, prompt body를 결과로 반환하지 않습니다. archive scoring tool은 raw absolute path도 반환하지 않습니다. project instruction review tool은 instruction file 본문과 raw absolute path를 반환하지 않습니다. status tool은 안전한 개수, 최신 prompt metadata, 사용 가능한 tool 이름, 다음 행동만 반환합니다.
+이 tool들은 점수, band, checklist breakdown, warning, 반복 부족 항목, 승인 가능한 재작성 초안, 개선 힌트를 반환합니다.
+직접 전달한 prompt text는 저장하지 않고, 외부 LLM을 호출하지 않습니다. archive 기반 score/rewrite 흐름은 저장된 원문 prompt body를 반환하지 않습니다. archive scoring tool은 raw absolute path도 반환하지 않습니다. project instruction review tool은 instruction file 본문과 raw absolute path를 반환하지 않습니다. status tool은 안전한 개수, 최신 prompt metadata, 사용 가능한 tool 이름, 다음 행동만 반환합니다.
 
 Claude Code 등록 예시:
 

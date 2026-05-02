@@ -108,10 +108,11 @@ uses the exact CLI path from the current installation.
 prompt-memory mcp
 ```
 
-This server exposes four model-controlled tools:
+This server exposes five model-controlled tools:
 
 - `get_prompt_memory_status`
 - `score_prompt`
+- `improve_prompt`
 - `score_prompt_archive`
 - `review_project_instructions`
 
@@ -119,19 +120,22 @@ This server exposes four model-controlled tools:
 counts, latest prompt metadata, available tool names, and next actions.
 `score_prompt` scores direct prompt text, a stored prompt id, or the latest
 stored prompt with the same local deterministic `0-100` Prompt Quality Score
-used by the web UI. `score_prompt_archive` scores accumulated prompt habits
-across recent stored prompts and returns aggregate score, recurring gaps, and
-low-score prompt ids. `review_project_instructions` scores local
+used by the web UI. `improve_prompt` returns an approval-ready copy-based
+rewrite draft for direct prompt text, a stored prompt id, or the latest stored
+prompt. `score_prompt_archive` scores accumulated prompt habits across recent
+stored prompts and returns aggregate score, recurring gaps, and low-score prompt
+ids. `review_project_instructions` scores local
 `AGENTS.md` / `CLAUDE.md` rules for the latest or selected project and returns
 file metadata, checklist status, and improvement hints.
 
-These tools return metadata without calling external LLMs or returning prompt
-bodies. The archive and status tools avoid raw absolute paths, and the
-instruction review tool avoids file bodies and raw absolute paths. Tool
-definitions are marked read-only, idempotent, and local-only through MCP
-annotations. Each `tools/call` response includes `structuredContent` plus a JSON
-text block for clients that still expect text content. If MCP is not configured,
-users can run the same archive review through:
+These tools do not call external LLMs. Archive-backed score/rewrite flows do not
+return stored original prompt bodies. The archive and status tools avoid raw
+absolute paths, and the instruction review tool avoids file bodies and raw
+absolute paths. Tool definitions are marked read-only, idempotent, and
+local-only through MCP annotations. Each `tools/call` response includes
+`structuredContent` plus a JSON text block for clients that still expect text
+content. If MCP is not configured, users can run the same archive review
+through:
 
 ```sh
 prompt-memory score --json

@@ -133,7 +133,8 @@ Hard delete removes:
    or Codex.
 2. The client launches the command as a stdio subprocess.
 3. The MCP server exposes `get_prompt_memory_status`, `score_prompt`,
-   `score_prompt_archive`, and `review_project_instructions`.
+   `improve_prompt`, `score_prompt_archive`, and
+   `review_project_instructions`.
 4. `get_prompt_memory_status` checks whether local storage is initialized,
    whether prompts have been captured, and which MCP tool to call next.
 5. `score_prompt` accepts exactly one of direct prompt text, a stored prompt id,
@@ -141,13 +142,16 @@ Hard delete removes:
 6. Direct prompt text is analyzed locally and is not stored.
 7. Stored prompt scoring reads existing local analysis from SQLite and does not
    return prompt bodies.
-8. Archive scoring reads recent prompt summaries from SQLite and returns an
+8. `improve_prompt` accepts exactly one of direct prompt text, a stored prompt
+   id, or `latest: true`, then returns a copy-based draft that requires user
+   approval before resubmission.
+9. Archive scoring reads recent prompt summaries from SQLite and returns an
    aggregate score, distribution, recurring quality gaps, and low-score prompt
    ids without prompt bodies or raw paths.
-9. Project instruction review reads local project metadata from SQLite, can
+10. Project instruction review reads local project metadata from SQLite, can
    rescan `AGENTS.md` / `CLAUDE.md`, and returns checklist metadata without
    instruction file bodies or raw paths.
-10. Every MCP tool is declared as read-only, idempotent, and local-only through
+11. Every MCP tool is declared as read-only, idempotent, and local-only through
     tool annotations, and `tools/call` returns both serialized JSON text and
     `structuredContent` for clients that can consume structured tool results.
 
@@ -158,6 +162,8 @@ Important rules:
 - MCP tool definitions include read-only/local-only risk hints
 - MCP tool responses include `structuredContent` plus a JSON text content block
 - direct MCP prompt input is not written to Markdown or SQLite
+- improvement MCP results are copy-based drafts, are never auto-submitted, and
+  archive-backed rewrites do not return the stored original prompt body
 - MCP tool results return score metadata and checklist explanations, not prompt
   bodies
 - status MCP results are readiness metadata only and never include prompt bodies

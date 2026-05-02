@@ -25,6 +25,9 @@ describe("MCP stdio server", () => {
             name: "score_prompt",
           }),
           expect.objectContaining({
+            name: "improve_prompt",
+          }),
+          expect.objectContaining({
             name: "score_prompt_archive",
           }),
           expect.objectContaining({
@@ -44,7 +47,7 @@ describe("MCP stdio server", () => {
 
     const tools = (response?.result as { tools: Array<unknown> }).tools;
 
-    expect(tools).toHaveLength(4);
+    expect(tools).toHaveLength(5);
     for (const tool of tools) {
       expect(tool).toEqual(
         expect.objectContaining({
@@ -121,6 +124,43 @@ describe("MCP stdio server", () => {
           privacy: expect.objectContaining({
             external_calls: false,
             returns_prompt_body: false,
+          }),
+        }),
+        isError: false,
+      },
+    });
+  });
+
+  it("returns structured MCP content for improve_prompt calls", () => {
+    const response = handleMcpMessage({
+      jsonrpc: "2.0",
+      id: "improve-1",
+      method: "tools/call",
+      params: {
+        name: "improve_prompt",
+        arguments: {
+          prompt:
+            "Review src/mcp/server.ts, run pnpm test, and return a Markdown summary.",
+        },
+      },
+    });
+
+    expect(response).toMatchObject({
+      jsonrpc: "2.0",
+      id: "improve-1",
+      result: {
+        content: [
+          {
+            type: "text",
+            text: expect.stringContaining('"improved_prompt"'),
+          },
+        ],
+        structuredContent: expect.objectContaining({
+          improved_prompt: expect.stringContaining("Please work from"),
+          requires_user_approval: true,
+          privacy: expect.objectContaining({
+            external_calls: false,
+            returns_stored_prompt_body: false,
           }),
         }),
         isError: false,

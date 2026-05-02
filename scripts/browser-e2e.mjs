@@ -266,6 +266,11 @@ try {
   );
   await assertText(
     page,
+    "improve_prompt",
+    "MCP page should expose approval-ready prompt rewriting.",
+  );
+  await assertText(
+    page,
     "get_prompt_memory_status",
     "MCP page should expose the preflight status tool.",
   );

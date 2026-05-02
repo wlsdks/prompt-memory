@@ -2897,7 +2897,7 @@ function McpToolsView({
       <section className="mcp-flow panel" aria-label="Recommended MCP flow">
         <div className="panel-heading-row">
           <h2>Recommended call order</h2>
-          <span>4 tools</span>
+          <span>5 tools</span>
         </div>
         <div className="mcp-flow-steps">
           {MCP_FLOW_STEPS.map((step, index) => (
@@ -3497,6 +3497,11 @@ const MCP_FLOW_STEPS = [
       "Score the latest, a pasted prompt, or a stored prompt id when the user asks about one request.",
   },
   {
+    tool: "improve_prompt",
+    detail:
+      "Generate an approval-ready rewritten request when the user wants to resubmit a better prompt.",
+  },
+  {
     tool: "score_prompt_archive",
     detail:
       "Review accumulated prompt habits, recurring gaps, and low-score review candidates.",
@@ -3534,6 +3539,19 @@ const MCP_TOOL_CATALOG = [
       "Direct prompt input is analyzed locally and not stored by this MCP tool.",
     prompt:
       "Use prompt-memory score_prompt with latest=true and tell me what to improve in my last request.",
+  },
+  {
+    kind: "rewrite",
+    name: "improve_prompt",
+    title: "Rewrite before resubmission",
+    when: "The user wants a clearer prompt draft to approve, copy, and manually resubmit to Claude Code or Codex.",
+    returns:
+      "Approval-ready improved prompt draft, changed sections, safety notes, and next action.",
+    assurances: ["read-only", "local-only", "structured JSON"],
+    privacy:
+      "No auto-submit, no external LLM call, and direct prompt input is not stored.",
+    prompt:
+      "Use prompt-memory improve_prompt with latest=true and give me an approval-ready draft I can copy and resubmit.",
   },
   {
     kind: "archive",

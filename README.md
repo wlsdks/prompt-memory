@@ -452,12 +452,14 @@ Codex, or any MCP client through a stdio MCP server:
 prompt-memory mcp
 ```
 
-The MCP server exposes four tools:
+The MCP server exposes five tools:
 
 - `get_prompt_memory_status`: check whether the local archive is initialized,
   whether prompts have been captured, and which MCP tool to call next.
 - `score_prompt`: score either direct prompt text, a stored `prompt_id`, or the
   latest stored prompt.
+- `improve_prompt`: generate an approval-ready improved prompt draft for direct
+  prompt text, a stored `prompt_id`, or the latest stored prompt.
 - `score_prompt_archive`: score accumulated prompt habits across recent stored
   prompts and return aggregate score, recurring gaps, and low-score prompt ids.
 - `review_project_instructions`: review local `AGENTS.md` / `CLAUDE.md`
@@ -465,8 +467,8 @@ The MCP server exposes four tools:
   checklist status, and improvement hints.
 
 All tools are read-only, idempotent, local-only, and return structured JSON
-metadata plus a text JSON fallback. They do not return prompt bodies, raw
-absolute paths, secrets, or external LLM results.
+metadata plus a text JSON fallback. Archive-backed tools do not return stored
+prompt bodies, raw absolute paths, secrets, or external LLM results.
 
 Practical agent prompts:
 
@@ -477,6 +479,9 @@ working before you score anything.
 Use prompt-memory score_prompt with latest=true and tell me what to improve in
 my last request.
 
+Use prompt-memory improve_prompt with latest=true and give me an
+approval-ready draft I can copy and resubmit.
+
 Use prompt-memory score_prompt_archive for recent Codex prompts and summarize my
 top recurring prompt habit gaps.
 
@@ -485,11 +490,12 @@ whether my AGENTS.md/CLAUDE.md rules are strong enough for coding agents.
 ```
 
 The tools return score metadata, checklist breakdowns, warnings, recurring gaps,
-and improvement hints. They do not store direct prompt text, do not call
-external LLMs, and do not return prompt bodies. The archive scoring tool also
-avoids raw absolute paths. The project instruction review tool also avoids
-instruction file bodies and raw absolute paths. The status tool returns only
-safe counts, latest prompt metadata, available tool names, and next actions.
+approval-ready rewrite drafts, and improvement hints. They do not store direct
+prompt text or call external LLMs. Archive-backed score/rewrite flows do not
+return stored original prompt bodies. The archive scoring tool also avoids raw
+absolute paths. The project instruction review tool also avoids instruction file
+bodies and raw absolute paths. The status tool returns only safe counts, latest
+prompt metadata, available tool names, and next actions.
 
 Example Claude Code registration:
 

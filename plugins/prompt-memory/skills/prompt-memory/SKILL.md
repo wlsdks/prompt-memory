@@ -61,6 +61,7 @@ prompt-memory mcp
 The MCP tools are:
 
 - `score_prompt` for one current, pasted, stored, or latest prompt
+- `improve_prompt` for an approval-ready draft the user can copy and resubmit
 - `score_prompt_archive` for accumulated prompt habit review across the local
   archive
 
@@ -79,6 +80,10 @@ paths.
 When the user asks to review the prompt they just typed, call `score_prompt`
 with `latest=true` if hook capture is enabled. If they paste a prompt explicitly,
 call `score_prompt` with `prompt` instead.
+
+When the user asks to rewrite, clarify, or upgrade the request before
+resubmission, call `improve_prompt`. The returned draft is copy-based and
+requires user approval; do not auto-submit it.
 
 ## Safety Rules
 

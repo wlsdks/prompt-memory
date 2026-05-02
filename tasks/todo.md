@@ -1,5 +1,20 @@
 # 작업 계획
 
+## 2026-05-03 MCP Improve Prompt Tool
+
+- [x] MCP 기능 gap 재평가: score 이후 승인 가능한 개선안 생성 흐름 필요성 판단
+- [x] `improve_prompt` MCP tool을 TDD로 추가하고 local-only/privacy contract 검증
+- [x] MCP 서버, 웹 MCP 카탈로그, README/docs/plugin skill에 새 tool 설명 반영
+- [x] browser E2E, MCP stdio 실제 호출, release gate 검증
+- [ ] 커밋, 푸시, CI 확인
+
+### 판단 기준
+
+- `improve_prompt`는 직접 prompt, 저장된 `prompt_id`, 최신 prompt 중 하나만 입력받는다.
+- 직접 입력은 저장하지 않고, 저장 prompt도 원문 body/raw path/secret을 반환하지 않는다.
+- 개선안은 자동 제출하지 않으며 `requires_user_approval: true`와 safety notes를 반환한다.
+- tool 수가 늘어도 각 tool의 사용 시점이 겹치지 않아야 한다.
+
 ## 2026-05-03 MCP Structured Tool Contract Polish
 
 - [x] MCP tool contract가 에이전트가 안정적으로 쓰기에 충분한지 재평가

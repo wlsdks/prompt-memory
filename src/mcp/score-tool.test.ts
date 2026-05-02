@@ -10,6 +10,7 @@ import { redactPrompt } from "../redaction/redact.js";
 import { createSqlitePromptStorage } from "../storage/sqlite.js";
 import {
   getPromptMemoryStatusTool,
+  improvePromptTool,
   reviewProjectInstructionsTool,
   scorePromptArchiveTool,
   scorePromptTool,
@@ -124,6 +125,65 @@ describe("scorePromptTool", () => {
 
   it("returns an actionable tool error for ambiguous input", () => {
     const result = scorePromptTool({});
+
+    expect(result.is_error).toBe(true);
+    expect(result.error_code).toBe("invalid_input");
+    expect(result.message).toContain("Provide exactly one");
+  });
+});
+
+describe("improvePromptTool", () => {
+  it("returns an approval-ready draft for direct prompt text without storing input", () => {
+    const result = improvePromptTool({
+      prompt: "Make this better with token sk-proj-1234567890abcdef",
+    });
+    const serialized = JSON.stringify(result);
+
+    expect(result.source).toBe("text");
+    expect(result.requires_user_approval).toBe(true);
+    expect(result.improved_prompt).toContain("Please work from");
+    expect(result.privacy).toEqual({
+      local_only: true,
+      stores_input: false,
+      external_calls: false,
+      returns_stored_prompt_body: false,
+    });
+    expect(serialized).not.toContain("sk-proj-1234567890abcdef");
+  });
+
+  it("improves the latest stored prompt without returning the stored prompt body", async () => {
+    const dataDir = createTempDir();
+    const init = initializePromptMemory({ dataDir });
+    const storage = createSqlitePromptStorage({
+      dataDir,
+      hmacSecret: init.hookAuth.web_session_secret,
+      now: () => new Date("2026-05-03T12:00:00.000Z"),
+    });
+    await storeClaudePrompt(
+      storage,
+      "Make this better",
+      "2026-05-03T11:59:00.000Z",
+    );
+    storage.close();
+
+    const result = improvePromptTool({ latest: true }, { dataDir });
+    const serialized = JSON.stringify(result);
+
+    expect(result.source).toBe("latest");
+    expect(result.prompt_id).toBeTruthy();
+    expect(result.improved_prompt).toContain("Goal");
+    expect(result.privacy).toMatchObject({
+      local_only: true,
+      stores_input: false,
+      external_calls: false,
+      returns_stored_prompt_body: false,
+    });
+    expect(serialized).not.toContain("Make this better");
+    expect(serialized).not.toContain("/Users/example");
+  });
+
+  it("returns an actionable tool error for ambiguous improvement input", () => {
+    const result = improvePromptTool({ prompt: "Fix this", latest: true });
 
     expect(result.is_error).toBe(true);
     expect(result.error_code).toBe("invalid_input");

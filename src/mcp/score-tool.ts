@@ -3,6 +3,7 @@ import {
   createArchiveScoreReport,
   type ArchiveScoreReport,
 } from "../analysis/archive-score.js";
+import { improvePrompt, type PromptImprovement } from "../analysis/improve.js";
 import { loadHookAuth, loadPromptMemoryConfig } from "../config/config.js";
 import type {
   PromptAnalysisPreview,
@@ -19,6 +20,13 @@ export type ScorePromptToolArguments = {
   prompt_id?: string;
   latest?: boolean;
   include_suggestions?: boolean;
+};
+
+export type ImprovePromptToolArguments = {
+  prompt?: string;
+  prompt_id?: string;
+  latest?: boolean;
+  language?: "en" | "ko";
 };
 
 export type ScorePromptToolOptions = {
@@ -79,6 +87,24 @@ export type ScorePromptArchiveToolResult =
   | {
       is_error: true;
       error_code: "storage_unavailable";
+      message: string;
+    };
+
+export type ImprovePromptToolResult =
+  | (PromptImprovement & {
+      source: "text" | "prompt_id" | "latest";
+      prompt_id?: string;
+      next_action: string;
+      privacy: {
+        local_only: true;
+        stores_input: false;
+        external_calls: false;
+        returns_stored_prompt_body: false;
+      };
+    })
+  | {
+      is_error: true;
+      error_code: "invalid_input" | "not_found" | "storage_unavailable";
       message: string;
     };
 
@@ -182,6 +208,43 @@ export const SCORE_PROMPT_TOOL_DEFINITION = {
         type: "boolean",
         description:
           "Whether to include concise improvement suggestions in the result. Defaults to true.",
+      },
+    },
+    additionalProperties: false,
+  },
+} as const;
+
+export const IMPROVE_PROMPT_TOOL_DEFINITION = {
+  name: "improve_prompt",
+  description:
+    "Generate an approval-ready improved coding prompt draft with prompt-memory's local deterministic Prompt Coach. Use this when the user asks Claude Code or Codex to rewrite, clarify, or upgrade the current request, a pasted prompt, a stored prompt id, or the latest captured prompt before resubmitting it. The tool is copy-based: it never auto-submits the draft, never calls external LLMs, does not store direct prompt input, and does not return the original stored prompt body.",
+  annotations: {
+    ...LOCAL_READ_ONLY_TOOL_ANNOTATIONS,
+    title: "Approval-ready prompt rewrite",
+  },
+  inputSchema: {
+    type: "object",
+    properties: {
+      prompt: {
+        type: "string",
+        description:
+          "Prompt text to improve directly. Use for the user's current or pasted prompt. This input is redacted locally and is not stored by this tool.",
+      },
+      prompt_id: {
+        type: "string",
+        description:
+          "Stored prompt id to improve from the local prompt-memory archive without returning the original stored body.",
+      },
+      latest: {
+        type: "boolean",
+        description:
+          "Set true to improve the latest stored prompt in the local prompt-memory archive.",
+      },
+      language: {
+        type: "string",
+        enum: ["en", "ko"],
+        description:
+          "Language for the improved draft and safety notes. Defaults to en.",
       },
     },
     additionalProperties: false,
@@ -308,6 +371,43 @@ export function scorePromptTool(
   return withStoredPrompt(args, options);
 }
 
+export function improvePromptTool(
+  args: ImprovePromptToolArguments,
+  options: ScorePromptToolOptions = {},
+): ImprovePromptToolResult {
+  const inputCount = [args.prompt, args.prompt_id, args.latest === true].filter(
+    Boolean,
+  ).length;
+
+  if (inputCount !== 1) {
+    return improvementToolError(
+      "invalid_input",
+      "Provide exactly one of `prompt`, `prompt_id`, or `latest: true`.",
+    );
+  }
+
+  if (args.prompt !== undefined) {
+    const prompt = args.prompt.trim();
+    if (!prompt) {
+      return improvementToolError(
+        "invalid_input",
+        "`prompt` must not be empty.",
+      );
+    }
+
+    return toImprovementToolResult({
+      source: "text",
+      improvement: improvePrompt({
+        prompt,
+        createdAt: (options.now ?? new Date()).toISOString(),
+        language: args.language,
+      }),
+    });
+  }
+
+  return withStoredPromptImprovement(args, options);
+}
+
 export function scorePromptArchiveTool(
   args: ScorePromptArchiveToolArguments,
   options: ScorePromptToolOptions = {},
@@ -384,6 +484,7 @@ export function getPromptMemoryStatusTool(
           dashboard.total_prompts > 0
             ? [
                 "Use score_prompt with latest=true to evaluate the latest captured prompt.",
+                "Use improve_prompt with latest=true to generate an approval-ready rewritten request.",
                 "Use score_prompt_archive to review accumulated prompt habits.",
                 "Use review_project_instructions to check AGENTS.md/CLAUDE.md quality for a captured project.",
               ]
@@ -597,9 +698,94 @@ function availableMcpToolNames(): string[] {
   return [
     GET_PROMPT_MEMORY_STATUS_TOOL_DEFINITION.name,
     SCORE_PROMPT_TOOL_DEFINITION.name,
+    IMPROVE_PROMPT_TOOL_DEFINITION.name,
     SCORE_PROMPT_ARCHIVE_TOOL_DEFINITION.name,
     REVIEW_PROJECT_INSTRUCTIONS_TOOL_DEFINITION.name,
   ];
+}
+
+function withStoredPromptImprovement(
+  args: ImprovePromptToolArguments,
+  options: ScorePromptToolOptions,
+): ImprovePromptToolResult {
+  try {
+    const config = loadPromptMemoryConfig(options.dataDir);
+    const auth = loadHookAuth(options.dataDir);
+    const storage = createSqlitePromptStorage({
+      dataDir: config.data_dir,
+      hmacSecret: auth.web_session_secret,
+    });
+
+    try {
+      const id =
+        args.prompt_id ??
+        (args.latest === true
+          ? storage.listPrompts({ limit: 1 }).items[0]?.id
+          : undefined);
+
+      if (!id) {
+        return improvementToolError(
+          "not_found",
+          "No stored prompt is available to improve.",
+        );
+      }
+
+      const prompt = storage.getPrompt(id);
+      if (!prompt?.analysis) {
+        return improvementToolError(
+          "not_found",
+          `Prompt not found or not analyzed: ${id}`,
+        );
+      }
+
+      return toImprovementToolResult({
+        source: args.latest === true ? "latest" : "prompt_id",
+        promptId: id,
+        improvement: improvePrompt({
+          prompt: prompt.analysis.summary,
+          createdAt: (options.now ?? new Date()).toISOString(),
+          language: args.language,
+        }),
+      });
+    } finally {
+      storage.close();
+    }
+  } catch (error) {
+    return improvementToolError(
+      "storage_unavailable",
+      `Local prompt-memory archive is not available. Run \`prompt-memory init\` first or pass --data-dir. ${errorMessage(error)}`,
+    );
+  }
+}
+
+function toImprovementToolResult(input: {
+  source: "text" | "prompt_id" | "latest";
+  promptId?: string;
+  improvement: PromptImprovement;
+}): ImprovePromptToolResult {
+  return {
+    ...input.improvement,
+    source: input.source,
+    ...(input.promptId ? { prompt_id: input.promptId } : {}),
+    improved_prompt: removeOriginalPromptSection(
+      input.improvement.improved_prompt,
+    ),
+    next_action:
+      "Review the draft, copy it manually, and resubmit it only after user approval.",
+    privacy: {
+      local_only: true,
+      stores_input: false,
+      external_calls: false,
+      returns_stored_prompt_body: false,
+    },
+  };
+}
+
+function removeOriginalPromptSection(draft: string): string {
+  return draft
+    .replace(/\n## Original prompt\n[\s\S]*$/u, "")
+    .replace(/\n## 원문\n[\s\S]*$/u, "")
+    .trim();
 }
 
 function toolError(
@@ -610,6 +796,21 @@ function toolError(
     : never,
   message: string,
 ): ScorePromptToolResult {
+  return {
+    is_error: true,
+    error_code: errorCode,
+    message,
+  };
+}
+
+function improvementToolError(
+  errorCode: ImprovePromptToolResult extends infer TResult
+    ? TResult extends { error_code: infer TCode }
+      ? TCode
+      : never
+    : never,
+  message: string,
+): ImprovePromptToolResult {
   return {
     is_error: true,
     error_code: errorCode,

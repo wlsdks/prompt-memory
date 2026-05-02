@@ -562,11 +562,13 @@ const UI_TRANSLATIONS: Record<string, string> = {
     "패턴 리뷰가 필요하면 archive scoring을 실행하고, 최신 요청만 보려면 score_prompt를 사용하세요.",
   "Recommended MCP flow": "권장 MCP 흐름",
   "Recommended call order": "권장 호출 순서",
-  "4 tools": "도구 4개",
+  "5 tools": "도구 5개",
   "Check setup, capture readiness, latest safe metadata, and the next tool to call.":
     "설정, 캡처 준비 상태, 안전한 최신 metadata, 다음에 호출할 도구를 확인합니다.",
   "Score the latest, a pasted prompt, or a stored prompt id when the user asks about one request.":
     "사용자가 하나의 요청을 묻는 경우 최신 prompt, 붙여넣은 prompt, 저장된 prompt id를 점수화합니다.",
+  "Generate an approval-ready rewritten request when the user wants to resubmit a better prompt.":
+    "사용자가 더 나은 prompt로 다시 입력하고 싶을 때 승인 가능한 재작성 요청을 생성합니다.",
   "Review accumulated prompt habits, recurring gaps, and low-score review candidates.":
     "누적 prompt 습관, 반복 부족 항목, 낮은 점수 리뷰 후보를 확인합니다.",
   "Score AGENTS.md / CLAUDE.md rules when the user asks whether agent instructions are strong enough.":
@@ -574,10 +576,12 @@ const UI_TRANSLATIONS: Record<string, string> = {
   "MCP tool catalog": "MCP 도구 카탈로그",
   preflight: "사전 점검",
   "single prompt": "단일 프롬프트",
+  rewrite: "재작성",
   archive: "아카이브",
   "project rules": "프로젝트 규칙",
   "Check capture readiness first": "먼저 캡처 준비 상태 확인",
   "Evaluate one request": "요청 하나 평가",
+  "Rewrite before resubmission": "재입력 전 재작성",
   "Find habit patterns": "습관 패턴 찾기",
   "Review AGENTS.md / CLAUDE.md": "AGENTS.md / CLAUDE.md 리뷰",
   "Use when": "사용 시점",
@@ -598,6 +602,12 @@ const UI_TRANSLATIONS: Record<string, string> = {
     "0-100 품질 점수, checklist, warning, 간결한 개선 제안을 반환합니다.",
   "Direct prompt input is analyzed locally and not stored by this MCP tool.":
     "직접 전달한 prompt 입력은 로컬에서 분석되며 이 MCP tool이 저장하지 않습니다.",
+  "The user wants a clearer prompt draft to approve, copy, and manually resubmit to Claude Code or Codex.":
+    "사용자가 Claude Code 또는 Codex에 승인 후 복사해 직접 재입력할 더 명확한 prompt 초안을 원할 때 사용합니다.",
+  "Approval-ready improved prompt draft, changed sections, safety notes, and next action.":
+    "승인 가능한 개선 prompt 초안, 변경 섹션, safety note, 다음 행동을 반환합니다.",
+  "No auto-submit, no external LLM call, and direct prompt input is not stored.":
+    "자동 제출하지 않고, 외부 LLM을 호출하지 않으며, 직접 전달한 prompt 입력을 저장하지 않습니다.",
   "The user wants Claude Code or Codex to review many stored prompts and identify repeated weak habits.":
     "사용자가 Claude Code 또는 Codex로 여러 저장 prompt를 리뷰하고 반복 약점을 찾고 싶을 때 사용합니다.",
   "Aggregate archive score, distribution, recurring gaps, and low-score prompt metadata.":
