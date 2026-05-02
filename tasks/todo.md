@@ -4,7 +4,7 @@
 
 - [x] PRD2 core 완료 판정 audit: PRD_PHASE2 수용 기준과 실제 구현 차이 목록화
 - [x] Browser raw-path boundary 결정: archive/detail/dashboard/projects에서 path를 그대로 보여줄지, masked display 옵션을 둘지 확정
-- [ ] Playwright 자동 E2E 추가: archive -> detail -> coach copy/save -> projects -> export -> mobile overflow
+- [x] Playwright 자동 E2E 추가: archive -> detail -> coach copy/save -> projects -> export -> mobile overflow
 - [ ] Benchmark v1 설계 및 구현: privacy, retrieval, coach quality, analytics, latency를 JSON report로 측정
 - [ ] Privacy regression fixture 확장: Markdown/SQLite/FTS/API/export/log/stdout raw secret/path 누출 검사
 - [ ] Release checklist 갱신: PRD2에서 추가된 import/export/project/coach 검증 항목 반영
