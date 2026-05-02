@@ -105,15 +105,18 @@ export function createPromptHabitCoach(
     biggestWeakness,
     nextFixes,
     reviewQueue:
-      archiveScore?.low_score_prompts.slice(0, 6).map((prompt) => ({
-        id: prompt.id,
-        tool: prompt.tool,
-        project: prompt.project,
-        received_at: prompt.received_at,
-        quality_score: prompt.quality_score,
-        quality_score_band: prompt.quality_score_band,
-        reasons: prompt.quality_gaps.slice(0, 3),
-      })) ?? [],
+      archiveScore?.low_score_prompts
+        .filter(isReviewablePrompt)
+        .slice(0, 6)
+        .map((prompt) => ({
+          id: prompt.id,
+          tool: prompt.tool,
+          project: prompt.project,
+          received_at: prompt.received_at,
+          quality_score: prompt.quality_score,
+          quality_score_band: prompt.quality_score_band,
+          reasons: prompt.quality_gaps.slice(0, 3),
+        })) ?? [],
     patternSummary: buildPatternSummary(dashboard, biggestWeakness),
   };
 }
@@ -253,6 +256,16 @@ function statusFor(
     label: "Needs practice",
     tone: "attention",
   };
+}
+
+function isReviewablePrompt(
+  prompt: ArchiveScoreReport["low_score_prompts"][number],
+): boolean {
+  return (
+    prompt.quality_score < 70 ||
+    prompt.quality_score_band === "needs_work" ||
+    prompt.quality_score_band === "weak"
+  );
 }
 
 function toQualityGap(value: string): PromptQualityGap | undefined {

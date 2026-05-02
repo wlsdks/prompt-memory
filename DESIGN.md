@@ -2,7 +2,9 @@
 
 `prompt-memory`의 전용 웹 UI 디자인 시스템이다. AI 에이전트는 UI 작업 전에 이 문서를 읽고, 로컬 우선 프롬프트 아카이브에 맞는 조용하고 정밀한 developer tool UI를 만든다.
 
-이 문서는 로컬 디자인 가이드 컬렉션의 DESIGN.md 구성 방식을 참고했다. 특정 브랜드를 복제하지 않는다. 참고한 방향은 Linear 계열의 정밀한 정보 밀도와 Cursor 계열의 따뜻한 로컬 도구 톤이며, 색상과 컴포넌트 언어는 `prompt-memory` 전용이다.
+이 문서는 `/Users/jinan/side-project/oh-my-ontology`의 Linear-base dark indigo 디자인 시스템을 1차 기준으로 삼는다. 로컬 디자인 가이드 컬렉션 `/Users/jinan/ai/awesome-design-md`는 보조 reference다. 특정 브랜드를 복제하지 않지만, `oh-my-ontology`의 절제된 흑백, 단일 인디고, mono caption, hairline surface hierarchy를 `prompt-memory`의 developer tool 화면에 맞게 적용한다.
+
+UI를 크게 바꾸는 작업, 특히 Dashboard, onboarding, detail coach 화면은 먼저 `/Users/jinan/ai/awesome-design-md`에서 관련 reference를 확인한다. 로컬 파일이 stub이면 `getdesign`으로 해당 reference를 확인하고, 적용한 판단은 `docs/design-references/` 또는 이 문서에 남긴다.
 
 ## 1. Visual Theme & Atmosphere
 
@@ -11,8 +13,10 @@
 - 로컬 저장소를 열어 프롬프트 기록, 품질 신호, 민감정보 상태를 점검하는 "developer workbench"처럼 보여야 한다.
 - 첫 화면은 항상 실제 archive/list다. 마케팅 hero, 소개 랜딩, 장식용 illustration을 만들지 않는다.
 - 전체 분위기는 차분하고 촘촘하다. 화면을 예쁘게 비우는 것보다 빠르게 스캔하고 조작하는 밀도를 우선한다.
-- 밝은 warm-neutral canvas 위에 ink text, mineral teal accent, amber warning을 제한적으로 사용한다.
+- 기본은 dark canvas다. `#08090a` 계열 canvas, `#0f1011` panel, `#191a1b` elevated surface, 단일 indigo accent를 사용한다.
+- 채색은 indigo 하나가 원칙이다. warning/danger 상태만 예외로 쓰고, decorative color나 teal/purple-pink gradient를 만들지 않는다.
 - 카드형 대시보드가 필요할 때도 "floating marketing card"처럼 보이면 안 된다. 경계선, 낮은 대비, 안정적인 grid로 운영 도구처럼 보이게 한다.
+- Dashboard의 첫 영역은 단순 metric card 묶음이 아니라 prompt habit command center여야 한다. score, 반복 약점, 다음에 고칠 문장, 낮은 점수 review queue가 한 화면에서 연결되어야 한다.
 
 ### Visual Keywords
 
@@ -57,11 +61,11 @@
 
 ### Color Rules
 
-- Teal is for current location, selected state, successful indexed state, and primary focus.
+- Indigo is for current location, selected state, primary focus, and coach emphasis.
 - Amber is only for weak/missing quality states or diagnostic warnings.
 - Red is only for destructive actions and security-sensitive warnings.
 - Tags use muted neutral pills by default. A tag must not look like a primary button.
-- Do not create purple/blue gradient-heavy UI.
+- Do not create purple/pink gradients, glassmorphism, glow pulse, neon, animated aurora, or multi-color AI-looking dashboards.
 
 ## 3. Typography Rules
 
@@ -119,6 +123,7 @@ font-family: "JetBrains Mono", SFMono-Regular, ui-monospace, Menlo, Consolas,
 - Border radius is 6px for compact panels, 8px maximum for larger panels.
 - Panels use a single border and minimal shadow. Do not nest card inside card unless it is a repeated item or copyable suggestion.
 - Dashboard metric cards are allowed, but keep them compact and aligned.
+- Dashboard의 coach 영역은 nested card grid로 보이면 안 된다. 하나의 단단한 command surface 안에서 hairline separator, compact rows, status rail로 정보를 나눈다.
 
 ### Badges
 

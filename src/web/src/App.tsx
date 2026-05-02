@@ -1422,9 +1422,7 @@ function DashboardView({
               >
                 <div>
                   <strong>{item.label}</strong>
-                  <p>
-                    missing {item.missing} / weak {item.weak}
-                  </p>
+                  <p>{`missing ${item.missing} / weak ${item.weak}`}</p>
                 </div>
                 <span>{Math.round(item.rate * 100)}%</span>
               </button>
@@ -1486,62 +1484,64 @@ function HabitCoachPanel({
   onOpenFilteredList(filters: PromptFilters): void;
   onSelect(id: string): void;
 }) {
+  const weaknessRate = coach.biggestWeakness
+    ? Math.round(coach.biggestWeakness.rate * 100)
+    : 0;
+
   return (
-    <section
-      className="panel habit-coach-panel"
-      aria-label="Prompt habit coach"
-    >
-      <div className="habit-coach-header">
-        <div>
+    <section className="habit-command-center" aria-label="Prompt habit coach">
+      <div className="habit-command-header">
+        <div className="habit-command-title">
           <p className="eyebrow">Prompt habit coach</p>
-          <h2>Your prompting pattern</h2>
+          <h2>Prompt habit command center</h2>
         </div>
         <span className={`habit-status ${coach.status.tone}`}>
           {coach.status.label}
         </span>
       </div>
-      <div className="habit-coach-grid">
-        <div className="habit-score-card">
-          <span className={`score-value ${coach.score.band}`}>
+
+      <div className="habit-command-grid">
+        <div className="habit-score-module">
+          <span className={`habit-score-number ${coach.score.band}`}>
             {coach.score.value}
           </span>
-          <div>
+          <div className="habit-score-copy">
             <strong>Your Prompt Habit Score</strong>
-            <small>
-              {coach.score.scoredPrompts} prompts scored / {coach.score.max}
-            </small>
+            <span>{`${coach.score.scoredPrompts} prompts scored / ${coach.score.max}`}</span>
+            <div className="habit-score-meter" aria-hidden="true">
+              <span style={{ width: `${Math.min(coach.score.value, 100)}%` }} />
+            </div>
           </div>
         </div>
-        <div className="habit-insight-card">
-          <div className="habit-card-title">
+
+        <div className="habit-command-cell">
+          <div className="habit-cell-title">
             <TrendingUp size={15} />
             <strong>Progress trend</strong>
           </div>
-          <p>
+          <p className="habit-signal">
             {coach.trend.label}
             {coach.trend.label !== "Not enough data" && (
               <span> {formatSignedNumber(coach.trend.delta)} points</span>
             )}
           </p>
-          <small>
-            recent {coach.trend.currentAverage} / previous{" "}
-            {coach.trend.previousAverage}
-          </small>
+          <small>{`recent ${coach.trend.currentAverage} / previous ${coach.trend.previousAverage}`}</small>
         </div>
-        <div className="habit-insight-card">
-          <div className="habit-card-title">
+
+        <div className="habit-command-cell weakness">
+          <div className="habit-cell-title">
             <Target size={15} />
             <strong>Your biggest weakness</strong>
           </div>
           {coach.biggestWeakness ? (
             <>
-              <p>{coach.biggestWeakness.label}</p>
-              <small>
-                {coach.biggestWeakness.count} prompts /{" "}
-                {Math.round(coach.biggestWeakness.rate * 100)}%
-              </small>
+              <p className="habit-signal">{coach.biggestWeakness.label}</p>
+              <small>{`${coach.biggestWeakness.count} prompts / ${weaknessRate}%`}</small>
+              <div className="habit-weakness-meter" aria-hidden="true">
+                <span style={{ width: `${weaknessRate}%` }} />
+              </div>
               <button
-                className="habit-card-action"
+                className="habit-inline-action"
                 onClick={() =>
                   onOpenFilteredList({
                     focus: "quality-gap",
@@ -1554,14 +1554,14 @@ function HabitCoachPanel({
               </button>
             </>
           ) : (
-            <p>No repeated weakness yet.</p>
+            <p className="habit-signal">No repeated weakness yet.</p>
           )}
         </div>
       </div>
 
-      <div className="habit-action-grid">
+      <div className="habit-command-main">
         <div className="habit-next-fixes">
-          <div className="habit-card-title">
+          <div className="habit-cell-title">
             <ListChecks size={15} />
             <strong>Fix these next</strong>
           </div>
@@ -1590,7 +1590,7 @@ function HabitCoachPanel({
         </div>
 
         <div className="habit-review-queue">
-          <div className="habit-card-title">
+          <div className="habit-cell-title">
             <FileText size={15} />
             <strong>Bad prompt review queue</strong>
           </div>

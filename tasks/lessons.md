@@ -9,3 +9,8 @@
 - 웹 UI 작업은 실제 서버를 띄운 뒤 Playwright MCP로 브라우저 점검까지 완료해야 한다.
 - 디자인 시스템은 별도 `DESIGN.md`를 기준으로 유지한다. UI 구현 중 임의 스타일을 늘리지 않는다.
 - 프로젝트 운영 문서는 한국어로 작성한다.
+
+## 2026-05-02
+
+- Dashboard처럼 제품 인상이 크게 달라지는 UI는 `/Users/jinan/ai/awesome-design-md`의 실제 reference를 먼저 확인하고, `DESIGN.md`에 적용 기준을 남긴 뒤 구현한다.
+- `prompt-memory` 대시보드 UI는 `/Users/jinan/side-project/oh-my-ontology`의 dark indigo 운영형 디자인 시스템을 1차 기준으로 삼고, AI-looking gradient/glass/neon 스타일을 피한다.

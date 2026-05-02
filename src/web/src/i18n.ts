@@ -70,11 +70,26 @@ function translateText(value: string): string {
 }
 
 function translateDynamic(value: string): string | undefined {
+  if (value.includes(", ")) {
+    const parts = value.split(", ");
+    const translatedParts = parts.map(translateKnown);
+    if (translatedParts.some((part, index) => part !== parts[index])) {
+      return translatedParts.join(", ");
+    }
+  }
   if (/^View .+: .+$/.test(value)) {
-    return value.replace(/^View (.+): (.+)$/, "$1 보기: $2");
+    return value.replace(
+      /^View (.+): (.+)$/,
+      (_match, label: string, metric: string) =>
+        `${translateKnown(label)} 보기: ${metric}`,
+    );
   }
   if (/^(.+): view (\d+) for (.+)$/.test(value)) {
-    return value.replace(/^(.+): view (\d+) for (.+)$/, "$1: $3 $2개 보기");
+    return value.replace(
+      /^(.+): view (\d+) for (.+)$/,
+      (_match, label: string, count: string, name: string) =>
+        `${translateKnown(label)}: ${name} ${count}개 보기`,
+    );
   }
   if (/^(.+): view (\d+) prompts$/.test(value)) {
     return value.replace(
@@ -113,6 +128,9 @@ function translateDynamic(value: string): string | undefined {
       "최근 $1 / 이전 $2",
     );
   }
+  if (/^[+-]\d+ points$/.test(value)) {
+    return value.replace(/^([+-]\d+) points$/, "$1점");
+  }
   if (/^\d+ prompts \/ \d+%$/.test(value)) {
     return value.replace(/^(\d+) prompts \/ (\d+)%$/, "$1개 프롬프트 / $2%");
   }
@@ -120,6 +138,66 @@ function translateDynamic(value: string): string | undefined {
     return value.replace(
       /^(\d+) prompts need this habit\.$/,
       "$1개 프롬프트에 이 습관이 필요합니다.",
+    );
+  }
+  if (/^missing \d+ \/ weak \d+ \d+%$/.test(value)) {
+    return value.replace(
+      /^missing (\d+) \/ weak (\d+) (\d+)%$/,
+      "누락 $1 / 약함 $2 $3%",
+    );
+  }
+  if (/^missing \d+ \/ weak \d+$/.test(value)) {
+    return value.replace(/^missing (\d+) \/ weak (\d+)$/, "누락 $1 / 약함 $2");
+  }
+  if (/^누락 \d+ \/ weak \d+$/.test(value)) {
+    return value.replace(/^누락 (\d+) \/ weak (\d+)$/, "누락 $1 / 약함 $2");
+  }
+  if (/^.+ missing \d+ \/ weak \d+ \d+%$/.test(value)) {
+    return value.replace(
+      /^(.+) missing (\d+) \/ weak (\d+) (\d+)%$/,
+      (_match, label: string, missing: string, weak: string, rate: string) =>
+        `${translateKnown(label)} 누락 ${missing} / 약함 ${weak} ${rate}%`,
+    );
+  }
+  if (/^.+ 누락 \d+ \/ weak \d+ \d+%$/.test(value)) {
+    return value.replace(
+      /^(.+) 누락 (\d+) \/ weak (\d+) (\d+)%$/,
+      "$1 누락 $2 / 약함 $3 $4%",
+    );
+  }
+  if (/^.+ has \d+ repeated prompts missing .+\.$/.test(value)) {
+    return value.replace(
+      /^(.+) has (\d+) repeated prompts missing (.+)\.$/,
+      (_match, project: string, count: string, gap: string) =>
+        `${project}에서 ${translateKnown(gap)}이 빠진 반복 프롬프트가 ${count}개 있습니다.`,
+    );
+  }
+  if (
+    /^.+ has \d+ repeated prompts with unclear goals or targets\.$/.test(value)
+  ) {
+    return value.replace(
+      /^(.+) has (\d+) repeated prompts with unclear goals or targets\.$/,
+      "$1에서 목표나 대상이 불명확한 반복 프롬프트가 $2개 있습니다.",
+    );
+  }
+  if (/^.+ often omits test commands or verification criteria\.$/.test(value)) {
+    return value.replace(
+      /^(.+) often omits test commands or verification criteria\.$/,
+      "$1에서 테스트 명령이나 검증 기준이 자주 빠집니다.",
+    );
+  }
+  if (/^.+ is missing or weak in \d+ prompts\.$/.test(value)) {
+    return value.replace(
+      /^(.+) is missing or weak in (\d+) prompts\.$/,
+      (_match, gap: string, count: string) =>
+        `${translateKnown(gap)}이 ${count}개 프롬프트에서 누락되었거나 약합니다.`,
+    );
+  }
+  if (/^.+ is repeatedly missing in .+\.$/.test(value)) {
+    return value.replace(
+      /^(.+) is repeatedly missing in (.+)\.$/,
+      (_match, gap: string, project: string) =>
+        `${project}에서 ${translateKnown(gap)}이 반복적으로 빠집니다.`,
     );
   }
   if (/^\d+ reuse candidates$/.test(value)) {
@@ -139,6 +217,22 @@ function translateDynamic(value: string): string | undefined {
   }
   return undefined;
 }
+
+function translateKnown(value: string): string {
+  return (
+    UI_TRANSLATIONS[value] ??
+    QUALITY_LABEL_TRANSLATIONS[value.toLowerCase()] ??
+    value
+  );
+}
+
+const QUALITY_LABEL_TRANSLATIONS: Record<string, string> = {
+  "goal clarity": "목표 명확성",
+  "background context": "배경 맥락",
+  "scope limits": "범위 제한",
+  "output format": "출력 형식",
+  "verification criteria": "검증 기준",
+};
 
 const UI_TRANSLATIONS: Record<string, string> = {
   "Skip to content": "본문으로 건너뛰기",
@@ -195,7 +289,14 @@ const UI_TRANSLATIONS: Record<string, string> = {
   "Usefulness and duplicate signals": "유용성 및 중복 신호",
   unsaved: "미저장",
   saved: "저장됨",
+  scored: "평가됨",
   redacted: "마스킹됨",
+  prompts: "프롬프트",
+  projects: "프로젝트",
+  missing: "누락",
+  gap: "부족",
+  reuse: "재사용",
+  "top gap": "주요 부족",
   "Back to list": "목록으로",
   "Current queue navigation": "현재 큐 탐색",
   "View previous prompt": "이전 프롬프트 보기",
@@ -222,6 +323,7 @@ const UI_TRANSLATIONS: Record<string, string> = {
   "Loading dashboard.": "대시보드를 불러오는 중입니다.",
   "Prompt quality metrics": "프롬프트 품질 지표",
   "Prompt habit coach": "프롬프트 습관 코치",
+  "Prompt habit command center": "프롬프트 습관 커맨드 센터",
   "Your prompting pattern": "나의 프롬프트 패턴",
   "Strong habits": "좋은 습관",
   Improving: "개선 중",
@@ -277,6 +379,14 @@ const UI_TRANSLATIONS: Record<string, string> = {
   "No recurring improvement suggestions yet.":
     "아직 제안할 반복 개선 포인트가 없습니다.",
   "Copy suggestion": "제안 복사",
+  "Include current state, relevant logs, and the background behind the problem.":
+    "현재 상태, 관련 로그, 문제 배경을 포함하세요.",
+  "When response shape matters, specify the desired structure such as summary, bullets, table, or JSON.":
+    "응답 형태가 중요하면 요약, bullet, table, JSON 같은 원하는 구조를 지정하세요.",
+  "Separate the files or areas that may be changed from the areas to exclude.":
+    "바꿔도 되는 파일/영역과 제외할 영역을 분리해서 적으세요.",
+  "Include test commands and expected results as verification criteria.":
+    "검증 기준으로 테스트 명령과 기대 결과를 포함하세요.",
   "Project quality profile": "프로젝트 품질 프로필",
   "No project quality signals yet.": "프로젝트별 품질 신호가 아직 없습니다.",
   "View all": "전체 보기",

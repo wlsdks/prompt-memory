@@ -1,5 +1,25 @@
 # 작업 계획
 
+## 2026-05-02 Dashboard Design Rebuild And Functionality Recheck
+
+- [x] `/Users/jinan/ai/awesome-design-md` 참고 기준을 프로젝트 디자인 문서와 작업 규칙에 반영
+- [x] `/Users/jinan/side-project/oh-my-ontology` 디자인 시스템을 확인하고 prompt-memory 기준으로 이식
+- [x] warm teal/dashboard command center 스타일을 oh-my-ontology 단일 인디고 다크 시스템으로 재구축
+- [x] 낮은 점수 review queue가 실제 개선 대상만 보여주는지 실패 테스트 작성
+- [x] Prompt Habit Coach dashboard를 command center 형태로 재구축
+- [x] 한국어/영어 UI 문구와 responsive layout 보강
+- [x] 자동 테스트, 전체 게이트, pack dry-run 재실행
+- [x] DevTools MCP로 desktop/mobile 렌더링, 콘솔/네트워크, 핵심 클릭 흐름 확인
+- [x] 커밋, 푸시, PR 상태 확인
+
+### 디자인 기준
+
+- awesome-design-md는 그대로 복제하지 않고 `prompt-memory`의 로컬 우선 developer tool 정체성에 맞게 적용한다.
+- 사용자가 명시한 기준은 `/Users/jinan/side-project/oh-my-ontology`의 Linear-base dark indigo design system이다.
+- Dashboard 첫 영역은 score, biggest weakness, next fix, low-score review queue가 한눈에 들어오는 작업 화면이어야 한다.
+- 낮은 점수 큐는 높은 점수 prompt를 섞어 보여주면 안 된다.
+- Dashboard는 raw prompt body, raw path, secret을 표시하지 않는다.
+
 ## 2026-05-02 Prompt Habit Coach Dashboard v1
 
 - [x] Dashboard를 단순 지표판에서 습관 코치 화면으로 재구성

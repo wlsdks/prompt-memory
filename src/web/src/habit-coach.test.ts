@@ -43,6 +43,25 @@ describe("createPromptHabitCoach", () => {
     expect(JSON.stringify(coach)).not.toContain("/Users/example");
   });
 
+  it("keeps high scoring prompts out of the low score review queue", () => {
+    const archiveScore = archiveScoreFixture();
+    archiveScore.low_score_prompts.unshift({
+      id: "prmt_strong",
+      tool: "codex",
+      project: "private-project",
+      received_at: "2026-05-02T10:05:00.000Z",
+      quality_score: 92,
+      quality_score_band: "excellent",
+      quality_gaps: ["Output format"],
+      tags: ["frontend"],
+      is_sensitive: false,
+    });
+
+    const coach = createPromptHabitCoach(dashboardFixture(), archiveScore);
+
+    expect(coach.reviewQueue.map((prompt) => prompt.id)).toEqual(["prmt_low"]);
+  });
+
   it("shows an empty status when there are no scored prompts", () => {
     const dashboard = dashboardFixture({
       total_prompts: 0,

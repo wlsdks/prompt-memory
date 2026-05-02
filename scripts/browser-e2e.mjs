@@ -128,8 +128,8 @@ try {
   );
   await assertText(
     page,
-    "Prompt habit coach",
-    "Dashboard should show prompt habit coach.",
+    "Prompt habit command center",
+    "Dashboard should show prompt habit command center.",
   );
   await assertText(
     page,
