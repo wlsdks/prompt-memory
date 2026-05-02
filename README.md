@@ -24,6 +24,75 @@ This repository is pre-release software.
 
 The CI target is Node 22 and Node 24.
 
+## Quick Start
+
+There are two pieces:
+
+1. the `prompt-memory` CLI, which owns the local server, hooks, storage, and web UI
+2. the Claude Code or Codex marketplace plugin, which gives the agent an easy setup/status/open workflow
+
+The marketplace plugin does not install the CLI binary by itself. Install the CLI first, then add the marketplace.
+
+### 1. Install The CLI
+
+After the package is published:
+
+```sh
+npm install -g prompt-memory
+```
+
+For local development from this repository:
+
+```sh
+git clone https://github.com/wlsdks/prompt-memory.git
+cd prompt-memory
+pnpm install
+pnpm build
+```
+
+### 2. Add The Claude Code Marketplace
+
+Inside Claude Code:
+
+```text
+/plugin marketplace add wlsdks/prompt-memory
+/plugin install prompt-memory
+/reload-plugins
+/prompt-memory:setup
+```
+
+`/prompt-memory:setup` checks that the CLI is available, runs `prompt-memory setup --dry-run`, asks before writing settings, and then runs the real setup if approved.
+
+### 3. Add The Codex Marketplace
+
+From your shell:
+
+```sh
+codex plugin marketplace add wlsdks/prompt-memory
+```
+
+Then run the local setup:
+
+```sh
+prompt-memory setup
+```
+
+Codex currently exposes marketplace management through `codex plugin marketplace add/upgrade/remove`. The prompt capture hook is installed by `prompt-memory setup`, which writes the Codex hook config and enables Codex hooks.
+
+### 4. Check Capture
+
+```sh
+prompt-memory doctor claude-code
+prompt-memory doctor codex
+prompt-memory statusline claude-code
+```
+
+Open the local archive:
+
+```text
+http://127.0.0.1:17373
+```
+
 ## Supported Platforms
 
 Release validation currently targets:
@@ -35,7 +104,7 @@ macOS, Linux arm64, and Windows support are intended, but they still require rel
 
 ## Install
 
-For local development:
+For local development without the agent marketplace flow:
 
 ```sh
 pnpm install
@@ -210,7 +279,13 @@ integrations/claude-code
 docs/PLUGINS.md
 ```
 
-Claude Code can consume the repository as a plugin marketplace:
+Recommended order:
+
+1. install the `prompt-memory` CLI
+2. add the agent marketplace
+3. run `prompt-memory setup` or `/prompt-memory:setup`
+
+Claude Code can consume this repository as a marketplace:
 
 ```text
 /plugin marketplace add wlsdks/prompt-memory
@@ -256,6 +331,14 @@ Render the Claude Code status line manually:
 ```sh
 pnpm prompt-memory statusline claude-code
 ```
+
+Codex can add the same repository as a marketplace:
+
+```sh
+codex plugin marketplace add wlsdks/prompt-memory
+```
+
+After that, use `prompt-memory setup` to install the Codex hook and enable Codex hooks.
 
 ## CLI
 

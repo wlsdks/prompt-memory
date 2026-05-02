@@ -1,5 +1,20 @@
 # 작업 계획
 
+## 2026-05-02 README Marketplace Install Flow
+
+- [x] Claude Code/Codex 외부 사용자 설치 순서 정리
+- [x] README Quick Start와 Plugin Packaging 섹션 갱신
+- [x] 문서 패키징 검증
+- [x] 커밋 및 푸시
+
+### 점검 결과
+
+- README 상단에 Quick Start를 추가해 `prompt-memory` CLI 설치와 Claude Code/Codex marketplace 추가를 분리했다.
+- marketplace plugin은 CLI binary를 설치하지 않으므로, 권장 순서를 CLI 설치 후 marketplace 추가로 명시했다.
+- Claude Code는 `/plugin marketplace add wlsdks/prompt-memory`, `/plugin install prompt-memory`, `/reload-plugins`, `/prompt-memory:setup` 순서로 정리했다.
+- Codex는 `codex plugin marketplace add wlsdks/prompt-memory` 후 `prompt-memory setup`으로 hook을 설치하고 Codex hooks를 활성화한다고 정리했다.
+- 검증 명령: `git diff --check`, `pnpm pack:dry-run` 통과. Node 20.20.0에서 실행되어 `engines.node >=22 <25` 경고는 계속 발생한다.
+
 ## 2026-05-02 Claude HUD-style Plugin
 
 - [x] Claude Code plugin 구조 설계: marketplace, manifest, slash commands, statusLine
