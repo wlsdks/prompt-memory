@@ -697,6 +697,16 @@ const UI_TRANSLATIONS: Record<string, string> = {
   "Evaluate the archive to load personalized practice habits.":
     "아카이브를 평가하면 개인화된 연습 습관을 불러옵니다.",
   "Fix before sending": "보내기 전 보완",
+  "One-click builder": "원클릭 빌더",
+  "Add all missing sections": "부족한 섹션 모두 추가",
+  "All habits covered": "모든 습관 충족",
+  "Add Goal": "목표 추가",
+  "Add Context": "맥락 추가",
+  "Add Scope": "범위 추가",
+  "Add Output": "출력 추가",
+  "Add Verification": "검증 추가",
+  "Add note": "메모 추가",
+  "Improve prompt": "프롬프트 개선",
   "This draft covers the core prompt habits.":
     "이 초안은 핵심 프롬프트 습관을 충족합니다.",
   "Prompts to review": "리뷰할 프롬프트",

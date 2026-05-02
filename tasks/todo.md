@@ -1,5 +1,18 @@
 # 작업 계획
 
+## 2026-05-03 Practice Quick Fix Builder
+
+- [x] Practice quick-fix builder 모델을 TDD로 추가
+- [x] Practice UI에서 빠진 항목을 one-click section snippet으로 보완
+- [x] 브라우저 E2E와 스크린샷으로 desktop/mobile 확인
+- [x] release gate 검증, 커밋, 푸시, CI 확인
+
+### 판단 기준
+
+- 사용자는 점수를 읽고 직접 고민하지 않아도 부족한 프롬프트 섹션을 바로 추가할 수 있어야 한다.
+- quick fix는 브라우저 draft textarea 안에서만 작동하고 prompt draft text, raw path, secret을 저장하지 않는다.
+- 새 탭, 새 DB, 새 MCP tool을 늘리지 않고 Practice 화면의 핵심 행동만 강화한다.
+
 ## 2026-05-03 Coach Brief Preview
 
 - [x] raw-free brief preview 모델을 TDD로 추가

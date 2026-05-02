@@ -229,6 +229,25 @@ try {
     ["Practice history", "연습 기록"],
     "Practice should show local score history.",
   );
+  await page.getByLabel("Practice draft").fill("fix it");
+  await assertTextAny(
+    page,
+    ["One-click builder", "원클릭 빌더"],
+    "Practice should expose one-click missing section fixes.",
+  );
+  await assertTextAny(
+    page,
+    ["Add all missing sections", "부족한 섹션 모두 추가"],
+    "Practice should offer an all-fixes builder action.",
+  );
+  await page
+    .getByRole("button", { name: /Add Verification|검증 추가/ })
+    .click();
+  assertIncludes(
+    await page.getByLabel("Practice draft").inputValue(),
+    "Verification: name commands or acceptance checks.",
+    "Practice should append selected quick-fix snippets to the draft.",
+  );
   await page
     .getByLabel("Practice draft")
     .fill(

@@ -17,6 +17,7 @@ import {
   GitCompare,
   ListChecks,
   Plug,
+  Plus,
   RefreshCw,
   Search,
   Settings,
@@ -80,6 +81,11 @@ import {
   createArchiveMeasurement,
   type ArchiveMeasurement,
 } from "./measurement.js";
+import {
+  appendPracticeQuickFix,
+  createPracticeQuickFixes,
+  type PracticeQuickFix,
+} from "./practice-builder.js";
 import {
   DistributionBarChart,
   GapRateChart,
@@ -1728,6 +1734,10 @@ function PracticeView({
   const missingItems = analysis.checklist.filter(
     (item) => item.status !== "good",
   );
+  const quickFixes = useMemo(
+    () => createPracticeQuickFixes(analysis),
+    [analysis],
+  );
   const practiceSummary = useMemo(
     () => summarizePracticeHistory(practiceHistory),
     [practiceHistory],
@@ -1754,6 +1764,19 @@ function PracticeView({
     const nextHistory = markPracticeOutcome(practiceHistory, latestId, outcome);
     setPracticeHistory(nextHistory);
     writeBrowserPracticeHistory(nextHistory);
+  }
+
+  function applyQuickFix(fix: PracticeQuickFix): void {
+    setDraft((currentDraft) => appendPracticeQuickFix(currentDraft, fix));
+  }
+
+  function applyAllQuickFixes(): void {
+    setDraft((currentDraft) =>
+      quickFixes.reduce(
+        (nextDraft, fix) => appendPracticeQuickFix(nextDraft, fix),
+        currentDraft,
+      ),
+    );
   }
 
   return (
@@ -1826,6 +1849,53 @@ function PracticeView({
           ))}
         </div>
       </aside>
+
+      <section className="practice-fix-panel panel">
+        <div className="practice-fix-header">
+          <div>
+            <p className="eyebrow">One-click builder</p>
+            <h2>Fix before sending</h2>
+          </div>
+          <button
+            className="panel-link-button"
+            disabled={quickFixes.length === 0}
+            onClick={applyAllQuickFixes}
+            type="button"
+          >
+            <Plus size={14} />{" "}
+            {quickFixes.length === 0
+              ? "All habits covered"
+              : "Add all missing sections"}
+          </button>
+        </div>
+        {quickFixes.length === 0 ? (
+          <p className="muted">This draft covers the core prompt habits.</p>
+        ) : (
+          <div className="practice-fix-list">
+            {quickFixes.map((fix) => {
+              const item = missingItems.find(
+                (checkItem) => checkItem.key === fix.key,
+              );
+
+              return (
+                <div className="practice-fix-row" key={fix.key}>
+                  <div>
+                    <strong>{fix.label}</strong>
+                    <p>{item?.suggestion ?? item?.reason ?? fix.snippet}</p>
+                  </div>
+                  <button
+                    className="practice-fix-add"
+                    onClick={() => applyQuickFix(fix)}
+                    type="button"
+                  >
+                    <Plus size={13} /> {fix.actionLabel}
+                  </button>
+                </div>
+              );
+            })}
+          </div>
+        )}
+      </section>
 
       <section className="practice-history-panel panel">
         <div className="panel-heading-row">
@@ -1961,22 +2031,6 @@ function PracticeView({
           <p className="muted">
             Evaluate the archive to load personalized practice habits.
           </p>
-        )}
-      </section>
-
-      <section className="practice-fix-panel panel">
-        <h2>Fix before sending</h2>
-        {missingItems.length === 0 ? (
-          <p className="muted">This draft covers the core prompt habits.</p>
-        ) : (
-          <div className="practice-fix-list">
-            {missingItems.map((item) => (
-              <div className="practice-fix-row" key={item.key}>
-                <strong>{item.label}</strong>
-                <p>{item.suggestion ?? item.reason}</p>
-              </div>
-            ))}
-          </div>
         )}
       </section>
     </div>
