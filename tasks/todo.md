@@ -5,7 +5,7 @@
 - [x] Practice copied draft outcome 모델을 TDD로 추가
 - [x] Practice UI에 Worked / Needs context / Blocked feedback controls와 outcome summary 표시
 - [x] browser E2E, release gate 검증
-- [ ] 커밋, 푸시, CI 확인
+- [x] 커밋, 푸시, CI 확인
 
 ### 판단 기준
 
