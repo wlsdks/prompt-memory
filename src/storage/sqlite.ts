@@ -21,17 +21,21 @@ import type {
 } from "../shared/schema.js";
 import { getPromptMemoryPaths } from "./paths.js";
 import type {
+  CreateImportJobInput,
   DeletePromptResult,
   DuplicatePromptGroup,
+  ImportJob,
+  ImportJobListResult,
+  ImportJobStoragePort,
   ListPromptsOptions,
-	  PromptDetail,
-	  ProjectListResult,
-	  ProjectPolicy,
-	  ProjectPolicyActor,
-	  ProjectPolicyPatch,
-	  ProjectPolicyStoragePort,
-	  ProjectSummary,
-	  PromptListResult,
+  PromptDetail,
+  ProjectListResult,
+  ProjectPolicy,
+  ProjectPolicyActor,
+  ProjectPolicyPatch,
+  ProjectPolicyStoragePort,
+  ProjectSummary,
+  PromptListResult,
   PromptQualityDashboard,
   PromptReadStoragePort,
   PromptSummary,
@@ -126,6 +130,18 @@ type ProjectPromptRow = {
   bookmarked_count: number;
 };
 
+type ImportJobRow = {
+  id: string;
+  source_type: string;
+  source_path_hash: string;
+  dry_run: number;
+  status: string;
+  started_at: string;
+  completed_at: string | null;
+  project_policy_version: number | null;
+  summary_json: string;
+};
+
 type RebuildPromptRow = {
   id: string;
   markdown_path: string;
@@ -139,8 +155,9 @@ export type AppliedMigration = {
 
 export type SqlitePromptStorage = PromptStoragePort &
   PromptReadStoragePort &
-  ProjectPolicyStoragePort & {
-	    close(): void;
+  ProjectPolicyStoragePort &
+  ImportJobStoragePort & {
+    close(): void;
     getAppliedMigrations(): AppliedMigration[];
     listPromptRows(): PromptRow[];
     searchPromptIds(query: string): string[];
@@ -202,31 +219,40 @@ export function createSqlitePromptStorage(
     recordPromptUsage(id, type) {
       return recordPromptUsage(db, id, type, options.now?.() ?? new Date());
     },
-	    setPromptBookmark(id, bookmarked) {
-	      return setPromptBookmark(
-	        db,
-	        id,
-	        bookmarked,
-	        options.now?.() ?? new Date(),
-	      );
-	    },
-	    listProjects() {
-	      return listProjectsForPolicy(db, options.hmacSecret);
-	    },
-	    updateProjectPolicy(projectId, patch, actor) {
-	      return updateProjectPolicy(
-	        db,
-	        options.hmacSecret,
-	        projectId,
-	        patch,
-	        actor,
-	        options.now?.() ?? new Date(),
-	      );
-	    },
-	    getProjectPolicyForEvent(event) {
-	      return getProjectPolicyForEvent(db, options.hmacSecret, event);
-	    },
-	    searchPromptIds(query) {
+    setPromptBookmark(id, bookmarked) {
+      return setPromptBookmark(
+        db,
+        id,
+        bookmarked,
+        options.now?.() ?? new Date(),
+      );
+    },
+    listProjects() {
+      return listProjectsForPolicy(db, options.hmacSecret);
+    },
+    updateProjectPolicy(projectId, patch, actor) {
+      return updateProjectPolicy(
+        db,
+        options.hmacSecret,
+        projectId,
+        patch,
+        actor,
+        options.now?.() ?? new Date(),
+      );
+    },
+    getProjectPolicyForEvent(event) {
+      return getProjectPolicyForEvent(db, options.hmacSecret, event);
+    },
+    createImportJob(input) {
+      return createImportJob(db, input, options.now?.() ?? new Date());
+    },
+    getImportJob(id) {
+      return getImportJob(db, id);
+    },
+    listImportJobs(options) {
+      return listImportJobs(db, options);
+    },
+    searchPromptIds(query) {
       const match = toSafeFtsQuery(query);
       if (!match) {
         return [];
@@ -262,11 +288,12 @@ function applyMigrations(db: Database.Database): void {
     ).run(1, "001_initial", new Date().toISOString());
   }
 
-	  applyAnalysisChecklistTagsMigration(db);
-	  applyPromptUsefulnessMigration(db);
-	  applyDuplicatePromptIndexMigration(db);
-	  applyProjectPolicyMigration(db);
-	}
+  applyAnalysisChecklistTagsMigration(db);
+  applyPromptUsefulnessMigration(db);
+  applyDuplicatePromptIndexMigration(db);
+  applyProjectPolicyMigration(db);
+  applyImportJobMigration(db);
+}
 
 function applyAnalysisChecklistTagsMigration(db: Database.Database): void {
   const applied = db
@@ -376,6 +403,56 @@ function applyProjectPolicyMigration(db: Database.Database): void {
     db.prepare(
       "INSERT INTO schema_migrations(version, name, applied_at) VALUES (?, ?, ?)",
     ).run(5, "005_project_policies", new Date().toISOString());
+  }
+}
+
+function applyImportJobMigration(db: Database.Database): void {
+  const applied = db
+    .prepare("SELECT 1 FROM schema_migrations WHERE version = ?")
+    .get(6);
+
+  db.exec(`
+    CREATE TABLE IF NOT EXISTS import_jobs (
+      id TEXT PRIMARY KEY,
+      source_type TEXT NOT NULL,
+      source_path_hash TEXT NOT NULL,
+      status TEXT NOT NULL,
+      dry_run INTEGER NOT NULL,
+      started_at TEXT NOT NULL,
+      completed_at TEXT,
+      project_policy_version INTEGER,
+      summary_json TEXT NOT NULL
+    );
+
+    CREATE TABLE IF NOT EXISTS import_records (
+      job_id TEXT NOT NULL,
+      record_key TEXT NOT NULL,
+      record_offset INTEGER,
+      status TEXT NOT NULL,
+      prompt_id TEXT,
+      error_code TEXT,
+      PRIMARY KEY(job_id, record_key),
+      FOREIGN KEY(job_id) REFERENCES import_jobs(id) ON DELETE CASCADE,
+      FOREIGN KEY(prompt_id) REFERENCES prompts(id) ON DELETE SET NULL
+    );
+
+    CREATE TABLE IF NOT EXISTS import_errors (
+      id TEXT PRIMARY KEY,
+      job_id TEXT NOT NULL,
+      error_code TEXT NOT NULL,
+      count INTEGER NOT NULL DEFAULT 1,
+      created_at TEXT NOT NULL,
+      FOREIGN KEY(job_id) REFERENCES import_jobs(id) ON DELETE CASCADE
+    );
+
+    CREATE INDEX IF NOT EXISTS idx_import_jobs_started_at
+      ON import_jobs(started_at DESC);
+  `);
+
+  if (!applied) {
+    db.prepare(
+      "INSERT INTO schema_migrations(version, name, applied_at) VALUES (?, ?, ?)",
+    ).run(6, "006_import_jobs", new Date().toISOString());
   }
 }
 
@@ -936,6 +1013,108 @@ function setPromptBookmark(
     updated: true,
     usefulness: readPromptUsefulness(db, id),
   };
+}
+
+function createImportJob(
+  db: Database.Database,
+  input: CreateImportJobInput,
+  now: Date,
+): ImportJob {
+  const completedAt = isTerminalImportJobStatus(input.status)
+    ? now.toISOString()
+    : null;
+  const job: ImportJob = {
+    id: createImportJobId(),
+    source_type: input.source_type,
+    source_path_hash: input.source_path_hash,
+    dry_run: input.dry_run,
+    status: input.status,
+    started_at: now.toISOString(),
+    completed_at: completedAt ?? undefined,
+    project_policy_version: input.project_policy_version,
+    summary: input.summary,
+  };
+
+  db.prepare(
+    `
+    INSERT INTO import_jobs(
+      id, source_type, source_path_hash, status, dry_run, started_at,
+      completed_at, project_policy_version, summary_json
+    )
+    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+    `,
+  ).run(
+    job.id,
+    job.source_type,
+    job.source_path_hash,
+    job.status,
+    job.dry_run ? 1 : 0,
+    job.started_at,
+    completedAt,
+    job.project_policy_version ?? null,
+    JSON.stringify(job.summary),
+  );
+
+  return job;
+}
+
+function getImportJob(
+  db: Database.Database,
+  id: string,
+): ImportJob | undefined {
+  const row = db.prepare("SELECT * FROM import_jobs WHERE id = ?").get(id) as
+    | ImportJobRow
+    | undefined;
+
+  return row ? toImportJob(row) : undefined;
+}
+
+function listImportJobs(
+  db: Database.Database,
+  options: { limit?: number } = {},
+): ImportJobListResult {
+  const limit = normalizeLimit(options.limit);
+  const rows = db
+    .prepare(
+      "SELECT * FROM import_jobs ORDER BY started_at DESC, id DESC LIMIT ?",
+    )
+    .all(limit) as ImportJobRow[];
+
+  return {
+    items: rows.map((row) => toImportJob(row)),
+  };
+}
+
+function toImportJob(row: ImportJobRow): ImportJob {
+  return {
+    id: row.id,
+    source_type: row.source_type,
+    source_path_hash: row.source_path_hash,
+    dry_run: row.dry_run === 1,
+    status: row.status as ImportJob["status"],
+    started_at: row.started_at,
+    completed_at: row.completed_at ?? undefined,
+    project_policy_version: row.project_policy_version ?? undefined,
+    summary: parseJsonValue(row.summary_json),
+  };
+}
+
+function parseJsonValue(value: string): unknown {
+  try {
+    return JSON.parse(value) as unknown;
+  } catch {
+    return {};
+  }
+}
+
+function isTerminalImportJobStatus(status: ImportJob["status"]): boolean {
+  return ["dry_run_completed", "completed", "failed", "canceled"].includes(
+    status,
+  );
+}
+
+function createImportJobId(): string {
+  return `imp_${randomUUID().replaceAll("-", "").slice(0, 24)}`;
 }
 
 function hasLivePrompt(db: Database.Database, id: string): boolean {
@@ -2090,19 +2269,17 @@ function listProjectsForPolicy(
 
   for (const row of rows) {
     const descriptor = projectDescriptor(row, hmacSecret);
-    const current =
-      projects.get(descriptor.projectId) ??
-      {
-        projectId: descriptor.projectId,
-        sourcePath: descriptor.sourcePath,
-        pathKind: descriptor.pathKind,
-        promptCount: 0,
-        latestIngest: undefined,
-        sensitiveCount: 0,
-        qualityGapCount: 0,
-        copiedCount: 0,
-        bookmarkedCount: 0,
-      };
+    const current = projects.get(descriptor.projectId) ?? {
+      projectId: descriptor.projectId,
+      sourcePath: descriptor.sourcePath,
+      pathKind: descriptor.pathKind,
+      promptCount: 0,
+      latestIngest: undefined,
+      sensitiveCount: 0,
+      qualityGapCount: 0,
+      copiedCount: 0,
+      bookmarkedCount: 0,
+    };
 
     current.promptCount += 1;
     current.latestIngest =
@@ -2135,7 +2312,9 @@ function listProjectsForPolicy(
           policy: policy.policy,
         };
       })
-      .sort((a, b) => (b.latest_ingest ?? "").localeCompare(a.latest_ingest ?? "")),
+      .sort((a, b) =>
+        (b.latest_ingest ?? "").localeCompare(a.latest_ingest ?? ""),
+      ),
   };
 }
 

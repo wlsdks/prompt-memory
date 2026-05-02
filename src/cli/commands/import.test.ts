@@ -6,7 +6,7 @@ import { afterEach, describe, expect, it } from "vitest";
 
 import { initializePromptMemory } from "../../config/config.js";
 import { createSqlitePromptStorage } from "../../storage/sqlite.js";
-import { importDryRunForCli } from "./import.js";
+import { importDryRunForCli, showImportJobForCli } from "./import.js";
 
 const tempDirs: string[] = [];
 
@@ -84,13 +84,47 @@ describe("import CLI", () => {
       storage.close();
     }
   });
+
+  it("saves and shows raw-free dry-run jobs when requested", () => {
+    const rawSecret = "sk-proj-1234567890abcdef";
+    const dataDir = createTempDir("prompt-memory-import-job-");
+    initializePromptMemory({ dataDir });
+    const file = writeJsonl([
+      {
+        hook_event_name: "UserPromptSubmit",
+        session_id: "session-1",
+        cwd: "/Users/example/project",
+        prompt: `Save this dry-run job without leaking ${rawSecret}`,
+      },
+    ]);
+
+    const output = importDryRunForCli({
+      dataDir,
+      dryRun: true,
+      file,
+      json: true,
+      saveJob: true,
+      source: "manual-jsonl",
+    });
+    const parsed = JSON.parse(output) as { job_id: string };
+    const shown = showImportJobForCli(parsed.job_id, { dataDir, json: true });
+
+    expect(parsed.job_id).toMatch(/^imp_/);
+    expect(shown).toContain('"status": "dry_run_completed"');
+    expect(shown).toContain('"prompt_candidates": 1');
+    expect(shown).not.toContain(rawSecret);
+    expect(shown).not.toContain("/Users/example/project");
+  });
 });
 
 function writeJsonl(records: Array<Record<string, unknown>>): string {
   const dir = createTempDir("prompt-memory-import-cli-");
 
   const path = join(dir, "transcript.jsonl");
-  writeFileSync(path, records.map((record) => JSON.stringify(record)).join("\n"));
+  writeFileSync(
+    path,
+    records.map((record) => JSON.stringify(record)).join("\n"),
+  );
   return path;
 }
 

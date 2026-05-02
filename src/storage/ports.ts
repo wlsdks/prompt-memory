@@ -235,6 +235,39 @@ export type ProjectPolicyPatch = {
 
 export type ProjectPolicyActor = "cli" | "web" | "system";
 
+export type ImportJobStatus =
+  | "pending"
+  | "dry_run_completed"
+  | "running"
+  | "completed"
+  | "failed"
+  | "canceled";
+
+export type ImportJob = {
+  id: string;
+  source_type: string;
+  source_path_hash: string;
+  dry_run: boolean;
+  status: ImportJobStatus;
+  started_at: string;
+  completed_at?: string;
+  project_policy_version?: number;
+  summary: unknown;
+};
+
+export type CreateImportJobInput = {
+  source_type: string;
+  source_path_hash: string;
+  dry_run: boolean;
+  status: ImportJobStatus;
+  project_policy_version?: number;
+  summary: unknown;
+};
+
+export type ImportJobListResult = {
+  items: ImportJob[];
+};
+
 export type PromptStoragePort = {
   storePrompt(input: StorePromptInput): Promise<StorePromptResult>;
 };
@@ -263,4 +296,10 @@ export type ProjectPolicyStoragePort = {
     cwd: string;
     project_root?: string | null;
   }): ProjectPolicy | undefined;
+};
+
+export type ImportJobStoragePort = {
+  createImportJob(input: CreateImportJobInput): ImportJob;
+  getImportJob(id: string): ImportJob | undefined;
+  listImportJobs(options?: { limit?: number }): ImportJobListResult;
 };

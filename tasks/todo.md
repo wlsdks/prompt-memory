@@ -1,5 +1,23 @@
 # 작업 계획
 
+## 2026-05-02 Import Job Storage
+
+- [x] 현재 import/storage 구조 재확인
+- [x] import job storage 실패 테스트 작성
+- [x] `import_jobs`, `import_records`, `import_errors` SQLite migration 추가
+- [x] raw-free import job 저장/조회/list 구현
+- [x] `prompt-memory import --dry-run --save-job` CLI 추가
+- [x] `prompt-memory import-job <id>` 조회 CLI 추가
+- [x] targeted 검증 실행
+- [x] full 검증, 커밋 및 푸시
+
+### 첫 구현 범위
+
+- 실제 prompt import 실행은 추가하지 않는다.
+- dry-run 결과만 job으로 저장하고, 저장 payload는 source hash와 redacted summary만 포함한다.
+- raw source path, raw prompt, raw secret은 import job row와 CLI 조회 결과에 저장/출력하지 않는다.
+- `import_records`, `import_errors`는 다음 실행 import 단계에서 idempotency/resume/error aggregation에 쓰기 위한 스키마만 먼저 둔다.
+
 ## 2026-05-02 Phase 2 PRD 정리 및 Project Control Plane
 
 - [x] Phase 2 PRD의 MVP/현재 기준선 충돌 정리

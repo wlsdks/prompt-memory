@@ -59,11 +59,12 @@ describe("SQLite prompt storage", () => {
     expect(duplicate).toEqual({ id: first.id, duplicate: true });
     expect(storage.getAppliedMigrations()).toEqual([
       { version: 1, name: "001_initial" },
-	      { version: 2, name: "002_analysis_checklist_tags" },
-	      { version: 3, name: "003_prompt_usefulness" },
-	      { version: 4, name: "004_duplicate_prompt_index" },
-	      { version: 5, name: "005_project_policies" },
-	    ]);
+      { version: 2, name: "002_analysis_checklist_tags" },
+      { version: 3, name: "003_prompt_usefulness" },
+      { version: 4, name: "004_duplicate_prompt_index" },
+      { version: 5, name: "005_project_policies" },
+      { version: 6, name: "006_import_jobs" },
+    ]);
 
     const prompts = storage.listPromptRows();
     expect(prompts).toHaveLength(1);
@@ -905,7 +906,7 @@ describe("SQLite prompt storage", () => {
     expect(
       storage
         .searchPrompts("Refactor", { qualityGap: "verification_criteria" })
-      .items.map((item) => item.id),
+        .items.map((item) => item.id),
     ).toEqual([]);
   });
 
@@ -923,7 +924,8 @@ describe("SQLite prompt storage", () => {
     });
 
     await storeClaudePrompt(storage, {
-      prompt: "Review backend test coverage with token sk-proj-1234567890abcdef",
+      prompt:
+        "Review backend test coverage with token sk-proj-1234567890abcdef",
       receivedAt: "2026-05-02T09:00:00.000Z",
       cwd: "/Users/example/private-project",
     });
@@ -953,7 +955,9 @@ describe("SQLite prompt storage", () => {
         version: 1,
       },
     });
-    expect(JSON.stringify(initial)).not.toContain("/Users/example/private-project");
+    expect(JSON.stringify(initial)).not.toContain(
+      "/Users/example/private-project",
+    );
     expect(JSON.stringify(initial)).not.toContain("sk-proj-1234567890abcdef");
 
     const updated = storage.updateProjectPolicy(
@@ -986,8 +990,61 @@ describe("SQLite prompt storage", () => {
 
     expect(auditRows).toHaveLength(1);
     expect(JSON.stringify(auditRows)).toContain("capture_disabled");
-    expect(JSON.stringify(auditRows)).not.toContain("/Users/example/private-project");
+    expect(JSON.stringify(auditRows)).not.toContain(
+      "/Users/example/private-project",
+    );
     expect(JSON.stringify(auditRows)).not.toContain("sk-proj-1234567890abcdef");
+  });
+
+  it("stores import dry-run jobs without prompt bodies or raw source paths", async () => {
+    const dataDir = createTempDir();
+    initializePromptMemory({ dataDir });
+    const storage = createSqlitePromptStorage({
+      dataDir,
+      hmacSecret: "test-secret",
+      now: () => new Date("2026-05-02T10:00:00.000Z"),
+    });
+
+    const job = storage.createImportJob({
+      source_type: "manual-jsonl",
+      source_path_hash: "path_abcdef12",
+      dry_run: true,
+      status: "dry_run_completed",
+      summary: {
+        records_read: 2,
+        prompt_candidates: 1,
+        sensitive_prompt_count: 1,
+        parse_errors: 0,
+        samples: [
+          {
+            prompt_preview: "Review [REDACTED:api_key]",
+            is_sensitive: true,
+          },
+        ],
+      },
+    });
+
+    expect(job).toMatchObject({
+      id: expect.stringMatching(/^imp_/),
+      source_type: "manual-jsonl",
+      source_path_hash: "path_abcdef12",
+      dry_run: true,
+      status: "dry_run_completed",
+      started_at: "2026-05-02T10:00:00.000Z",
+      completed_at: "2026-05-02T10:00:00.000Z",
+      summary: {
+        prompt_candidates: 1,
+      },
+    });
+    expect(storage.getImportJob(job.id)).toEqual(job);
+    expect(storage.listImportJobs().items).toEqual([job]);
+
+    const db = new Database(join(dataDir, "prompt-memory.sqlite"));
+    const rows = db.prepare("SELECT * FROM import_jobs").all();
+    db.close();
+
+    expect(JSON.stringify(rows)).not.toContain("/Users/example/project");
+    expect(JSON.stringify(rows)).not.toContain("sk-proj-1234567890abcdef");
   });
 
   it("rebuilds missing database rows from Markdown files", async () => {
