@@ -20,7 +20,8 @@ This repository is pre-release software.
 - Prompt Quality Score: implemented as a local deterministic `0-100` rubric
 - MCP prompt scoring tools: implemented as a local stdio server
 - Copy-based Prompt Coach: implemented
-- Prompt Practice workspace: implemented as a local draft-and-score UI
+- Prompt Practice workspace: implemented as a local draft-and-score UI with
+  score history that does not store draft text
 - Transcript import: CLI only
 - Anonymized export: web UI and CLI preview/job flow
 - Benchmark v1: implemented as a local regression baseline

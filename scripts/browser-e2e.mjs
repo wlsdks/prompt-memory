@@ -195,6 +195,11 @@ try {
     ["Live local score", "실시간 로컬 점수"],
     "Practice should show local prompt score preview.",
   );
+  await assertTextAny(
+    page,
+    ["Practice history", "연습 기록"],
+    "Practice should show local score history.",
+  );
   await page
     .getByLabel("Practice draft")
     .fill(
@@ -214,6 +219,32 @@ try {
   await page
     .getByRole("button", { name: /Copy practice draft|연습 초안 복사/ })
     .waitFor();
+  await page
+    .getByRole("button", { name: /Copy practice draft|연습 초안 복사/ })
+    .click();
+  await assertTextAny(
+    page,
+    ["1 copied drafts", "1 copied draft", "복사한 초안"],
+    "Practice should record copied draft score metadata.",
+  );
+  await page.waitForTimeout(2600);
+  await page
+    .getByRole("button", { name: /Copy practice draft|연습 초안 복사/ })
+    .click();
+  await assertTextAny(
+    page,
+    ["2 copied drafts", "복사한 초안"],
+    "Practice should keep multiple copied draft score points.",
+  );
+  await assertChartVisible(page, "practice", 1);
+  await assertTextAny(
+    page,
+    [
+      "Practice history stores scores and missing labels only",
+      "점수와 부족 항목 라벨만 저장",
+    ],
+    "Practice history should explain that draft text is not stored.",
+  );
   await assertBrowserSafe(page, "practice");
 
   await page.getByRole("button", { name: "Scores", exact: true }).click();

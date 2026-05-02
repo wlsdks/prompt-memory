@@ -78,9 +78,18 @@ import {
 import {
   DistributionBarChart,
   GapRateChart,
+  PracticeHistoryChart,
   QualityTrendChart,
   ScoreDistributionChart,
 } from "./charts.js";
+import {
+  appendPracticeHistory,
+  createPracticeHistoryItem,
+  readPracticeHistory,
+  summarizePracticeHistory,
+  writePracticeHistory,
+  type PracticeHistoryItem,
+} from "./practice-history.js";
 
 type View =
   | { name: "list" }
@@ -1690,6 +1699,9 @@ function PracticeView({
     archiveScore?.next_prompt_template ?? DEFAULT_PRACTICE_DRAFT;
   const [draft, setDraft] = useState(archiveTemplate);
   const [draftCopied, setDraftCopied] = useState(false);
+  const [practiceHistory, setPracticeHistory] = useState<PracticeHistoryItem[]>(
+    () => readBrowserPracticeHistory(),
+  );
 
   useEffect(() => {
     if (!draft.trim() || draft === DEFAULT_PRACTICE_DRAFT) {
@@ -1709,6 +1721,10 @@ function PracticeView({
   const missingItems = analysis.checklist.filter(
     (item) => item.status !== "good",
   );
+  const practiceSummary = useMemo(
+    () => summarizePracticeHistory(practiceHistory),
+    [practiceHistory],
+  );
 
   async function copyDraft(): Promise<void> {
     const copied = await copyTextToClipboard(draft);
@@ -1716,6 +1732,12 @@ function PracticeView({
       return;
     }
 
+    const nextHistory = appendPracticeHistory(
+      practiceHistory,
+      createPracticeHistoryItem({ analysis }),
+    );
+    setPracticeHistory(nextHistory);
+    writeBrowserPracticeHistory(nextHistory);
     setDraftCopied(true);
     window.setTimeout(() => setDraftCopied(false), 2500);
   }
@@ -1791,6 +1813,56 @@ function PracticeView({
         </div>
       </aside>
 
+      <section className="practice-history-panel panel">
+        <div className="panel-heading-row">
+          <div>
+            <p className="eyebrow">Local growth signal</p>
+            <h2>Practice history</h2>
+          </div>
+          <span>
+            {practiceSummary.count > 0
+              ? formatPracticeCopyCount(practiceSummary.count)
+              : "No copied drafts yet"}
+          </span>
+        </div>
+        <PracticeHistoryChart history={practiceHistory} />
+        <div className="practice-history-stats">
+          <MeasurementSignal
+            detail="last copied practice draft"
+            label="Latest"
+            value={
+              practiceSummary.latestScore === undefined
+                ? "-"
+                : `${practiceSummary.latestScore}`
+            }
+          />
+          <MeasurementSignal
+            detail="copied draft average"
+            label="Average"
+            value={
+              practiceSummary.count === 0
+                ? "-"
+                : `${practiceSummary.averageScore}`
+            }
+          />
+          <MeasurementSignal
+            detail="vs previous copied draft"
+            label="Delta"
+            value={formatPracticeDelta(practiceSummary.delta)}
+          />
+        </div>
+        <p className="muted">
+          Practice history stores scores and missing labels only, not draft
+          text.
+        </p>
+        {practiceSummary.repeatedGap && (
+          <p className="practice-history-gap">
+            Repeated practice gap:{" "}
+            <strong>{practiceSummary.repeatedGap}</strong>
+          </p>
+        )}
+      </section>
+
       <section className="practice-plan-panel panel">
         <div className="panel-heading-row">
           <h2>Practice plan</h2>
@@ -1837,6 +1909,38 @@ function PracticeView({
       </section>
     </div>
   );
+}
+
+function readBrowserPracticeHistory(): PracticeHistoryItem[] {
+  try {
+    return readPracticeHistory(window.localStorage);
+  } catch {
+    return [];
+  }
+}
+
+function writeBrowserPracticeHistory(history: PracticeHistoryItem[]): void {
+  try {
+    writePracticeHistory(window.localStorage, history);
+  } catch {
+    // Ignore private-mode or unavailable storage; the copied draft still works.
+  }
+}
+
+function formatPracticeDelta(delta?: number): string {
+  if (delta === undefined) {
+    return "-";
+  }
+
+  if (delta > 0) {
+    return `+${delta}`;
+  }
+
+  return `${delta}`;
+}
+
+function formatPracticeCopyCount(count: number): string {
+  return count === 1 ? "1 copied draft" : `${count} copied drafts`;
 }
 
 function ScoresView({
@@ -3833,7 +3937,7 @@ const MCP_TOOL_CATALOG = [
     title: "Find habit patterns",
     when: "The user wants Claude Code or Codex to review many stored prompts and identify repeated weak habits.",
     returns:
-      "Aggregate archive score, distribution, recurring gaps, and low-score prompt metadata.",
+      "Aggregate archive score, distribution, recurring gaps, practice plan, next prompt template, and low-score prompt metadata.",
     assurances: ["read-only", "local-only", "structured JSON", "output schema"],
     privacy:
       "Returns metadata only; no prompt bodies and no raw absolute paths.",

@@ -454,7 +454,7 @@ export const IMPROVE_PROMPT_TOOL_DEFINITION = {
 export const SCORE_PROMPT_ARCHIVE_TOOL_DEFINITION = {
   name: "score_prompt_archive",
   description:
-    "Score the local prompt-memory archive across many stored Claude Code or Codex prompts. Use this when the user asks to evaluate accumulated prompt habits, score all recent prompts, find low scoring prompts, or summarize recurring prompt quality gaps. The result is a local-only aggregate report and low-score metadata; it does not return prompt bodies, raw paths, or call external LLMs.",
+    "Score the local prompt-memory archive across many stored Claude Code or Codex prompts. Use this when the user asks to evaluate accumulated prompt habits, score all recent prompts, find low scoring prompts, summarize recurring prompt quality gaps, or prepare the next better request. The result is a local-only aggregate report with distribution, recurring gaps, a practice plan, a next prompt template, and low-score metadata; it does not return prompt bodies, raw paths, or call external LLMs.",
   annotations: {
     ...LOCAL_READ_ONLY_TOOL_ANNOTATIONS,
     title: "Archive prompt habit score",

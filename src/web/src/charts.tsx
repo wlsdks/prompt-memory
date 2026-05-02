@@ -16,6 +16,7 @@ import type {
   DistributionBucket,
   QualityDashboard,
 } from "./api.js";
+import type { PracticeHistoryItem } from "./practice-history.js";
 
 const CHART_COLORS = {
   accent: "#828fff",
@@ -303,6 +304,80 @@ export function DistributionBarChart({
             radius={[0, 6, 6, 0]}
           />
         </BarChart>
+      )}
+    </ChartFrame>
+  );
+}
+
+export function PracticeHistoryChart({
+  history,
+}: {
+  history: PracticeHistoryItem[];
+}) {
+  const data = history
+    .slice()
+    .reverse()
+    .map((item, index) => ({
+      label: `${index + 1}`,
+      score: item.score.value,
+    }));
+
+  return (
+    <ChartFrame
+      ariaLabel="Practice score history chart"
+      compact
+      empty={
+        data.length < 2
+          ? "Copy two practice drafts to show a trend."
+          : undefined
+      }
+    >
+      {(width, height) => (
+        <AreaChart
+          data={data}
+          height={height}
+          margin={{ bottom: 0, left: -18, right: 8, top: 8 }}
+          width={width}
+        >
+          <CartesianGrid
+            stroke={CHART_COLORS.grid}
+            strokeDasharray="3 3"
+            vertical={false}
+          />
+          <XAxis
+            axisLine={false}
+            dataKey="label"
+            tick={{ fill: CHART_COLORS.text, fontSize: 11 }}
+            tickLine={false}
+          />
+          <YAxis
+            axisLine={false}
+            domain={[0, 100]}
+            tick={{ fill: CHART_COLORS.text, fontSize: 11 }}
+            tickLine={false}
+            width={34}
+          />
+          <Tooltip
+            contentStyle={{
+              background: CHART_COLORS.surface,
+              border: "1px solid rgba(255, 255, 255, 0.14)",
+              borderRadius: 8,
+              color: "#f7f8f8",
+              fontSize: 12,
+            }}
+            formatter={(value) => [value, "score"]}
+            labelFormatter={(label) => `practice ${label}`}
+          />
+          <Area
+            dataKey="score"
+            fill="rgba(130, 143, 255, 0.16)"
+            isAnimationActive={false}
+            name="score"
+            stroke={CHART_COLORS.accent}
+            strokeWidth={2}
+            type="monotone"
+          />
+        </AreaChart>
       )}
     </ChartFrame>
   );

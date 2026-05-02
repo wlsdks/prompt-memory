@@ -1,5 +1,19 @@
 # 작업 계획
 
+## 2026-05-03 Practice Score History Loop
+
+- [x] Practice copy 이후 원문 없는 score history 모델을 TDD로 추가
+- [x] Practice UI에 최근 점수 추이 그래프와 반복 보완 항목을 표시
+- [x] MCP archive tool 설명과 웹 카탈로그에 practice plan/next template 반환을 더 명확히 반영
+- [x] browser E2E, MCP stdio, release gate 검증
+- [ ] 커밋, 푸시, CI 확인
+
+### 판단 기준
+
+- 사용자는 다음 요청 초안을 복사할 때마다 자신의 작성 품질이 오르는지 볼 수 있어야 한다.
+- practice history는 prompt draft 원문, raw path, secret을 저장하지 않는다.
+- 새 MCP tool을 늘리지 않고 기존 tool 선택 부담을 유지한다.
+
 ## 2026-05-03 Prompt Practice Workspace
 
 - [x] 점수/연습 계획 다음에 실제 작성 작업면이 필요한지 재평가

@@ -1965,6 +1965,7 @@ dd {
 }
 
 .practice-workspace {
+  align-content: start;
   display: grid;
   gap: 14px;
   grid-row: span 2;
@@ -2021,6 +2022,7 @@ dd {
 }
 
 .practice-score-panel,
+.practice-history-panel,
 .practice-plan-panel,
 .practice-fix-panel {
   display: grid;
@@ -2088,6 +2090,29 @@ dd {
   font-size: 13px;
   line-height: 20px;
   margin: 3px 0 0;
+}
+
+.practice-history-stats {
+  display: grid;
+  gap: 8px;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+
+.practice-history-stats .measurement-signal {
+  min-height: 84px;
+}
+
+.practice-history-gap {
+  border-top: 1px solid var(--color-border-soft);
+  color: var(--pm-text-muted);
+  font-size: 13px;
+  line-height: 20px;
+  margin: 0;
+  padding-top: 10px;
+}
+
+.practice-history-gap strong {
+  color: var(--pm-text);
 }
 
 .distribution-list,
@@ -3235,6 +3260,7 @@ dd {
 
   .practice-workspace,
   .practice-score-panel,
+  .practice-history-panel,
   .practice-plan-panel,
   .practice-fix-panel {
     margin-bottom: 12px;
@@ -3251,6 +3277,10 @@ dd {
 
   .practice-editor textarea {
     min-height: 320px;
+  }
+
+  .practice-history-stats {
+    grid-template-columns: 1fr;
   }
 
   .mcp-hero,
