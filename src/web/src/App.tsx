@@ -71,6 +71,7 @@ import {
 } from "./i18n.js";
 import {
   createHabitNextRequestBrief,
+  createHabitNextRequestBriefPreview,
   createPromptHabitCoach,
   type PromptHabitCoach,
 } from "./habit-coach.js";
@@ -2571,6 +2572,10 @@ function HabitCoachPanel({
     () => createHabitNextRequestBrief(coach),
     [coach],
   );
+  const nextRequestPreview = useMemo(
+    () => createHabitNextRequestBriefPreview(coach),
+    [coach],
+  );
 
   async function copyNextRequestBrief(): Promise<void> {
     const copied = await copyTextToClipboard(nextRequestBrief);
@@ -2654,21 +2659,42 @@ function HabitCoachPanel({
       </div>
 
       <div className="habit-brief-bar" aria-label="Next request brief">
-        <div>
-          <p className="eyebrow">Next request brief</p>
-          <strong>Copy an approval-ready coaching prompt</strong>
-          <span>
-            Uses score, repeated weakness, next fixes, and review target without
-            prompt bodies or raw paths.
-          </span>
+        <div className="habit-brief-heading">
+          <div>
+            <p className="eyebrow">Next request brief</p>
+            <strong>Preview and copy an approval-ready coaching prompt</strong>
+            <span>
+              Uses score, repeated weakness, next fixes, and review target
+              without prompt bodies or raw paths.
+            </span>
+          </div>
+          <button
+            className="primary-button"
+            onClick={() => void copyNextRequestBrief()}
+            type="button"
+          >
+            <Copy size={15} /> {briefCopied ? "Copied brief" : "Copy brief"}
+          </button>
         </div>
-        <button
-          className="primary-button"
-          onClick={() => void copyNextRequestBrief()}
-          type="button"
-        >
-          <Copy size={15} /> {briefCopied ? "Copied brief" : "Copy brief"}
-        </button>
+        <div className="habit-brief-preview">
+          <BriefPreviewItem label="Goal" value={nextRequestPreview.goal} />
+          <BriefPreviewItem
+            label="Weakness"
+            value={nextRequestPreview.weakness}
+          />
+          <BriefPreviewItem
+            label="First fix"
+            value={nextRequestPreview.firstFix}
+          />
+          <BriefPreviewItem
+            label="Review target"
+            value={nextRequestPreview.reviewTarget}
+          />
+          <div className="habit-brief-preview-item sections">
+            <span>Sections</span>
+            <p>{nextRequestPreview.sections.join(" / ")}</p>
+          </div>
+        </div>
       </div>
 
       <div className="habit-command-main">
@@ -2742,6 +2768,15 @@ function HabitCoachPanel({
         <span>{coach.patternSummary.detail}</span>
       </div>
     </section>
+  );
+}
+
+function BriefPreviewItem({ label, value }: { label: string; value: string }) {
+  return (
+    <div className="habit-brief-preview-item">
+      <span>{label}</span>
+      <p>{value}</p>
+    </div>
   );
 }
 

@@ -476,10 +476,17 @@ const UI_TRANSLATIONS: Record<string, string> = {
     "리뷰할 낮은 점수 프롬프트가 없습니다.",
   "Next request brief": "다음 요청 브리프",
   "Copy an approval-ready coaching prompt": "승인 가능한 코칭 프롬프트 복사",
+  "Preview and copy an approval-ready coaching prompt":
+    "승인 가능한 코칭 프롬프트 미리보기와 복사",
   "Uses score, repeated weakness, next fixes, and review target without prompt bodies or raw paths.":
     "점수, 반복 약점, 다음 보완 항목, 리뷰 대상을 사용하지만 prompt 본문과 raw path는 포함하지 않습니다.",
   "Copy brief": "브리프 복사",
   "Copied brief": "브리프 복사됨",
+  Goal: "목표",
+  Weakness: "약점",
+  "First fix": "첫 보완",
+  "Review target": "리뷰 대상",
+  Sections: "섹션",
   "Most repeated pattern": "가장 반복되는 패턴",
   "No repeated weak prompting pattern has enough samples yet.":
     "아직 반복 약점 패턴을 판단할 표본이 충분하지 않습니다.",

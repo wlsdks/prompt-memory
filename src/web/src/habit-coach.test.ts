@@ -3,6 +3,7 @@ import { describe, expect, it } from "vitest";
 import type { ArchiveScoreReport, QualityDashboard } from "./api.js";
 import {
   createHabitNextRequestBrief,
+  createHabitNextRequestBriefPreview,
   createPromptHabitCoach,
 } from "./habit-coach.js";
 
@@ -64,6 +65,33 @@ describe("createPromptHabitCoach", () => {
     expect(brief).not.toContain("secret prompt body");
     expect(brief).not.toContain("/Users/example");
     expect(brief).not.toContain("sk-proj");
+  });
+
+  it("creates a compact preview for the next request brief", () => {
+    const coach = createPromptHabitCoach(
+      dashboardFixture(),
+      archiveScoreFixture(),
+    );
+
+    const preview = createHabitNextRequestBriefPreview(coach);
+
+    expect(preview).toMatchObject({
+      goal: "Improve my next Claude Code/Codex request",
+      weakness: "Verification criteria",
+      firstFix: "Include the verification command or acceptance check.",
+      reviewTarget: "claude-code / private-project",
+    });
+    expect(preview.sections).toEqual([
+      "Goal",
+      "Context",
+      "Fix these habits",
+      "Scope",
+      "Verification",
+      "Output",
+    ]);
+    expect(JSON.stringify(preview)).not.toContain("secret prompt body");
+    expect(JSON.stringify(preview)).not.toContain("/Users/example");
+    expect(JSON.stringify(preview)).not.toContain("sk-proj");
   });
 
   it("falls back to a safe starter brief when no repeated fixes are ready", () => {

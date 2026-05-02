@@ -1,5 +1,18 @@
 # 작업 계획
 
+## 2026-05-03 Coach Brief Preview
+
+- [x] raw-free brief preview 모델을 TDD로 추가
+- [x] Coach command center에서 생성된 brief 내용을 확인하고 복사할 수 있게 UI 개선
+- [x] 브라우저 E2E와 스크린샷으로 desktop/mobile 확인
+- [ ] release gate 검증, 커밋, 푸시, CI 확인
+
+### 판단 기준
+
+- 사용자는 복사 전에 다음 요청 브리프 내용을 눈으로 확인할 수 있어야 한다.
+- preview와 copied text 모두 prompt body, raw absolute path, secret을 포함하지 않는다.
+- 새 탭이나 새 저장소 데이터를 늘리지 않고 Coach 화면 안에서 신뢰도와 사용성을 높인다.
+
 ## 2026-05-03 Coach Next Request Brief
 
 - [x] Prompt habit coach가 raw-free next request brief를 만들도록 TDD로 추가

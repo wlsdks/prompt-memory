@@ -186,6 +186,24 @@ try {
     ["Next request brief", "다음 요청 브리프"],
     "Coach should expose a copyable next request brief.",
   );
+  await assertTextAny(
+    page,
+    [
+      "Preview and copy an approval-ready coaching prompt",
+      "승인 가능한 코칭 프롬프트 미리보기와 복사",
+    ],
+    "Coach should show the brief preview before copying.",
+  );
+  await assertTextAny(
+    page,
+    ["First fix", "첫 보완"],
+    "Coach should show the first habit fix in the brief preview.",
+  );
+  await assertTextAny(
+    page,
+    ["Review target", "리뷰 대상"],
+    "Coach should show the review target in the brief preview.",
+  );
   await page.getByRole("button", { name: /Copy brief|브리프 복사/ }).click();
   await assertTextAny(
     page,

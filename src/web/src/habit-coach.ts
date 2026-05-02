@@ -52,6 +52,14 @@ export type HabitFix = {
   rate: number;
 };
 
+export type HabitNextRequestBriefPreview = {
+  goal: string;
+  weakness: string;
+  firstFix: string;
+  reviewTarget: string;
+  sections: string[];
+};
+
 const GAP_FIXES: Record<
   PromptQualityGap,
   {
@@ -156,6 +164,32 @@ export function createHabitNextRequestBrief(coach: PromptHabitCoach): string {
     "Output:",
     "- Return one approval-ready prompt draft plus a short list of what changed.",
   ].join("\n");
+}
+
+export function createHabitNextRequestBriefPreview(
+  coach: PromptHabitCoach,
+): HabitNextRequestBriefPreview {
+  const firstFix = coach.nextFixes[0];
+  const reviewTarget = coach.reviewQueue[0]
+    ? `${coach.reviewQueue[0].tool} / ${coach.reviewQueue[0].project}`
+    : "No low-score review target";
+
+  return {
+    goal: "Improve my next Claude Code/Codex request",
+    weakness: coach.biggestWeakness?.label ?? "No repeated weakness yet",
+    firstFix:
+      firstFix?.command ??
+      "Use Goal, Context, Scope, Verification, and Output sections.",
+    reviewTarget,
+    sections: [
+      "Goal",
+      "Context",
+      "Fix these habits",
+      "Scope",
+      "Verification",
+      "Output",
+    ],
+  };
 }
 
 function calculateScoreTrend(
