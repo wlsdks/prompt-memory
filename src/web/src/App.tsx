@@ -146,16 +146,16 @@ export function App() {
 
     void getPrompt(view.id)
       .then(setSelected)
-      .catch(() => setError("프롬프트를 찾을 수 없습니다."));
+      .catch(() => setError("Could not find the prompt."));
   }, [view]);
 
   const visibleTitle = useMemo(() => {
-    if (view.name === "settings") return "설정";
-    if (view.name === "exports") return "익명화 Export";
-    if (view.name === "projects") return "프로젝트";
-    if (view.name === "detail") return "프롬프트 상세";
-    if (view.name === "dashboard") return "품질 대시보드";
-    return "프롬프트 아카이브";
+    if (view.name === "settings") return "Settings";
+    if (view.name === "exports") return "Anonymized export";
+    if (view.name === "projects") return "Projects";
+    if (view.name === "detail") return "Prompt detail";
+    if (view.name === "dashboard") return "Quality dashboard";
+    return "Prompt archive";
   }, [view]);
   const queueNavigation = useMemo(() => {
     if (view.name !== "detail") {
@@ -190,7 +190,7 @@ export function App() {
       );
       setNextCursor(result.next_cursor);
     } catch {
-      setError("프롬프트 목록을 불러오지 못했습니다.");
+      setError("Could not load prompts.");
     } finally {
       setLoading(false);
     }
@@ -226,12 +226,12 @@ export function App() {
           .then(setDashboard)
           .catch(() => undefined);
       } catch {
-        setError("복사는 완료됐지만 사용 기록을 저장하지 못했습니다.");
+        setError("Copied the prompt, but could not save the usage event.");
       }
       return;
     }
 
-    setError("프롬프트를 복사하지 못했습니다.");
+    setError("Could not copy the prompt.");
   }
 
   async function copyImprovedPrompt(prompt: PromptDetail): Promise<void> {
@@ -246,7 +246,7 @@ export function App() {
       return;
     }
 
-    setError("개선안을 복사하지 못했습니다.");
+    setError("Could not copy the improvement draft.");
   }
 
   async function saveImprovementDraft(prompt: PromptDetail): Promise<void> {
@@ -278,7 +278,7 @@ export function App() {
       setSavedImprovementId(prompt.id);
       window.setTimeout(() => setSavedImprovementId(undefined), 3000);
     } catch {
-      setError("개선안을 저장하지 못했습니다.");
+      setError("Could not save the improvement draft.");
     }
   }
 
@@ -293,7 +293,7 @@ export function App() {
         .then(setDashboard)
         .catch(() => undefined);
     } catch {
-      setError("북마크 상태를 저장하지 못했습니다.");
+      setError("Could not save the bookmark status.");
     }
   }
 
@@ -308,7 +308,7 @@ export function App() {
         ),
       );
     } catch {
-      setError("프로젝트 수집 정책을 저장하지 못했습니다.");
+      setError("Could not save the project capture policy.");
     }
   }
 
@@ -320,7 +320,7 @@ export function App() {
       setExportPreview(preview);
       setExportPayload(undefined);
     } catch {
-      setError("익명화 export preview를 생성하지 못했습니다.");
+      setError("Could not create the anonymized export preview.");
     } finally {
       setExportBusy(false);
     }
@@ -338,7 +338,7 @@ export function App() {
       setExportPayload(payload);
     } catch {
       setError(
-        "익명화 export를 실행하지 못했습니다. preview를 다시 생성하세요.",
+        "Could not run the anonymized export. Create a new preview and try again.",
       );
     } finally {
       setExportBusy(false);
@@ -359,7 +359,7 @@ export function App() {
       return;
     }
 
-    setError("Export JSON을 복사하지 못했습니다.");
+    setError("Could not copy the export JSON.");
   }
 
   function downloadExportPayload(): void {
@@ -412,9 +412,9 @@ export function App() {
   return (
     <main className="app-shell">
       <a className="skip-link" href="#workspace">
-        본문으로 건너뛰기
+        Skip to content
       </a>
-      <aside className="sidebar" aria-label="주요 탐색">
+      <aside className="sidebar" aria-label="Primary navigation">
         <div className="brand">
           <Database size={18} />
           <span>prompt-memory</span>
@@ -423,19 +423,19 @@ export function App() {
           className={`nav-button ${view.name === "list" ? "active" : ""}`}
           onClick={() => navigate({ name: "list" })}
         >
-          <FileText size={16} /> 프롬프트
+          <FileText size={16} /> Prompts
         </button>
         <button
           className={`nav-button ${view.name === "dashboard" ? "active" : ""}`}
           onClick={() => navigate({ name: "dashboard" })}
         >
-          <BarChart3 size={16} /> 대시보드
+          <BarChart3 size={16} /> Dashboard
         </button>
         <button
           className={`nav-button ${view.name === "projects" ? "active" : ""}`}
           onClick={() => navigate({ name: "projects" })}
         >
-          <FolderCog size={16} /> 프로젝트
+          <FolderCog size={16} /> Projects
         </button>
         <button
           className={`nav-button ${view.name === "exports" ? "active" : ""}`}
@@ -447,11 +447,11 @@ export function App() {
           className={`nav-button ${view.name === "settings" ? "active" : ""}`}
           onClick={() => navigate({ name: "settings" })}
         >
-          <Settings size={16} /> 설정
+          <Settings size={16} /> Settings
         </button>
         <div className="capture-status">
           {health?.ok ? <ShieldCheck size={16} /> : <AlertTriangle size={16} />}
-          <span>{health?.ok ? "서버 정상" : "상태 확인 중"}</span>
+          <span>{health?.ok ? "Server OK" : "Checking status"}</span>
         </div>
       </aside>
 
@@ -466,37 +466,37 @@ export function App() {
               <label className="search-box">
                 <Search size={16} />
                 <input
-                  aria-label="프롬프트 검색"
+                  aria-label="Prompts Search"
                   autoComplete="off"
                   name="prompt-search"
                   onChange={(event) =>
                     updateFilters({ query: event.target.value })
                   }
-                  placeholder="프롬프트 검색…"
+                  placeholder="Prompts Search…"
                   value={filters.query ?? ""}
                 />
               </label>
               <select
-                aria-label="도구 필터"
+                aria-label="Tool filter"
                 name="tool-filter"
                 onChange={(event) =>
                   updateFilters({ tool: event.target.value })
                 }
                 value={filters.tool ?? ""}
               >
-                <option value="">전체 도구</option>
+                <option value="">All tools</option>
                 <option value="claude-code">Claude Code</option>
                 <option value="codex">Codex</option>
                 <option value="manual">Manual</option>
                 <option value="unknown">Unknown</option>
               </select>
               <select
-                aria-label="태그 필터"
+                aria-label="Tag filter"
                 name="tag-filter"
                 onChange={(event) => updateFilters({ tag: event.target.value })}
                 value={filters.tag ?? ""}
               >
-                <option value="">전체 태그</option>
+                <option value="">All tags</option>
                 {PROMPT_TAGS.map((tag) => (
                   <option key={tag} value={tag}>
                     {tag}
@@ -504,7 +504,7 @@ export function App() {
                 ))}
               </select>
               <select
-                aria-label="민감정보 필터"
+                aria-label="Sensitivity filter"
                 name="sensitivity-filter"
                 onChange={(event) =>
                   updateFilters({
@@ -514,12 +514,12 @@ export function App() {
                 }
                 value={filters.isSensitive ?? "all"}
               >
-                <option value="all">전체 민감도</option>
-                <option value="true">민감정보 포함</option>
-                <option value="false">민감정보 없음</option>
+                <option value="all">All sensitivity</option>
+                <option value="true">Contains sensitive data</option>
+                <option value="false">No sensitive data</option>
               </select>
               <select
-                aria-label="포커스 필터"
+                aria-label="Focus filter"
                 name="focus-filter"
                 onChange={(event) =>
                   updateFilters({
@@ -531,14 +531,14 @@ export function App() {
                 }
                 value={filters.focus ?? ""}
               >
-                <option value="">전체 Focus</option>
-                <option value="saved">저장됨</option>
-                <option value="reused">재사용됨</option>
-                <option value="duplicated">중복 후보</option>
-                <option value="quality-gap">품질 보강</option>
+                <option value="">All focus</option>
+                <option value="saved">Saved</option>
+                <option value="reused">Reused</option>
+                <option value="duplicated">Duplicate candidates</option>
+                <option value="quality-gap">Quality gaps</option>
               </select>
               <select
-                aria-label="부족 항목 필터"
+                aria-label="Quality gap filter"
                 name="quality-gap-filter"
                 onChange={(event) =>
                   updateFilters({
@@ -550,7 +550,7 @@ export function App() {
                 }
                 value={filters.qualityGap ?? ""}
               >
-                <option value="">전체 부족 항목</option>
+                <option value="">All quality gaps</option>
                 {QUALITY_GAP_OPTIONS.map((item) => (
                   <option key={item.key} value={item.key}>
                     {item.label}
@@ -558,7 +558,7 @@ export function App() {
                 ))}
               </select>
               <input
-                aria-label="경로 접두사 필터"
+                aria-label="Path prefix filter"
                 autoComplete="off"
                 className="path-filter"
                 name="cwd-prefix-filter"
@@ -569,7 +569,7 @@ export function App() {
                 value={filters.cwdPrefix ?? ""}
               />
               <input
-                aria-label="시작일 필터"
+                aria-label="Start date filter"
                 autoComplete="off"
                 name="received-from-filter"
                 onChange={(event) =>
@@ -579,7 +579,7 @@ export function App() {
                 value={filters.receivedFrom ?? ""}
               />
               <input
-                aria-label="종료일 필터"
+                aria-label="End date filter"
                 autoComplete="off"
                 name="received-to-filter"
                 onChange={(event) =>
@@ -685,15 +685,17 @@ export function App() {
       {pendingDelete && (
         <div className="modal-backdrop" role="presentation">
           <div aria-modal="true" className="modal" role="dialog">
-            <h2>프롬프트 삭제</h2>
+            <h2>Prompts Delete</h2>
             <p>
-              <code>{pendingDelete.id}</code> 를 삭제합니다. Markdown과 색인도
-              함께 정리됩니다.
+              <code>{pendingDelete.id}</code> will be deleted. Markdown and
+              index rows will be deleted too.
             </p>
             <div className="modal-actions">
-              <button onClick={() => setPendingDelete(undefined)}>취소</button>
+              <button onClick={() => setPendingDelete(undefined)}>
+                Cancel
+              </button>
               <button className="danger" onClick={() => void confirmDelete()}>
-                삭제
+                Delete
               </button>
             </div>
           </div>
@@ -721,7 +723,7 @@ function PromptList({
   prompts: PromptSummary[];
 }) {
   if (loading && prompts.length === 0) {
-    return <div className="panel empty">목록을 불러오는 중입니다.</div>;
+    return <div className="panel empty">Loading prompts.</div>;
   }
 
   if (prompts.length === 0) {
@@ -737,11 +739,11 @@ function PromptList({
     <>
       <div className="prompt-table" role="table">
         <div className="table-row table-head" role="row">
-          <span>받은 시간</span>
-          <span>도구</span>
-          <span>경로</span>
-          <span>태그/상태</span>
-          <span>길이</span>
+          <span>Received</span>
+          <span>Tool</span>
+          <span>Path</span>
+          <span>Tags/status</span>
+          <span>Length</span>
         </div>
         {prompts.map((prompt) => (
           <button
@@ -792,7 +794,7 @@ function PromptList({
           disabled={loading}
           onClick={onLoadMore}
         >
-          {loading ? "불러오는 중…" : "더 보기"}
+          {loading ? "Loading..." : "Load more"}
         </button>
       )}
     </>
@@ -817,11 +819,11 @@ function ActiveFilterBar({
   }
 
   return (
-    <section className="active-filter-bar" aria-label="활성 필터">
+    <section className="active-filter-bar" aria-label="Active filters">
       <div className="active-filter-list">
         {chips.map((chip) => (
           <button
-            aria-label={`${chip.label} 필터 제거: ${chip.value}`}
+            aria-label={`${chip.label} remove filter: ${chip.value}`}
             className="filter-chip"
             key={chip.key}
             onClick={() => onRemove(chip.key)}
@@ -837,7 +839,7 @@ function ActiveFilterBar({
         onClick={onClearAll}
         type="button"
       >
-        필터 초기화
+        Clear filters
       </button>
     </section>
   );
@@ -878,7 +880,7 @@ function PromptDetailView({
   };
 }) {
   if (!prompt) {
-    return <div className="panel empty">상세 정보를 불러오는 중입니다.</div>;
+    return <div className="panel empty">Loading prompt details.</div>;
   }
 
   const improvement = improvePrompt({
@@ -901,7 +903,10 @@ function PromptDetailView({
           <dt>Redaction</dt>
           <dd>{prompt.redaction_policy}</dd>
         </dl>
-        <div className="metadata-stats" aria-label="유용성 및 중복 신호">
+        <div
+          className="metadata-stats"
+          aria-label="Usefulness and duplicate signals"
+        >
           <span>
             <Copy size={14} /> {prompt.usefulness.copied_count}
           </span>
@@ -914,7 +919,7 @@ function PromptDetailView({
           </span>
         </div>
         <button className="danger full-width" onClick={() => onDelete(prompt)}>
-          <Trash2 size={16} /> 삭제
+          <Trash2 size={16} /> Delete
         </button>
       </aside>
       <article className="prompt-body">
@@ -934,32 +939,32 @@ function PromptDetailView({
         />
         <div className="prompt-actions">
           <button className="secondary-action" onClick={onBack}>
-            <ArrowLeft size={16} /> 목록으로
+            <ArrowLeft size={16} /> Back to list
           </button>
-          <div className="queue-actions" aria-label="현재 큐 탐색">
+          <div className="queue-actions" aria-label="Current queue navigation">
             <button
-              aria-label="이전 프롬프트 보기"
+              aria-label="View previous prompt"
               disabled={!queueNavigation.previous}
               onClick={() =>
                 queueNavigation.previous &&
                 onNavigate(queueNavigation.previous.id)
               }
             >
-              <ChevronLeft size={16} /> 이전
+              <ChevronLeft size={16} /> Previous
             </button>
             <span>
               {queueNavigation.current && queueNavigation.total
                 ? `${queueNavigation.current} / ${queueNavigation.total}`
-                : "큐 없음"}
+                : "No queue"}
             </span>
             <button
-              aria-label="다음 프롬프트 보기"
+              aria-label="View next prompt"
               disabled={!queueNavigation.next}
               onClick={() =>
                 queueNavigation.next && onNavigate(queueNavigation.next.id)
               }
             >
-              다음 <ChevronRight size={16} />
+              Next <ChevronRight size={16} />
             </button>
           </div>
           <div className="prompt-action-group">
@@ -968,10 +973,10 @@ function PromptDetailView({
               onClick={() => onBookmark(prompt)}
             >
               <Star size={16} />
-              {prompt.usefulness.bookmarked ? "저장됨" : "다시 볼 프롬프트"}
+              {prompt.usefulness.bookmarked ? "Saved" : "Save for later"}
             </button>
             <button onClick={() => onCopy(prompt)}>
-              <Copy size={16} /> {copied ? "복사됨" : "프롬프트 복사"}
+              <Copy size={16} /> {copied ? "Copied" : "Copy prompt"}
             </button>
           </div>
         </div>
@@ -997,11 +1002,11 @@ function PromptCoachPanel({
   savedDrafts: PromptDetail["improvement_drafts"];
 }) {
   return (
-    <section className="coach-panel" aria-label="프롬프트 개선안">
+    <section className="coach-panel" aria-label="Prompt improvement draft">
       <div className="analysis-header">
         <div>
           <p className="eyebrow">Prompt coach</p>
-          <h2>승인 후 재입력할 개선안</h2>
+          <h2>Improvement draft for manual resubmission</h2>
         </div>
         <span className="badge">{improvement.mode}</span>
       </div>
@@ -1016,15 +1021,15 @@ function PromptCoachPanel({
           ))}
         </div>
         <button className="coach-copy-button" onClick={onCopy} type="button">
-          <Copy size={16} /> {copied ? "복사됨" : "개선안 복사"}
+          <Copy size={16} /> {copied ? "Copied" : "Copy draft"}
         </button>
         <button className="coach-save-button" onClick={onSave} type="button">
-          <FileText size={16} /> {saved ? "저장됨" : "개선안 저장"}
+          <FileText size={16} /> {saved ? "Saved" : "Save draft"}
         </button>
       </div>
       {savedDrafts.length > 0 && (
-        <div className="saved-drafts" aria-label="저장된 개선안">
-          <h3>저장된 개선안</h3>
+        <div className="saved-drafts" aria-label="Saved drafts">
+          <h3>Saved drafts</h3>
           {savedDrafts.slice(0, 3).map((draft) => (
             <article className="saved-draft-row" key={draft.id}>
               <div>
@@ -1036,7 +1041,7 @@ function PromptCoachPanel({
                   ? draft.changed_sections
                       .map((section) => qualityGapLabel(section) ?? section)
                       .join(", ")
-                  : "원문 구조 정리"}
+                  : "Original structure cleanup"}
               </p>
             </article>
           ))}
@@ -1054,17 +1059,17 @@ function AnalysisPreview({
   onOpenQualityGap(gap: PromptQualityGap): void;
 }) {
   return (
-    <section className="analysis-panel" aria-label="분석 preview">
+    <section className="analysis-panel" aria-label="Analysis preview">
       <div className="analysis-header">
         <div>
           <p className="eyebrow">Local analysis</p>
-          <h2>분석 preview</h2>
+          <h2>Analysis preview</h2>
         </div>
         <span className="badge">{analysis.analyzer}</span>
       </div>
       <p className="analysis-summary">{analysis.summary}</p>
       {analysis.checklist.length > 0 && (
-        <div className="checklist-grid" aria-label="분석 체크리스트">
+        <div className="checklist-grid" aria-label="Analysis checklist">
           {analysis.checklist.map((item) => {
             const qualityGap = isQualityGapKey(item.key) ? item.key : undefined;
 
@@ -1083,7 +1088,7 @@ function AnalysisPreview({
                     onClick={() => onOpenQualityGap(qualityGap)}
                     type="button"
                   >
-                    같은 항목 보기
+                    View matching prompts
                   </button>
                 )}
               </div>
@@ -1092,7 +1097,7 @@ function AnalysisPreview({
         </div>
       )}
       {analysis.tags.length > 0 && (
-        <div className="tag-row" aria-label="자동 태그">
+        <div className="tag-row" aria-label="Automatic tags">
           <Tags size={14} />
           {analysis.tags.map((tag) => (
             <span className="badge tag-badge" key={tag}>
@@ -1103,7 +1108,7 @@ function AnalysisPreview({
       )}
       {analysis.warnings.length > 0 && (
         <div className="analysis-list">
-          <h3>주의할 점</h3>
+          <h3>Warnings</h3>
           <ul>
             {analysis.warnings.map((warning) => (
               <li key={warning}>{warning}</li>
@@ -1113,7 +1118,7 @@ function AnalysisPreview({
       )}
       {analysis.suggestions.length > 0 && (
         <div className="analysis-list">
-          <h3>개선 힌트</h3>
+          <h3>Improvement hints</h3>
           <ul>
             {analysis.suggestions.map((suggestion) => (
               <li key={suggestion}>{suggestion}</li>
@@ -1137,19 +1142,19 @@ function DashboardView({
   onSelect(id: string): void;
 }) {
   if (loading || !dashboard) {
-    return <div className="panel empty">대시보드를 불러오는 중입니다.</div>;
+    return <div className="panel empty">Loading dashboard.</div>;
   }
 
   return (
     <div className="dashboard-layout">
-      <section className="metric-strip" aria-label="프롬프트 품질 지표">
+      <section className="metric-strip" aria-label="Prompt quality metrics">
         <Metric
-          label="전체 프롬프트"
+          label="Total prompts"
           onSelect={() => onOpenFilteredList({})}
           value={dashboard.total_prompts}
         />
         <Metric
-          label="민감정보 포함"
+          label="Contains sensitive data"
           onSelect={() =>
             onOpenFilteredList({
               isSensitive: "true",
@@ -1158,7 +1163,7 @@ function DashboardView({
           value={`${Math.round(dashboard.sensitive_ratio * 100)}%`}
         />
         <Metric
-          label="최근 7일"
+          label="Last 7 days"
           onSelect={() =>
             onOpenFilteredList({
               receivedFrom: daysAgoDateInput(7),
@@ -1167,7 +1172,7 @@ function DashboardView({
           value={dashboard.recent.last_7_days}
         />
         <Metric
-          label="최근 30일"
+          label="Last 30 days"
           onSelect={() =>
             onOpenFilteredList({
               receivedFrom: daysAgoDateInput(30),
@@ -1195,7 +1200,7 @@ function DashboardView({
               tool: bucket.key,
             })
           }
-          title="도구별 분포"
+          title="Tool distribution"
         />
         <DistributionPanel
           buckets={dashboard.distribution.by_project}
@@ -1204,7 +1209,7 @@ function DashboardView({
               cwdPrefix: bucket.key,
             })
           }
-          title="프로젝트별 분포"
+          title="Project distribution"
         />
       </section>
 
@@ -1216,21 +1221,21 @@ function DashboardView({
       <section className="dashboard-grid wide">
         <div className="panel">
           <div className="panel-heading-row">
-            <h2>재사용 후보</h2>
+            <h2>Reuse candidates</h2>
             {dashboard.useful_prompts.length > 0 && (
               <button
                 className="panel-link-button"
                 onClick={() => onOpenFilteredList({ focus: "reused" })}
                 type="button"
               >
-                목록 보기
+                View list
               </button>
             )}
           </div>
           <div className="useful-list">
             {dashboard.useful_prompts.length === 0 && (
               <p className="muted">
-                복사하거나 저장한 프롬프트가 여기에 표시됩니다.
+                Prompts you copied or saved will appear here.
               </p>
             )}
             {dashboard.useful_prompts.map((prompt) => (
@@ -1257,12 +1262,10 @@ function DashboardView({
         </div>
 
         <div className="panel">
-          <h2>중복 후보</h2>
+          <h2>Duplicate candidates</h2>
           <div className="duplicate-list">
             {dashboard.duplicate_prompt_groups.length === 0 && (
-              <p className="muted">
-                같은 저장 본문을 가진 프롬프트가 없습니다.
-              </p>
+              <p className="muted">No prompts share the same stored body.</p>
             )}
             {dashboard.duplicate_prompt_groups.map((group) => (
               <div className="duplicate-group" key={group.group_id}>
@@ -1289,10 +1292,10 @@ function DashboardView({
         </div>
 
         <div className="panel">
-          <h2>자주 부족한 항목</h2>
+          <h2>Frequent quality gaps</h2>
           <div className="gap-list">
             {dashboard.missing_items.length === 0 && (
-              <p className="muted">아직 반복적으로 부족한 항목이 없습니다.</p>
+              <p className="muted">No repeated gaps yet.</p>
             )}
             {dashboard.missing_items.map((item) => (
               <button
@@ -1318,11 +1321,11 @@ function DashboardView({
         </div>
 
         <div className="panel">
-          <h2>반복 패턴</h2>
+          <h2>Repeated patterns</h2>
           <div className="pattern-list">
             {dashboard.patterns.length === 0 && (
               <p className="muted">
-                표본이 더 쌓이면 프로젝트별 패턴이 표시됩니다.
+                Project patterns will appear after more samples are captured.
               </p>
             )}
             {dashboard.patterns.map((pattern) => (
@@ -1335,22 +1338,22 @@ function DashboardView({
       </section>
 
       <section className="panel">
-        <h2>AGENTS.md / CLAUDE.md 후보</h2>
+        <h2>AGENTS.md / CLAUDE.md candidates</h2>
         <div className="suggestion-grid">
           {dashboard.instruction_suggestions.length === 0 && (
-            <p className="muted">아직 제안할 반복 개선 포인트가 없습니다.</p>
+            <p className="muted">No recurring improvement suggestions yet.</p>
           )}
           {dashboard.instruction_suggestions.map((suggestion) => (
             <div className="suggestion-box" key={suggestion.reason}>
               <p className="muted">{suggestion.reason}</p>
               <code>{suggestion.text}</code>
               <button
-                aria-label="제안 복사"
+                aria-label="Copy suggestion"
                 className="icon-button"
                 onClick={() =>
                   void navigator.clipboard.writeText(suggestion.text)
                 }
-                title="제안 복사"
+                title="Copy suggestion"
               >
                 <Copy size={15} />
               </button>
@@ -1372,12 +1375,12 @@ function ProjectProfilesPanel({
   return (
     <section className="panel project-profile-panel">
       <div className="panel-heading-row">
-        <h2>프로젝트 품질 프로필</h2>
+        <h2>Project quality profile</h2>
         <span>{profiles.length} projects</span>
       </div>
       <div className="project-profile-list">
         {profiles.length === 0 && (
-          <p className="muted">프로젝트별 품질 신호가 아직 없습니다.</p>
+          <p className="muted">No project quality signals yet.</p>
         )}
         {profiles.map((profile) => (
           <article className="project-profile-row" key={profile.key}>
@@ -1424,7 +1427,7 @@ function ProjectProfilesPanel({
                 }
                 type="button"
               >
-                전체 보기
+                View all
               </button>
               <button
                 disabled={!profile.top_gap || profile.quality_gap_count === 0}
@@ -1444,7 +1447,7 @@ function ProjectProfilesPanel({
                 }}
                 type="button"
               >
-                품질 보강
+                Quality gaps
               </button>
               <button
                 disabled={profile.sensitive_count === 0}
@@ -1456,7 +1459,7 @@ function ProjectProfilesPanel({
                 }
                 type="button"
               >
-                민감정보
+                Sensitive
               </button>
               <button
                 disabled={profile.copied_count + profile.bookmarked_count === 0}
@@ -1468,7 +1471,7 @@ function ProjectProfilesPanel({
                 }
                 type="button"
               >
-                재사용됨
+                Reused
               </button>
             </div>
           </article>
@@ -1488,18 +1491,16 @@ function TrendPanel({
   const maxPromptCount = Math.max(1, ...daily.map((item) => item.prompt_count));
 
   return (
-    <section className="panel trend-panel" aria-label="최근 품질 트렌드">
+    <section className="panel trend-panel" aria-label="Recent quality trend">
       <div className="panel-heading-row">
-        <h2>최근 품질 트렌드</h2>
-        <span>7일</span>
+        <h2>Recent quality trend</h2>
+        <span>7 days</span>
       </div>
       <div className="trend-list">
-        {daily.length === 0 && (
-          <p className="muted">트렌드 데이터가 없습니다.</p>
-        )}
+        {daily.length === 0 && <p className="muted">No trend data yet.</p>}
         {daily.map((day) => (
           <button
-            aria-label={`${day.date} 프롬프트 ${day.prompt_count}개 보기`}
+            aria-label={`${day.date}: view ${day.prompt_count} prompts`}
             className="trend-row"
             key={day.date}
             onClick={() => onSelectDay(day.date)}
@@ -1545,7 +1546,7 @@ function Metric({
 }) {
   return (
     <button
-      aria-label={`${label} ${value} 보기`}
+      aria-label={`View ${label}: ${value}`}
       className="metric metric-action"
       onClick={onSelect}
       type="button"
@@ -1571,10 +1572,10 @@ function DistributionPanel({
     <div className="panel">
       <h2>{title}</h2>
       <div className="distribution-list">
-        {buckets.length === 0 && <p className="muted">데이터가 없습니다.</p>}
+        {buckets.length === 0 && <p className="muted">No data.</p>}
         {buckets.map((bucket) => (
           <button
-            aria-label={`${title}: ${bucket.label} ${bucket.count}개 보기`}
+            aria-label={`${title}: view ${bucket.count} for ${bucket.label}`}
             className="distribution-row distribution-action"
             key={bucket.key}
             onClick={() => onBucketSelect(bucket)}
@@ -1607,7 +1608,7 @@ function SettingsView({
   return (
     <div className="settings-grid">
       <section className="panel setup-panel">
-        <h2>온보딩 점검</h2>
+        <h2>Onboarding checks</h2>
         <div className="setup-check-list">
           {setupChecks.map((check) => (
             <div className="setup-check" key={check.label}>
@@ -1622,26 +1623,26 @@ function SettingsView({
         </div>
       </section>
       <section className="panel">
-        <h2>서버</h2>
+        <h2>Server</h2>
         <dl>
-          <dt>상태</dt>
-          <dd>{health?.ok ? "정상" : "확인 중"}</dd>
-          <dt>버전</dt>
+          <dt>Status</dt>
+          <dd>{health?.ok ? "OK" : "Checking"}</dd>
+          <dt>Version</dt>
           <dd>{health?.version ?? "-"}</dd>
-          <dt>데이터 디렉터리</dt>
+          <dt>Data directory</dt>
           <dd>{settings?.data_dir ?? health?.data_dir ?? "-"}</dd>
-          <dt>주소</dt>
+          <dt>Address</dt>
           <dd>
             {settings ? `${settings.server.host}:${settings.server.port}` : "-"}
           </dd>
         </dl>
       </section>
       <section className="panel">
-        <h2>수집</h2>
+        <h2>Capture</h2>
         <dl>
           <dt>Redaction</dt>
           <dd>{settings?.redaction_mode ?? "-"}</dd>
-          <dt>수집 제외 프로젝트</dt>
+          <dt>Excluded projects</dt>
           <dd>
             {settings?.excluded_project_roots.length ? (
               <ul className="path-list">
@@ -1650,19 +1651,21 @@ function SettingsView({
                 ))}
               </ul>
             ) : (
-              "없음"
+              "None"
             )}
           </dd>
-          <dt>마지막 hook 전송</dt>
+          <dt>Last hook delivery</dt>
           <dd>
             {settings?.last_ingest_status
-              ? `${settings.last_ingest_status.ok ? "정상" : "실패"} ${
+              ? `${settings.last_ingest_status.ok ? "OK" : "failed"} ${
                   settings.last_ingest_status.status ?? ""
                 }`
-              : "기록 없음"}
+              : "No record"}
           </dd>
         </dl>
-        <p className="muted">상세 진단은 CLI doctor 명령으로 확인합니다.</p>
+        <p className="muted">
+          Use the CLI doctor command for detailed diagnostics.
+        </p>
         <code>prompt-memory doctor claude-code</code>
       </section>
     </div>
@@ -1679,21 +1682,21 @@ function ProjectsView({
   if (projects.length === 0) {
     return (
       <div className="panel empty">
-        <h2>프로젝트 기록이 없습니다.</h2>
+        <h2>No project records yet.</h2>
         <code>prompt-memory setup</code>
       </div>
     );
   }
 
   return (
-    <section className="project-panel panel" aria-label="프로젝트 정책">
+    <section className="project-panel panel" aria-label="Project policy">
       <div className="project-table" role="table">
         <div className="project-row project-head" role="row">
-          <span>프로젝트</span>
-          <span>최근 수집</span>
-          <span>품질/민감도</span>
-          <span>재사용</span>
-          <span>수집</span>
+          <span>Projects</span>
+          <span>Latest capture</span>
+          <span>Quality/sensitivity</span>
+          <span>Reuse</span>
+          <span>Capture</span>
         </div>
         {projects.map((project) => (
           <div className="project-row" key={project.project_id} role="row">
@@ -1775,9 +1778,10 @@ function ExportView({
     <div className="export-layout">
       <section className="panel export-control-panel">
         <div>
-          <h2>익명화 Export</h2>
+          <h2>Anonymized export</h2>
           <p className="muted">
-            로컬 archive를 raw path와 stable prompt id 없이 JSON으로 만듭니다.
+            Create JSON from the local archive without raw paths or stable
+            prompt ids.
           </p>
         </div>
         <div className="export-controls">
@@ -1804,26 +1808,26 @@ function ExportView({
             onClick={onPreview}
             type="button"
           >
-            Preview 생성
+            Create preview
           </button>
         </div>
       </section>
 
-      <section className="export-summary-strip" aria-label="Export 요약">
+      <section className="export-summary-strip" aria-label="Export summary">
         <MetricCard
-          label="저장된 프롬프트"
+          label="Stored prompts"
           value={dashboard?.total_prompts ?? 0}
         />
         <MetricCard
-          label="민감정보 포함"
+          label="Contains sensitive data"
           value={dashboard?.sensitive_prompts ?? 0}
         />
         <MetricCard
-          label="Preview 대상"
+          label="Preview candidates"
           value={preview?.counts.prompt_count ?? "-"}
         />
         <MetricCard
-          label="작은 집합 경고"
+          label="Small-set warning"
           value={preview?.counts.small_set_warning ? "on" : "off"}
         />
       </section>
@@ -1834,7 +1838,7 @@ function ExportView({
             <div>
               <h2>Preview job</h2>
               <p className="muted">
-                {preview.id} · 만료 {formatDate(preview.expires_at)}
+                {preview.id} · expires {formatDate(preview.expires_at)}
               </p>
             </div>
             <button
@@ -1843,34 +1847,35 @@ function ExportView({
               onClick={onExecute}
               type="button"
             >
-              Export 실행
+              Run export
             </button>
           </div>
           {preview.counts.small_set_warning && (
             <p className="warning-line">
-              작은 prompt 집합은 익명화 후에도 재식별 위험이 있습니다.
+              Small prompt sets can still carry re-identification risk after
+              anonymization.
             </p>
           )}
           <div className="export-field-grid">
             <FieldList
               items={preview.counts.included_fields}
-              title="포함되는 필드"
+              title="Included fields"
             />
             <FieldList
               items={preview.counts.excluded_fields}
-              title="제외되는 필드"
+              title="Excluded fields"
             />
             <FieldList
               items={Object.entries(
                 preview.counts.residual_identifier_counts,
               ).map(([key, count]) => `${key}: ${count}`)}
-              title="잔여 identifier count"
+              title="Residual identifier count"
             />
           </div>
         </section>
       ) : (
         <section className="panel empty">
-          <h2>아직 preview가 없습니다.</h2>
+          <h2>No preview yet.</h2>
           <code>prompt-memory export --anonymized --preview</code>
         </section>
       )}
@@ -1887,10 +1892,10 @@ function ExportView({
             </div>
             <div className="export-action-row">
               <button onClick={onCopy} type="button">
-                <Copy size={14} /> {copied ? "복사됨" : "JSON 복사"}
+                <Copy size={14} /> {copied ? "Copied" : "Copy JSON"}
               </button>
               <button onClick={onDownload} type="button">
-                <Download size={14} /> 다운로드
+                <Download size={14} /> Download
               </button>
             </div>
           </div>
@@ -1927,7 +1932,7 @@ function FieldList({ items, title }: { items: string[]; title: string }) {
           ))}
         </ul>
       ) : (
-        <p className="muted">검출된 항목 없음</p>
+        <p className="muted">No detected items.</p>
       )}
     </div>
   );
@@ -1957,16 +1962,16 @@ function buildSetupChecks({
 
   return [
     {
-      label: "로컬 서버",
+      label: "Local server",
       status: health?.ok ? "good" : "pending",
       detail: health?.ok
         ? `version ${health.version}`
-        : "서버 상태를 확인하는 중입니다.",
+        : "Checking server status.",
     },
     {
-      label: "로컬 저장소",
+      label: "Local storage",
       status: settings?.data_dir ? "good" : "pending",
-      detail: settings?.data_dir ?? "데이터 디렉터리를 확인하는 중입니다.",
+      detail: settings?.data_dir ?? "Checking data directory.",
     },
     {
       label: "Redaction",
@@ -1977,41 +1982,41 @@ function buildSetupChecks({
             ? "attention"
             : "pending",
       detail: redactionMode
-        ? `${redactionMode} 모드`
-        : "저장 정책을 확인하는 중입니다.",
+        ? `${redactionMode} mode`
+        : "Checking storage policy.",
     },
     {
-      label: "Hook 수집",
+      label: "Hook Capture",
       status: lastIngest?.ok ? "good" : lastIngest ? "attention" : "pending",
       detail: lastIngest
-        ? `${lastIngest.ok ? "마지막 전송 성공" : "마지막 전송 실패"} ${
+        ? `${lastIngest.ok ? "last delivery succeeded" : "last delivery failed"} ${
             lastIngest.status ?? ""
           }`.trim()
-        : "아직 hook 전송 기록이 없습니다.",
+        : "No hook delivery has been recorded yet.",
     },
     {
-      label: "첫 프롬프트 저장",
+      label: "First prompt stored",
       status: promptCount > 0 ? "good" : "pending",
       detail:
         promptCount > 0
-          ? `${promptCount}개 저장됨`
-          : "테스트 프롬프트를 전송하면 완료됩니다.",
+          ? `${promptCount} stored`
+          : "Send a test prompt to complete this check.",
     },
     {
-      label: "재사용 루프",
+      label: "Reuse loop",
       status: usefulCount > 0 ? "good" : "pending",
       detail:
         usefulCount > 0
-          ? `${usefulCount}개 재사용 후보`
-          : "복사하거나 저장한 프롬프트가 아직 없습니다.",
+          ? `${usefulCount} reuse candidates`
+          : "No copied or saved prompts yet.",
     },
   ];
 }
 
 function setupStatusLabel(status: SetupCheckStatus): string {
-  if (status === "good") return "정상";
-  if (status === "attention") return "확인 필요";
-  return "대기";
+  if (status === "good") return "OK";
+  if (status === "attention") return "Needs attention";
+  return "Waiting";
 }
 
 function StatusBadge({ prompt }: { prompt: PromptSummary }) {
@@ -2145,11 +2150,11 @@ const PROMPT_TAGS = [
 ];
 
 const QUALITY_GAP_OPTIONS: Array<{ key: PromptQualityGap; label: string }> = [
-  { key: "goal_clarity", label: "목표 명확성" },
-  { key: "background_context", label: "배경 맥락" },
-  { key: "scope_limits", label: "범위 제한" },
-  { key: "output_format", label: "출력 형식" },
-  { key: "verification_criteria", label: "검증 기준" },
+  { key: "goal_clarity", label: "Goal clarity" },
+  { key: "background_context", label: "Background context" },
+  { key: "scope_limits", label: "Scope limits" },
+  { key: "output_format", label: "Output format" },
+  { key: "verification_criteria", label: "Verification criteria" },
 ];
 
 const TOOL_LABELS: Record<string, string> = {
@@ -2160,15 +2165,15 @@ const TOOL_LABELS: Record<string, string> = {
 };
 
 const SENSITIVITY_LABELS: Record<string, string> = {
-  true: "민감정보 포함",
-  false: "민감정보 없음",
+  true: "Contains sensitive data",
+  false: "No sensitive data",
 };
 
 const FOCUS_LABELS: Record<NonNullable<PromptFilters["focus"]>, string> = {
-  saved: "저장됨",
-  reused: "재사용됨",
-  duplicated: "중복 후보",
-  "quality-gap": "품질 보강",
+  saved: "Saved",
+  reused: "Reused",
+  duplicated: "Duplicate candidates",
+  "quality-gap": "Quality gaps",
 };
 
 function formatDate(value: string): string {
@@ -2209,25 +2214,25 @@ function activeFilterChips(
   const chips: Array<{ key: FilterKey; label: string; value: string }> = [];
 
   if (filters.query?.trim()) {
-    chips.push({ key: "query", label: "검색", value: filters.query.trim() });
+    chips.push({ key: "query", label: "Search", value: filters.query.trim() });
   }
 
   if (filters.tool) {
     chips.push({
       key: "tool",
-      label: "도구",
+      label: "Tool",
       value: TOOL_LABELS[filters.tool] ?? filters.tool,
     });
   }
 
   if (filters.tag) {
-    chips.push({ key: "tag", label: "태그", value: filters.tag });
+    chips.push({ key: "tag", label: "Tag", value: filters.tag });
   }
 
   if (filters.isSensitive && filters.isSensitive !== "all") {
     chips.push({
       key: "isSensitive",
-      label: "민감도",
+      label: "Sensitivity",
       value: SENSITIVITY_LABELS[filters.isSensitive],
     });
   }
@@ -2243,7 +2248,7 @@ function activeFilterChips(
   if (filters.qualityGap) {
     chips.push({
       key: "qualityGap",
-      label: "부족 항목",
+      label: "Quality gap",
       value: qualityGapLabel(filters.qualityGap) ?? filters.qualityGap,
     });
   }
@@ -2251,7 +2256,7 @@ function activeFilterChips(
   if (filters.cwdPrefix?.trim()) {
     chips.push({
       key: "cwdPrefix",
-      label: "경로",
+      label: "Path",
       value: filters.cwdPrefix.trim(),
     });
   }
@@ -2259,7 +2264,7 @@ function activeFilterChips(
   if (filters.receivedFrom) {
     chips.push({
       key: "receivedFrom",
-      label: "시작일",
+      label: "Start date",
       value: filters.receivedFrom,
     });
   }
@@ -2267,7 +2272,7 @@ function activeFilterChips(
   if (filters.receivedTo) {
     chips.push({
       key: "receivedTo",
-      label: "종료일",
+      label: "End date",
       value: filters.receivedTo,
     });
   }
@@ -2311,12 +2316,12 @@ function emptyPromptTitle(
   qualityGap?: PromptQualityGap,
 ): string {
   const gapLabel = qualityGapLabel(qualityGap);
-  if (gapLabel) return `${gapLabel} 보강 큐가 비어 있습니다.`;
-  if (focus === "saved") return "저장된 프롬프트가 없습니다.";
-  if (focus === "reused") return "재사용한 프롬프트가 없습니다.";
-  if (focus === "duplicated") return "중복 후보가 없습니다.";
-  if (focus === "quality-gap") return "품질 보강이 필요한 프롬프트가 없습니다.";
-  return "아직 저장된 프롬프트가 없습니다.";
+  if (gapLabel) return `${gapLabel} queue is empty.`;
+  if (focus === "saved") return "No saved prompts.";
+  if (focus === "reused") return "No reused prompts.";
+  if (focus === "duplicated") return "No duplicate candidates.";
+  if (focus === "quality-gap") return "No prompts need quality improvements.";
+  return "No prompts stored yet.";
 }
 
 function emptyPromptHint(
@@ -2324,13 +2329,14 @@ function emptyPromptHint(
   qualityGap?: PromptQualityGap,
 ): string {
   const gapLabel = qualityGapLabel(qualityGap);
-  if (gapLabel) return `${gapLabel}이 weak/missing인 프롬프트가 없습니다.`;
-  if (focus === "saved") return "상세 화면에서 다시 볼 프롬프트를 저장하세요.";
+  if (gapLabel) return `No prompts have weak or missing ${gapLabel}.`;
+  if (focus === "saved")
+    return "Save prompts for later from the detail screen.";
   if (focus === "reused")
-    return "복사하거나 저장한 프롬프트가 여기에 표시됩니다.";
+    return "Prompts you copied or saved will appear here.";
   if (focus === "duplicated")
-    return "같은 저장 본문이 반복되면 여기에 표시됩니다.";
+    return "Repeated stored prompt bodies will appear here.";
   if (focus === "quality-gap")
-    return "검증 기준, 출력 형식, 범위를 명시해보세요.";
+    return "Try adding verification criteria, output format, and scope.";
   return "prompt-memory install-hook claude-code";
 }

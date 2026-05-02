@@ -15,7 +15,7 @@ describe("improve CLI", () => {
   it("prints JSON improvement results from text input", () => {
     const output = improvePromptForCli({
       json: true,
-      text: "이거 좀 고쳐줘",
+      text: "Make this better",
     });
     const parsed = JSON.parse(output) as {
       improved_prompt: string;
@@ -23,8 +23,8 @@ describe("improve CLI", () => {
     };
 
     expect(parsed.requires_user_approval).toBe(true);
-    expect(parsed.improved_prompt).toContain("검증");
-    expect(parsed.improved_prompt).toContain("출력");
+    expect(parsed.improved_prompt).toContain("Verification");
+    expect(parsed.improved_prompt).toContain("Output");
   });
 
   it("requires explicit text or stdin", () => {

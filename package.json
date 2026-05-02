@@ -1,6 +1,6 @@
 {
   "name": "prompt-memory",
-  "version": "0.0.0",
+  "version": "0.1.0-beta.0",
   "description": "Local-first prompt archive for AI coding tools.",
   "type": "module",
   "license": "MIT",
@@ -29,6 +29,9 @@
     "docs/ADAPTERS.md",
     "docs/PLUGINS.md",
     "docs/BENCHMARK_V1.md",
+    "docs/FEATURE_AUDIT_2026-05-02.md",
+    "docs/PRD2_COMPLETION_AUDIT.md",
+    "docs/NPM_PUBLISHING.md",
     "docs/RELEASE_CHECKLIST.md",
     "plugins",
     "integrations",

@@ -410,7 +410,7 @@ project policy versions, redaction version, or preview counts change.
 Generate a copy-based Prompt Coach draft:
 
 ```sh
-pnpm prompt-memory improve --text "고쳐줘" --json
+pnpm prompt-memory improve --text "make this request clearer" --json
 ```
 
 ## Local Analysis Preview

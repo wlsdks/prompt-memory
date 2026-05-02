@@ -67,8 +67,8 @@ const fixtures = [
   {
     label: "vague_prompt",
     adapter: "codex",
-    query: "고쳐줘",
-    prompt: "이거 좀 고쳐줘",
+    query: "make better",
+    prompt: "Make this better",
   },
   {
     label: "release_docs",
@@ -79,11 +79,11 @@ const fixtures = [
   },
 ];
 const coachCases = [
-  "이거 좀 고쳐줘",
+  "Make this better",
   `Fix ${rawPathPrefix}/benchmark-project/src/secret.ts with token ${rawSecret}.`,
   "Review export UI.",
-  "DB 쪽 봐줘",
-  "테스트 고쳐줘",
+  "Check the DB part",
+  "Fix the tests",
 ];
 
 let serverProcess;
@@ -222,11 +222,11 @@ function scorePromptCoach() {
     });
     const text = result.improved_prompt;
     const hasSections = [
-      "## 목표",
-      "## 맥락",
-      "## 범위",
-      "## 검증",
-      "## 출력",
+      "## Goal",
+      "## Context",
+      "## Scope",
+      "## Verification",
+      "## Output",
     ].every((section) => text.includes(section));
     const safe = !text.includes(rawSecret);
     if (hasSections && safe) {

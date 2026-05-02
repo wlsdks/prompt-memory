@@ -38,7 +38,10 @@ describe("createServer P2 ingest boundary", () => {
     });
 
     expect(response.statusCode).toBe(200);
-    expect(response.json()).toMatchObject({ ok: true, version: "0.0.0" });
+    expect(response.json()).toMatchObject({
+      ok: true,
+      version: "0.1.0-beta.0",
+    });
   });
 
   it("returns an empty favicon response for browser probes", async () => {
@@ -257,7 +260,7 @@ describe("createServer P2 ingest boundary", () => {
         adapter_version: "claude-code-v1",
         index_status: "indexed",
         tags: ["backend"],
-        quality_gaps: ["검증 기준"],
+        quality_gaps: ["Verification criteria"],
         usefulness: { copied_count: 0, bookmarked: false },
         duplicate_count: 0,
         markdown:

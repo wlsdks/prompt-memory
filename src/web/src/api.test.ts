@@ -67,7 +67,7 @@ describe("web api export client", () => {
           project_alias: "prompt-memory",
           prompt: "Fix [REDACTED:path] with [REDACTED:api_key]",
           tags: ["backend"],
-          quality_gaps: ["검증 기준"],
+          quality_gaps: ["Verification criteria"],
         },
       ],
     };

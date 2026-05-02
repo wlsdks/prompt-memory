@@ -1,106 +1,110 @@
 # Benchmark v1 Spec
 
-작성일: 2026-05-02
+Date: 2026-05-02
 
-## 목적
+## Purpose
 
-Benchmark v1은 `prompt-memory`가 Claude Code/Codex 사용자에게 실제로 유용한지 숫자로 확인하기 위한 로컬 평가 도구다.
+Benchmark v1 is the local regression benchmark for `prompt-memory`. It checks whether the product is still delivering its core value to Claude Code and Codex users:
 
-이 벤치마크는 전통적인 성능 측정만 보지 않는다. 제품 핵심 가치인 "다시 찾기", "나쁜 습관 보기", "다음 prompt 개선", "local-first privacy"를 함께 측정한다.
+- finding previously useful prompts again
+- surfacing weak prompting habits
+- helping the user write a better next prompt
+- preserving the local-first privacy boundary
 
-## 원칙
+This benchmark is intentionally local-only. It does not call an external LLM judge, embedding API, analytics service, or telemetry endpoint.
 
-- 기본 실행은 local-only다.
-- 외부 LLM judge, embedding API, telemetry 전송은 사용하지 않는다.
-- fixture prompt는 synthetic 데이터만 쓴다.
-- benchmark report에는 raw secret, raw absolute path, 원문 민감정보를 남기지 않는다.
-- v1은 회귀 방지와 baseline 수립이 목적이다. 절대 점수보다 버전 간 변화가 더 중요하다.
-
-## 실행
+## Command
 
 ```sh
 pnpm benchmark
 pnpm benchmark -- --json
 ```
 
-`pnpm benchmark`는 먼저 production build를 만들고, 임시 data dir과 임시 localhost port에서 서버를 실행한다.
+The command builds the production app first, creates an isolated temporary data directory, starts the local server on a temporary loopback port, ingests synthetic fixture prompts, and measures API/UI-adjacent behavior through the built app.
 
-## 측정 영역
+## Principles
+
+- Use synthetic fixture prompts only.
+- Do not include raw secrets, raw absolute paths, or sensitive prompt text in the report.
+- Treat v1 as a regression baseline, not a proof of real-user product-market fit.
+- Compare trend and regression across versions rather than treating the absolute score as final quality.
+
+## Metrics
 
 ### 1. Privacy Safety
 
-확인 대상:
+Checks:
 
 - browser prompt list/detail/dashboard API
 - anonymized export preview/result
 - Markdown archive
-- SQLite prompt/analysis/redaction rows
+- SQLite prompt, analysis, and redaction rows
 
-측정값:
+Metric:
 
 - `privacy_leak_count`
 
-통과 기준:
+Pass threshold:
 
-- raw API key/token leak count는 0이어야 한다.
-- browser/export surface의 raw absolute path leak count는 0이어야 한다.
+- raw API key/token leak count must be `0`
+- raw absolute path leak count on browser/export surfaces must be `0`
 
 ### 2. Retrieval Quality
 
-확인 대상:
+Checks:
 
-- API search 결과에서 known query가 기대 prompt를 top-k 안에 찾는지 본다.
+- known search queries return the expected fixture prompt in the top-k results
 
-측정값:
+Metric:
 
 - `retrieval_top3`
 
-통과 기준:
+Pass threshold:
 
-- v1 기준 `>= 0.8`
+- `>= 0.8`
 
 ### 3. Prompt Coach Quality
 
-확인 대상:
+Checks:
 
-- weak prompt를 `local-rules-v1` 개선안으로 바꿨을 때 목표, 맥락, 범위, 검증, 출력 형식 섹션이 보강되는지 본다.
-- raw secret이 개선안에 다시 들어가지 않는지 본다.
+- weak prompt fixtures are improved with goal, context, scope, verification, and output-format sections
+- raw secrets are not reintroduced into improvement drafts
 
-측정값:
+Metric:
 
 - `coach_gap_fix_rate`
 
-통과 기준:
+Pass threshold:
 
-- v1 기준 `>= 0.8`
+- `>= 0.8`
 
 ### 4. Analytics Usefulness
 
-확인 대상:
+Checks:
 
 - total prompt count
 - sensitive prompt count
 - project distribution
 - quality gap summary
 
-측정값:
+Metric:
 
 - `analytics_score`
 
-통과 기준:
+Pass threshold:
 
-- v1 기준 `>= 0.75`
+- `>= 0.75`
 
 ### 5. Local Runtime Performance
 
-확인 대상:
+Checks:
 
 - ingest p95
 - search p95
 - dashboard latency
 - export latency
 
-통과 기준:
+Pass thresholds:
 
 - `ingest_p95_ms <= 500`
 - `search_p95_ms <= 250`
@@ -111,7 +115,7 @@ pnpm benchmark -- --json
 
 ```json
 {
-  "version": "0.0.0",
+  "version": "0.1.0-beta.0",
   "dataset": "benchmark-v1",
   "pass": true,
   "scores": {
@@ -137,12 +141,12 @@ pnpm benchmark -- --json
 }
 ```
 
-## v1 제외 범위
+## v1 Exclusions
 
-- 실제 사용자 archive 평가
-- 외부 LLM-as-judge
-- semantic search 품질
-- cross-platform performance 비교
-- 장기 사용 retention 분석
+- real user archive evaluation
+- external LLM-as-judge
+- semantic search quality
+- cross-platform performance comparison
+- long-term retention analysis
 
-이 항목들은 public beta 이후 opt-in benchmark로 분리한다.
+Those items should become opt-in benchmarks after the public beta.

@@ -120,7 +120,7 @@ describe("prompt read/delete API", () => {
       analysis: {
         analyzer: "local-rules-v1",
         warnings: expect.arrayContaining([
-          "작업 대상이나 배경 맥락이 부족합니다.",
+          "The target or background context is missing.",
         ]),
         checklist: expect.arrayContaining([
           expect.objectContaining({
@@ -671,7 +671,7 @@ async function createDuplicatePromptApiFixture() {
     ]),
   });
   const duplicatePrompt =
-    "Refactor duplicate prompt flow. 검증 기준: pnpm test. 출력 형식: 요약.";
+    "Refactor duplicate prompt flow. Verification criteria: pnpm test. Output format: summary.";
   const alpha = await storeClaudePrompt(
     storage,
     duplicatePrompt,

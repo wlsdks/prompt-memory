@@ -1,5 +1,13 @@
 # 작업 계획
 
+## 2026-05-02 Open Source English/NPM Readiness
+
+- [x] npm에 포함되는 공개 문서의 한국어 잔존 범위 확인
+- [x] README와 npm package에 포함되는 docs를 영어 기준으로 정리
+- [x] npm publish 준비 상태와 로그인 상태 확인
+- [x] 문서/패키징 검증 게이트 실행
+- [x] 커밋 및 origin/main 푸시
+
 ## 2026-05-02 Full Feature Audit Plan
 
 - [x] CLI command surface 점검: setup/init/hook/doctor/server/service/statusline/list/search/show/delete/rebuild/import/export/improve

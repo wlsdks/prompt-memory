@@ -5,14 +5,14 @@ import { improvePrompt } from "./improve.js";
 describe("improvePrompt", () => {
   it("turns vague prompts into an approval-ready structured prompt", () => {
     const result = improvePrompt({
-      prompt: "이거 좀 고쳐줘",
+      prompt: "Make this better",
       createdAt: "2026-05-02T10:00:00.000Z",
     });
 
-    expect(result.improved_prompt).toContain("목표");
-    expect(result.improved_prompt).toContain("범위");
-    expect(result.improved_prompt).toContain("검증");
-    expect(result.improved_prompt).toContain("출력");
+    expect(result.improved_prompt).toContain("Goal");
+    expect(result.improved_prompt).toContain("Scope");
+    expect(result.improved_prompt).toContain("Verification");
+    expect(result.improved_prompt).toContain("Output");
     expect(result.mode).toBe("copy");
     expect(result.requires_user_approval).toBe(true);
     expect(result.changed_sections).toEqual(
@@ -24,13 +24,13 @@ describe("improvePrompt", () => {
         "verification_criteria",
       ]),
     );
-    expect(result.summary).toContain("재입력");
+    expect(result.summary).toContain("resubmit");
   });
 
   it("preserves concrete user intent without inventing files or commands", () => {
     const result = improvePrompt({
       prompt:
-        "src/server/routes/prompts.ts에서 delete API 오류를 고쳐줘. pnpm test 실행하고 요약해줘.",
+        "Fix the delete API bug in src/server/routes/prompts.ts. Run pnpm test and return a summary.",
       createdAt: "2026-05-02T10:00:00.000Z",
     });
 
@@ -51,7 +51,7 @@ describe("improvePrompt", () => {
     expect(serialized).not.toContain("sk-proj");
     expect(serialized).not.toContain("[REDACTED:api_key]");
     expect(result.safety_notes).toContain(
-      "민감정보 placeholder는 개선안에 포함하지 않았습니다.",
+      "Sensitive placeholders were not copied into the improvement draft.",
     );
   });
 
@@ -64,9 +64,9 @@ describe("improvePrompt", () => {
     const serialized = JSON.stringify(result);
 
     expect(serialized).not.toContain(rawSecret);
-    expect(result.improved_prompt).toContain("민감정보");
+    expect(result.improved_prompt).toContain("sensitive content");
     expect(result.safety_notes).toContain(
-      "민감정보는 mask redaction 후 개선안에 반영했습니다.",
+      "Sensitive content was represented only after mask redaction.",
     );
   });
 });

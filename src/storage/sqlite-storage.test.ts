@@ -159,7 +159,7 @@ describe("SQLite prompt storage", () => {
 
     expect(detail?.analysis).toMatchObject({
       analyzer: "local-rules-v1",
-      summary: expect.stringContaining("구체적인"),
+      summary: expect.stringContaining("relatively clear"),
       warnings: [],
       suggestions: [],
       checklist: expect.arrayContaining([
@@ -188,7 +188,7 @@ describe("SQLite prompt storage", () => {
       receivedAt: "2026-05-01T10:00:00.000Z",
     });
     const vague = await storeClaudePrompt(storage, {
-      prompt: "이거 좀 고쳐줘",
+      prompt: "Make this better",
       receivedAt: "2026-05-01T10:01:00.000Z",
     });
 
@@ -201,7 +201,9 @@ describe("SQLite prompt storage", () => {
     expect(
       storage.listPrompts().items.find((item) => item.id === vague.id)
         ?.quality_gaps,
-    ).toEqual(expect.arrayContaining(["목표 명확성", "검증 기준"]));
+    ).toEqual(
+      expect.arrayContaining(["Goal clarity", "Verification criteria"]),
+    );
 
     expect(storage.deletePrompt(ui.id)).toEqual({ deleted: true });
     const db = new Database(join(dataDir, "prompt-memory.sqlite"));
@@ -229,18 +231,18 @@ describe("SQLite prompt storage", () => {
     });
 
     await storeClaudePrompt(storage, {
-      prompt: "이거 고쳐줘",
+      prompt: "Fix this",
       receivedAt: "2026-05-01T10:00:00.000Z",
       cwd: "/Users/example/project-a",
     });
     const sensitive = await storeClaudePrompt(storage, {
-      prompt: "저거 고쳐줘 token sk-proj-1234567890abcdef",
+      prompt: "Fix that token sk-proj-1234567890abcdef",
       receivedAt: "2026-05-02T10:00:00.000Z",
       cwd: "/Users/example/project-a",
     });
     const docs = await storeClaudePrompt(storage, {
       prompt:
-        "현재 README 온보딩 설명이 부족합니다. Update docs/README.md only, return Markdown summary, and run pnpm test expecting pass.",
+        "Because README onboarding is incomplete, update docs/README.md only, return Markdown summary, and run pnpm test expecting pass.",
       receivedAt: "2026-05-03T10:00:00.000Z",
       cwd: "/Users/example/project-b",
     });
@@ -333,7 +335,7 @@ describe("SQLite prompt storage", () => {
         copied_count: 0,
         bookmarked_count: 0,
         top_gap: expect.objectContaining({
-          key: "verification_criteria",
+          key: "background_context",
           count: 2,
         }),
       }),
@@ -350,10 +352,12 @@ describe("SQLite prompt storage", () => {
       }),
     ]);
     expect(dashboard.instruction_suggestions.length).toBeGreaterThan(0);
-    expect(serialized).not.toContain("이거 고쳐줘");
-    expect(serialized).not.toContain("저거 고쳐줘");
+    expect(serialized).not.toContain("Fix this");
+    expect(serialized).not.toContain("Fix that");
     expect(serialized).not.toContain("sk-proj-1234567890abcdef");
-    expect(serialized).not.toContain("현재 README 온보딩 설명이 부족합니다.");
+    expect(serialized).not.toContain(
+      "Because README onboarding is incomplete.",
+    );
     expect(storage.getPrompt(sensitive.id)?.is_sensitive).toBe(true);
   });
 
@@ -721,7 +725,7 @@ describe("SQLite prompt storage", () => {
       ]),
     });
     const repeatedPrompt =
-      "Refactor duplicate prompt flow. 검증 기준: pnpm test. 출력 형식: 요약.";
+      "Refactor duplicate prompt flow. Verification criteria: pnpm test. Output format: summary.";
     const first = await storeClaudePrompt(storage, {
       prompt: repeatedPrompt,
       receivedAt: "2026-05-01T10:00:00.000Z",
@@ -842,7 +846,7 @@ describe("SQLite prompt storage", () => {
       ]),
     });
     const duplicatePrompt =
-      "Refactor focus filter. 검증 기준: pnpm test. 출력 형식: 요약.";
+      "Refactor focus filter. Verification criteria: pnpm test. Output format: summary.";
     const duplicateA = await storeClaudePrompt(storage, {
       prompt: duplicatePrompt,
       receivedAt: "2026-05-01T10:00:00.000Z",
@@ -852,7 +856,7 @@ describe("SQLite prompt storage", () => {
       receivedAt: "2026-05-01T10:01:00.000Z",
     });
     const saved = await storeClaudePrompt(storage, {
-      prompt: "Saved prompt with 검증 기준: pnpm test.",
+      prompt: "Saved prompt with Verification criteria: pnpm test.",
       receivedAt: "2026-05-01T10:02:00.000Z",
     });
     const qualityGap = await storeClaudePrompt(storage, {
@@ -860,7 +864,7 @@ describe("SQLite prompt storage", () => {
       receivedAt: "2026-05-01T10:03:00.000Z",
     });
     const copied = await storeClaudePrompt(storage, {
-      prompt: "Copied prompt with 검증 기준: pnpm test.",
+      prompt: "Copied prompt with Verification criteria: pnpm test.",
       receivedAt: "2026-05-01T10:04:00.000Z",
     });
     storage.setPromptBookmark(saved.id, true);
@@ -1128,10 +1132,12 @@ describe("SQLite prompt storage", () => {
 
     const draft = storage.createPromptImprovementDraft(prompt.id, {
       draft_text:
-        "## 목표\nFix this bug with secret sk-proj-1234567890abcdef\n## 검증\nRun pnpm test",
+        "## Goal\nFix this bug with secret sk-proj-1234567890abcdef\n## Verification\nRun pnpm test",
       analyzer: "local-rules-v1",
       changed_sections: ["goal_clarity", "verification_criteria"],
-      safety_notes: ["민감정보는 mask redaction 후 개선안에 반영했습니다."],
+      safety_notes: [
+        "Sensitive content was represented only after mask redaction.",
+      ],
       copied: true,
     });
 
@@ -1141,7 +1147,9 @@ describe("SQLite prompt storage", () => {
       draft_text: expect.stringContaining("[REDACTED:api_key]"),
       analyzer: "local-rules-v1",
       changed_sections: ["goal_clarity", "verification_criteria"],
-      safety_notes: ["민감정보는 mask redaction 후 개선안에 반영했습니다."],
+      safety_notes: [
+        "Sensitive content was represented only after mask redaction.",
+      ],
       is_sensitive: true,
       redaction_policy: "mask",
       created_at: "2026-05-02T11:01:00.000Z",

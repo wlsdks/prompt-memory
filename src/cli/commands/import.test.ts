@@ -155,7 +155,7 @@ describe("import CLI", () => {
         hook_event_name: "UserPromptSubmit",
         session_id: "session-2",
         cwd: "/Users/example/project",
-        prompt: "Second imported prompt with 검증 기준: pnpm test.",
+        prompt: "Second imported prompt with Verification criteria: pnpm test.",
       },
     ]);
     const dryRun = JSON.parse(

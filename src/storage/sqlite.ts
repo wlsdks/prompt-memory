@@ -2622,7 +2622,7 @@ function buildInstructionSuggestions(
     suggestions.push({
       scope: "global",
       text: instructionText(item.key),
-      reason: `${item.label} 항목이 ${item.missing + item.weak}건 부족합니다.`,
+      reason: `${item.label} is missing or weak in ${item.missing + item.weak} prompts.`,
     });
   }
 
@@ -2631,7 +2631,7 @@ function buildInstructionSuggestions(
       scope: "project",
       project: pattern.project,
       text: instructionText(pattern.item_key),
-      reason: `${projectLabel(pattern.project)}에서 ${pattern.label} 누락이 반복됩니다.`,
+      reason: `${pattern.label} is repeatedly missing in ${projectLabel(pattern.project)}.`,
     });
   }
 
@@ -2640,18 +2640,22 @@ function buildInstructionSuggestions(
 
 function instructionText(itemKey: string): string {
   const instructions: Record<string, string> = {
-    goal_clarity: "요청에는 바꿀 대상과 기대 동작을 한 문장 이상으로 명시한다.",
+    goal_clarity:
+      "State the target and expected behavior in at least one sentence.",
     background_context:
-      "작업 요청에는 현재 상태, 관련 로그, 문제가 발생한 배경을 함께 포함한다.",
+      "Include current state, relevant logs, and the background behind the problem.",
     scope_limits:
-      "작업 요청에는 수정해도 되는 파일/영역과 제외할 영역을 구분해 적는다.",
+      "Separate the files or areas that may be changed from the areas to exclude.",
     output_format:
-      "응답 형식이 중요할 때는 요약, 목록, 표, JSON 등 원하는 구조를 명시한다.",
+      "When response shape matters, specify the desired structure such as summary, bullets, table, or JSON.",
     verification_criteria:
-      "작업 요청에는 실행할 테스트 명령과 기대 결과를 검증 기준으로 포함한다.",
+      "Include test commands and expected results as verification criteria.",
   };
 
-  return instructions[itemKey] ?? "반복적으로 빠지는 요청 조건을 명시한다.";
+  return (
+    instructions[itemKey] ??
+    "State the request condition that is repeatedly missing."
+  );
 }
 
 function patternMessage(
@@ -2661,14 +2665,16 @@ function patternMessage(
 ): string {
   const projectName = projectLabel(project);
   const messages: Record<string, string> = {
-    goal_clarity: `${projectName}에서는 목표와 대상이 모호한 요청이 ${count}건 반복됩니다.`,
-    background_context: `${projectName}에서는 배경 맥락이 빠진 요청이 ${count}건 반복됩니다.`,
-    scope_limits: `${projectName}에서는 파일 범위나 제외 범위를 명시하지 않은 요청이 ${count}건 반복됩니다.`,
-    output_format: `${projectName}에서는 출력 형식이 빠진 요청이 ${count}건 반복됩니다.`,
-    verification_criteria: `${projectName}에서는 테스트 명령이나 검증 기준을 자주 빼먹습니다.`,
+    goal_clarity: `${projectName} has ${count} repeated prompts with unclear goals or targets.`,
+    background_context: `${projectName} has ${count} repeated prompts missing background context.`,
+    scope_limits: `${projectName} has ${count} repeated prompts missing file scope or exclusion boundaries.`,
+    output_format: `${projectName} has ${count} repeated prompts missing output format.`,
+    verification_criteria: `${projectName} often omits test commands or verification criteria.`,
   };
 
-  return messages[itemKey] ?? `${projectName}에서 같은 누락이 반복됩니다.`;
+  return (
+    messages[itemKey] ?? `${projectName} has a repeated prompt-quality gap.`
+  );
 }
 
 function daysAgo(now: Date, days: number): string {

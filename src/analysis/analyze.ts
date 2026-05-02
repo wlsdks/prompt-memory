@@ -30,35 +30,39 @@ export function analyzePrompt(
   const suggestions: string[] = [];
 
   if (text.length < 30 || (!signals.hasContext && !signals.hasSpecificTarget)) {
-    warnings.push("작업 대상이나 배경 맥락이 부족합니다.");
+    warnings.push("The target or background context is missing.");
     suggestions.push(
-      "대상 파일, 명령, 에러 메시지, 현재 기대 동작을 함께 적어보세요.",
+      "Add the target file, command, error message, and expected behavior.",
     );
   }
 
   if (!signals.hasOutputFormat) {
-    warnings.push("원하는 출력 형식이 명확하지 않습니다.");
+    warnings.push("The desired output format is unclear.");
     suggestions.push(
-      "출력 형식을 추가하세요: 원하는 응답 구조와 포함할 항목을 적어주세요.",
+      "Add an output format: specify the response structure and required fields.",
     );
   }
 
   if (!signals.hasVerification) {
-    warnings.push("완료 기준이나 검증 방법이 없습니다.");
+    warnings.push("Completion criteria or verification steps are missing.");
     suggestions.push(
-      "검증 기준을 추가하세요: 실행할 테스트와 기대 결과를 적어주세요.",
+      "Add verification criteria: list the tests to run and the expected result.",
     );
   }
 
   if (!signals.hasConstraints || isBroadRequest(text)) {
-    warnings.push("작업 범위나 제약조건이 넓게 해석될 수 있습니다.");
+    warnings.push(
+      "The work scope or constraints could be interpreted too broadly.",
+    );
     suggestions.push(
-      "변경해도 되는 범위와 건드리지 말아야 할 범위를 적어보세요.",
+      "State what may be changed and what should stay untouched.",
     );
   }
 
   if (containsRedactedPlaceholder(text)) {
-    warnings.push("민감정보가 마스킹되어 분석 정확도가 제한될 수 있습니다.");
+    warnings.push(
+      "Sensitive content was masked, so analysis may be less precise.",
+    );
   }
 
   return {
@@ -87,66 +91,66 @@ function buildChecklist(
   return [
     checklistItem(
       "goal_clarity",
-      "목표 명확성",
+      "Goal clarity",
       statusForGoal(text, signals),
       {
-        good: "수행할 작업과 대상이 드러납니다.",
-        weak: "의도는 보이지만 대상이나 기대 동작이 더 구체적일 수 있습니다.",
-        missing: "무엇을 바꿀지 판단할 목표가 부족합니다.",
+        good: "The task and target are clear.",
+        weak: "The intent is visible, but the target or expected behavior could be clearer.",
+        missing: "The goal is too vague to know what should change.",
       },
-      "목표를 추가하세요: 바꿀 대상과 기대 동작을 한 문장으로 적어주세요.",
+      "Add a goal: describe the target and expected behavior in one sentence.",
     ),
     checklistItem(
       "background_context",
-      "배경 맥락",
+      "Background context",
       signals.hasContext
         ? "good"
         : signals.hasSpecificTarget
           ? "weak"
           : "missing",
       {
-        good: "현재 상황이나 문제 배경이 포함되어 있습니다.",
-        weak: "대상은 있으나 왜 필요한 작업인지 맥락이 적습니다.",
-        missing: "현재 상태, 에러, 배경 설명이 부족합니다.",
+        good: "The prompt includes current state or problem background.",
+        weak: "The target is present, but the reason for the work is thin.",
+        missing: "Current state, error details, or background are missing.",
       },
-      "맥락을 추가하세요: 현재 상태, 관련 로그, 왜 필요한 변경인지 적어주세요.",
+      "Add context: include current state, relevant logs, and why the change is needed.",
     ),
     checklistItem(
       "scope_limits",
-      "범위 제한",
+      "Scope limits",
       signals.hasConstraints
         ? "good"
         : isBroadRequest(text)
           ? "missing"
           : "weak",
       {
-        good: "변경 범위나 제약 조건이 드러납니다.",
-        weak: "작업은 좁아 보이지만 건드릴 범위가 명확하지 않습니다.",
-        missing: "넓게 해석될 수 있는 요청에 범위 제한이 없습니다.",
+        good: "The allowed scope or constraints are visible.",
+        weak: "The task seems narrow, but the editable area is not explicit.",
+        missing: "A broad request has no scope boundary.",
       },
-      "범위를 추가하세요: 수정해도 되는 파일과 제외할 영역을 적어주세요.",
+      "Add scope: name files or areas that may be changed and areas to exclude.",
     ),
     checklistItem(
       "output_format",
-      "출력 형식",
+      "Output format",
       signals.hasOutputFormat ? "good" : "missing",
       {
-        good: "원하는 응답 형식이 포함되어 있습니다.",
-        weak: "응답 형식이 일부만 드러납니다.",
-        missing: "결과를 어떤 형태로 받을지 알기 어렵습니다.",
+        good: "The desired response format is included.",
+        weak: "The response format is only partially implied.",
+        missing: "It is unclear what shape the result should take.",
       },
-      "출력 형식을 추가하세요: 요약, 목록, 표, JSON 등 원하는 구조를 적어주세요.",
+      "Add an output format: summary, bullets, table, JSON, or another required structure.",
     ),
     checklistItem(
       "verification_criteria",
-      "검증 기준",
+      "Verification criteria",
       signals.hasVerification ? "good" : "missing",
       {
-        good: "테스트나 확인 방법이 포함되어 있습니다.",
-        weak: "검증 방향은 있으나 성공 조건이 모호합니다.",
-        missing: "완료 여부를 판단할 검증 기준이 없습니다.",
+        good: "The prompt includes tests or checks.",
+        weak: "A verification direction exists, but success criteria are vague.",
+        missing: "There is no verification criterion for deciding done.",
       },
-      "검증 기준을 추가하세요: 실행할 테스트와 기대 결과를 적어주세요.",
+      "Add verification criteria: list the tests to run and the expected result.",
     ),
   ];
 }
@@ -186,22 +190,19 @@ function extractTags(text: string): PromptTag[] {
   const normalized = text.toLowerCase();
   const tags: PromptTag[] = [];
   const rules: Array<[PromptTag, RegExp]> = [
-    ["bugfix", /bug|fix|error|exception|오류|에러|버그|고쳐|수정/iu],
-    ["refactor", /refactor|cleanup|structure|리팩터|정리|구조/iu],
-    ["docs", /docs?|readme|markdown|문서|가이드/iu],
-    ["test", /test|vitest|playwright|검증|테스트|coverage/iu],
-    ["ui", /ui|ux|react|tsx|css|화면|버튼|레이아웃|브라우저/iu],
-    [
-      "backend",
-      /api|server|route|fastify|cli|storage|queue|worker|backend|서버|백엔드/iu,
-    ],
+    ["bugfix", /bug|fix|error|exception/iu],
+    ["refactor", /refactor|cleanup|structure/iu],
+    ["docs", /docs?|readme|markdown|guide/iu],
+    ["test", /test|vitest|playwright|verify|coverage/iu],
+    ["ui", /ui|ux|react|tsx|css|screen|button|layout|browser/iu],
+    ["backend", /api|server|route|fastify|cli|storage|queue|worker|backend/iu],
     [
       "security",
-      /csrf|xss|auth|token|secret|redaction|cross-site|보안|권한|인증/iu,
+      /csrf|xss|auth|token|secret|redaction|cross-site|permission/iu,
     ],
-    ["db", /sqlite|database|sql|migration|fts|index|db|데이터베이스/iu],
-    ["release", /release|pack|publish|version|npm|배포|릴리스/iu],
-    ["ops", /doctor|health|status|monitor|운영|관리|진단/iu],
+    ["db", /sqlite|database|sql|migration|fts|index|db/iu],
+    ["release", /release|pack|publish|version|npm/iu],
+    ["ops", /doctor|health|status|monitor|diagnostic/iu],
   ];
 
   for (const [tag, pattern] of rules) {
@@ -215,52 +216,52 @@ function extractTags(text: string): PromptTag[] {
 
 function summarize(text: string, signalCount: number): string {
   if (text.length < 30) {
-    return "짧은 요청이라 의도 확인에는 좋지만 실행 기준이 부족합니다.";
+    return "This is a short request; the intent is visible, but execution criteria are thin.";
   }
 
   if (signalCount >= 4) {
-    return "구체적인 대상과 검증 기준이 비교적 잘 드러난 요청입니다.";
+    return "The target and verification criteria are relatively clear.";
   }
 
   if (signalCount >= 2) {
-    return "목표는 보이지만 맥락, 제약, 완료 기준을 더 구체화할 수 있습니다.";
+    return "The goal is visible, but context, constraints, or completion criteria could be clearer.";
   }
 
-  return "요청 의도는 있으나 작업 대상과 성공 기준이 넓게 해석될 수 있습니다.";
+  return "The request has intent, but the target and success criteria are open to broad interpretation.";
 }
 
 function hasContext(text: string): boolean {
-  return /because|현재|기존|에러|오류|문제|배경|context|when|while|로그|원인/i.test(
+  return /because|current|existing|error|problem|background|context|when|while|log|cause/i.test(
     text,
   );
 }
 
 function hasSpecificTarget(text: string): boolean {
-  return /[\w./-]+\.(ts|tsx|js|jsx|json|md|yml|yaml|toml|sql|css)\b|pnpm|npm|node|vitest|playwright|api|ui|cli|server|storage|database|sqlite|파일|화면|서버|테스트|명령/i.test(
+  return /[\w./-]+\.(ts|tsx|js|jsx|json|md|yml|yaml|toml|sql|css)\b|pnpm|npm|node|vitest|playwright|api|ui|cli|server|storage|database|sqlite|file|screen|test|command/i.test(
     text,
   );
 }
 
 function hasOutputFormat(text: string): boolean {
-  return /markdown|json|table|표|목록|불릿|bullet|summary|요약|형식|format|return|응답|출력/i.test(
+  return /markdown|json|table|list|bullet|summary|format|return|response|output/i.test(
     text,
   );
 }
 
 function hasVerification(text: string): boolean {
-  return /test|tests|vitest|playwright|검증|확인|통과|실행|성공|완료 기준|acceptance|build|lint/i.test(
+  return /test|tests|vitest|playwright|verify|check|pass|run|success|acceptance|build|lint/i.test(
     text,
   );
 }
 
 function hasConstraints(text: string): boolean {
-  return /only|avoid|without|do not|must|must not|concise|제외|하지|말고|범위|제약|필수|금지|최소|간결|그대로/i.test(
+  return /only|avoid|without|do not|must|must not|concise|exclude|scope|constraint|required|forbid|minimal|unchanged/i.test(
     text,
   );
 }
 
 function isBroadRequest(text: string): boolean {
-  return /좋게|개선|고쳐|수정|fix|improve|optimize|refactor/i.test(text);
+  return /fix|improve|optimize|refactor|make better|clean up/i.test(text);
 }
 
 function containsRedactedPlaceholder(text: string): boolean {

@@ -90,7 +90,7 @@ try {
   });
 
   await page.goto(serverBaseUrl);
-  await page.getByRole("heading", { name: "프롬프트 아카이브" }).waitFor();
+  await page.getByRole("heading", { name: "Prompt archive" }).waitFor();
   await page.getByText("private-project").first().waitFor();
   await assertBrowserSafe(page, "archive");
   await assertText(
@@ -106,32 +106,32 @@ try {
 
   await page.getByRole("row", { name: /claude-code private-project/ }).click();
   await page
-    .getByRole("heading", { name: "승인 후 재입력할 개선안" })
+    .getByRole("heading", { name: "Improvement draft for manual resubmission" })
     .waitFor();
   await assertBrowserSafe(page, "detail");
-  await page.getByRole("button", { name: "개선안 복사" }).click();
-  await page.getByRole("button", { name: "복사됨" }).waitFor();
-  await page.getByRole("button", { name: "개선안 저장" }).click();
-  await page.getByRole("button", { name: "저장됨" }).waitFor();
+  await page.getByRole("button", { name: "Copy draft" }).click();
+  await page.getByRole("button", { name: "Copied" }).waitFor();
+  await page.getByRole("button", { name: "Save draft" }).click();
+  await page.getByRole("button", { name: "Saved" }).waitFor();
 
-  await page.getByRole("button", { name: "대시보드" }).click();
-  await page.getByRole("heading", { name: "품질 대시보드" }).waitFor();
+  await page.getByRole("button", { name: "Dashboard" }).click();
+  await page.getByRole("heading", { name: "Quality dashboard" }).waitFor();
   await assertBrowserSafe(page, "dashboard");
 
-  await page.getByRole("button", { name: "프로젝트", exact: true }).click();
-  await page.getByRole("heading", { name: "프로젝트" }).waitFor();
+  await page.getByRole("button", { name: "Projects", exact: true }).click();
+  await page.getByRole("heading", { name: "Projects" }).waitFor();
   await assertBrowserSafe(page, "projects");
   await page.getByRole("button", { name: "capture on" }).click();
   await page.getByRole("button", { name: "paused" }).waitFor();
 
   await page.getByRole("button", { name: "Export" }).click();
   await page
-    .getByRole("heading", { name: "익명화 Export", level: 1 })
+    .getByRole("heading", { name: "Anonymized export", level: 1 })
     .waitFor();
-  await page.getByRole("button", { name: "Preview 생성" }).click();
+  await page.getByRole("button", { name: "Create preview" }).click();
   await page.getByRole("heading", { name: "Preview job" }).waitFor();
   await assertBrowserSafe(page, "export preview");
-  await page.getByRole("button", { name: "Export 실행" }).click();
+  await page.getByRole("button", { name: "Run export" }).click();
   await page.getByRole("heading", { name: "Export JSON" }).waitFor();
   await assertBrowserSafe(page, "export result");
   await assertText(
