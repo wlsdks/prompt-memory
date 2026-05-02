@@ -46,15 +46,49 @@ plugin portable, but it means `prompt-memory setup` remains the reliable path fo
 normal users because setup records an absolute CLI command and can configure the
 local service.
 
-## Claude Code
+## Claude Code Plugin
 
-Claude Code's documented extension point for prompt capture is hook
-configuration in settings files. The supported install paths are:
+Claude Code can consume this repository as a plugin marketplace:
+
+```text
+/plugin marketplace add wlsdks/prompt-memory
+/plugin install prompt-memory
+/reload-plugins
+/prompt-memory:setup
+```
+
+The Claude Code plugin files live in:
+
+```text
+.claude-plugin
+commands
+```
+
+The plugin exposes:
+
+- `/prompt-memory:setup` to preview and run local setup
+- `/prompt-memory:status` to run doctor and statusLine checks
+- `/prompt-memory:open` to open the local archive
+
+Prompt capture still uses Claude Code hook configuration in settings files. The
+supported install paths are:
 
 ```sh
 prompt-memory setup
 prompt-memory install-hook claude-code
 ```
+
+The plugin can also install an optional Claude Code status line:
+
+```sh
+prompt-memory install-statusline claude-code
+prompt-memory statusline claude-code
+```
+
+This status line reports capture readiness, server health, and the last ingest
+status. Claude Code supports one `statusLine` command, so installing it may
+replace another status line such as a HUD. The setup command must ask before
+installing it.
 
 For manual configuration, see:
 

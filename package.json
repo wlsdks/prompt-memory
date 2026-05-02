@@ -17,6 +17,8 @@
   },
   "files": [
     "dist",
+    ".claude-plugin",
+    "commands",
     "README.md",
     "SECURITY.md",
     "docs/PRD.md",

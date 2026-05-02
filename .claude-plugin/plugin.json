@@ -1,0 +1,25 @@
+{
+  "name": "prompt-memory",
+  "description": "Local-first prompt archive for Claude Code and Codex prompts.",
+  "version": "0.0.0",
+  "author": {
+    "name": "prompt-memory contributors",
+    "url": "https://github.com/wlsdks/prompt-memory"
+  },
+  "commands": [
+    "./commands/setup.md",
+    "./commands/status.md",
+    "./commands/open.md"
+  ],
+  "homepage": "https://github.com/wlsdks/prompt-memory",
+  "repository": "https://github.com/wlsdks/prompt-memory",
+  "license": "MIT",
+  "keywords": [
+    "prompt-memory",
+    "memory",
+    "hooks",
+    "statusline",
+    "local-first",
+    "claude-code"
+  ]
+}

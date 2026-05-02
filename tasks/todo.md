@@ -1,5 +1,24 @@
 # 작업 계획
 
+## 2026-05-02 Claude HUD-style Plugin
+
+- [x] Claude Code plugin 구조 설계: marketplace, manifest, slash commands, statusLine
+- [x] 실패 테스트 작성: Claude plugin 파일, command 문서, statusLine 출력
+- [x] `.claude-plugin` marketplace/manifest와 `/prompt-memory:*` commands 추가
+- [x] `prompt-memory statusline claude-code` CLI 추가
+- [x] README/docs/package 포함 파일 갱신
+- [x] 검증 명령 실행
+- [x] 커밋 및 푸시
+
+### 점검 결과
+
+- Claude Code repo-local marketplace 파일을 `.claude-plugin/marketplace.json`에 추가했다. 사용 흐름은 `/plugin marketplace add wlsdks/prompt-memory`, `/plugin install prompt-memory`, `/reload-plugins`다.
+- Claude Code plugin manifest `.claude-plugin/plugin.json`에 `/prompt-memory:setup`, `/prompt-memory:status`, `/prompt-memory:open` command 문서를 연결했다.
+- `/prompt-memory:setup`은 CLI 존재 여부를 먼저 확인하고, `prompt-memory setup --dry-run`을 보여준 뒤 승인 시 실제 setup을 실행하도록 작성했다. statusLine은 기존 Claude `statusLine`을 대체할 수 있어서 별도 승인 후 `install-statusline`을 실행하게 했다.
+- `prompt-memory statusline claude-code`, `install-statusline claude-code`, `uninstall-statusline claude-code`를 추가했다. statusLine은 capture on/paused/setup needed, server 상태, last ingest 상태를 한 줄로 출력한다.
+- 검증 명령: `pnpm format`, `pnpm test`, `pnpm lint`, `pnpm build`, `pnpm pack:dry-run`, `pnpm smoke:release`, `git diff --check` 통과. `pnpm prompt-memory install-statusline claude-code --dry-run`과 `pnpm prompt-memory statusline claude-code`도 실제 빌드된 CLI로 실행했다.
+- 현재 로컬에서는 서버가 내려가 있어 statusLine 출력은 `PM capture paused | server down | last ingest failed`였다. Node 20.20.0에서 실행되어 `engines.node >=22 <25` 경고는 계속 발생한다.
+
 ## 2026-05-02 Claude/Codex Plugin Packaging
 
 - [x] 공식 확장 방식과 로컬 plugin manifest 스펙 확인

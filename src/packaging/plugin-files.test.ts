@@ -7,6 +7,48 @@ function readJson<T>(path: string): T {
 }
 
 describe("plugin packaging files", () => {
+  it("ships a Claude Code plugin marketplace and manifest with slash commands", () => {
+    const marketplace = readJson<{
+      plugins: Array<{ name: string; source: string; category: string }>;
+    }>(".claude-plugin/marketplace.json");
+    const manifest = readJson<{
+      name: string;
+      commands: string[];
+    }>(".claude-plugin/plugin.json");
+
+    expect(marketplace.plugins).toContainEqual(
+      expect.objectContaining({
+        name: "prompt-memory",
+        source: "./",
+        category: "memory",
+      }),
+    );
+    expect(manifest.name).toBe("prompt-memory");
+    expect(manifest.commands).toEqual([
+      "./commands/setup.md",
+      "./commands/status.md",
+      "./commands/open.md",
+    ]);
+  });
+
+  it("ships Claude Code command docs for setup, status, and open", () => {
+    const setup = readFileSync(
+      join(process.cwd(), "commands/setup.md"),
+      "utf8",
+    );
+    const status = readFileSync(
+      join(process.cwd(), "commands/status.md"),
+      "utf8",
+    );
+    const open = readFileSync(join(process.cwd(), "commands/open.md"), "utf8");
+
+    expect(setup).toContain("prompt-memory setup --dry-run");
+    expect(setup).toContain("prompt-memory install-statusline claude-code");
+    expect(status).toContain("prompt-memory doctor claude-code");
+    expect(status).toContain("prompt-memory statusline claude-code");
+    expect(open).toContain("http://127.0.0.1:17373");
+  });
+
   it("ships a Codex plugin manifest that points at bundled hooks and skills", () => {
     const manifest = readJson<{
       name: string;
@@ -55,6 +97,8 @@ describe("plugin packaging files", () => {
   it("includes plugin artifacts in npm package files", () => {
     const packageJson = readJson<{ files: string[] }>("package.json");
 
+    expect(packageJson.files).toContain(".claude-plugin");
+    expect(packageJson.files).toContain("commands");
     expect(packageJson.files).toContain("plugins");
     expect(packageJson.files).toContain("integrations");
     expect(packageJson.files).toContain("docs/PLUGINS.md");

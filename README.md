@@ -203,9 +203,36 @@ Uninstall removes the prompt-memory hook entry but leaves the Codex feature flag
 This repository also ships plugin packaging artifacts:
 
 ```text
+.claude-plugin
+commands
 plugins/prompt-memory
 integrations/claude-code
 docs/PLUGINS.md
+```
+
+Claude Code can consume the repository as a plugin marketplace:
+
+```text
+/plugin marketplace add wlsdks/prompt-memory
+/plugin install prompt-memory
+/reload-plugins
+/prompt-memory:setup
+```
+
+The Claude Code plugin provides slash commands:
+
+```text
+/prompt-memory:setup
+/prompt-memory:status
+/prompt-memory:open
+```
+
+`/prompt-memory:setup` runs `prompt-memory setup --dry-run` first, asks before
+writing local settings, and can optionally install a small Claude Code
+`statusLine` indicator with:
+
+```sh
+pnpm prompt-memory install-statusline claude-code
 ```
 
 The Codex package under `plugins/prompt-memory` contains a `.codex-plugin`
@@ -223,6 +250,12 @@ pnpm prompt-memory setup
 The explicit setup command is still required because plugin discovery should not
 silently edit user settings, install a login service, or start a local server.
 See `docs/PLUGINS.md` for the packaging boundary and manual configuration notes.
+
+Render the Claude Code status line manually:
+
+```sh
+pnpm prompt-memory statusline claude-code
+```
 
 ## CLI
 

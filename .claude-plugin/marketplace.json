@@ -1,0 +1,26 @@
+{
+  "name": "prompt-memory",
+  "owner": {
+    "name": "prompt-memory contributors",
+    "email": "support@example.com"
+  },
+  "metadata": {
+    "description": "Local-first prompt archive for Claude Code and Codex prompts.",
+    "version": "0.0.0"
+  },
+  "plugins": [
+    {
+      "name": "prompt-memory",
+      "source": "./",
+      "description": "Capture Claude Code prompts locally, redact secrets before storage, search the archive, and show capture health in the Claude Code status line.",
+      "category": "memory",
+      "tags": [
+        "prompt-memory",
+        "memory",
+        "hooks",
+        "statusline",
+        "local-first"
+      ]
+    }
+  ]
+}
