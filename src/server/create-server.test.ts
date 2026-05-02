@@ -370,21 +370,21 @@ describe("createServer P2 ingest boundary", () => {
     expect(fallback.statusCode).toBe(200);
     expect(fallback.body).toContain('<div id="root"></div>');
 
-    const dashboard = await server.inject({
-      method: "GET",
-      url: "/dashboard",
-      headers: { host: "127.0.0.1:17373" },
-    });
-    expect(dashboard.statusCode).toBe(200);
-    expect(dashboard.body).toContain('<div id="root"></div>');
-
-    const projects = await server.inject({
-      method: "GET",
-      url: "/projects",
-      headers: { host: "127.0.0.1:17373" },
-    });
-    expect(projects.statusCode).toBe(200);
-    expect(projects.body).toContain('<div id="root"></div>');
+    for (const path of [
+      "/dashboard",
+      "/coach",
+      "/scores",
+      "/insights",
+      "/projects",
+    ]) {
+      const route = await server.inject({
+        method: "GET",
+        url: path,
+        headers: { host: "127.0.0.1:17373" },
+      });
+      expect(route.statusCode).toBe(200);
+      expect(route.body).toContain('<div id="root"></div>');
+    }
 
     const asset = await server.inject({
       method: "GET",

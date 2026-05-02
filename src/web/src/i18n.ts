@@ -203,6 +203,25 @@ function translateDynamic(value: string): string | undefined {
   if (/^\d+ reuse candidates$/.test(value)) {
     return value.replace(/^(\d+) reuse candidates$/, "재사용 후보 $1개");
   }
+  if (/^.+ · \d+ review$/.test(value)) {
+    return value.replace(
+      /^(.+) · (\d+) review$/,
+      (_match, label: string, count: string) =>
+        `${translateKnown(label)} · 리뷰 ${count}개`,
+    );
+  }
+  if (/^\d+ low score prompts$/.test(value)) {
+    return value.replace(
+      /^(\d+) low score prompts$/,
+      "낮은 점수 프롬프트 $1개",
+    );
+  }
+  if (/^\d+ projects · \d+ duplicate groups$/.test(value)) {
+    return value.replace(
+      /^(\d+) projects · (\d+) duplicate groups$/,
+      "프로젝트 $1개 · 중복 그룹 $2개",
+    );
+  }
   if (/^gap \d+%$/.test(value)) {
     return value.replace(/^gap (.+)$/, "부족 $1");
   }
@@ -239,6 +258,9 @@ const UI_TRANSLATIONS: Record<string, string> = {
   "Primary navigation": "주요 탐색",
   Prompts: "프롬프트",
   Dashboard: "대시보드",
+  Coach: "코치",
+  Scores: "점수",
+  Insights: "인사이트",
   Projects: "프로젝트",
   Export: "내보내기",
   Settings: "설정",
@@ -249,6 +271,9 @@ const UI_TRANSLATIONS: Record<string, string> = {
   "Prompt archive": "프롬프트 아카이브",
   "Prompt detail": "프롬프트 상세",
   "Quality dashboard": "품질 대시보드",
+  "Prompt coach": "프롬프트 코치",
+  "Prompt scores": "프롬프트 점수",
+  "Prompt insights": "프롬프트 인사이트",
   "Anonymized export": "익명화 Export",
   "Prompts Search": "프롬프트 검색",
   "Prompts Search...": "프롬프트 검색...",
@@ -308,7 +333,6 @@ const UI_TRANSLATIONS: Record<string, string> = {
   "Copy prompt": "프롬프트 복사",
   Copied: "복사됨",
   "Prompt improvement draft": "프롬프트 개선안",
-  "Prompt coach": "프롬프트 코치",
   "Improvement draft for manual resubmission": "승인 후 재입력할 개선안",
   "Copy draft": "개선안 복사",
   "Save draft": "개선안 저장",
@@ -321,6 +345,11 @@ const UI_TRANSLATIONS: Record<string, string> = {
   Warnings: "주의할 점",
   "Improvement hints": "개선 힌트",
   "Loading dashboard.": "대시보드를 불러오는 중입니다.",
+  "Workspace areas": "작업 영역",
+  "Improve the next prompt": "다음 프롬프트 개선",
+  "Review archive quality": "아카이브 품질 검토",
+  "Find reuse and project patterns": "재사용과 프로젝트 패턴 찾기",
+  "No repeated weakness yet": "아직 반복 약점이 없습니다",
   "Prompt quality metrics": "프롬프트 품질 지표",
   "Prompt habit coach": "프롬프트 습관 코치",
   "Prompt habit command center": "프롬프트 습관 커맨드 센터",

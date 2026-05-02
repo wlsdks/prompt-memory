@@ -128,31 +128,68 @@ try {
   );
   await assertText(
     page,
+    "Improve the next prompt",
+    "Dashboard should route users to prompt coaching.",
+  );
+  await assertText(
+    page,
+    "Review archive quality",
+    "Dashboard should route users to score review.",
+  );
+  await assertText(
+    page,
+    "Find reuse and project patterns",
+    "Dashboard should route users to insights.",
+  );
+  await assertBrowserSafe(page, "dashboard");
+
+  await page.getByRole("button", { name: "Coach", exact: true }).click();
+  await page.getByRole("heading", { name: "Prompt coach" }).waitFor();
+  await assertText(
+    page,
     "Prompt habit command center",
-    "Dashboard should show prompt habit command center.",
+    "Coach should show prompt habit command center.",
   );
   await assertText(
     page,
     "Fix these next",
-    "Dashboard should show next habit fixes.",
+    "Coach should show next habit fixes.",
   );
   await assertText(
     page,
     "Bad prompt review queue",
-    "Dashboard should show low score review queue.",
+    "Coach should show low score review queue.",
   );
+  await assertBrowserSafe(page, "coach");
+
+  await page.getByRole("button", { name: "Scores", exact: true }).click();
+  await page.getByRole("heading", { name: "Prompt scores" }).waitFor();
   await assertText(
     page,
     "Archive score review",
-    "Dashboard should show archive score review.",
+    "Scores should show archive score review.",
   );
   await page.getByRole("button", { name: "Evaluate archive" }).click();
   await assertText(
     page,
     "Lowest scoring prompts",
-    "Dashboard should show lowest scoring prompts.",
+    "Scores should show lowest scoring prompts.",
   );
-  await assertBrowserSafe(page, "dashboard");
+  await assertBrowserSafe(page, "scores");
+
+  await page.getByRole("button", { name: "Insights", exact: true }).click();
+  await page.getByRole("heading", { name: "Prompt insights" }).waitFor();
+  await assertText(
+    page,
+    "Project quality profile",
+    "Insights should show project quality profiles.",
+  );
+  await assertText(
+    page,
+    "Reuse candidates",
+    "Insights should show reuse candidates.",
+  );
+  await assertBrowserSafe(page, "insights");
 
   await page.getByRole("button", { name: "Projects", exact: true }).click();
   await page.getByRole("heading", { name: "Projects" }).waitFor();

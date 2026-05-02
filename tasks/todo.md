@@ -1,5 +1,21 @@
 # 작업 계획
 
+## 2026-05-02 Dashboard Information Architecture Split
+
+- [x] Dashboard를 overview 전용 화면으로 축소
+- [x] Prompt Coach, Scores, Insights를 좌측 메뉴의 독립 화면으로 분리
+- [x] 기존 Dashboard 섹션을 새 화면에 재배치하고 중복/과밀 표시 제거
+- [x] English/Korean UI 문구와 라우팅/E2E 기대값 갱신
+- [x] 웹 기준 Playwright 점검, 자동 검증, 커밋 및 푸시
+
+### 분리 기준
+
+- Dashboard는 첫 판단에 필요한 요약과 다음 이동만 보여준다.
+- Coach는 사용자가 다음 프롬프트를 더 잘 쓰도록 돕는 화면이다.
+- Scores는 누적 프롬프트 점수, 점수 분포, 낮은 점수 목록을 검토하는 화면이다.
+- Insights는 프로젝트/도구/재사용/중복/반복 패턴을 운영 분석처럼 보는 화면이다.
+- 모바일은 이번 우선순위에서 제외하고, desktop web 가독성과 정보 밀도를 먼저 다듬는다.
+
 ## 2026-05-02 Dashboard Design Rebuild And Functionality Recheck
 
 - [x] `/Users/jinan/ai/awesome-design-md` 참고 기준을 프로젝트 디자인 문서와 작업 규칙에 반영
