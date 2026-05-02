@@ -65,6 +65,7 @@ describe("SQLite prompt storage", () => {
       { version: 5, name: "005_project_policies" },
       { version: 6, name: "006_import_jobs" },
       { version: 7, name: "007_prompt_improvement_drafts" },
+      { version: 8, name: "008_export_jobs" },
     ]);
 
     const prompts = storage.listPromptRows();
@@ -1044,6 +1045,70 @@ describe("SQLite prompt storage", () => {
     const rows = db.prepare("SELECT * FROM import_jobs").all();
     db.close();
 
+    expect(JSON.stringify(rows)).not.toContain("/Users/example/project");
+    expect(JSON.stringify(rows)).not.toContain("sk-proj-1234567890abcdef");
+  });
+
+  it("stores anonymized export preview jobs without raw prompt ids or paths", async () => {
+    const dataDir = createTempDir();
+    initializePromptMemory({ dataDir });
+    const storage = createSqlitePromptStorage({
+      dataDir,
+      hmacSecret: "test-secret",
+      now: () => new Date("2026-05-02T12:00:00.000Z"),
+    });
+
+    const job = storage.createExportJob({
+      preset: "anonymized_review",
+      status: "previewed",
+      prompt_id_hashes: ["ph_abcdef123456"],
+      project_policy_versions: { proj_abcdef123456: 1 },
+      redaction_version: "mask-v1",
+      counts: {
+        prompt_count: 1,
+        sensitive_count: 1,
+        included_fields: [
+          "masked_prompt",
+          "tags",
+          "quality_gaps",
+          "tool",
+          "coarse_date",
+          "project_alias",
+        ],
+        excluded_fields: [
+          "cwd",
+          "project_root",
+          "transcript_path",
+          "raw_metadata",
+          "stable_prompt_id",
+          "exact_timestamp",
+        ],
+        residual_identifier_counts: { api_key: 1, path: 1 },
+        small_set_warning: true,
+      },
+      expires_at: "2026-05-03T12:00:00.000Z",
+    });
+
+    expect(job).toMatchObject({
+      id: expect.stringMatching(/^exp_/),
+      preset: "anonymized_review",
+      status: "previewed",
+      prompt_id_hashes: ["ph_abcdef123456"],
+      created_at: "2026-05-02T12:00:00.000Z",
+      expires_at: "2026-05-03T12:00:00.000Z",
+      counts: {
+        prompt_count: 1,
+        sensitive_count: 1,
+        small_set_warning: true,
+      },
+    });
+    expect(storage.getExportJob(job.id)).toEqual(job);
+
+    const db = new Database(join(dataDir, "prompt-memory.sqlite"));
+    const rows = db.prepare("SELECT * FROM export_jobs").all();
+    db.close();
+
+    expect(JSON.stringify(rows)).not.toContain("prmt_");
     expect(JSON.stringify(rows)).not.toContain("/Users/example/project");
     expect(JSON.stringify(rows)).not.toContain("sk-proj-1234567890abcdef");
   });

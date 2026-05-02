@@ -125,7 +125,7 @@ try {
         hook_event_name: "UserPromptSubmit",
         session_id: "release-smoke-import-session",
         cwd: join(homeDir, "project"),
-        prompt: `Imported release smoke prompt with ${importSecret}`,
+        prompt: `Imported release smoke prompt for ${join(homeDir, "project", "src", "secret.ts")} with ${importSecret}`,
       }),
       JSON.stringify({
         role: "assistant",
@@ -188,6 +188,58 @@ try {
     "Imported-only output must not contain raw import secret.",
   );
   verifyImportRecords(importDryRun.job_id, importSecret);
+
+  step("Preview and execute anonymized export");
+  const exportPreview = parseJson(
+    runCli([
+      "export",
+      "--data-dir",
+      dataDir,
+      "--anonymized",
+      "--preset",
+      "anonymized_review",
+      "--preview",
+      "--json",
+    ]),
+  );
+  assertEqual(
+    exportPreview.counts.prompt_count,
+    3,
+    "Export preview should include three live prompts.",
+  );
+  assertNotIncludes(
+    JSON.stringify(exportPreview),
+    "prmt_",
+    "Export preview must not contain stable prompt ids.",
+  );
+  const exported = parseJson(
+    runCli([
+      "export",
+      "--data-dir",
+      dataDir,
+      "--anonymized",
+      "--job",
+      exportPreview.id,
+      "--json",
+    ]),
+  );
+  assertEqual(exported.count, 3, "Executed export count should match preview.");
+  assertIncludes(
+    JSON.stringify(exported),
+    "[REDACTED:path]",
+    "Executed export should anonymize filesystem paths.",
+  );
+  assertNotIncludes(
+    JSON.stringify(exported),
+    importSecret,
+    "Executed export must not contain raw import secret.",
+  );
+  assertNotIncludes(
+    JSON.stringify(exported),
+    homeDir,
+    "Executed export must not contain raw home directory paths.",
+  );
+  verifyExportJobs(importSecret);
 
   step("Verify SQLite, Markdown, FTS, and delete cleanup");
   verifyDatabaseBeforeDelete(claudeId);
@@ -357,6 +409,35 @@ function verifyImportRecords(jobId, rawSecret) {
       JSON.stringify(db.prepare("SELECT * FROM import_records").all()),
       rawSecret,
       "Import records must not contain raw import secret.",
+    );
+  } finally {
+    db.close();
+  }
+}
+
+function verifyExportJobs(rawSecret) {
+  const db = openDb();
+  try {
+    const rows = JSON.stringify(db.prepare("SELECT * FROM export_jobs").all());
+    assertEqual(
+      scalar(db, "SELECT COUNT(*) FROM export_jobs"),
+      1,
+      "Export preview should create one export job.",
+    );
+    assertNotIncludes(
+      rows,
+      "prmt_",
+      "Export jobs must not contain stable prompt ids.",
+    );
+    assertNotIncludes(
+      rows,
+      rawSecret,
+      "Export jobs must not contain raw import secret.",
+    );
+    assertNotIncludes(
+      rows,
+      homeDir,
+      "Export jobs must not contain raw home directory paths.",
     );
   } finally {
     db.close();

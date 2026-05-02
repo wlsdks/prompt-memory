@@ -4,11 +4,14 @@ import { ZodError } from "zod";
 
 import type { RedactionPolicy } from "../shared/schema.js";
 import type {
+  ExportJobStoragePort,
   ProjectPolicyStoragePort,
+  PromptReadStoragePort,
   PromptStoragePort,
 } from "../storage/ports.js";
 import type { ServerAuthConfig } from "./auth.js";
 import { HttpProblem, problem } from "./errors.js";
+import { registerExportRoutes } from "./routes/exports.js";
 import { registerHealthRoutes } from "./routes/health.js";
 import { registerIngestRoutes } from "./routes/ingest.js";
 import { registerPromptRoutes } from "./routes/prompts.js";
@@ -20,7 +23,10 @@ import { registerStaticRoutes, type WebAssets } from "./routes/static.js";
 export type CreateServerOptions = {
   dataDir: string;
   auth: ServerAuthConfig;
-  storage: PromptStoragePort & Partial<ProjectPolicyStoragePort>;
+  storage: PromptStoragePort &
+    Partial<ProjectPolicyStoragePort> &
+    Partial<PromptReadStoragePort> &
+    Partial<ExportJobStoragePort>;
   redactionMode: RedactionPolicy;
   excludedProjectRoots?: string[];
   maxBodyBytes?: number;
@@ -113,6 +119,10 @@ export function createServer(options: CreateServerOptions): FastifyInstance {
     maxPromptLength: options.maxPromptLength ?? 100_000,
   });
   registerProjectRoutes(server, {
+    auth: options.auth,
+    storage: options.storage,
+  });
+  registerExportRoutes(server, {
     auth: options.auth,
     storage: options.storage,
   });

@@ -290,6 +290,44 @@ export type ImportJobListResult = {
   items: ImportJob[];
 };
 
+export type ExportPreset =
+  | "personal_backup"
+  | "anonymized_review"
+  | "issue_report_attachment";
+
+export type ExportJobStatus = "previewed" | "completed" | "invalid";
+
+export type ExportPreviewCounts = {
+  prompt_count: number;
+  sensitive_count: number;
+  included_fields: string[];
+  excluded_fields: string[];
+  residual_identifier_counts: Record<string, number>;
+  small_set_warning: boolean;
+};
+
+export type ExportJob = {
+  id: string;
+  preset: ExportPreset;
+  status: ExportJobStatus;
+  prompt_id_hashes: string[];
+  project_policy_versions: Record<string, number>;
+  redaction_version: string;
+  counts: ExportPreviewCounts;
+  expires_at: string;
+  created_at: string;
+};
+
+export type CreateExportJobInput = {
+  preset: ExportPreset;
+  status: ExportJobStatus;
+  prompt_id_hashes: string[];
+  project_policy_versions: Record<string, number>;
+  redaction_version: string;
+  counts: ExportPreviewCounts;
+  expires_at: string;
+};
+
 export type PromptImprovementDraft = {
   id: string;
   prompt_id: string;
@@ -358,4 +396,13 @@ export type ImportJobStoragePort = {
   getImportJob(id: string): ImportJob | undefined;
   listImportJobs(options?: { limit?: number }): ImportJobListResult;
   listImportRecords(jobId: string): ImportRecord[];
+};
+
+export type ExportJobStoragePort = {
+  createExportJob(input: CreateExportJobInput): ExportJob;
+  getExportJob(id: string): ExportJob | undefined;
+  updateExportJobStatus(
+    id: string,
+    status: ExportJobStatus,
+  ): ExportJob | undefined;
 };

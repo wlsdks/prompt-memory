@@ -4,7 +4,11 @@ import { fileURLToPath } from "node:url";
 import { describe, expect, it } from "vitest";
 
 import { createServer } from "./create-server.js";
-import type { PromptStoragePort } from "../storage/ports.js";
+import type {
+  ExportJob,
+  PromptDetail,
+  PromptStoragePort,
+} from "../storage/ports.js";
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const claudeFixture = JSON.parse(
@@ -232,6 +236,107 @@ describe("createServer P2 ingest boundary", () => {
       },
     ]);
     expect(updated.body).not.toContain("/Users/example/private-project");
+  });
+
+  it("requires csrf for anonymized export preview and executes by job id", async () => {
+    const storage = createMemoryStorage();
+    storage.promptDetails = [
+      {
+        id: "prmt_20260502_120000_abcdefabcdef",
+        tool: "claude-code",
+        source_event: "UserPromptSubmit",
+        session_id: "session-1",
+        cwd: "/Users/example/private-project",
+        created_at: "2026-05-02T12:00:00.000Z",
+        received_at: "2026-05-02T12:00:00.000Z",
+        snippet: "Fix [REDACTED:api_key]",
+        prompt_length: 24,
+        is_sensitive: true,
+        excluded_from_analysis: false,
+        redaction_policy: "mask",
+        adapter_version: "claude-code-v1",
+        index_status: "indexed",
+        tags: ["backend"],
+        quality_gaps: ["검증 기준"],
+        usefulness: { copied_count: 0, bookmarked: false },
+        duplicate_count: 0,
+        markdown:
+          "Fix /Users/example/private-project/src/secret.ts with [REDACTED:api_key]",
+        analysis: undefined,
+        improvement_drafts: [],
+      },
+    ];
+    const server = createTestServer({ storage });
+    const session = await server.inject({
+      method: "GET",
+      url: "/api/v1/session",
+      headers: { host: "127.0.0.1:17373" },
+    });
+    const cookie = String(session.headers["set-cookie"]);
+    const csrfToken = session.json<{ data: { csrf_token: string } }>().data
+      .csrf_token;
+
+    const noCsrf = await server.inject({
+      method: "POST",
+      url: "/api/v1/exports/preview",
+      headers: {
+        host: "127.0.0.1:17373",
+        cookie,
+      },
+      payload: { preset: "anonymized_review" },
+    });
+    expect(noCsrf.statusCode).toBe(403);
+
+    const preview = await server.inject({
+      method: "POST",
+      url: "/api/v1/exports/preview",
+      headers: {
+        host: "127.0.0.1:17373",
+        cookie,
+        "x-csrf-token": csrfToken,
+      },
+      payload: { preset: "anonymized_review" },
+    });
+    const previewBody = preview.json<{ data: ExportJob }>();
+
+    expect(preview.statusCode).toBe(200);
+    expect(previewBody.data).toMatchObject({
+      id: expect.stringMatching(/^exp_/),
+      preset: "anonymized_review",
+      counts: {
+        prompt_count: 1,
+        sensitive_count: 1,
+      },
+    });
+    expect(preview.body).not.toContain("prmt_20260502_120000_abcdefabcdef");
+    expect(preview.body).not.toContain("/Users/example/private-project");
+
+    const executed = await server.inject({
+      method: "POST",
+      url: "/api/v1/exports",
+      headers: {
+        host: "127.0.0.1:17373",
+        cookie,
+        "x-csrf-token": csrfToken,
+      },
+      payload: { job_id: previewBody.data.id },
+    });
+
+    expect(executed.statusCode).toBe(200);
+    expect(executed.json()).toMatchObject({
+      data: {
+        job_id: previewBody.data.id,
+        count: 1,
+        items: [
+          {
+            anonymous_id: expect.stringMatching(/^anon_/),
+            prompt: expect.stringContaining("[REDACTED:path]"),
+          },
+        ],
+      },
+    });
+    expect(executed.body).not.toContain("prmt_20260502_120000_abcdefabcdef");
+    expect(executed.body).not.toContain("/Users/example/private-project");
   });
 
   it("serves built web assets with csp and spa fallback", async () => {
@@ -712,10 +817,13 @@ function createMemoryStorage() {
     patch: Record<string, unknown>;
     actor: "cli" | "web" | "system";
   }> = [];
+  const exportJobs = new Map<string, ExportJob>();
 
   return {
     events,
     policyUpdates,
+    promptDetails: [] as PromptDetail[],
+    exportJobs,
     policyForIngest: undefined as
       | {
           capture_disabled: boolean;
@@ -791,13 +899,17 @@ function createMemoryStorage() {
       return this.policyForIngest;
     },
     listPrompts() {
-      return { items: [] };
+      return {
+        items: this.promptDetails.map(
+          ({ markdown, analysis, improvement_drafts, ...summary }) => summary,
+        ),
+      };
     },
     searchPrompts() {
-      return { items: [] };
+      return this.listPrompts();
     },
-    getPrompt() {
-      return undefined;
+    getPrompt(id: string) {
+      return this.promptDetails.find((prompt) => prompt.id === id);
     },
     deletePrompt() {
       return { deleted: true };
@@ -830,6 +942,41 @@ function createMemoryStorage() {
         usefulness: { copied_count: 0, bookmarked: false },
       };
     },
+    createExportJob(input: {
+      preset: ExportJob["preset"];
+      status: ExportJob["status"];
+      prompt_id_hashes: string[];
+      project_policy_versions: Record<string, number>;
+      redaction_version: string;
+      counts: ExportJob["counts"];
+      expires_at: string;
+    }) {
+      const job: ExportJob = {
+        id: `exp_${exportJobs.size + 1}`,
+        preset: input.preset,
+        status: input.status,
+        prompt_id_hashes: input.prompt_id_hashes,
+        project_policy_versions: input.project_policy_versions,
+        redaction_version: input.redaction_version,
+        counts: input.counts,
+        expires_at: input.expires_at,
+        created_at: "2026-05-02T12:00:00.000Z",
+      };
+      exportJobs.set(job.id, job);
+      return job;
+    },
+    getExportJob(id: string) {
+      return exportJobs.get(id);
+    },
+    updateExportJobStatus(id: string, status: ExportJob["status"]) {
+      const job = exportJobs.get(id);
+      if (!job) {
+        return undefined;
+      }
+      const updated = { ...job, status };
+      exportJobs.set(id, updated);
+      return updated;
+    },
   } satisfies PromptStoragePort & {
     events: Array<Parameters<PromptStoragePort["storePrompt"]>[0]>;
     policyUpdates: Array<{
@@ -837,6 +984,8 @@ function createMemoryStorage() {
       patch: Record<string, unknown>;
       actor: "cli" | "web" | "system";
     }>;
+    promptDetails: PromptDetail[];
+    exportJobs: Map<string, ExportJob>;
     policyForIngest:
       | {
           capture_disabled: boolean;

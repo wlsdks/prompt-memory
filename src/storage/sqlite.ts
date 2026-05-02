@@ -24,9 +24,13 @@ import { getPromptMemoryPaths } from "./paths.js";
 import type {
   CreateImportJobInput,
   CreateImportRecordInput,
+  CreateExportJobInput,
   CreatePromptImprovementDraftInput,
   DeletePromptResult,
   DuplicatePromptGroup,
+  ExportJob,
+  ExportJobStatus,
+  ExportJobStoragePort,
   ImportJob,
   ImportJobListResult,
   ImportRecord,
@@ -156,6 +160,18 @@ type ImportRecordRow = {
   error_code: string | null;
 };
 
+type ExportJobRow = {
+  id: string;
+  preset: string;
+  status: string;
+  prompt_id_hashes_json: string;
+  project_policy_versions_json: string;
+  redaction_version: string;
+  counts_json: string;
+  expires_at: string;
+  created_at: string;
+};
+
 type PromptImprovementDraftRow = {
   id: string;
   prompt_id: string;
@@ -184,7 +200,8 @@ export type AppliedMigration = {
 export type SqlitePromptStorage = PromptStoragePort &
   PromptReadStoragePort &
   ProjectPolicyStoragePort &
-  ImportJobStoragePort & {
+  ImportJobStoragePort &
+  ExportJobStoragePort & {
     close(): void;
     getAppliedMigrations(): AppliedMigration[];
     listPromptRows(): PromptRow[];
@@ -303,6 +320,15 @@ export function createSqlitePromptStorage(
     listImportRecords(jobId) {
       return listImportRecords(db, jobId);
     },
+    createExportJob(input) {
+      return createExportJob(db, input, options.now?.() ?? new Date());
+    },
+    getExportJob(id) {
+      return getExportJob(db, id);
+    },
+    updateExportJobStatus(id, status) {
+      return updateExportJobStatus(db, id, status);
+    },
     searchPromptIds(query) {
       const match = toSafeFtsQuery(query);
       if (!match) {
@@ -345,6 +371,7 @@ function applyMigrations(db: Database.Database): void {
   applyProjectPolicyMigration(db);
   applyImportJobMigration(db);
   applyPromptImprovementDraftMigration(db);
+  applyExportJobMigration(db);
 }
 
 function applyAnalysisChecklistTagsMigration(db: Database.Database): void {
@@ -537,6 +564,37 @@ function applyPromptImprovementDraftMigration(db: Database.Database): void {
     db.prepare(
       "INSERT INTO schema_migrations(version, name, applied_at) VALUES (?, ?, ?)",
     ).run(7, "007_prompt_improvement_drafts", new Date().toISOString());
+  }
+}
+
+function applyExportJobMigration(db: Database.Database): void {
+  const applied = db
+    .prepare("SELECT 1 FROM schema_migrations WHERE version = ?")
+    .get(8);
+
+  db.exec(`
+    CREATE TABLE IF NOT EXISTS export_jobs (
+      id TEXT PRIMARY KEY,
+      preset TEXT NOT NULL,
+      status TEXT NOT NULL,
+      prompt_id_hashes_json TEXT NOT NULL,
+      project_policy_versions_json TEXT NOT NULL,
+      redaction_version TEXT NOT NULL,
+      counts_json TEXT NOT NULL,
+      expires_at TEXT NOT NULL,
+      created_at TEXT NOT NULL
+    );
+
+    CREATE INDEX IF NOT EXISTS idx_export_jobs_created_at
+      ON export_jobs(created_at DESC);
+    CREATE INDEX IF NOT EXISTS idx_export_jobs_expires_at
+      ON export_jobs(expires_at);
+  `);
+
+  if (!applied) {
+    db.prepare(
+      "INSERT INTO schema_migrations(version, name, applied_at) VALUES (?, ?, ?)",
+    ).run(8, "008_export_jobs", new Date().toISOString());
   }
 }
 
@@ -1366,12 +1424,130 @@ function toImportJob(row: ImportJobRow): ImportJob {
   };
 }
 
+function createExportJob(
+  db: Database.Database,
+  input: CreateExportJobInput,
+  now: Date,
+): ExportJob {
+  const job: ExportJob = {
+    id: createExportJobId(),
+    preset: input.preset,
+    status: input.status,
+    prompt_id_hashes: input.prompt_id_hashes,
+    project_policy_versions: input.project_policy_versions,
+    redaction_version: input.redaction_version,
+    counts: input.counts,
+    expires_at: input.expires_at,
+    created_at: now.toISOString(),
+  };
+
+  db.prepare(
+    `
+    INSERT INTO export_jobs(
+      id, preset, status, prompt_id_hashes_json,
+      project_policy_versions_json, redaction_version, counts_json,
+      expires_at, created_at
+    )
+    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+    `,
+  ).run(
+    job.id,
+    job.preset,
+    job.status,
+    JSON.stringify(job.prompt_id_hashes),
+    JSON.stringify(job.project_policy_versions),
+    job.redaction_version,
+    JSON.stringify(job.counts),
+    job.expires_at,
+    job.created_at,
+  );
+
+  return job;
+}
+
+function getExportJob(
+  db: Database.Database,
+  id: string,
+): ExportJob | undefined {
+  const row = db.prepare("SELECT * FROM export_jobs WHERE id = ?").get(id) as
+    | ExportJobRow
+    | undefined;
+
+  return row ? toExportJob(row) : undefined;
+}
+
+function updateExportJobStatus(
+  db: Database.Database,
+  id: string,
+  status: ExportJobStatus,
+): ExportJob | undefined {
+  const result = db
+    .prepare("UPDATE export_jobs SET status = ? WHERE id = ?")
+    .run(status, id);
+
+  return result.changes > 0 ? getExportJob(db, id) : undefined;
+}
+
+function toExportJob(row: ExportJobRow): ExportJob {
+  const counts = parseJsonValue(row.counts_json);
+  return {
+    id: row.id,
+    preset: row.preset as ExportJob["preset"],
+    status: row.status as ExportJob["status"],
+    prompt_id_hashes: readStringArray(row.prompt_id_hashes_json),
+    project_policy_versions: readNumberRecord(row.project_policy_versions_json),
+    redaction_version: row.redaction_version,
+    counts: isExportPreviewCounts(counts)
+      ? counts
+      : {
+          prompt_count: 0,
+          sensitive_count: 0,
+          included_fields: [],
+          excluded_fields: [],
+          residual_identifier_counts: {},
+          small_set_warning: false,
+        },
+    expires_at: row.expires_at,
+    created_at: row.created_at,
+  };
+}
+
 function parseJsonValue(value: string): unknown {
   try {
     return JSON.parse(value) as unknown;
   } catch {
     return {};
   }
+}
+
+function readNumberRecord(value: string): Record<string, number> {
+  const parsed = parseJsonValue(value);
+
+  if (!parsed || typeof parsed !== "object" || Array.isArray(parsed)) {
+    return {};
+  }
+
+  return Object.fromEntries(
+    Object.entries(parsed).filter(
+      (entry): entry is [string, number] => typeof entry[1] === "number",
+    ),
+  );
+}
+
+function isExportPreviewCounts(value: unknown): value is ExportJob["counts"] {
+  return (
+    Boolean(value) &&
+    typeof value === "object" &&
+    !Array.isArray(value) &&
+    typeof (value as ExportJob["counts"]).prompt_count === "number" &&
+    typeof (value as ExportJob["counts"]).sensitive_count === "number" &&
+    Array.isArray((value as ExportJob["counts"]).included_fields) &&
+    Array.isArray((value as ExportJob["counts"]).excluded_fields) &&
+    Boolean((value as ExportJob["counts"]).residual_identifier_counts) &&
+    typeof (value as ExportJob["counts"]).residual_identifier_counts ===
+      "object" &&
+    typeof (value as ExportJob["counts"]).small_set_warning === "boolean"
+  );
 }
 
 function isTerminalImportJobStatus(status: ImportJob["status"]): boolean {
@@ -1382,6 +1558,10 @@ function isTerminalImportJobStatus(status: ImportJob["status"]): boolean {
 
 function createImportJobId(): string {
   return `imp_${randomUUID().replaceAll("-", "").slice(0, 24)}`;
+}
+
+function createExportJobId(): string {
+  return `exp_${randomUUID().replaceAll("-", "").slice(0, 24)}`;
 }
 
 function createPromptImprovementDraftId(): string {

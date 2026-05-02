@@ -1,5 +1,22 @@
 # 작업 계획
 
+## 2026-05-02 Anonymized Export Preview Job
+
+- [x] 익명화 export 범위와 raw-free 저장 조건 확정
+- [x] storage/API/CLI 실패 테스트 작성
+- [x] `export_jobs` SQLite migration과 storage port 추가
+- [x] 익명화 preview job 생성과 `job_id` 실행 구현
+- [x] CLI `export --anonymized --preview|--job` 추가
+- [x] release smoke 보강, 전체 검증, 커밋 및 푸시
+
+### 첫 구현 범위
+
+- browser/API/CLI 기본 경로는 anonymized export만 지원한다.
+- export preview는 raw prompt id, raw cwd, raw path, raw secret 없이 `export_jobs`에 snapshot을 저장한다.
+- export 실행은 `job_id`만 받아 preview와 같은 prompt count를 검증한다.
+- raw export와 파일 저장 UI는 이번 단위에서 제외한다.
+- export payload는 masked prompt, tags, quality gap summary, tool, coarse date, project alias만 포함한다.
+
 ## 2026-05-02 Import Execution And Imported-Only Filter
 
 - [x] import 실행/resume 실패 테스트 작성

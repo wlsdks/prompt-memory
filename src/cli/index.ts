@@ -4,6 +4,7 @@ import { pathToFileURL } from "node:url";
 import { Command } from "commander";
 
 import { registerDoctorCommand } from "./commands/doctor.js";
+import { registerExportCommand } from "./commands/export.js";
 import { registerHookCommand } from "./commands/hook.js";
 import { registerImproveCommand } from "./commands/improve.js";
 import { registerImportCommand } from "./commands/import.js";
@@ -26,6 +27,7 @@ export function createProgram(): Command {
 
   registerInitCommand(program);
   registerHookCommand(program);
+  registerExportCommand(program);
   registerImproveCommand(program);
   registerImportCommand(program);
   registerInstallHookCommands(program);
