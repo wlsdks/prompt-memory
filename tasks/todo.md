@@ -9,7 +9,7 @@
 - [x] Claude Code slash command와 Codex plugin skill에 archive score 흐름 추가
 - [x] README/기술 문서/플러그인 문서 갱신
 - [x] 자동 테스트, browser E2E, release smoke, pack dry-run 검증
-- [ ] 커밋 및 브랜치 푸시
+- [x] 커밋 및 브랜치 푸시
 
 ### 첫 구현 범위
 
