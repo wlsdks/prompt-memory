@@ -6,7 +6,7 @@
 - [x] `improve_prompt` MCP tool을 TDD로 추가하고 local-only/privacy contract 검증
 - [x] MCP 서버, 웹 MCP 카탈로그, README/docs/plugin skill에 새 tool 설명 반영
 - [x] browser E2E, MCP stdio 실제 호출, release gate 검증
-- [ ] 커밋, 푸시, CI 확인
+- [x] 커밋, 푸시, CI 확인
 
 ### 판단 기준
 
