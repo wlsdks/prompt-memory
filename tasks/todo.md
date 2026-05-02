@@ -8,7 +8,7 @@
 - [x] English/Korean UI 문구와 responsive 스타일 보강
 - [x] 자동 테스트와 browser E2E 업데이트
 - [x] DevTools MCP로 실제 Dashboard 렌더링, 콘솔/네트워크, mobile overflow 점검
-- [ ] 전체 검증, 커밋, 브랜치 푸시, PR CI 확인
+- [x] 전체 검증, 커밋, 브랜치 푸시, PR CI 확인
 
 ### 디자인 기준
 
