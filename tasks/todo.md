@@ -1,5 +1,22 @@
 # 작업 계획
 
+## 2026-05-02 Runtime Verification And Benchmark Plan
+
+- [x] 현재 브랜치/작업트리 상태 확인
+- [x] 기본 자동 검증 게이트 실행
+- [x] 릴리즈 스모크 실행
+- [x] 실제 서버 실행 후 핵심 UI 흐름 확인
+- [x] 테스트 보강 필요 영역 판단
+- [x] Claude Code/Codex 유저 관점 기능 가치 평가
+- [x] 벤치마크 도구 설계 방향 정리
+
+### 점검 기준
+
+- 테스트 통과 여부와 Node engine 경고를 구분해서 본다.
+- 서버는 임시 data dir에서 띄우고 실제 ingest 데이터로 확인한다.
+- UI는 archive/detail/dashboard/projects/export의 핵심 흐름을 확인한다.
+- 벤치마크는 속도뿐 아니라 privacy, retrieval, prompt improvement 품질을 함께 측정해야 한다.
+
 ## 2026-05-02 Anonymized Export Web UI
 
 - [x] Export UI 범위와 raw-free 브라우저 경계 확정
