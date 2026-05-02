@@ -42,12 +42,20 @@ describe("prompt read/delete API", () => {
     });
     expect(firstPage.statusCode).toBe(200);
     const firstBody = firstPage.json<{
-      data: { items: Array<{ id: string }>; next_cursor?: string };
+      data: {
+        items: Array<{ id: string; cwd: string; snippet: string }>;
+        next_cursor?: string;
+      };
     }>().data;
     expect(firstBody.items.map((item) => item.id)).toEqual([
       ids.gamma,
       ids.beta,
     ]);
+    expect(firstBody.items[0]).toMatchObject({
+      cwd: "project",
+      snippet: expect.stringContaining("[REDACTED:path]"),
+    });
+    expect(firstPage.body).not.toContain("/Users/example/project");
     expect(firstBody.next_cursor).toBeTypeOf("string");
 
     const secondPage = await server.inject({
@@ -63,6 +71,7 @@ describe("prompt read/delete API", () => {
         .json<{ data: { items: Array<{ id: string }> } }>()
         .data.items.map((item) => item.id),
     ).toEqual([ids.alpha]);
+    expect(secondPage.body).not.toContain("/Users/example/project");
   });
 
   it("searches, shows, and deletes prompts", async () => {
@@ -94,6 +103,7 @@ describe("prompt read/delete API", () => {
       detail.json<{
         data: {
           id: string;
+          cwd: string;
           markdown: string;
           analysis: {
             analyzer: string;
@@ -105,6 +115,7 @@ describe("prompt read/delete API", () => {
       }>().data,
     ).toMatchObject({
       id: ids.beta,
+      cwd: "project",
       markdown: expect.stringContaining("beta prompt"),
       analysis: {
         analyzer: "local-rules-v1",
@@ -120,6 +131,7 @@ describe("prompt read/delete API", () => {
         tags: [],
       },
     });
+    expect(detail.body).not.toContain("/Users/example/project");
 
     const crossOriginDelete = await server.inject({
       method: "DELETE",
@@ -271,13 +283,29 @@ describe("prompt read/delete API", () => {
       instruction_suggestions: expect.any(Array),
       project_profiles: expect.arrayContaining([
         expect.objectContaining({
-          key: "/Users/example/project",
+          key: "project",
           prompt_count: 3,
         }),
       ]),
       duplicate_prompt_groups: expect.any(Array),
     });
     expect(JSON.stringify(dashboard.json())).not.toContain("alpha prompt");
+    expect(dashboard.body).not.toContain("/Users/example/project");
+
+    const labelFiltered = await server.inject({
+      method: "GET",
+      url: "/api/v1/prompts?cwd_prefix=project",
+      headers: {
+        host: "127.0.0.1:17373",
+        authorization: "Bearer app-token",
+      },
+    });
+    expect(labelFiltered.statusCode).toBe(200);
+    expect(
+      labelFiltered
+        .json<{ data: { items: Array<{ id: string }> } }>()
+        .data.items.map((item) => item.id),
+    ).toEqual([ids.gamma, ids.beta, ids.alpha]);
 
     const tagged = await server.inject({
       method: "GET",
@@ -605,7 +633,7 @@ async function createPromptApiFixture() {
   );
   const gamma = await storeClaudePrompt(
     storage,
-    "Update src/server/routes/prompts.ts and run pnpm test.",
+    "Update /Users/example/project/src/server/routes/prompts.ts and run pnpm test.",
     "2026-05-01T10:02:00.000Z",
   );
   const server = createServer({

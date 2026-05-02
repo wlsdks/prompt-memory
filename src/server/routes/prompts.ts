@@ -2,7 +2,10 @@ import type { FastifyInstance } from "fastify";
 import { z } from "zod";
 
 import type {
+  PromptDetail,
+  PromptQualityDashboard,
   PromptReadStoragePort,
+  PromptSummary,
   PromptStoragePort,
 } from "../../storage/ports.js";
 import { requireAppAccess, type ServerAuthConfig } from "../auth.js";
@@ -107,7 +110,7 @@ export function registerPromptRoutes(
 
       return {
         data: {
-          items: result.items,
+          items: result.items.map(toBrowserPromptSummary),
           next_cursor: result.nextCursor,
         },
       };
@@ -131,14 +134,14 @@ export function registerPromptRoutes(
       throw problem(404, "Not Found", "Prompt not found.", request.url);
     }
 
-    return { data: prompt };
+    return { data: toBrowserPromptDetail(prompt) };
   });
 
   server.get("/api/v1/quality", async (request) => {
     requireAppAccess(request, options.auth);
     const storage = requireReadStorage(options.storage, request.url);
 
-    return { data: storage.getQualityDashboard() };
+    return { data: toBrowserQualityDashboard(storage.getQualityDashboard()) };
   });
 
   server.post("/api/v1/prompts/:id/events", async (request) => {
@@ -195,6 +198,81 @@ export function registerPromptRoutes(
 
     return { data: result };
   });
+}
+
+function toBrowserPromptSummary(prompt: PromptSummary): PromptSummary {
+  return {
+    ...prompt,
+    cwd: browserProjectLabel(prompt.cwd),
+    snippet: maskBrowserPathText(prompt.snippet),
+  };
+}
+
+function toBrowserPromptDetail(prompt: PromptDetail): PromptDetail {
+  return {
+    ...prompt,
+    cwd: browserProjectLabel(prompt.cwd),
+    snippet: maskBrowserPathText(prompt.snippet),
+    markdown: maskBrowserPathText(prompt.markdown),
+  };
+}
+
+function toBrowserQualityDashboard(
+  dashboard: PromptQualityDashboard,
+): PromptQualityDashboard {
+  return {
+    ...dashboard,
+    distribution: {
+      ...dashboard.distribution,
+      by_project: dashboard.distribution.by_project.map((bucket) => ({
+        ...bucket,
+        key: browserProjectLabel(bucket.key),
+        label: browserProjectLabel(bucket.label),
+      })),
+    },
+    useful_prompts: dashboard.useful_prompts.map((prompt) => ({
+      ...prompt,
+      cwd: browserProjectLabel(prompt.cwd),
+    })),
+    duplicate_prompt_groups: dashboard.duplicate_prompt_groups.map((group) => ({
+      ...group,
+      projects: group.projects.map(browserProjectLabel),
+      prompts: group.prompts.map((prompt) => ({
+        ...prompt,
+        cwd: browserProjectLabel(prompt.cwd),
+      })),
+    })),
+    project_profiles: dashboard.project_profiles.map((profile) => ({
+      ...profile,
+      key: browserProjectLabel(profile.key),
+      label: browserProjectLabel(profile.label),
+    })),
+    patterns: dashboard.patterns.map((pattern) => ({
+      ...pattern,
+      project: browserProjectLabel(pattern.project),
+      message: maskBrowserPathText(pattern.message),
+    })),
+    instruction_suggestions: dashboard.instruction_suggestions.map(
+      (suggestion) => ({
+        ...suggestion,
+        project: suggestion.project
+          ? browserProjectLabel(suggestion.project)
+          : undefined,
+        reason: maskBrowserPathText(suggestion.reason),
+      }),
+    ),
+  };
+}
+
+function browserProjectLabel(value: string): string {
+  return value.split("/").filter(Boolean).at(-1) ?? value;
+}
+
+function maskBrowserPathText(value: string): string {
+  return value.replace(
+    /(^|[\s('"`])\/(?:Users|home|private|tmp|var|opt|workspace|Volumes)\/[^\s)'"`]+/gi,
+    (_match, prefix: string) => `${prefix}[REDACTED:path]`,
+  );
 }
 
 function requireReadStorage(

@@ -840,8 +840,16 @@ function buildPromptFilters(
   }
 
   if (options.cwdPrefix) {
-    clauses.push(`(${prefix}cwd = ? OR ${prefix}cwd LIKE ? ESCAPE '\\')`);
-    values.push(options.cwdPrefix, `${escapeLike(options.cwdPrefix)}/%`);
+    const escapedPrefix = escapeLike(options.cwdPrefix);
+    const pathMatches = [`${prefix}cwd = ?`, `${prefix}cwd LIKE ? ESCAPE '\\'`];
+    values.push(options.cwdPrefix, `${escapedPrefix}/%`);
+
+    if (!options.cwdPrefix.startsWith("/")) {
+      pathMatches.push(`${prefix}cwd LIKE ? ESCAPE '\\'`);
+      values.push(`%/${escapedPrefix}`);
+    }
+
+    clauses.push(`(${pathMatches.join(" OR ")})`);
   }
 
   if (options.importJobId) {
