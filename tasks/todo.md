@@ -1,5 +1,13 @@
 # 작업 계획
 
+## 2026-05-02 Open Source Bilingual Readme Review
+
+- [x] 오픈소스 준비 상태 재검토
+- [x] README 영어/한국어 선택 링크 추가
+- [x] 한국어 README 추가 및 package 포함
+- [x] 배포 문서와 npm dry-run 범위 갱신
+- [x] 검증, 커밋, PR 생성
+
 ## 2026-05-02 Pre-Publish Open Source Governance And I18n
 
 - [x] npm tarball에 포함될 파일과 코드 범위 확인

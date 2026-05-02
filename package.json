@@ -20,6 +20,8 @@
     ".claude-plugin",
     "commands",
     "README.md",
+    "README.ko.md",
+    "CHANGELOG.md",
     "LICENSE",
     "SECURITY.md",
     "CODE_OF_CONDUCT.md",

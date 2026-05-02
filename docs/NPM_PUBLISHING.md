@@ -83,7 +83,7 @@ HOME="$TMP_HOME" npm install -g --prefix "$TMP_PREFIX" ./prompt-memory-0.1.0-bet
 
 - [ ] package name is still available or already owned by the maintainer
 - [ ] version is bumped and has never been published
-- [ ] README is English and matches the actual feature set
+- [ ] README is available in English and Korean and matches the actual feature set
 - [ ] package contents contain built CLI/server/web assets
 - [ ] `bin.prompt-memory` points to `dist/cli/index.js`
 - [ ] `dist/cli/index.js` is executable after build

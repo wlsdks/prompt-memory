@@ -250,7 +250,7 @@ Required:
 
 PRD2 core is complete. The remaining work is release-oriented:
 
-- English public documentation
+- English/Korean public README documentation
 - release notes
 - beta tag and npm publish decision
 - Node 22/24 CI gate

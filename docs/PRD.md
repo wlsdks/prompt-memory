@@ -352,7 +352,7 @@ The public beta is acceptable when:
 - anonymized export preview/job flow works
 - privacy regression tests pass
 - benchmark and release smoke pass
-- package contents include built CLI/server/web assets and English public documentation
+- package contents include built CLI/server/web assets and English/Korean public README documentation
 
 ## 17. Open Questions
 

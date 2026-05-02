@@ -1,5 +1,7 @@
 # prompt-memory
 
+[English](README.md) | [한국어](README.ko.md)
+
 AI coding prompt memory and improvement workspace, local-first.
 
 `prompt-memory` is a developer tool that safely records prompts you enter into AI coding tools such as Claude Code and Codex, helps you find them again, analyzes weak prompting patterns, and helps you write better follow-up requests.
