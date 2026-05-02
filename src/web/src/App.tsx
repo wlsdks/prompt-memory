@@ -4,6 +4,7 @@ import {
   BarChart3,
   ChevronLeft,
   ChevronRight,
+  ClipboardCheck,
   Copy,
   Database,
   Download,
@@ -25,6 +26,7 @@ import {
 } from "lucide-react";
 import { useEffect, useMemo, useState, type ReactNode } from "react";
 
+import { analyzePrompt } from "../../analysis/analyze.js";
 import {
   improvePrompt,
   type PromptImprovement,
@@ -54,6 +56,7 @@ import {
   type PromptFilters,
   type PromptDetail,
   type PromptQualityGap,
+  type PromptQualityScoreBand,
   type PromptSummary,
   type SettingsResponse,
 } from "./api.js";
@@ -84,6 +87,7 @@ type View =
   | { name: "detail"; id: string }
   | { name: "dashboard" }
   | { name: "coach" }
+  | { name: "practice" }
   | { name: "scores" }
   | { name: "benchmark" }
   | { name: "insights" }
@@ -92,9 +96,16 @@ type View =
   | { name: "exports" }
   | { name: "settings" };
 
-type WorkspaceSection = "coach" | "scores" | "insights";
+type WorkspaceSection = "coach" | "practice" | "scores" | "insights";
 
 const LIVE_MEASUREMENT_REFRESH_MS = 12_000;
+const DEFAULT_PRACTICE_DRAFT = [
+  "Goal:",
+  "Context:",
+  "Scope:",
+  "Verification:",
+  "Output:",
+].join("\n");
 
 export function App() {
   const [language, setLanguage] = useState<Language>(() =>
@@ -269,6 +280,7 @@ export function App() {
     if (view.name === "insights") return "Prompt insights";
     if (view.name === "benchmark") return "Prompt benchmark";
     if (view.name === "scores") return "Prompt scores";
+    if (view.name === "practice") return "Prompt practice";
     if (view.name === "coach") return "Prompt coach";
     if (view.name === "detail") return "Prompt detail";
     if (view.name === "dashboard") return "Quality dashboard";
@@ -574,21 +586,23 @@ export function App() {
           ? "/dashboard"
           : next.name === "coach"
             ? "/coach"
-            : next.name === "scores"
-              ? "/scores"
-              : next.name === "benchmark"
-                ? "/benchmark"
-                : next.name === "insights"
-                  ? "/insights"
-                  : next.name === "projects"
-                    ? "/projects"
-                    : next.name === "mcp"
-                      ? "/mcp"
-                      : next.name === "exports"
-                        ? "/exports"
-                        : next.name === "settings"
-                          ? "/settings"
-                          : "/";
+            : next.name === "practice"
+              ? "/practice"
+              : next.name === "scores"
+                ? "/scores"
+                : next.name === "benchmark"
+                  ? "/benchmark"
+                  : next.name === "insights"
+                    ? "/insights"
+                    : next.name === "projects"
+                      ? "/projects"
+                      : next.name === "mcp"
+                        ? "/mcp"
+                        : next.name === "exports"
+                          ? "/exports"
+                          : next.name === "settings"
+                            ? "/settings"
+                            : "/";
     window.history.pushState({}, "", path);
     setView(next);
   }
@@ -620,6 +634,12 @@ export function App() {
           onClick={() => navigate({ name: "coach" })}
         >
           <Target size={16} /> Coach
+        </button>
+        <button
+          className={`nav-button ${view.name === "practice" ? "active" : ""}`}
+          onClick={() => navigate({ name: "practice" })}
+        >
+          <ClipboardCheck size={16} /> Practice
         </button>
         <button
           className={`nav-button ${view.name === "scores" ? "active" : ""}`}
@@ -895,6 +915,12 @@ export function App() {
               navigate({ name: "list" });
             }}
             onSelect={(id) => navigate({ name: "detail", id })}
+          />
+        )}
+        {view.name === "practice" && (
+          <PracticeView
+            archiveScore={archiveScore}
+            onMeasure={() => void refreshArchiveScore()}
           />
         )}
         {view.name === "scores" && (
@@ -1507,6 +1533,19 @@ function DashboardView({
           title="Improve the next prompt"
         />
         <OverviewSectionCard
+          detail={
+            archiveScore
+              ? "Practice habits ready"
+              : "Score archive to personalize"
+          }
+          icon={<ClipboardCheck size={18} />}
+          label="Practice"
+          metric={archiveScore?.practice_plan.length ?? "-"}
+          metricLabel="habits"
+          onSelect={() => onNavigateSection("practice")}
+          title="Draft with live score"
+        />
+        <OverviewSectionCard
           detail={`${reviewCount} prompts need review`}
           icon={<ListChecks size={18} />}
           label="Scores"
@@ -1636,6 +1675,166 @@ function CoachView({
         <RepeatedPatternsPanel dashboard={dashboard} />
       </section>
       <InstructionSuggestionsPanel dashboard={dashboard} />
+    </div>
+  );
+}
+
+function PracticeView({
+  archiveScore,
+  onMeasure,
+}: {
+  archiveScore?: ArchiveScoreReport;
+  onMeasure(): void;
+}) {
+  const archiveTemplate =
+    archiveScore?.next_prompt_template ?? DEFAULT_PRACTICE_DRAFT;
+  const [draft, setDraft] = useState(archiveTemplate);
+  const [draftCopied, setDraftCopied] = useState(false);
+
+  useEffect(() => {
+    if (!draft.trim() || draft === DEFAULT_PRACTICE_DRAFT) {
+      setDraft(archiveTemplate);
+    }
+  }, [archiveTemplate, draft]);
+
+  const analysis = useMemo(
+    () =>
+      analyzePrompt({
+        prompt: draft,
+        createdAt: new Date().toISOString(),
+      }),
+    [draft],
+  );
+  const score = analysis.quality_score;
+  const missingItems = analysis.checklist.filter(
+    (item) => item.status !== "good",
+  );
+
+  async function copyDraft(): Promise<void> {
+    const copied = await copyTextToClipboard(draft);
+    if (!copied) {
+      return;
+    }
+
+    setDraftCopied(true);
+    window.setTimeout(() => setDraftCopied(false), 2500);
+  }
+
+  return (
+    <div className="practice-layout">
+      <section className="practice-workspace panel">
+        <div className="panel-heading-row">
+          <div>
+            <p className="eyebrow">Prompt practice workspace</p>
+            <h2>Draft the next request</h2>
+            <span>
+              This draft is scored locally and is not saved until you send it to
+              Claude Code or Codex.
+            </span>
+          </div>
+          <div className="practice-actions">
+            <button
+              className="panel-link-button"
+              onClick={onMeasure}
+              type="button"
+            >
+              <RefreshCw size={14} /> Refresh plan
+            </button>
+            <button
+              className="primary-button"
+              onClick={() => void copyDraft()}
+              type="button"
+            >
+              <Copy size={15} />{" "}
+              {draftCopied ? "Copied draft" : "Copy practice draft"}
+            </button>
+          </div>
+        </div>
+
+        <label className="practice-editor">
+          <span>Practice draft</span>
+          <textarea
+            aria-label="Practice draft"
+            onChange={(event) => setDraft(event.target.value)}
+            spellCheck={false}
+            value={draft}
+          />
+        </label>
+      </section>
+
+      <aside
+        className="practice-score-panel panel"
+        aria-label="Live local score"
+      >
+        <div className="practice-score-hero">
+          <span className={`score-value ${score.band}`}>{score.value}</span>
+          <div>
+            <p className="eyebrow">Live local score</p>
+            <h2>{qualityBandLabel(score.band)}</h2>
+            <small>{score.max} max · local-rules-v1</small>
+          </div>
+        </div>
+        <div className="archive-score-meter" aria-hidden="true">
+          <span style={{ width: `${Math.min(score.value, 100)}%` }} />
+        </div>
+
+        <div className="practice-checklist">
+          {analysis.checklist.map((item) => (
+            <div className="practice-check-row" key={item.key}>
+              <span className={`quality-dot ${item.status}`} />
+              <div>
+                <strong>{item.label}</strong>
+                <small>{item.reason}</small>
+              </div>
+            </div>
+          ))}
+        </div>
+      </aside>
+
+      <section className="practice-plan-panel panel">
+        <div className="panel-heading-row">
+          <h2>Practice plan</h2>
+          <span>
+            {archiveScore
+              ? `${archiveScore.practice_plan.length} habits from archive`
+              : "No archive score yet"}
+          </span>
+        </div>
+        {archiveScore?.practice_plan.length ? (
+          <div className="archive-practice-list">
+            {archiveScore.practice_plan.map((item) => (
+              <div className="archive-practice-row" key={item.priority}>
+                <span>{item.priority}</span>
+                <div>
+                  <strong>{item.label}</strong>
+                  <p>{item.prompt_rule}</p>
+                  <small>{item.reason}</small>
+                </div>
+              </div>
+            ))}
+          </div>
+        ) : (
+          <p className="muted">
+            Evaluate the archive to load personalized practice habits.
+          </p>
+        )}
+      </section>
+
+      <section className="practice-fix-panel panel">
+        <h2>Fix before sending</h2>
+        {missingItems.length === 0 ? (
+          <p className="muted">This draft covers the core prompt habits.</p>
+        ) : (
+          <div className="practice-fix-list">
+            {missingItems.map((item) => (
+              <div className="practice-fix-row" key={item.key}>
+                <strong>{item.label}</strong>
+                <p>{item.suggestion ?? item.reason}</p>
+              </div>
+            ))}
+          </div>
+        )}
+      </section>
     </div>
   );
 }
@@ -3352,6 +3551,13 @@ function setupStatusLabel(status: SetupCheckStatus): string {
   return "Waiting";
 }
 
+function qualityBandLabel(band: PromptQualityScoreBand): string {
+  if (band === "excellent") return "Excellent";
+  if (band === "good") return "Good";
+  if (band === "needs_work") return "Needs work";
+  return "Weak";
+}
+
 function StatusBadge({ prompt }: { prompt: PromptSummary }) {
   const label = prompt.is_sensitive ? "redacted" : prompt.index_status;
   return <span className="badge">{label}</span>;
@@ -3364,6 +3570,10 @@ function routeFromLocation(): View {
 
   if (window.location.pathname === "/coach") {
     return { name: "coach" };
+  }
+
+  if (window.location.pathname === "/practice") {
+    return { name: "practice" };
   }
 
   if (window.location.pathname === "/scores") {
@@ -3406,6 +3616,7 @@ function needsDashboardData(viewName: View["name"]): boolean {
   return [
     "dashboard",
     "coach",
+    "practice",
     "scores",
     "benchmark",
     "insights",
@@ -3416,7 +3627,9 @@ function needsDashboardData(viewName: View["name"]): boolean {
 }
 
 function needsArchiveScoreData(viewName: View["name"]): boolean {
-  return ["dashboard", "coach", "scores", "benchmark"].includes(viewName);
+  return ["dashboard", "coach", "practice", "scores", "benchmark"].includes(
+    viewName,
+  );
 }
 
 function filtersFromLocation(): PromptFilters {

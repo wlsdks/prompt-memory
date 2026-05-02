@@ -1648,6 +1648,24 @@ dd {
   border-color: var(--pm-border-strong);
 }
 
+.primary-button {
+  align-items: center;
+  background: var(--color-indigo-brand);
+  border: 1px solid rgba(130, 143, 255, 0.48);
+  border-radius: 8px;
+  color: var(--color-text-primary);
+  display: inline-flex;
+  font-size: 13px;
+  font-weight: 750;
+  gap: 8px;
+  min-height: 36px;
+  padding: 0 12px;
+}
+
+.primary-button:hover {
+  background: var(--color-indigo-accent);
+}
+
 .trend-list {
   display: grid;
   gap: 8px;
@@ -1938,6 +1956,138 @@ dd {
   font-size: 13px;
   line-height: 20px;
   margin: 0 0 2px;
+}
+
+.practice-layout {
+  display: grid;
+  gap: 14px;
+  grid-template-columns: minmax(0, 1.35fr) minmax(300px, 0.65fr);
+}
+
+.practice-workspace {
+  display: grid;
+  gap: 14px;
+  grid-row: span 2;
+}
+
+.practice-workspace .panel-heading-row {
+  align-items: start;
+}
+
+.practice-workspace .panel-heading-row span {
+  display: block;
+  line-height: 18px;
+  margin-top: 2px;
+}
+
+.practice-actions {
+  align-items: center;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  justify-content: flex-end;
+}
+
+.practice-editor {
+  display: grid;
+  gap: 8px;
+}
+
+.practice-editor span {
+  color: var(--pm-text-subtle);
+  font-size: 11px;
+  font-weight: 750;
+  text-transform: uppercase;
+}
+
+.practice-editor textarea {
+  background: var(--color-canvas);
+  border: 1px solid var(--color-border-soft);
+  border-radius: 10px;
+  color: var(--color-text-secondary);
+  font-family:
+    "JetBrains Mono", SFMono-Regular, ui-monospace, Menlo, Consolas, monospace;
+  font-size: 13px;
+  line-height: 22px;
+  min-height: 430px;
+  outline: 0;
+  padding: 14px;
+  resize: vertical;
+  width: 100%;
+}
+
+.practice-editor textarea:focus {
+  border-color: rgba(130, 143, 255, 0.55);
+}
+
+.practice-score-panel,
+.practice-plan-panel,
+.practice-fix-panel {
+  display: grid;
+  gap: 12px;
+  align-content: start;
+}
+
+.practice-score-hero {
+  align-items: center;
+  display: grid;
+  gap: 12px;
+  grid-template-columns: auto minmax(0, 1fr);
+}
+
+.practice-score-hero h2 {
+  font-size: 18px;
+  line-height: 24px;
+  margin: 0;
+}
+
+.practice-score-hero small {
+  color: var(--pm-text-muted);
+  font-size: 12px;
+}
+
+.practice-checklist,
+.practice-fix-list {
+  display: grid;
+  gap: 8px;
+}
+
+.practice-check-row {
+  align-items: start;
+  background: var(--color-overlay-1);
+  border: 1px solid var(--color-border-soft);
+  border-radius: 8px;
+  display: grid;
+  gap: 10px;
+  grid-template-columns: 10px minmax(0, 1fr);
+  padding: 9px;
+}
+
+.practice-check-row strong,
+.practice-fix-row strong {
+  display: block;
+  font-size: 13px;
+  line-height: 18px;
+}
+
+.practice-check-row small {
+  color: var(--pm-text-muted);
+  display: block;
+  font-size: 12px;
+  line-height: 18px;
+  margin-top: 2px;
+}
+
+.practice-fix-row {
+  border-top: 1px solid var(--color-border-soft);
+  padding-top: 8px;
+}
+
+.practice-fix-row p {
+  color: var(--pm-text-muted);
+  font-size: 13px;
+  line-height: 20px;
+  margin: 3px 0 0;
 }
 
 .distribution-list,
@@ -3077,9 +3227,30 @@ dd {
   .mcp-next-action,
   .mcp-flow-steps,
   .mcp-tool-grid,
+  .practice-layout,
   .dashboard-grid,
   .checklist-grid {
     display: block;
+  }
+
+  .practice-workspace,
+  .practice-score-panel,
+  .practice-plan-panel,
+  .practice-fix-panel {
+    margin-bottom: 12px;
+  }
+
+  .practice-actions {
+    justify-content: stretch;
+  }
+
+  .practice-actions button {
+    justify-content: center;
+    width: 100%;
+  }
+
+  .practice-editor textarea {
+    min-height: 320px;
   }
 
   .mcp-hero,

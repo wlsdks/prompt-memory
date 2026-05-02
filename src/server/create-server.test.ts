@@ -423,6 +423,7 @@ describe("createServer P2 ingest boundary", () => {
     for (const path of [
       "/dashboard",
       "/coach",
+      "/practice",
       "/scores",
       "/benchmark",
       "/insights",

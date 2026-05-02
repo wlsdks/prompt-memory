@@ -147,6 +147,11 @@ try {
   );
   await assertText(
     page,
+    "Draft with live score",
+    "Dashboard should route users to prompt practice.",
+  );
+  await assertText(
+    page,
     "Review archive quality",
     "Dashboard should route users to score review.",
   );
@@ -178,6 +183,39 @@ try {
   );
   await assertBrowserSafe(page, "coach");
 
+  await page.getByRole("button", { name: "Practice", exact: true }).click();
+  await page.getByRole("heading", { name: "Prompt practice" }).waitFor();
+  await assertTextAny(
+    page,
+    ["Prompt practice workspace", "프롬프트 연습 작업면"],
+    "Practice should expose a prompt drafting workspace.",
+  );
+  await assertTextAny(
+    page,
+    ["Live local score", "실시간 로컬 점수"],
+    "Practice should show local prompt score preview.",
+  );
+  await page
+    .getByLabel("Practice draft")
+    .fill(
+      [
+        "Goal: improve the archive practice plan UI.",
+        "Context: use src/web/src/App.tsx and src/web/src/styles.css.",
+        "Scope: keep changes limited to the Practice screen.",
+        "Verification: run pnpm test and pnpm e2e:browser.",
+        "Output: concise Markdown summary with risks.",
+      ].join("\n"),
+    );
+  await assertTextAny(
+    page,
+    ["Excellent", "우수"],
+    "Practice should update the score preview while drafting.",
+  );
+  await page
+    .getByRole("button", { name: /Copy practice draft|연습 초안 복사/ })
+    .waitFor();
+  await assertBrowserSafe(page, "practice");
+
   await page.getByRole("button", { name: "Scores", exact: true }).click();
   await page.getByRole("heading", { name: "Prompt scores" }).waitFor();
   await page.getByText("Archive score review").waitFor();
@@ -197,9 +235,7 @@ try {
     "Practice plan",
     "Scores should show actionable practice plan.",
   );
-  await page
-    .getByRole("button", { name: "Copy practice template" })
-    .waitFor();
+  await page.getByRole("button", { name: "Copy practice template" }).waitFor();
   await assertChartVisible(page, "scores", 3);
   await assertBrowserSafe(page, "scores");
 

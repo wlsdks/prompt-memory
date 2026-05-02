@@ -1,5 +1,19 @@
 # 작업 계획
 
+## 2026-05-03 Prompt Practice Workspace
+
+- [x] 점수/연습 계획 다음에 실제 작성 작업면이 필요한지 재평가
+- [x] Practice 탭에서 archive template을 불러오고 로컬 점수 preview를 즉시 보여주기
+- [x] copy draft, checklist, missing habit 표시를 desktop web 기준으로 정리
+- [x] browser E2E, MCP stdio, release gate 검증
+- [ ] 커밋, 푸시, CI 확인
+
+### 판단 기준
+
+- 사용자는 prompt-memory 안에서 다음 Claude Code/Codex 요청을 작성하고 바로 점수를 확인할 수 있어야 한다.
+- 초안 작성/점수 preview는 로컬 deterministic rule만 사용하고 prompt를 저장하지 않는다.
+- Practice 화면은 raw prompt archive를 새로 노출하지 않고 사용자가 직접 작성 중인 draft만 다룬다.
+
 ## 2026-05-03 Archive Practice Plan UX
 
 - [x] `score_prompt_archive`가 점수뿐 아니라 다음 연습 행동을 줄 수 있는지 재평가
