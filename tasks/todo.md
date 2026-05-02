@@ -1,5 +1,20 @@
 # 작업 계획
 
+## 2026-05-02 Agent Measurement Verification And Live Refresh
+
+- [x] MCP `score_prompt` / `score_prompt_archive`가 Claude Code/Codex에서 쓸 수 있는지 실제 호출로 점검
+- [x] 현재 입력 prompt가 hook capture 후 archive score와 web measurement에 반영되는지 검증
+- [x] 웹 Benchmark/Dashboard에서 새 prompt 측정이 자동 또는 명확한 refresh로 보강
+- [x] Claude Code/Codex 사용 문서와 E2E/테스트 보강
+- [x] 전체 검증, 커밋, 푸시, PR 상태 확인
+
+### 판단 기준
+
+- Agent는 raw prompt body 없이 현재 prompt 또는 archive를 점수화할 수 있어야 한다.
+- Hook으로 들어온 Claude Code/Codex prompt가 score archive와 web measurement에 반영되어야 한다.
+- 사용자가 화면을 보고 있을 때 새 prompt capture가 감지되면 측정 재실행 행동이 분명해야 한다.
+- 외부 LLM 호출이나 자동 재입력은 이번 범위에 포함하지 않는다.
+
 ## 2026-05-02 Live Archive Measurement UX
 
 - [x] 현재 benchmark/score 기능이 웹에서 바로 보이는지 점검

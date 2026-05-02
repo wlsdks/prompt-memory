@@ -353,6 +353,14 @@ MCP server는 두 개의 tool을 제공합니다.
 - `score_prompt`: 직접 전달한 prompt text, 저장된 `prompt_id`, 또는 최신 저장 prompt를 점수화합니다.
 - `score_prompt_archive`: 최근 저장 prompt 전체를 대상으로 누적 prompt 습관을 점수화하고, 평균 점수, 반복 부족 항목, 낮은 점수 prompt id를 반환합니다.
 
+Agent에게 이렇게 요청할 수 있습니다.
+
+```text
+prompt-memory score_prompt를 latest=true로 사용해서 방금 내 요청에서 고칠 점을 알려줘.
+
+최근 Codex 프롬프트를 prompt-memory score_prompt_archive로 측정하고 반복되는 프롬프트 습관 약점을 요약해줘.
+```
+
 이 tool들은 점수, band, checklist breakdown, warning, 반복 부족 항목, 개선 힌트를 반환합니다.
 직접 전달한 prompt text는 저장하지 않고, 외부 LLM을 호출하지 않으며, prompt body를 결과로 반환하지 않습니다. archive scoring tool은 raw absolute path도 반환하지 않습니다.
 

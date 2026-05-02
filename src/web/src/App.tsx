@@ -85,6 +85,8 @@ type View =
 
 type WorkspaceSection = "coach" | "scores" | "insights";
 
+const LIVE_MEASUREMENT_REFRESH_MS = 12_000;
+
 export function App() {
   const [language, setLanguage] = useState<Language>(() =>
     detectInitialLanguage(),
@@ -209,6 +211,32 @@ export function App() {
       .then(setProjects)
       .catch(() => undefined);
   }, [projects.length, view.name]);
+
+  useEffect(() => {
+    if (view.name !== "benchmark") {
+      return;
+    }
+
+    let cancelled = false;
+    const timer = window.setInterval(() => {
+      void Promise.all([getQualityDashboard(), getArchiveScoreReport()])
+        .then(([nextDashboard, nextArchiveScore]) => {
+          if (cancelled) {
+            return;
+          }
+
+          setDashboard(nextDashboard);
+          setArchiveScore(nextArchiveScore);
+          setMeasurementCheckedAt(new Date().toISOString());
+        })
+        .catch(() => undefined);
+    }, LIVE_MEASUREMENT_REFRESH_MS);
+
+    return () => {
+      cancelled = true;
+      window.clearInterval(timer);
+    };
+  }, [view.name]);
 
   useEffect(() => {
     if (view.name !== "detail") {
@@ -1486,6 +1514,7 @@ function BenchmarkView({
   return (
     <div className="dashboard-layout benchmark-layout">
       <ArchiveMeasurementPanel
+        autoRefresh
         measurement={measurement}
         measurementBusy={measurementBusy}
         onMeasure={onMeasure}
@@ -1650,6 +1679,7 @@ function InsightsView({
 }
 
 function ArchiveMeasurementPanel({
+  autoRefresh = false,
   compact = false,
   measurement,
   measurementBusy,
@@ -1657,6 +1687,7 @@ function ArchiveMeasurementPanel({
   onOpenFilteredList,
   onOpenScores,
 }: {
+  autoRefresh?: boolean;
   compact?: boolean;
   measurement: ArchiveMeasurement;
   measurementBusy: boolean;
@@ -1724,6 +1755,11 @@ function ArchiveMeasurementPanel({
               ? `Measured ${formatDate(measurement.measuredAt)}`
               : "Not measured in this session yet"}
           </small>
+          {autoRefresh && (
+            <small>{`Auto-updates every ${Math.round(
+              LIVE_MEASUREMENT_REFRESH_MS / 1000,
+            )}s while open`}</small>
+          )}
         </div>
         <div className="measurement-buttons">
           <button

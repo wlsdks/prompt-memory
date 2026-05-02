@@ -11,6 +11,12 @@ Prefer the MCP tool when it is available:
 prompt-memory:score_prompt_archive
 ```
 
+For the user's most recent captured request, prefer:
+
+```text
+prompt-memory:score_prompt latest=true
+```
+
 If MCP is not configured, run:
 
 ```bash

@@ -448,6 +448,16 @@ The MCP server exposes two tools:
 - `score_prompt_archive`: score accumulated prompt habits across recent stored
   prompts and return aggregate score, recurring gaps, and low-score prompt ids.
 
+Practical agent prompts:
+
+```text
+Use prompt-memory score_prompt with latest=true and tell me what to improve in
+my last request.
+
+Use prompt-memory score_prompt_archive for recent Codex prompts and summarize my
+top recurring prompt habit gaps.
+```
+
 The tools return score metadata, checklist breakdowns, warnings, recurring gaps,
 and improvement hints. They do not store direct prompt text, do not call
 external LLMs, and do not return prompt bodies. The archive scoring tool also

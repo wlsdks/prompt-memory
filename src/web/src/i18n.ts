@@ -140,6 +140,12 @@ function translateDynamic(value: string): string | undefined {
   if (/^Measured .+$/.test(value)) {
     return value.replace(/^Measured (.+)$/, "$1 측정");
   }
+  if (/^Auto-updates every \d+s while open$/.test(value)) {
+    return value.replace(
+      /^Auto-updates every (\d+)s while open$/,
+      "열려 있는 동안 $1초마다 자동 갱신",
+    );
+  }
   if (/^recent \d+ \/ previous \d+$/.test(value)) {
     return value.replace(
       /^recent (\d+) \/ previous (\d+)$/,

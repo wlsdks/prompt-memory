@@ -188,6 +188,11 @@ try {
     "Measure now",
     "Benchmark should expose a live measurement action.",
   );
+  await assertText(
+    page,
+    "Auto-updates every 12s while open",
+    "Benchmark should explain live measurement refresh.",
+  );
   await page.getByRole("button", { name: "Measure now" }).click();
   await page.getByText(/^Measured /).waitFor();
   await assertText(

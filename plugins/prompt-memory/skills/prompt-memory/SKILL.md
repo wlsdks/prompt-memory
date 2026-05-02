@@ -76,6 +76,10 @@ Both MCP tools return local score metadata without storing direct prompt text or
 calling external LLMs. The archive tool does not return prompt bodies or raw
 paths.
 
+When the user asks to review the prompt they just typed, call `score_prompt`
+with `latest=true` if hook capture is enabled. If they paste a prompt explicitly,
+call `score_prompt` with `prompt` instead.
+
 ## Safety Rules
 
 - Do not print raw prompt bodies or raw hook payloads unless the user explicitly
