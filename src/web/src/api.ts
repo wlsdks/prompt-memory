@@ -36,6 +36,21 @@ export type PromptDetail = PromptSummary & {
     analyzer: string;
     created_at: string;
   };
+  improvement_drafts: PromptImprovementDraft[];
+};
+
+export type PromptImprovementDraft = {
+  id: string;
+  prompt_id: string;
+  draft_text: string;
+  analyzer: string;
+  changed_sections: PromptQualityGap[];
+  safety_notes: string[];
+  is_sensitive: boolean;
+  redaction_policy: "mask";
+  created_at: string;
+  copied_at?: string;
+  accepted_at?: string;
 };
 
 export type PromptUsefulness = {
@@ -376,6 +391,36 @@ export async function recordPromptCopied(
     data: { usefulness: PromptUsefulness };
   };
   return body.data.usefulness;
+}
+
+export async function savePromptImprovementDraft(
+  id: string,
+  draft: {
+    draft_text: string;
+    analyzer: string;
+    changed_sections: PromptQualityGap[];
+    safety_notes: string[];
+    copied?: boolean;
+  },
+): Promise<PromptImprovementDraft> {
+  await ensureSession();
+  const response = await fetch(
+    `/api/v1/prompts/${encodeURIComponent(id)}/improvements`,
+    {
+      method: "POST",
+      credentials: "same-origin",
+      headers: {
+        "content-type": "application/json",
+        "x-csrf-token": csrfToken ?? "",
+      },
+      body: JSON.stringify(draft),
+    },
+  );
+  if (!response.ok) {
+    throw new Error("Improvement draft save failed");
+  }
+  const body = (await response.json()) as { data: PromptImprovementDraft };
+  return body.data;
 }
 
 export async function setPromptBookmark(

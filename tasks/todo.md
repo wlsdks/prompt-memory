@@ -1,5 +1,21 @@
 # 작업 계획
 
+## 2026-05-02 Prompt Improvement Draft Storage
+
+- [x] 저장소/API 실패 테스트 작성
+- [x] `prompt_improvement_drafts` SQLite migration과 storage port 추가
+- [x] `POST /api/v1/prompts/:id/improvements` 구현
+- [x] prompt detail 응답에 최신 개선 draft 포함
+- [x] UI에서 개선안 저장 버튼과 저장 상태 표시
+- [x] targeted/full 검증, 커밋 및 푸시
+
+### 첫 구현 범위
+
+- 개선 draft는 원문 prompt를 덮어쓰지 않는다.
+- 저장 전 `mask` redaction을 다시 적용한다.
+- 자동으로 `AGENTS.md`, `CLAUDE.md` 또는 프로젝트 파일을 수정하지 않는다.
+- 저장 이벤트는 `prompt_copied` 재사용 지표와 분리한다.
+
 ## 2026-05-02 Product Identity Documentation
 
 - [x] README 첫머리에 local-first prompt memory and improvement workspace 포지셔닝 반영

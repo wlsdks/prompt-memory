@@ -154,6 +154,86 @@ describe("prompt read/delete API", () => {
     expect(missing.statusCode).toBe(404);
   });
 
+  it("stores improvement drafts with CSRF and returns them on prompt detail", async () => {
+    const { server, ids } = await createPromptApiFixture();
+
+    const session = await server.inject({
+      method: "GET",
+      url: "/api/v1/session",
+      headers: { host: "127.0.0.1:17373" },
+    });
+    const csrfToken = session.json<{ data: { csrf_token: string } }>().data
+      .csrf_token;
+    const cookie = session.headers["set-cookie"];
+
+    const missingCsrf = await server.inject({
+      method: "POST",
+      url: `/api/v1/prompts/${ids.beta}/improvements`,
+      headers: {
+        host: "127.0.0.1:17373",
+        cookie,
+      },
+      payload: {
+        draft_text:
+          "Improve beta prompt with sk-proj-1234567890abcdef and run pnpm test",
+        analyzer: "local-rules-v1",
+      },
+    });
+    expect(missingCsrf.statusCode).toBe(403);
+
+    const saved = await server.inject({
+      method: "POST",
+      url: `/api/v1/prompts/${ids.beta}/improvements`,
+      headers: {
+        host: "127.0.0.1:17373",
+        cookie,
+        "x-csrf-token": csrfToken,
+      },
+      payload: {
+        draft_text:
+          "Improve beta prompt with sk-proj-1234567890abcdef and run pnpm test",
+        analyzer: "local-rules-v1",
+        changed_sections: ["goal_clarity", "verification_criteria"],
+        safety_notes: ["redacted"],
+        copied: false,
+      },
+    });
+
+    expect(saved.statusCode).toBe(200);
+    expect(saved.json()).toMatchObject({
+      data: {
+        draft_text: expect.stringContaining("[REDACTED:api_key]"),
+        analyzer: "local-rules-v1",
+        changed_sections: ["goal_clarity", "verification_criteria"],
+        is_sensitive: true,
+      },
+    });
+    expect(
+      saved.json<{ data: Record<string, unknown> }>().data,
+    ).not.toHaveProperty("copied_at");
+    expect(JSON.stringify(saved.json())).not.toContain(
+      "sk-proj-1234567890abcdef",
+    );
+
+    const detail = await server.inject({
+      method: "GET",
+      url: `/api/v1/prompts/${ids.beta}`,
+      headers: {
+        host: "127.0.0.1:17373",
+        authorization: "Bearer app-token",
+      },
+    });
+    expect(detail.statusCode).toBe(200);
+    expect(
+      detail.json<{ data: { improvement_drafts: Array<{ id: string }> } }>()
+        .data.improvement_drafts,
+    ).toEqual([
+      expect.objectContaining({
+        id: saved.json<{ data: { id: string } }>().data.id,
+      }),
+    ]);
+  });
+
   it("returns the prompt quality dashboard and supports tag filters", async () => {
     const { server, ids } = await createPromptApiFixture();
 

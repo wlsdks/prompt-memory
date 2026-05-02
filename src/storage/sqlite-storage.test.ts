@@ -64,6 +64,7 @@ describe("SQLite prompt storage", () => {
       { version: 4, name: "004_duplicate_prompt_index" },
       { version: 5, name: "005_project_policies" },
       { version: 6, name: "006_import_jobs" },
+      { version: 7, name: "007_prompt_improvement_drafts" },
     ]);
 
     const prompts = storage.listPromptRows();
@@ -1045,6 +1046,64 @@ describe("SQLite prompt storage", () => {
 
     expect(JSON.stringify(rows)).not.toContain("/Users/example/project");
     expect(JSON.stringify(rows)).not.toContain("sk-proj-1234567890abcdef");
+  });
+
+  it("stores redacted prompt improvement drafts and deletes them with prompts", async () => {
+    const dataDir = createTempDir();
+    initializePromptMemory({ dataDir });
+    const storage = createSqlitePromptStorage({
+      dataDir,
+      hmacSecret: "test-secret",
+      now: nextDate(["2026-05-02T11:00:00.000Z", "2026-05-02T11:01:00.000Z"]),
+    });
+    const prompt = await storeClaudePrompt(storage, {
+      prompt: "Fix this bug",
+      receivedAt: "2026-05-02T11:00:00.000Z",
+    });
+
+    const draft = storage.createPromptImprovementDraft(prompt.id, {
+      draft_text:
+        "## 목표\nFix this bug with secret sk-proj-1234567890abcdef\n## 검증\nRun pnpm test",
+      analyzer: "local-rules-v1",
+      changed_sections: ["goal_clarity", "verification_criteria"],
+      safety_notes: ["민감정보는 mask redaction 후 개선안에 반영했습니다."],
+      copied: true,
+    });
+
+    expect(draft).toMatchObject({
+      id: expect.stringMatching(/^impdraft_/),
+      prompt_id: prompt.id,
+      draft_text: expect.stringContaining("[REDACTED:api_key]"),
+      analyzer: "local-rules-v1",
+      changed_sections: ["goal_clarity", "verification_criteria"],
+      safety_notes: ["민감정보는 mask redaction 후 개선안에 반영했습니다."],
+      is_sensitive: true,
+      redaction_policy: "mask",
+      created_at: "2026-05-02T11:01:00.000Z",
+      copied_at: "2026-05-02T11:01:00.000Z",
+    });
+    expect(JSON.stringify(draft)).not.toContain("sk-proj-1234567890abcdef");
+
+    expect(storage.getPrompt(prompt.id)?.improvement_drafts).toEqual([draft]);
+
+    const db = new Database(join(dataDir, "prompt-memory.sqlite"));
+    const rowsBeforeDelete = db
+      .prepare("SELECT * FROM prompt_improvement_drafts")
+      .all();
+    db.close();
+    expect(JSON.stringify(rowsBeforeDelete)).not.toContain(
+      "sk-proj-1234567890abcdef",
+    );
+
+    expect(storage.deletePrompt(prompt.id)).toEqual({ deleted: true });
+    expect(storage.getPrompt(prompt.id)).toBeUndefined();
+
+    const dbAfterDelete = new Database(join(dataDir, "prompt-memory.sqlite"));
+    const rowsAfterDelete = dbAfterDelete
+      .prepare("SELECT * FROM prompt_improvement_drafts")
+      .all();
+    dbAfterDelete.close();
+    expect(rowsAfterDelete).toEqual([]);
   });
 
   it("rebuilds missing database rows from Markdown files", async () => {

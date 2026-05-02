@@ -39,6 +39,7 @@ export type PromptSummary = {
 export type PromptDetail = PromptSummary & {
   markdown: string;
   analysis?: PromptAnalysisPreview;
+  improvement_drafts: PromptImprovementDraft[];
 };
 
 export type PromptUsefulness = {
@@ -268,6 +269,29 @@ export type ImportJobListResult = {
   items: ImportJob[];
 };
 
+export type PromptImprovementDraft = {
+  id: string;
+  prompt_id: string;
+  draft_text: string;
+  analyzer: string;
+  changed_sections: PromptQualityCriterion[];
+  safety_notes: string[];
+  is_sensitive: boolean;
+  redaction_policy: "mask";
+  created_at: string;
+  copied_at?: string;
+  accepted_at?: string;
+};
+
+export type CreatePromptImprovementDraftInput = {
+  draft_text: string;
+  analyzer: string;
+  changed_sections?: PromptQualityCriterion[];
+  safety_notes?: string[];
+  copied?: boolean;
+  accepted?: boolean;
+};
+
 export type PromptStoragePort = {
   storePrompt(input: StorePromptInput): Promise<StorePromptResult>;
 };
@@ -283,6 +307,10 @@ export type PromptReadStoragePort = {
   getQualityDashboard(): PromptQualityDashboard;
   recordPromptUsage(id: string, type: PromptUsageEventType): PromptUsageResult;
   setPromptBookmark(id: string, bookmarked: boolean): PromptBookmarkResult;
+  createPromptImprovementDraft(
+    promptId: string,
+    input: CreatePromptImprovementDraftInput,
+  ): PromptImprovementDraft | undefined;
 };
 
 export type ProjectPolicyStoragePort = {

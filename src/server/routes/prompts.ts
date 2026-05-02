@@ -47,6 +47,26 @@ const PromptBookmarkSchema = z.object({
   bookmarked: z.boolean(),
 });
 
+const PromptImprovementDraftSchema = z.object({
+  draft_text: z.string().trim().min(1).max(100_000),
+  analyzer: z.string().trim().min(1).max(120),
+  changed_sections: z
+    .array(
+      z.enum([
+        "goal_clarity",
+        "background_context",
+        "scope_limits",
+        "output_format",
+        "verification_criteria",
+      ]),
+    )
+    .max(10)
+    .optional(),
+  safety_notes: z.array(z.string().trim().min(1).max(500)).max(10).optional(),
+  copied: z.boolean().optional(),
+  accepted: z.boolean().optional(),
+});
+
 export function registerPromptRoutes(
   server: FastifyInstance,
   options: PromptRouteOptions,
@@ -146,6 +166,20 @@ export function registerPromptRoutes(
     return { data: result };
   });
 
+  server.post("/api/v1/prompts/:id/improvements", async (request) => {
+    requireAppAccess(request, options.auth, { csrf: true });
+    const storage = requireImprovementStorage(options.storage, request.url);
+    const params = PromptParamsSchema.parse(request.params);
+    const body = PromptImprovementDraftSchema.parse(request.body);
+    const draft = storage.createPromptImprovementDraft(params.id, body);
+
+    if (!draft) {
+      throw problem(404, "Not Found", "Prompt not found.", request.url);
+    }
+
+    return { data: draft };
+  });
+
   server.delete("/api/v1/prompts/:id", async (request) => {
     requireAppAccess(request, options.auth, { csrf: true });
     const storage = requireReadStorage(options.storage, request.url);
@@ -182,4 +216,22 @@ function requireReadStorage(
   }
 
   return storage as PromptReadStoragePort;
+}
+
+function requireImprovementStorage(
+  storage: PromptRouteOptions["storage"],
+  instance: string,
+): PromptReadStoragePort {
+  const readStorage = requireReadStorage(storage, instance);
+
+  if (!readStorage.createPromptImprovementDraft) {
+    throw problem(
+      500,
+      "Internal Server Error",
+      "Prompt improvement storage is not configured.",
+      instance,
+    );
+  }
+
+  return readStorage;
 }

@@ -16,12 +16,14 @@ import { createStoredContentHash } from "../shared/hashing.js";
 import type {
   PromptAnalysisPreview,
   PromptQualityChecklistItem,
+  PromptQualityCriterion,
   PromptTag,
   RedactionPolicy,
 } from "../shared/schema.js";
 import { getPromptMemoryPaths } from "./paths.js";
 import type {
   CreateImportJobInput,
+  CreatePromptImprovementDraftInput,
   DeletePromptResult,
   DuplicatePromptGroup,
   ImportJob,
@@ -35,6 +37,7 @@ import type {
   ProjectPolicyPatch,
   ProjectPolicyStoragePort,
   ProjectSummary,
+  PromptImprovementDraft,
   PromptListResult,
   PromptQualityDashboard,
   PromptReadStoragePort,
@@ -142,6 +145,20 @@ type ImportJobRow = {
   summary_json: string;
 };
 
+type PromptImprovementDraftRow = {
+  id: string;
+  prompt_id: string;
+  draft_text: string;
+  analyzer: string;
+  changed_sections_json: string | null;
+  safety_notes_json: string | null;
+  is_sensitive: number;
+  redaction_policy: string;
+  created_at: string;
+  copied_at: string | null;
+  accepted_at: string | null;
+};
+
 type RebuildPromptRow = {
   id: string;
   markdown_path: string;
@@ -227,6 +244,14 @@ export function createSqlitePromptStorage(
         options.now?.() ?? new Date(),
       );
     },
+    createPromptImprovementDraft(promptId, input) {
+      return createPromptImprovementDraft(
+        db,
+        promptId,
+        input,
+        options.now?.() ?? new Date(),
+      );
+    },
     listProjects() {
       return listProjectsForPolicy(db, options.hmacSecret);
     },
@@ -293,6 +318,7 @@ function applyMigrations(db: Database.Database): void {
   applyDuplicatePromptIndexMigration(db);
   applyProjectPolicyMigration(db);
   applyImportJobMigration(db);
+  applyPromptImprovementDraftMigration(db);
 }
 
 function applyAnalysisChecklistTagsMigration(db: Database.Database): void {
@@ -453,6 +479,38 @@ function applyImportJobMigration(db: Database.Database): void {
     db.prepare(
       "INSERT INTO schema_migrations(version, name, applied_at) VALUES (?, ?, ?)",
     ).run(6, "006_import_jobs", new Date().toISOString());
+  }
+}
+
+function applyPromptImprovementDraftMigration(db: Database.Database): void {
+  const applied = db
+    .prepare("SELECT 1 FROM schema_migrations WHERE version = ?")
+    .get(7);
+
+  db.exec(`
+    CREATE TABLE IF NOT EXISTS prompt_improvement_drafts (
+      id TEXT PRIMARY KEY,
+      prompt_id TEXT NOT NULL,
+      draft_text TEXT NOT NULL,
+      analyzer TEXT NOT NULL,
+      changed_sections_json TEXT,
+      safety_notes_json TEXT,
+      is_sensitive INTEGER NOT NULL DEFAULT 0,
+      redaction_policy TEXT NOT NULL DEFAULT 'mask',
+      created_at TEXT NOT NULL,
+      copied_at TEXT,
+      accepted_at TEXT,
+      FOREIGN KEY(prompt_id) REFERENCES prompts(id) ON DELETE CASCADE
+    );
+
+    CREATE INDEX IF NOT EXISTS idx_prompt_improvement_drafts_prompt_id
+      ON prompt_improvement_drafts(prompt_id, created_at DESC);
+  `);
+
+  if (!applied) {
+    db.prepare(
+      "INSERT INTO schema_migrations(version, name, applied_at) VALUES (?, ?, ?)",
+    ).run(7, "007_prompt_improvement_drafts", new Date().toISOString());
   }
 }
 
@@ -849,6 +907,7 @@ function getPrompt(
     ...toPromptSummary(db, row),
     markdown: parsePromptMarkdown(row.markdown_path).body,
     analysis: readPromptAnalysis(db, id),
+    improvement_drafts: readPromptImprovementDrafts(db, id),
   };
 }
 
@@ -865,6 +924,9 @@ function deletePrompt(db: Database.Database, id: string): DeletePromptResult {
     db.prepare("DELETE FROM prompt_fts WHERE prompt_id = ?").run(id);
     db.prepare("DELETE FROM prompt_tags WHERE prompt_id = ?").run(id);
     db.prepare("DELETE FROM prompt_analyses WHERE prompt_id = ?").run(id);
+    db.prepare("DELETE FROM prompt_improvement_drafts WHERE prompt_id = ?").run(
+      id,
+    );
     db.prepare("DELETE FROM redaction_events WHERE prompt_id = ?").run(id);
     db.prepare("DELETE FROM prompt_usage_events WHERE prompt_id = ?").run(id);
     db.prepare("DELETE FROM prompt_bookmarks WHERE prompt_id = ?").run(id);
@@ -1058,6 +1120,89 @@ function createImportJob(
   return job;
 }
 
+function createPromptImprovementDraft(
+  db: Database.Database,
+  promptId: string,
+  input: CreatePromptImprovementDraftInput,
+  now: Date,
+): PromptImprovementDraft | undefined {
+  if (!hasLivePrompt(db, promptId)) {
+    return undefined;
+  }
+
+  const redaction = redactPrompt(input.draft_text, "mask");
+  const createdAt = now.toISOString();
+  const draft: PromptImprovementDraft = {
+    id: createPromptImprovementDraftId(),
+    prompt_id: promptId,
+    draft_text: redaction.stored_text,
+    analyzer: input.analyzer,
+    changed_sections: input.changed_sections ?? [],
+    safety_notes: input.safety_notes ?? [],
+    is_sensitive: redaction.is_sensitive,
+    redaction_policy: "mask",
+    created_at: createdAt,
+    copied_at: input.copied ? createdAt : undefined,
+    accepted_at: input.accepted ? createdAt : undefined,
+  };
+
+  db.prepare(
+    `
+    INSERT INTO prompt_improvement_drafts(
+      id, prompt_id, draft_text, analyzer, changed_sections_json,
+      safety_notes_json, is_sensitive, redaction_policy, created_at,
+      copied_at, accepted_at
+    )
+    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+    `,
+  ).run(
+    draft.id,
+    draft.prompt_id,
+    draft.draft_text,
+    draft.analyzer,
+    JSON.stringify(draft.changed_sections),
+    JSON.stringify(draft.safety_notes),
+    draft.is_sensitive ? 1 : 0,
+    draft.redaction_policy,
+    draft.created_at,
+    draft.copied_at ?? null,
+    draft.accepted_at ?? null,
+  );
+
+  return draft;
+}
+
+function readPromptImprovementDrafts(
+  db: Database.Database,
+  promptId: string,
+): PromptImprovementDraft[] {
+  const rows = db
+    .prepare(
+      `
+      SELECT *
+      FROM prompt_improvement_drafts
+      WHERE prompt_id = ?
+      ORDER BY created_at DESC, id DESC
+      LIMIT 20
+      `,
+    )
+    .all(promptId) as PromptImprovementDraftRow[];
+
+  return rows.map((row) => ({
+    id: row.id,
+    prompt_id: row.prompt_id,
+    draft_text: row.draft_text,
+    analyzer: row.analyzer,
+    changed_sections: readQualityCriteria(row.changed_sections_json),
+    safety_notes: readStringArray(row.safety_notes_json),
+    is_sensitive: row.is_sensitive === 1,
+    redaction_policy: "mask",
+    created_at: row.created_at,
+    copied_at: row.copied_at ?? undefined,
+    accepted_at: row.accepted_at ?? undefined,
+  }));
+}
+
 function getImportJob(
   db: Database.Database,
   id: string,
@@ -1115,6 +1260,10 @@ function isTerminalImportJobStatus(status: ImportJob["status"]): boolean {
 
 function createImportJobId(): string {
   return `imp_${randomUUID().replaceAll("-", "").slice(0, 24)}`;
+}
+
+function createPromptImprovementDraftId(): string {
+  return `impdraft_${randomUUID().replaceAll("-", "").slice(0, 24)}`;
 }
 
 function hasLivePrompt(db: Database.Database, id: string): boolean {
@@ -1578,6 +1727,18 @@ function readPromptTags(value: string | null): PromptTag[] {
       "release",
       "ops",
     ].includes(tag),
+  );
+}
+
+function readQualityCriteria(value: string | null): PromptQualityCriterion[] {
+  return readStringArray(value).filter((item): item is PromptQualityCriterion =>
+    [
+      "goal_clarity",
+      "background_context",
+      "scope_limits",
+      "output_format",
+      "verification_criteria",
+    ].includes(item),
   );
 }
 

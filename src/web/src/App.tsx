@@ -31,6 +31,7 @@ import {
   listProjects,
   listPrompts,
   recordPromptCopied,
+  savePromptImprovementDraft,
   setPromptBookmark,
   updateProjectPolicy,
   type ProjectSummary,
@@ -71,6 +72,9 @@ export function App() {
   >();
   const [copiedPromptId, setCopiedPromptId] = useState<string | undefined>();
   const [copiedImprovementId, setCopiedImprovementId] = useState<
+    string | undefined
+  >();
+  const [savedImprovementId, setSavedImprovementId] = useState<
     string | undefined
   >();
 
@@ -227,6 +231,39 @@ export function App() {
     }
 
     setError("개선안을 복사하지 못했습니다.");
+  }
+
+  async function saveImprovementDraft(prompt: PromptDetail): Promise<void> {
+    const improvement = improvePrompt({
+      prompt: prompt.markdown,
+      createdAt: prompt.received_at,
+    });
+
+    try {
+      const draft = await savePromptImprovementDraft(prompt.id, {
+        draft_text: improvement.improved_prompt,
+        analyzer: improvement.analyzer,
+        changed_sections: improvement.changed_sections,
+        safety_notes: improvement.safety_notes,
+      });
+      setSelected((current) =>
+        current?.id === prompt.id
+          ? {
+              ...current,
+              improvement_drafts: [
+                draft,
+                ...current.improvement_drafts.filter(
+                  (item) => item.id !== draft.id,
+                ),
+              ],
+            }
+          : current,
+      );
+      setSavedImprovementId(prompt.id);
+      window.setTimeout(() => setSavedImprovementId(undefined), 3000);
+    } catch {
+      setError("개선안을 저장하지 못했습니다.");
+    }
   }
 
   async function toggleBookmark(prompt: PromptDetail): Promise<void> {
@@ -490,6 +527,7 @@ export function App() {
           <PromptDetailView
             copied={selected?.id === copiedPromptId}
             copiedImprovement={selected?.id === copiedImprovementId}
+            savedImprovement={selected?.id === savedImprovementId}
             onBookmark={toggleBookmark}
             onBack={() => navigate({ name: "list" })}
             onCopy={copyPrompt}
@@ -504,6 +542,7 @@ export function App() {
               navigate({ name: "list" });
             }}
             onNavigate={(id) => navigate({ name: "detail", id })}
+            onSaveImprovement={saveImprovementDraft}
             prompt={selected}
             queueNavigation={queueNavigation}
           />
@@ -698,6 +737,7 @@ function ActiveFilterBar({
 function PromptDetailView({
   copied,
   copiedImprovement,
+  savedImprovement,
   onBack,
   onBookmark,
   onCopy,
@@ -705,11 +745,13 @@ function PromptDetailView({
   onDelete,
   onNavigate,
   onOpenQualityGap,
+  onSaveImprovement,
   prompt,
   queueNavigation,
 }: {
   copied: boolean;
   copiedImprovement: boolean;
+  savedImprovement: boolean;
   onBack(): void;
   onBookmark(prompt: PromptDetail): void;
   onCopy(prompt: PromptDetail): void;
@@ -717,6 +759,7 @@ function PromptDetailView({
   onDelete(prompt: PromptDetail): void;
   onNavigate(id: string): void;
   onOpenQualityGap(gap: PromptQualityGap): void;
+  onSaveImprovement(prompt: PromptDetail): void;
   prompt?: PromptDetail;
   queueNavigation: {
     current?: number;
@@ -776,6 +819,9 @@ function PromptDetailView({
           copied={copiedImprovement}
           improvement={improvement}
           onCopy={() => onCopyImprovement(prompt)}
+          onSave={() => onSaveImprovement(prompt)}
+          saved={savedImprovement}
+          savedDrafts={prompt.improvement_drafts}
         />
         <div className="prompt-actions">
           <button className="secondary-action" onClick={onBack}>
@@ -830,10 +876,16 @@ function PromptCoachPanel({
   copied,
   improvement,
   onCopy,
+  onSave,
+  saved,
+  savedDrafts,
 }: {
   copied: boolean;
   improvement: PromptImprovement;
   onCopy(): void;
+  onSave(): void;
+  saved: boolean;
+  savedDrafts: PromptDetail["improvement_drafts"];
 }) {
   return (
     <section className="coach-panel" aria-label="프롬프트 개선안">
@@ -857,7 +909,30 @@ function PromptCoachPanel({
         <button className="coach-copy-button" onClick={onCopy} type="button">
           <Copy size={16} /> {copied ? "복사됨" : "개선안 복사"}
         </button>
+        <button className="coach-save-button" onClick={onSave} type="button">
+          <FileText size={16} /> {saved ? "저장됨" : "개선안 저장"}
+        </button>
       </div>
+      {savedDrafts.length > 0 && (
+        <div className="saved-drafts" aria-label="저장된 개선안">
+          <h3>저장된 개선안</h3>
+          {savedDrafts.slice(0, 3).map((draft) => (
+            <article className="saved-draft-row" key={draft.id}>
+              <div>
+                <strong>{formatDate(draft.created_at)}</strong>
+                <span>{draft.analyzer}</span>
+              </div>
+              <p>
+                {draft.changed_sections.length > 0
+                  ? draft.changed_sections
+                      .map((section) => qualityGapLabel(section) ?? section)
+                      .join(", ")
+                  : "원문 구조 정리"}
+              </p>
+            </article>
+          ))}
+        </div>
+      )}
     </section>
   );
 }
