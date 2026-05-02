@@ -6,7 +6,7 @@
 - [x] Practice UI에 최근 점수 추이 그래프와 반복 보완 항목을 표시
 - [x] MCP archive tool 설명과 웹 카탈로그에 practice plan/next template 반환을 더 명확히 반영
 - [x] browser E2E, MCP stdio, release gate 검증
-- [ ] 커밋, 푸시, CI 확인
+- [x] 커밋, 푸시, CI 확인
 
 ### 판단 기준
 
