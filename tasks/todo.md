@@ -7,10 +7,10 @@
 - [x] Playwright 자동 E2E 추가: archive -> detail -> coach copy/save -> projects -> export -> mobile overflow
 - [x] Benchmark v1 설계 및 구현: privacy, retrieval, coach quality, analytics, latency를 JSON report로 측정
 - [x] Privacy regression fixture 확장: Markdown/SQLite/FTS/API/export/log/stdout raw secret/path 누출 검사
-- [ ] Release checklist 갱신: PRD2에서 추가된 import/export/project/coach 검증 항목 반영
-- [ ] README/문서 public beta 정리: 설치, hook, local-first, external analysis 미구현, Codex beta, uninstall/delete 경계 확인
-- [ ] Node 22/24와 package smoke 재검증: 현재 Node 20 warning을 실제 지원 버전에서 제거
-- [ ] Beta release candidate 태그 전 최종 live smoke: 새 설치 기준으로 Claude Code/Codex 수집과 웹 UI 확인
+- [x] Release checklist 갱신: PRD2에서 추가된 import/export/project/coach 검증 항목 반영
+- [x] README/문서 public beta 정리: 설치, hook, local-first, external analysis 미구현, Codex beta, uninstall/delete 경계 확인
+- [x] Node 22/24와 package smoke 재검증: 현재 Node 20 warning을 실제 지원 버전에서 제거
+- [x] Beta release candidate 태그 전 최종 live smoke: 새 설치 기준으로 Claude Code/Codex 수집과 웹 UI 확인
 
 ### 최적 순서
 

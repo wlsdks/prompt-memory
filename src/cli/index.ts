@@ -1,5 +1,6 @@
 #!/usr/bin/env node
-import { pathToFileURL } from "node:url";
+import { realpathSync } from "node:fs";
+import { fileURLToPath, pathToFileURL } from "node:url";
 
 import { Command } from "commander";
 
@@ -51,10 +52,23 @@ function runCli(argv: string[]): void {
   program.parse(argv);
 }
 
-const entryUrl = process.argv[1]
-  ? pathToFileURL(process.argv[1]).href
-  : undefined;
+export function isCliEntryPoint(
+  importMetaUrl: string,
+  argvPath = process.argv[1],
+): boolean {
+  if (!argvPath) {
+    return false;
+  }
 
-if (import.meta.url === entryUrl) {
+  try {
+    return (
+      realpathSync(fileURLToPath(importMetaUrl)) === realpathSync(argvPath)
+    );
+  } catch {
+    return importMetaUrl === pathToFileURL(argvPath).href;
+  }
+}
+
+if (isCliEntryPoint(import.meta.url)) {
   runCli(process.argv);
 }

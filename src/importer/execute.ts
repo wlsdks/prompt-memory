@@ -8,6 +8,7 @@ import type {
 import type {
   ImportJob,
   ImportJobStoragePort,
+  ProjectPolicyStoragePort,
   PromptStoragePort,
 } from "../storage/ports.js";
 import {
@@ -36,7 +37,9 @@ export type ImportExecuteResult = {
   source_path_hash: string;
 };
 
-export type ImportExecutionStorage = PromptStoragePort & ImportJobStoragePort;
+export type ImportExecutionStorage = PromptStoragePort &
+  ImportJobStoragePort &
+  Partial<ProjectPolicyStoragePort>;
 
 export async function executeImport(
   storage: ImportExecutionStorage,
@@ -98,6 +101,23 @@ export async function executeImport(
 
     try {
       const event = toImportedPromptEvent(candidate, options, job);
+      if (
+        storage.getProjectPolicyForEvent?.({
+          cwd: event.cwd,
+          project_root: event.project_root,
+        })?.capture_disabled
+      ) {
+        result.skipped_count += 1;
+        storage.createImportRecord({
+          job_id: job.id,
+          record_key: candidate.record_key,
+          record_offset: candidate.record_offset,
+          status: "skipped",
+          error_code: "project_capture_disabled",
+        });
+        continue;
+      }
+
       const redaction = redactPrompt(event.prompt, options.redactionMode);
       const stored = await storage.storePrompt({ event, redaction });
       storage.createImportRecord({

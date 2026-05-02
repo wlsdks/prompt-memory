@@ -4,7 +4,9 @@ import { join } from "node:path";
 import { randomUUID } from "node:crypto";
 import { afterEach, describe, expect, it } from "vitest";
 
-import { initializePromptMemory } from "../../config/config.js";
+import { normalizeClaudeCodePayload } from "../../adapters/claude-code.js";
+import { initializePromptMemory, loadHookAuth } from "../../config/config.js";
+import { redactPrompt } from "../../redaction/redact.js";
 import { createSqlitePromptStorage } from "../../storage/sqlite.js";
 import { createProgram } from "../index.js";
 import { listPromptsForCli } from "./prompts.js";
@@ -72,9 +74,10 @@ describe("import CLI", () => {
   it("does not mutate prompt storage during dry-run", () => {
     const dataDir = createTempDir("prompt-memory-import-data-");
     initializePromptMemory({ dataDir });
+    const hmacSecret = loadHookAuth(dataDir).web_session_secret;
     const storage = createSqlitePromptStorage({
       dataDir,
-      hmacSecret: "test-secret",
+      hmacSecret,
     });
     const file = writeJsonl([
       {
@@ -212,6 +215,60 @@ describe("import CLI", () => {
       storage.close();
     }
   });
+
+  it("skips import candidates when project capture is disabled", async () => {
+    const dataDir = createTempDir("prompt-memory-import-policy-");
+    initializePromptMemory({ dataDir });
+    const hmacSecret = loadHookAuth(dataDir).web_session_secret;
+    const storage = createSqlitePromptStorage({
+      dataDir,
+      hmacSecret,
+    });
+    try {
+      await storeClaudePrompt(storage, {
+        cwd: "/Users/example/policy-project",
+        prompt: "Existing prompt used to create project policy.",
+      });
+      const projectId = storage.listProjects().items[0]!.project_id;
+      storage.updateProjectPolicy(projectId, { capture_disabled: true }, "web");
+    } finally {
+      storage.close();
+    }
+
+    const file = writeJsonl([
+      {
+        hook_event_name: "UserPromptSubmit",
+        session_id: "session-policy-disabled",
+        cwd: "/Users/example/policy-project",
+        prompt: "This import candidate should be skipped by project policy.",
+      },
+    ]);
+    const executed = JSON.parse(
+      await importForCli({
+        dataDir,
+        execute: true,
+        file,
+        json: true,
+        source: "manual-jsonl",
+      }),
+    ) as {
+      imported_count: number;
+      skipped_count: number;
+    };
+    const afterImport = createSqlitePromptStorage({
+      dataDir,
+      hmacSecret,
+    });
+    try {
+      expect(executed).toMatchObject({
+        imported_count: 0,
+        skipped_count: 1,
+      });
+      expect(afterImport.listPrompts().items).toHaveLength(1);
+    } finally {
+      afterImport.close();
+    }
+  });
 });
 
 function writeJsonl(records: Array<Record<string, unknown>>): string {
@@ -230,4 +287,26 @@ function createTempDir(prefix: string): string {
   mkdirSync(dir, { recursive: true });
   tempDirs.push(dir);
   return dir;
+}
+
+async function storeClaudePrompt(
+  storage: ReturnType<typeof createSqlitePromptStorage>,
+  options: { cwd: string; prompt: string },
+) {
+  const event = normalizeClaudeCodePayload(
+    {
+      session_id: `session-${randomUUID()}`,
+      transcript_path: "/Users/example/.claude/session.jsonl",
+      cwd: options.cwd,
+      permission_mode: "default",
+      hook_event_name: "UserPromptSubmit",
+      prompt: options.prompt,
+    },
+    new Date("2026-05-02T10:00:00.000Z"),
+  );
+
+  return storage.storePrompt({
+    event,
+    redaction: redactPrompt(event.prompt, "mask"),
+  });
 }

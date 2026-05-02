@@ -16,6 +16,9 @@ This repository is pre-release software.
 - Codex support: beta adapter
 - Local rule-based analysis preview: implemented
 - Copy-based Prompt Coach: implemented
+- Transcript import: CLI only
+- Anonymized export: web UI and CLI preview/job flow
+- Benchmark v1: implemented as a local regression baseline
 - External LLM analysis: not implemented
 - Default data handling: local only
 
@@ -381,11 +384,53 @@ Rebuild SQLite/FTS from Markdown:
 pnpm prompt-memory rebuild-index
 ```
 
+Preview and import JSONL transcripts:
+
+```sh
+pnpm prompt-memory import --dry-run --file ./transcript.jsonl --save-job
+pnpm prompt-memory import --execute --file ./transcript.jsonl
+pnpm prompt-memory import-job <job-id>
+```
+
+Import is currently CLI-centered. The web UI can browse imported prompts through
+the normal archive and imported-only filters, but there is no web import upload
+screen.
+
+Create and execute an anonymized export:
+
+```sh
+pnpm prompt-memory export --anonymized --preview --preset anonymized_review --json
+pnpm prompt-memory export --anonymized --job <export-job-id> --json
+```
+
+The web UI exposes only anonymized export. Raw export is not implemented.
+Previewed export jobs expire and are invalidated when the selected prompt set,
+project policy versions, redaction version, or preview counts change.
+
+Generate a copy-based Prompt Coach draft:
+
+```sh
+pnpm prompt-memory improve --text "고쳐줘" --json
+```
+
 ## Local Analysis Preview
 
 Prompt detail views include a local rule-based analysis preview. It summarizes whether a prompt includes clear targets, context, constraints, output format, and verification criteria.
 
 This preview runs locally against the stored, redacted prompt body. It does not call an external LLM provider.
+
+## Benchmark
+
+Benchmark v1 measures local regression signals for privacy, retrieval,
+rule-based prompt improvement, analytics, and latency:
+
+```sh
+pnpm benchmark
+pnpm benchmark -- --json
+```
+
+The benchmark uses synthetic fixtures only. It is a local baseline, not a claim
+that real user prompt quality is fully solved.
 
 ## Release Smoke
 
@@ -396,6 +441,15 @@ pnpm smoke:release
 ```
 
 The smoke script builds the package, creates an isolated temporary data directory and HOME, starts the local server, captures fixture-like Claude Code and Codex prompts, verifies CLI list/search/show/delete/rebuild-index, checks SQLite WAL/FTS5, and confirms deleted prompt metadata is removed.
+
+Browser regression smoke is also available:
+
+```sh
+pnpm e2e:browser
+```
+
+It checks the archive, prompt detail, Prompt Coach copy/save flow, projects,
+anonymized export, and mobile overflow against a real local server.
 
 ## Storage
 
@@ -424,6 +478,8 @@ Default behavior:
 - The browser UI uses a same-origin session cookie and CSRF token.
 - Sensitive values are redacted before Markdown, SQLite, and FTS indexing in `mask` mode.
 - External LLM analysis is not implemented and no prompt is sent to an external analysis provider by this app.
+- Prompt Coach is copy-based. It does not automatically replace or resubmit prompts into Claude Code or Codex.
+- Settings and local diagnostics may show local filesystem paths to the local user. Browser prompt/archive/export surfaces mask prompt-body paths and avoid raw prompt identifiers.
 
 Important limits:
 

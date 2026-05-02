@@ -104,6 +104,19 @@ describe("plugin packaging files", () => {
     expect(packageJson.files).toContain("docs/PLUGINS.md");
   });
 
+  it("restores executable mode for the npm CLI bin after server builds", () => {
+    const packageJson = readJson<{ scripts: Record<string, string> }>(
+      "package.json",
+    );
+
+    expect(packageJson.scripts["build:server"]).toContain(
+      "node scripts/fix-bin-mode.mjs",
+    );
+    expect(
+      readFileSync(join(process.cwd(), "scripts/fix-bin-mode.mjs"), "utf8"),
+    ).toContain("chmodSync");
+  });
+
   it("registers the repo-local plugin in the local marketplace file", () => {
     const marketplace = readJson<{
       plugins: Array<{

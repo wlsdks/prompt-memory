@@ -128,6 +128,72 @@ describe("anonymized export", () => {
     ).toThrow("Export job is no longer valid");
     expect(storage.getExportJob(preview.id)?.status).toBe("invalid");
   });
+
+  it("invalidates execution when exportable prompt membership changes after preview", async () => {
+    const dataDir = createTempDir();
+    initializePromptMemory({ dataDir });
+    const storage = createSqlitePromptStorage({
+      dataDir,
+      hmacSecret: "test-secret",
+      now: nextDate(["2026-05-02T14:00:00.000Z", "2026-05-02T14:01:00.000Z"]),
+    });
+
+    await storeClaudePrompt(storage, {
+      prompt: "Export this first prompt.",
+      receivedAt: "2026-05-02T14:00:00.000Z",
+      cwd: "/Users/example/project",
+    });
+    const preview = createAnonymizedExportPreview(storage, {
+      hmacSecret: "test-secret",
+      preset: "personal_backup",
+      now: new Date("2026-05-02T14:01:00.000Z"),
+    });
+    await storeClaudePrompt(storage, {
+      prompt: "This later prompt must force a fresh preview.",
+      receivedAt: "2026-05-02T14:02:00.000Z",
+      cwd: "/Users/example/project",
+    });
+
+    expect(() =>
+      executeAnonymizedExport(storage, preview.id, {
+        hmacSecret: "test-secret",
+        now: new Date("2026-05-02T14:03:00.000Z"),
+      }),
+    ).toThrow("Export job is no longer valid");
+    expect(storage.getExportJob(preview.id)?.status).toBe("invalid");
+  });
+
+  it("invalidates execution when project policy changes after preview", async () => {
+    const dataDir = createTempDir();
+    initializePromptMemory({ dataDir });
+    const storage = createSqlitePromptStorage({
+      dataDir,
+      hmacSecret: "test-secret",
+      now: nextDate(["2026-05-02T15:00:00.000Z", "2026-05-02T15:01:00.000Z"]),
+    });
+
+    await storeClaudePrompt(storage, {
+      prompt: "Export this prompt before policy changes.",
+      receivedAt: "2026-05-02T15:00:00.000Z",
+      cwd: "/Users/example/policy-project",
+    });
+    const preview = createAnonymizedExportPreview(storage, {
+      hmacSecret: "test-secret",
+      preset: "anonymized_review",
+      now: new Date("2026-05-02T15:01:00.000Z"),
+    });
+    const projectId = storage.listProjects().items[0]!.project_id;
+
+    storage.updateProjectPolicy(projectId, { alias: "renamed" }, "web");
+
+    expect(() =>
+      executeAnonymizedExport(storage, preview.id, {
+        hmacSecret: "test-secret",
+        now: new Date("2026-05-02T15:02:00.000Z"),
+      }),
+    ).toThrow("Export job is no longer valid");
+    expect(storage.getExportJob(preview.id)?.status).toBe("invalid");
+  });
 });
 
 async function storeClaudePrompt(

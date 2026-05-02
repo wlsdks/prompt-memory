@@ -133,20 +133,22 @@ export function executeAnonymizedExport(
   }
 
   const currentPromptDetails = collectExportablePrompts(storage);
-  const detailsByHash = new Map(
-    currentPromptDetails.map((detail) => [
-      createPromptHash(detail.id, options.hmacSecret),
-      detail,
-    ]),
+  const currentPromptIdHashes = currentPromptDetails.map((detail) =>
+    createPromptHash(detail.id, options.hmacSecret),
   );
-  const selected = job.prompt_id_hashes
-    .map((hash) => detailsByHash.get(hash))
-    .filter((detail): detail is PromptDetail => Boolean(detail));
+  const currentProjectPolicyVersions = collectProjectPolicyVersions(
+    storage,
+    currentPromptDetails,
+    options.hmacSecret,
+  );
 
-  if (selected.length !== job.prompt_id_hashes.length) {
-    storage.updateExportJobStatus(job.id, "invalid");
-    throw new Error("Export job is no longer valid. Create a new preview.");
-  }
+  validateExportPreviewSnapshot(storage, job, {
+    promptIdHashes: currentPromptIdHashes,
+    projectPolicyVersions: currentProjectPolicyVersions,
+    promptCount: currentPromptDetails.length,
+    sensitiveCount: currentPromptDetails.filter((detail) => detail.is_sensitive)
+      .length,
+  });
 
   storage.updateExportJobStatus(job.id, "completed");
 
@@ -155,8 +157,8 @@ export function executeAnonymizedExport(
     preset: job.preset,
     redaction_version: job.redaction_version,
     generated_at: now.toISOString(),
-    count: selected.length,
-    items: selected.map((detail) => ({
+    count: currentPromptDetails.length,
+    items: currentPromptDetails.map((detail) => ({
       anonymous_id: `anon_${createPromptHash(detail.id, options.hmacSecret).slice(3, 19)}`,
       tool: detail.tool,
       coarse_date: detail.received_at.slice(0, 10),
@@ -166,6 +168,59 @@ export function executeAnonymizedExport(
       quality_gaps: detail.quality_gaps,
     })),
   };
+}
+
+function validateExportPreviewSnapshot(
+  storage: AnonymizedExportStorage,
+  job: ExportJob,
+  current: {
+    promptIdHashes: string[];
+    projectPolicyVersions: Record<string, number>;
+    promptCount: number;
+    sensitiveCount: number;
+  },
+): void {
+  const valid =
+    job.redaction_version === REDACTION_VERSION &&
+    sameStringArray(job.prompt_id_hashes, current.promptIdHashes) &&
+    sameNumberRecord(
+      job.project_policy_versions,
+      current.projectPolicyVersions,
+    ) &&
+    job.counts.prompt_count === current.promptCount &&
+    job.counts.sensitive_count === current.sensitiveCount;
+
+  if (!valid) {
+    storage.updateExportJobStatus(job.id, "invalid");
+    throw new Error("Export job is no longer valid. Create a new preview.");
+  }
+}
+
+function sameStringArray(left: string[], right: string[]): boolean {
+  return (
+    left.length === right.length &&
+    left.every((value, index) => value === right[index])
+  );
+}
+
+function sameNumberRecord(
+  left: Record<string, number>,
+  right: Record<string, number>,
+): boolean {
+  const leftEntries = Object.entries(left).sort(([a], [b]) =>
+    a.localeCompare(b),
+  );
+  const rightEntries = Object.entries(right).sort(([a], [b]) =>
+    a.localeCompare(b),
+  );
+
+  return (
+    leftEntries.length === rightEntries.length &&
+    leftEntries.every(
+      ([key, value], index) =>
+        key === rightEntries[index]?.[0] && value === rightEntries[index]?.[1],
+    )
+  );
 }
 
 function collectExportablePrompts(
