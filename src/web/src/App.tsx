@@ -168,16 +168,37 @@ export function App() {
     void getSettings()
       .then(setSettings)
       .catch(() => undefined);
+  }, []);
+
+  useEffect(() => {
+    if (!needsDashboardData(view.name) || dashboard) {
+      return;
+    }
+
     void getQualityDashboard()
       .then(setDashboard)
       .catch(() => undefined);
+  }, [dashboard, view.name]);
+
+  useEffect(() => {
+    if (!needsArchiveScoreData(view.name) || archiveScore) {
+      return;
+    }
+
     void getArchiveScoreReport()
       .then(setArchiveScore)
       .catch(() => undefined);
+  }, [archiveScore, view.name]);
+
+  useEffect(() => {
+    if (view.name !== "projects" || projects.length > 0) {
+      return;
+    }
+
     void listProjects()
       .then(setProjects)
       .catch(() => undefined);
-  }, []);
+  }, [projects.length, view.name]);
 
   useEffect(() => {
     if (view.name !== "detail") {
@@ -1300,7 +1321,12 @@ function DashboardView({
   }
 
   const habitCoach = createPromptHabitCoach(dashboard, archiveScore);
-  const lowScoreCount = archiveScore?.low_score_prompts.length ?? 0;
+  const reviewCount =
+    archiveScore?.low_score_prompts.filter(isReviewableScorePrompt).length ?? 0;
+  const insightSignalCount =
+    dashboard.patterns.length +
+    dashboard.duplicate_prompt_groups.length +
+    dashboard.useful_prompts.length;
 
   return (
     <div className="dashboard-layout dashboard-overview">
@@ -1318,14 +1344,16 @@ function DashboardView({
           icon={<Target size={18} />}
           label="Coach"
           metric={habitCoach.score.value}
+          metricLabel="habit score"
           onSelect={() => onNavigateSection("coach")}
           title="Improve the next prompt"
         />
         <OverviewSectionCard
-          detail={`${lowScoreCount} low score prompts`}
+          detail={`${reviewCount} prompts need review`}
           icon={<ListChecks size={18} />}
           label="Scores"
           metric={archiveScore?.archive_score.average ?? "-"}
+          metricLabel="archive score"
           onSelect={() => onNavigateSection("scores")}
           title="Review archive quality"
         />
@@ -1333,7 +1361,8 @@ function DashboardView({
           detail={`${dashboard.project_profiles.length} projects · ${dashboard.duplicate_prompt_groups.length} duplicate groups`}
           icon={<GitCompare size={18} />}
           label="Insights"
-          metric={dashboard.useful_prompts.length}
+          metric={insightSignalCount}
+          metricLabel="signals"
           onSelect={() => onNavigateSection("insights")}
           title="Find reuse and project patterns"
         />
@@ -1542,6 +1571,7 @@ function OverviewSectionCard({
   icon,
   label,
   metric,
+  metricLabel,
   onSelect,
   title,
 }: {
@@ -1549,6 +1579,7 @@ function OverviewSectionCard({
   icon: ReactNode;
   label: string;
   metric: number | string;
+  metricLabel: string;
   onSelect(): void;
   title: string;
 }) {
@@ -1560,7 +1591,10 @@ function OverviewSectionCard({
       </span>
       <strong>{title}</strong>
       <span>{detail}</span>
-      <em>{metric}</em>
+      <em>
+        <strong>{metric}</strong>
+        <span>{metricLabel}</span>
+      </em>
     </button>
   );
 }
@@ -1923,6 +1957,8 @@ function ArchiveScoreReviewPanel({
       ] as const)
     : [];
   const maxBandCount = Math.max(1, ...distribution.map(([, count]) => count));
+  const reviewPrompts =
+    report?.low_score_prompts.filter(isReviewableScorePrompt).slice(0, 6) ?? [];
 
   return (
     <section
@@ -1990,11 +2026,11 @@ function ArchiveScoreReviewPanel({
             ))}
           </div>
           <div className="archive-low-scores">
-            <h3>Lowest scoring prompts</h3>
-            {report.low_score_prompts.length === 0 && (
-              <p className="muted">No low score prompts yet.</p>
+            <h3>Prompts to review</h3>
+            {reviewPrompts.length === 0 && (
+              <p className="muted">No prompts need score review.</p>
             )}
-            {report.low_score_prompts.slice(0, 6).map((prompt) => (
+            {reviewPrompts.map((prompt) => (
               <button
                 className="archive-low-score-row"
                 key={prompt.id}
@@ -2048,7 +2084,7 @@ function ProjectProfilesPanel({
             <div className="project-profile-main">
               <div>
                 <strong>{profile.label}</strong>
-                <small>{profile.key}</small>
+                {profile.key !== profile.label && <small>{profile.key}</small>}
               </div>
               <span>{formatDate(profile.latest_received_at)}</span>
             </div>
@@ -2296,7 +2332,7 @@ function SettingsView({
           <dt>Version</dt>
           <dd>{health?.version ?? "-"}</dd>
           <dt>Data directory</dt>
-          <dd>{settings?.data_dir ?? health?.data_dir ?? "-"}</dd>
+          <dd>{displayLocalPath(settings?.data_dir ?? health?.data_dir)}</dd>
           <dt>Address</dt>
           <dd>
             {settings ? `${settings.server.host}:${settings.server.port}` : "-"}
@@ -2313,7 +2349,7 @@ function SettingsView({
             {settings?.excluded_project_roots.length ? (
               <ul className="path-list">
                 {settings.excluded_project_roots.map((path) => (
-                  <li key={path}>{path}</li>
+                  <li key={path}>{displayLocalPath(path)}</li>
                 ))}
               </ul>
             ) : (
@@ -2637,7 +2673,9 @@ function buildSetupChecks({
     {
       label: "Local storage",
       status: settings?.data_dir ? "good" : "pending",
-      detail: settings?.data_dir ?? "Checking data directory.",
+      detail: settings?.data_dir
+        ? displayLocalPath(settings.data_dir)
+        : "Checking data directory.",
     },
     {
       label: "Redaction",
@@ -2725,6 +2763,21 @@ function routeFromLocation(): View {
   }
 
   return { name: "list" };
+}
+
+function needsDashboardData(viewName: View["name"]): boolean {
+  return [
+    "dashboard",
+    "coach",
+    "scores",
+    "insights",
+    "exports",
+    "settings",
+  ].includes(viewName);
+}
+
+function needsArchiveScoreData(viewName: View["name"]): boolean {
+  return ["dashboard", "coach", "scores"].includes(viewName);
 }
 
 function filtersFromLocation(): PromptFilters {
@@ -2964,6 +3017,32 @@ function activeFilterChips(
 
 function projectLabel(path: string): string {
   return path.split("/").filter(Boolean).at(-1) ?? path;
+}
+
+function displayLocalPath(path?: string): string {
+  if (!path) {
+    return "-";
+  }
+
+  const normalized = path.replace(/\\/g, "/").replace(/\/+$/, "");
+  const parts = normalized.split("/").filter(Boolean);
+  const last = parts.at(-1);
+
+  if (!last) {
+    return "[local path]";
+  }
+
+  return `[local path]/${last}`;
+}
+
+function isReviewableScorePrompt(
+  prompt: ArchiveScoreReport["low_score_prompts"][number],
+): boolean {
+  return (
+    prompt.quality_score < 70 ||
+    prompt.quality_score_band === "needs_work" ||
+    prompt.quality_score_band === "weak"
+  );
 }
 
 function isQualityGapKey(value: string | null): value is PromptQualityGap {

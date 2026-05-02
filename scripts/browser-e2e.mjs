@@ -121,6 +121,7 @@ try {
 
   await page.getByRole("button", { name: "Dashboard" }).click();
   await page.getByRole("heading", { name: "Quality dashboard" }).waitFor();
+  await page.getByText("Average prompt score").waitFor();
   await assertText(
     page,
     "Average prompt score",
@@ -145,6 +146,7 @@ try {
 
   await page.getByRole("button", { name: "Coach", exact: true }).click();
   await page.getByRole("heading", { name: "Prompt coach" }).waitFor();
+  await page.getByText("Prompt habit command center").waitFor();
   await assertText(
     page,
     "Prompt habit command center",
@@ -164,6 +166,7 @@ try {
 
   await page.getByRole("button", { name: "Scores", exact: true }).click();
   await page.getByRole("heading", { name: "Prompt scores" }).waitFor();
+  await page.getByText("Archive score review").waitFor();
   await assertText(
     page,
     "Archive score review",
@@ -172,13 +175,14 @@ try {
   await page.getByRole("button", { name: "Evaluate archive" }).click();
   await assertText(
     page,
-    "Lowest scoring prompts",
-    "Scores should show lowest scoring prompts.",
+    "Prompts to review",
+    "Scores should show prompts that need review.",
   );
   await assertBrowserSafe(page, "scores");
 
   await page.getByRole("button", { name: "Insights", exact: true }).click();
   await page.getByRole("heading", { name: "Prompt insights" }).waitFor();
+  await page.getByText("Project quality profile").waitFor();
   await assertText(
     page,
     "Project quality profile",
@@ -212,6 +216,17 @@ try {
     "[REDACTED:path]",
     "Export JSON preview should include anonymized paths.",
   );
+
+  await page.getByRole("button", { name: "Settings" }).click();
+  await page.getByRole("heading", { name: "Settings" }).waitFor();
+  await page.getByText("[local path]").first().waitFor();
+  await assertBrowserSafe(page, "settings");
+  await assertText(
+    page,
+    "[local path]",
+    "Settings should show masked local paths.",
+  );
+  await assertNotText(page, tempRoot, "Settings must not show raw temp paths.");
 
   await page.setViewportSize({ width: 390, height: 844 });
   const viewport = await page.evaluate(() => ({
@@ -327,6 +342,11 @@ async function assertBrowserSafe(page, label) {
 async function assertText(page, expected, message) {
   const text = await page.locator("body").innerText();
   assertIncludes(text, expected, message);
+}
+
+async function assertNotText(page, unexpected, message) {
+  const text = await page.locator("body").innerText();
+  assertNotIncludes(text, unexpected, message);
 }
 
 async function waitForHealth(url) {

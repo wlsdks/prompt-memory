@@ -216,6 +216,12 @@ function translateDynamic(value: string): string | undefined {
       "낮은 점수 프롬프트 $1개",
     );
   }
+  if (/^\d+ prompts need review$/.test(value)) {
+    return value.replace(
+      /^(\d+) prompts need review$/,
+      "리뷰 필요한 프롬프트 $1개",
+    );
+  }
   if (/^\d+ projects · \d+ duplicate groups$/.test(value)) {
     return value.replace(
       /^(\d+) projects · (\d+) duplicate groups$/,
@@ -350,6 +356,9 @@ const UI_TRANSLATIONS: Record<string, string> = {
   "Review archive quality": "아카이브 품질 검토",
   "Find reuse and project patterns": "재사용과 프로젝트 패턴 찾기",
   "No repeated weakness yet": "아직 반복 약점이 없습니다",
+  "habit score": "습관 점수",
+  "archive score": "아카이브 점수",
+  signals: "신호",
   "Prompt quality metrics": "프롬프트 품질 지표",
   "Prompt habit coach": "프롬프트 습관 코치",
   "Prompt habit command center": "프롬프트 습관 커맨드 센터",
@@ -428,8 +437,8 @@ const UI_TRANSLATIONS: Record<string, string> = {
   "Average archive score": "평균 아카이브 점수",
   "Score distribution": "점수 분포",
   "Top quality gaps": "주요 부족 항목",
-  "Lowest scoring prompts": "낮은 점수 프롬프트",
-  "No low score prompts yet.": "낮은 점수 프롬프트가 없습니다.",
+  "Prompts to review": "리뷰할 프롬프트",
+  "No prompts need score review.": "점수 리뷰가 필요한 프롬프트가 없습니다.",
   excellent: "우수",
   good: "좋음",
   needs_work: "보강 필요",

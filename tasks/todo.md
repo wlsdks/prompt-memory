@@ -1,5 +1,20 @@
 # 작업 계획
 
+## 2026-05-02 Display Data Usefulness And Query Audit
+
+- [x] Dashboard/Coach/Scores/Insights에 표시되는 데이터 목록과 필요성 평가
+- [x] API/SQLite 집계 경로가 실제 표시 데이터와 일치하는지 검증
+- [x] 불필요하거나 오해를 부르는 표시 항목 제거/조정
+- [x] 반복 호출 쿼리와 dashboard 집계 쿼리 최적화 필요 여부 확인
+- [x] 테스트, 브라우저 웹 점검, 커밋 및 푸시
+
+### 판단 기준
+
+- 사용자가 다음 행동을 결정하는 데 직접 도움이 되는 데이터만 우선 표시한다.
+- privacy-safe project label, masked path, redaction 상태를 유지한다.
+- 단순히 “있어서 보여주는” 데이터는 숨기거나 더 적절한 화면으로 이동한다.
+- 쿼리 최적화는 실제 WHERE/ORDER/GROUP BY 경로를 보고 판단한다.
+
 ## 2026-05-02 Dashboard Information Architecture Split
 
 - [x] Dashboard를 overview 전용 화면으로 축소

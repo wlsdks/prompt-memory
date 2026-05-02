@@ -1014,11 +1014,30 @@ dd {
 
 .overview-section-card em {
   align-self: end;
-  color: var(--pm-warning);
+  display: grid;
+  gap: 2px;
   font-size: 28px;
   font-style: normal;
   font-weight: 510;
   line-height: 32px;
+}
+
+.overview-section-card em strong {
+  color: var(--pm-warning);
+  font-size: 28px;
+  font-weight: 510;
+  line-height: 32px;
+}
+
+.overview-section-card em span {
+  color: var(--pm-text-subtle);
+  font-family:
+    "JetBrains Mono", SFMono-Regular, ui-monospace, Menlo, Consolas, monospace;
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  line-height: 14px;
+  text-transform: uppercase;
 }
 
 .metric {

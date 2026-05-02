@@ -66,7 +66,27 @@ describe("SQLite prompt storage", () => {
       { version: 6, name: "006_import_jobs" },
       { version: 7, name: "007_prompt_improvement_drafts" },
       { version: 8, name: "008_export_jobs" },
+      { version: 9, name: "009_dashboard_query_indexes" },
     ]);
+    const db = new Database(join(dataDir, "prompt-memory.sqlite"));
+    try {
+      const indexes = db
+        .prepare("PRAGMA index_list(prompts)")
+        .all()
+        .map((row) => (row as { name: string }).name);
+      expect(indexes).toEqual(
+        expect.arrayContaining([
+          "idx_prompts_deleted_received",
+          "idx_prompts_deleted_tool_received",
+          "idx_prompts_deleted_sensitive",
+          "idx_prompts_deleted_hash_received",
+          "idx_prompts_deleted_cwd_received",
+          "idx_prompts_deleted_project_root_received",
+        ]),
+      );
+    } finally {
+      db.close();
+    }
 
     const prompts = storage.listPromptRows();
     expect(prompts).toHaveLength(1);
@@ -259,6 +279,7 @@ describe("SQLite prompt storage", () => {
       cwd: "/Users/example/project-b",
     });
     storage.recordPromptUsage(docs.id, "prompt_copied");
+    storage.recordPromptUsage(docs.id, "prompt_copied");
     storage.setPromptBookmark(docs.id, true);
 
     const dashboard = storage.getQualityDashboard();
@@ -373,7 +394,7 @@ describe("SQLite prompt storage", () => {
         quality_gap_rate: 0,
         average_quality_score: 100,
         sensitive_count: 0,
-        copied_count: 1,
+        copied_count: 2,
         bookmarked_count: 1,
         top_gap: undefined,
       }),

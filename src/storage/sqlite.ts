@@ -120,6 +120,13 @@ type PromptUsefulnessRow = {
 
 type UsefulPromptRow = PromptRow & PromptUsefulnessRow;
 
+type PromptSignalRow = {
+  checklist_json: string | null;
+  tags_json: string | null;
+};
+
+type PromptWithSignalRow = PromptRow & PromptSignalRow;
+
 type ProjectPolicyRow = {
   project_key: string;
   display_alias: string | null;
@@ -376,6 +383,7 @@ function applyMigrations(db: Database.Database): void {
   applyImportJobMigration(db);
   applyPromptImprovementDraftMigration(db);
   applyExportJobMigration(db);
+  applyDashboardQueryIndexMigration(db);
 }
 
 function applyAnalysisChecklistTagsMigration(db: Database.Database): void {
@@ -599,6 +607,33 @@ function applyExportJobMigration(db: Database.Database): void {
     db.prepare(
       "INSERT INTO schema_migrations(version, name, applied_at) VALUES (?, ?, ?)",
     ).run(8, "008_export_jobs", new Date().toISOString());
+  }
+}
+
+function applyDashboardQueryIndexMigration(db: Database.Database): void {
+  const applied = db
+    .prepare("SELECT 1 FROM schema_migrations WHERE version = ?")
+    .get(9);
+
+  db.exec(`
+    CREATE INDEX IF NOT EXISTS idx_prompts_deleted_received
+      ON prompts(deleted_at, received_at DESC, id DESC);
+    CREATE INDEX IF NOT EXISTS idx_prompts_deleted_tool_received
+      ON prompts(deleted_at, tool, received_at DESC, id DESC);
+    CREATE INDEX IF NOT EXISTS idx_prompts_deleted_sensitive
+      ON prompts(deleted_at, is_sensitive);
+    CREATE INDEX IF NOT EXISTS idx_prompts_deleted_hash_received
+      ON prompts(deleted_at, stored_content_hash, received_at DESC, id DESC);
+    CREATE INDEX IF NOT EXISTS idx_prompts_deleted_cwd_received
+      ON prompts(deleted_at, cwd, received_at DESC, id DESC);
+    CREATE INDEX IF NOT EXISTS idx_prompts_deleted_project_root_received
+      ON prompts(deleted_at, project_root, received_at DESC, id DESC);
+  `);
+
+  if (!applied) {
+    db.prepare(
+      "INSERT INTO schema_migrations(version, name, applied_at) VALUES (?, ?, ?)",
+    ).run(9, "009_dashboard_query_indexes", new Date().toISOString());
   }
 }
 
@@ -1598,7 +1633,7 @@ function readPromptUsefulness(
     .prepare(
       `
       SELECT
-        COUNT(pue.id) AS copied_count,
+        COUNT(DISTINCT pue.id) AS copied_count,
         MAX(pue.created_at) AS last_copied_at,
         pb.created_at AS bookmarked_at
       FROM prompts p
@@ -2271,7 +2306,10 @@ function readDuplicatePromptGroups(
         COUNT(*) AS count,
         MAX(received_at) AS latest_received_at
       FROM prompts
-      WHERE deleted_at IS NULL
+      WHERE
+        deleted_at IS NULL
+        AND stored_content_hash IS NOT NULL
+        AND stored_content_hash <> ''
       GROUP BY stored_content_hash
       HAVING count > 1
       ORDER BY count DESC, latest_received_at DESC
@@ -2288,14 +2326,18 @@ function readDuplicatePromptGroups(
     const rows = db
       .prepare(
         `
-        SELECT *
-        FROM prompts
-        WHERE deleted_at IS NULL AND stored_content_hash = ?
-        ORDER BY received_at DESC, id DESC
+        SELECT
+          p.*,
+          pa.checklist_json,
+          pa.tags_json
+        FROM prompts p
+        LEFT JOIN prompt_analyses pa ON pa.prompt_id = p.id
+        WHERE p.deleted_at IS NULL AND p.stored_content_hash = ?
+        ORDER BY p.received_at DESC, p.id DESC
         LIMIT 6
         `,
       )
-      .all(group.stored_content_hash) as PromptRow[];
+      .all(group.stored_content_hash) as PromptWithSignalRow[];
     const projects = [
       ...new Set(rows.map((row) => row.cwd).sort((a, b) => a.localeCompare(b))),
     ];
@@ -2306,14 +2348,14 @@ function readDuplicatePromptGroups(
       latest_received_at: group.latest_received_at,
       projects,
       prompts: rows.map((row) => {
-        const summary = toPromptSummary(db, row);
+        const signals = readPromptSignalsFromRow(row);
         return {
           id: row.id,
           tool: row.tool,
           cwd: row.cwd,
           received_at: row.received_at,
-          tags: summary.tags,
-          quality_gaps: summary.quality_gaps,
+          tags: signals.tags,
+          quality_gaps: signals.quality_gaps,
         };
       }),
     };
@@ -2326,10 +2368,13 @@ function readUsefulPrompts(db: Database.Database): UsefulPrompt[] {
       `
       SELECT
         p.*,
-        COUNT(pue.id) AS copied_count,
+        pa.checklist_json,
+        pa.tags_json,
+        COUNT(DISTINCT pue.id) AS copied_count,
         MAX(pue.created_at) AS last_copied_at,
         pb.created_at AS bookmarked_at
       FROM prompts p
+      LEFT JOIN prompt_analyses pa ON pa.prompt_id = p.id
       LEFT JOIN prompt_usage_events pue
         ON pue.prompt_id = p.id AND pue.event_type = 'prompt_copied'
       LEFT JOIN prompt_bookmarks pb ON pb.prompt_id = p.id
@@ -2344,10 +2389,10 @@ function readUsefulPrompts(db: Database.Database): UsefulPrompt[] {
       LIMIT 8
       `,
     )
-    .all() as UsefulPromptRow[];
+    .all() as Array<UsefulPromptRow & PromptSignalRow>;
 
   return rows.map((row) => {
-    const summary = toPromptSummary(db, row);
+    const signals = readPromptSignalsFromRow(row);
     return {
       id: row.id,
       tool: row.tool,
@@ -2357,10 +2402,24 @@ function readUsefulPrompts(db: Database.Database): UsefulPrompt[] {
       last_copied_at: row.last_copied_at ?? undefined,
       bookmarked: row.bookmarked_at !== null,
       bookmarked_at: row.bookmarked_at ?? undefined,
-      tags: summary.tags,
-      quality_gaps: summary.quality_gaps,
+      tags: signals.tags,
+      quality_gaps: signals.quality_gaps,
     };
   });
+}
+
+function readPromptSignalsFromRow(row: PromptSignalRow): {
+  tags: PromptTag[];
+  quality_gaps: string[];
+} {
+  const checklist = readChecklist(row?.checklist_json ?? null);
+
+  return {
+    tags: readPromptTags(row?.tags_json ?? null),
+    quality_gaps: checklist
+      .filter((item) => item.status !== "good")
+      .map((item) => item.label),
+  };
 }
 
 function readCount(
@@ -2563,8 +2622,8 @@ function readProjectUsefulness(
       `
       SELECT
         COALESCE(NULLIF(p.project_root, ''), p.cwd) AS project,
-        COUNT(pue.id) AS copied_count,
-        COUNT(pb.prompt_id) AS bookmarked_count
+        COUNT(DISTINCT pue.id) AS copied_count,
+        COUNT(DISTINCT pb.prompt_id) AS bookmarked_count
       FROM prompts p
       LEFT JOIN prompt_usage_events pue
         ON pue.prompt_id = p.id AND pue.event_type = 'prompt_copied'
@@ -2790,7 +2849,7 @@ function listProjectsForPolicy(
         p.received_at,
         p.is_sensitive,
         pa.checklist_json,
-        COUNT(pue.id) AS copied_count,
+        COUNT(DISTINCT pue.id) AS copied_count,
         CASE WHEN pb.prompt_id IS NULL THEN 0 ELSE 1 END AS bookmarked_count
       FROM prompts p
       LEFT JOIN prompt_analyses pa ON pa.prompt_id = p.id
@@ -3208,6 +3267,18 @@ CREATE INDEX IF NOT EXISTS idx_prompts_session_id ON prompts(session_id);
 CREATE INDEX IF NOT EXISTS idx_prompts_index_status ON prompts(index_status);
 CREATE INDEX IF NOT EXISTS idx_prompts_stored_content_hash
   ON prompts(stored_content_hash);
+CREATE INDEX IF NOT EXISTS idx_prompts_deleted_received
+  ON prompts(deleted_at, received_at DESC, id DESC);
+CREATE INDEX IF NOT EXISTS idx_prompts_deleted_tool_received
+  ON prompts(deleted_at, tool, received_at DESC, id DESC);
+CREATE INDEX IF NOT EXISTS idx_prompts_deleted_sensitive
+  ON prompts(deleted_at, is_sensitive);
+CREATE INDEX IF NOT EXISTS idx_prompts_deleted_hash_received
+  ON prompts(deleted_at, stored_content_hash, received_at DESC, id DESC);
+CREATE INDEX IF NOT EXISTS idx_prompts_deleted_cwd_received
+  ON prompts(deleted_at, cwd, received_at DESC, id DESC);
+CREATE INDEX IF NOT EXISTS idx_prompts_deleted_project_root_received
+  ON prompts(deleted_at, project_root, received_at DESC, id DESC);
 CREATE INDEX IF NOT EXISTS idx_prompt_usage_events_prompt_id
   ON prompt_usage_events(prompt_id);
 CREATE INDEX IF NOT EXISTS idx_prompt_usage_events_type_created_at
