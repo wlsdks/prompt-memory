@@ -5,6 +5,7 @@ import { Command } from "commander";
 
 import { registerDoctorCommand } from "./commands/doctor.js";
 import { registerHookCommand } from "./commands/hook.js";
+import { registerImportCommand } from "./commands/import.js";
 import { registerInstallHookCommands } from "./commands/install-hook.js";
 import { registerInitCommand } from "./commands/init.js";
 import { registerPromptCommands } from "./commands/prompts.js";
@@ -24,6 +25,7 @@ export function createProgram(): Command {
 
   registerInitCommand(program);
   registerHookCommand(program);
+  registerImportCommand(program);
   registerInstallHookCommands(program);
   registerSetupCommand(program);
   registerDoctorCommand(program);

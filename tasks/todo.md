@@ -31,14 +31,14 @@
 
 ## 2026-05-02 Transcript Import Dry Run
 
-- [ ] import dry-run 범위 확정
-- [ ] source별 allowlist parser 실패 테스트 작성
-- [ ] `prompt-memory import --dry-run --file <path>` CLI 추가
-- [ ] raw-free dry-run summary 출력 구현
-- [ ] assistant/tool/command/file content 제외 회귀 테스트
-- [ ] malformed JSONL이 전체 dry-run을 깨지 않는지 검증
-- [ ] dry-run이 Markdown, prompt index, FTS를 변경하지 않는지 검증
-- [ ] targeted/full 검증, 커밋 및 푸시
+- [x] import dry-run 범위 확정
+- [x] source별 allowlist parser 실패 테스트 작성
+- [x] `prompt-memory import --dry-run --file <path>` CLI 추가
+- [x] raw-free dry-run summary 출력 구현
+- [x] assistant/tool/command/file content 제외 회귀 테스트
+- [x] malformed JSONL이 전체 dry-run을 깨지 않는지 검증
+- [x] dry-run이 Markdown, prompt index, FTS를 변경하지 않는지 검증
+- [x] targeted/full 검증, 커밋 및 푸시
 
 ### 첫 구현 범위
 
