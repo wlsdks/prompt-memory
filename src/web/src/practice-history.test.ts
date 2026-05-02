@@ -3,6 +3,7 @@ import { describe, expect, it } from "vitest";
 import {
   appendPracticeHistory,
   createPracticeHistoryItem,
+  markPracticeOutcome,
   readPracticeHistory,
   summarizePracticeHistory,
   type PracticePromptAnalysis,
@@ -73,6 +74,87 @@ describe("practice history", () => {
     expect(storage.value).not.toContain("Fix the private project");
     expect(storage.value).not.toContain("/Users/example");
     expect(storage.value).not.toContain("sk-proj");
+  });
+
+  it("marks copied draft outcomes without storing prompt content", () => {
+    const first = createPracticeHistoryItem({
+      analysis: analysisFixture({ score: 91 }),
+      now: new Date("2026-05-03T01:03:00.000Z"),
+    });
+    const second = createPracticeHistoryItem({
+      analysis: analysisFixture({ score: 72, label: "Scope boundaries" }),
+      now: new Date("2026-05-03T01:04:00.000Z"),
+    });
+
+    const history = markPracticeOutcome(
+      [second, first],
+      first.id,
+      "worked",
+      new Date("2026-05-03T01:05:00.000Z"),
+    );
+
+    expect(history[0]?.outcome).toBeUndefined();
+    expect(history[1]).toMatchObject({
+      id: first.id,
+      outcome: "worked",
+      outcome_at: "2026-05-03T01:05:00.000Z",
+    });
+    expect(JSON.stringify(history)).not.toContain("Fix the private project");
+    expect(JSON.stringify(history)).not.toContain("/Users/example");
+    expect(JSON.stringify(history)).not.toContain("sk-proj");
+  });
+
+  it("summarizes copied draft outcomes", () => {
+    const first = createPracticeHistoryItem({
+      analysis: analysisFixture({ score: 80 }),
+      now: new Date("2026-05-03T01:03:00.000Z"),
+    });
+    const second = createPracticeHistoryItem({
+      analysis: analysisFixture({ score: 75 }),
+      now: new Date("2026-05-03T01:04:00.000Z"),
+    });
+    const third = createPracticeHistoryItem({
+      analysis: analysisFixture({ score: 68 }),
+      now: new Date("2026-05-03T01:05:00.000Z"),
+    });
+
+    const history = markPracticeOutcome(
+      markPracticeOutcome(
+        markPracticeOutcome([third, second, first], third.id, "blocked"),
+        second.id,
+        "needs_context",
+      ),
+      first.id,
+      "worked",
+    );
+
+    expect(summarizePracticeHistory(history)).toMatchObject({
+      workedCount: 1,
+      needsContextCount: 1,
+      blockedCount: 1,
+      latestOutcome: "blocked",
+    });
+  });
+
+  it("reads legacy history and rejects invalid outcome values", () => {
+    const storage = createMemoryStorage();
+    const valid = createPracticeHistoryItem({
+      analysis: analysisFixture({ score: 90 }),
+      now: new Date("2026-05-03T01:06:00.000Z"),
+    });
+    storage.setItem(
+      "prompt-memory.practice-history.v1",
+      JSON.stringify([
+        valid,
+        { ...valid, id: "bad-outcome", outcome: "auto_approved" },
+        { ...valid, id: "with-outcome", outcome: "needs_context" },
+      ]),
+    );
+
+    expect(readPracticeHistory(storage).map((item) => item.id)).toEqual([
+      valid.id,
+      "with-outcome",
+    ]);
   });
 });
 

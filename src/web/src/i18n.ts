@@ -664,6 +664,16 @@ const UI_TRANSLATIONS: Record<string, string> = {
   "vs previous copied draft": "이전 복사 초안 대비",
   "Practice history stores scores and missing labels only, not draft text.":
     "연습 기록은 점수와 부족 항목 라벨만 저장하고 초안 본문은 저장하지 않습니다.",
+  "Practice outcome feedback": "연습 결과 피드백",
+  "Outcome feedback": "결과 피드백",
+  "Did the copied draft work?": "복사한 초안이 실제로 도움이 됐나요?",
+  Worked: "성공",
+  "Needs context": "컨텍스트 보강 필요",
+  Blocked: "막힘",
+  "Copy a draft before marking outcome.":
+    "결과를 표시하려면 먼저 초안을 복사하세요.",
+  "Latest outcome:": "최근 결과:",
+  "No outcome yet": "아직 결과 없음",
   "Repeated practice gap:": "반복 연습 부족 항목:",
   "Copy two practice drafts to show a trend.":
     "연습 초안을 두 번 복사하면 추이가 표시됩니다.",

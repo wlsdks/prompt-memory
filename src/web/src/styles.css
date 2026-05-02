@@ -2102,6 +2102,79 @@ dd {
   min-height: 84px;
 }
 
+.practice-outcome-panel {
+  background: color-mix(in srgb, var(--color-overlay-1) 72%, transparent);
+  border: 1px solid var(--color-border-soft);
+  border-radius: 8px;
+  display: grid;
+  gap: 10px;
+  padding: 11px;
+}
+
+.practice-outcome-panel h3 {
+  font-size: 14px;
+  line-height: 20px;
+  margin: 2px 0 0;
+}
+
+.practice-outcome-actions {
+  display: grid;
+  gap: 8px;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+
+.practice-outcome-button {
+  align-items: center;
+  background: var(--pm-surface);
+  border: 1px solid var(--color-border-soft);
+  border-radius: 8px;
+  color: var(--pm-text-muted);
+  cursor: pointer;
+  display: inline-flex;
+  font-size: 12px;
+  font-weight: 750;
+  gap: 6px;
+  justify-content: center;
+  line-height: 16px;
+  min-height: 36px;
+  padding: 0 8px;
+}
+
+.practice-outcome-button:hover:not(:disabled),
+.practice-outcome-button[aria-pressed="true"] {
+  background: rgba(128, 139, 255, 0.13);
+  border-color: rgba(128, 139, 255, 0.48);
+  color: var(--pm-text);
+}
+
+.practice-outcome-button:disabled {
+  cursor: not-allowed;
+  opacity: 0.5;
+}
+
+.practice-outcome-summary {
+  align-items: center;
+  color: var(--pm-text-muted);
+  display: flex;
+  flex-wrap: wrap;
+  gap: 7px;
+  font-size: 12px;
+  line-height: 18px;
+}
+
+.practice-outcome-summary span {
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid var(--color-border-soft);
+  border-radius: 999px;
+  display: inline-flex;
+  gap: 5px;
+  padding: 4px 8px;
+}
+
+.practice-outcome-summary strong {
+  color: var(--pm-text);
+}
+
 .practice-history-gap {
   border-top: 1px solid var(--color-border-soft);
   color: var(--pm-text-muted);
@@ -3280,6 +3353,10 @@ dd {
   }
 
   .practice-history-stats {
+    grid-template-columns: 1fr;
+  }
+
+  .practice-outcome-actions {
     grid-template-columns: 1fr;
   }
 

@@ -1,5 +1,18 @@
 # 작업 계획
 
+## 2026-05-03 Practice Outcome Feedback
+
+- [x] Practice copied draft outcome 모델을 TDD로 추가
+- [x] Practice UI에 Worked / Needs context / Blocked feedback controls와 outcome summary 표시
+- [x] browser E2E, release gate 검증
+- [ ] 커밋, 푸시, CI 확인
+
+### 판단 기준
+
+- 사용자는 복사한 개선 초안이 실제 작업에 도움이 됐는지 빠르게 표시할 수 있어야 한다.
+- outcome은 score, label, outcome metadata만 저장하고 prompt draft text는 저장하지 않는다.
+- 기능은 Practice 화면 안에서 작고 명확해야 하며 새 탭이나 새 MCP tool을 늘리지 않는다.
+
 ## 2026-05-03 Practice Score History Loop
 
 - [x] Practice copy 이후 원문 없는 score history 모델을 TDD로 추가

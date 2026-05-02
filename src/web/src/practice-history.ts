@@ -31,7 +31,11 @@ export type PracticeHistoryItem = {
   };
   missing_keys: string[];
   missing_labels: string[];
+  outcome?: PracticeOutcome;
+  outcome_at?: string;
 };
+
+export type PracticeOutcome = "worked" | "needs_context" | "blocked";
 
 export type PracticeHistorySummary = {
   count: number;
@@ -40,6 +44,10 @@ export type PracticeHistorySummary = {
   bestScore?: number;
   delta?: number;
   repeatedGap?: string;
+  workedCount: number;
+  needsContextCount: number;
+  blockedCount: number;
+  latestOutcome?: PracticeOutcome;
 };
 
 const HISTORY_LIMIT = 20;
@@ -90,12 +98,16 @@ export function summarizePracticeHistory(
     return {
       count: 0,
       averageScore: 0,
+      workedCount: 0,
+      needsContextCount: 0,
+      blockedCount: 0,
     };
   }
 
   const scores = history.map((item) => item.score.value);
   const latestScore = history[0]?.score.value;
   const previousScore = history[1]?.score.value;
+  const outcomes = summarizeOutcomes(history);
 
   return {
     count: history.length,
@@ -109,7 +121,32 @@ export function summarizePracticeHistory(
         ? undefined
         : latestScore - previousScore,
     repeatedGap: mostFrequentGap(history),
+    workedCount: outcomes.workedCount,
+    needsContextCount: outcomes.needsContextCount,
+    blockedCount: outcomes.blockedCount,
+    latestOutcome: history.find((item) => item.outcome)?.outcome,
   };
+}
+
+export function markPracticeOutcome(
+  history: PracticeHistoryItem[],
+  id: string | undefined,
+  outcome: PracticeOutcome,
+  now = new Date(),
+): PracticeHistoryItem[] {
+  if (!id) {
+    return history;
+  }
+
+  return history.map((item) =>
+    item.id === id
+      ? {
+          ...item,
+          outcome,
+          outcome_at: now.toISOString(),
+        }
+      : item,
+  );
 }
 
 export function readPracticeHistory(
@@ -152,7 +189,46 @@ function isPracticeHistoryItem(value: unknown): value is PracticeHistoryItem {
     item.score.max === 100 &&
     typeof item.score.band === "string" &&
     Array.isArray(item.missing_keys) &&
-    Array.isArray(item.missing_labels)
+    Array.isArray(item.missing_labels) &&
+    isPracticeOutcomeMetadata(item)
+  );
+}
+
+function isPracticeOutcomeMetadata(item: PracticeHistoryItem): boolean {
+  if (item.outcome === undefined) {
+    return item.outcome_at === undefined || typeof item.outcome_at === "string";
+  }
+
+  return (
+    isPracticeOutcome(item.outcome) &&
+    (item.outcome_at === undefined || typeof item.outcome_at === "string")
+  );
+}
+
+function isPracticeOutcome(value: unknown): value is PracticeOutcome {
+  return value === "worked" || value === "needs_context" || value === "blocked";
+}
+
+function summarizeOutcomes(history: PracticeHistoryItem[]) {
+  return history.reduce(
+    (summary, item) => {
+      if (item.outcome === "worked") {
+        summary.workedCount += 1;
+      }
+      if (item.outcome === "needs_context") {
+        summary.needsContextCount += 1;
+      }
+      if (item.outcome === "blocked") {
+        summary.blockedCount += 1;
+      }
+
+      return summary;
+    },
+    {
+      workedCount: 0,
+      needsContextCount: 0,
+      blockedCount: 0,
+    },
   );
 }
 

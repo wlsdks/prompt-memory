@@ -245,6 +245,22 @@ try {
     ],
     "Practice history should explain that draft text is not stored.",
   );
+  await assertTextAny(
+    page,
+    ["Did the copied draft work?", "복사한 초안이 실제로 도움이 됐나요?"],
+    "Practice should ask for outcome feedback after copied drafts.",
+  );
+  await page.getByRole("button", { name: /Worked|성공/ }).click();
+  await assertTextAny(
+    page,
+    ["Latest outcome:", "최근 결과:"],
+    "Practice should show the latest copied draft outcome.",
+  );
+  await assertTextAny(
+    page,
+    ["Worked", "성공"],
+    "Practice should record worked outcomes.",
+  );
   await assertBrowserSafe(page, "practice");
 
   await page.getByRole("button", { name: "Scores", exact: true }).click();

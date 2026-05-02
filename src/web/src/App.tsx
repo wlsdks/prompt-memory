@@ -4,7 +4,10 @@ import {
   BarChart3,
   ChevronLeft,
   ChevronRight,
+  CheckCircle2,
   ClipboardCheck,
+  CircleAlert,
+  CircleX,
   Copy,
   Database,
   Download,
@@ -85,9 +88,11 @@ import {
 import {
   appendPracticeHistory,
   createPracticeHistoryItem,
+  markPracticeOutcome,
   readPracticeHistory,
   summarizePracticeHistory,
   writePracticeHistory,
+  type PracticeOutcome,
   type PracticeHistoryItem,
 } from "./practice-history.js";
 
@@ -1742,6 +1747,13 @@ function PracticeView({
     window.setTimeout(() => setDraftCopied(false), 2500);
   }
 
+  function markLatestOutcome(outcome: PracticeOutcome): void {
+    const latestId = practiceHistory[0]?.id;
+    const nextHistory = markPracticeOutcome(practiceHistory, latestId, outcome);
+    setPracticeHistory(nextHistory);
+    writeBrowserPracticeHistory(nextHistory);
+  }
+
   return (
     <div className="practice-layout">
       <section className="practice-workspace panel">
@@ -1855,6 +1867,64 @@ function PracticeView({
           Practice history stores scores and missing labels only, not draft
           text.
         </p>
+        <div
+          className="practice-outcome-panel"
+          aria-label="Practice outcome feedback"
+        >
+          <div>
+            <p className="eyebrow">Outcome feedback</p>
+            <h3>Did the copied draft work?</h3>
+          </div>
+          <div className="practice-outcome-actions">
+            <PracticeOutcomeButton
+              active={practiceHistory[0]?.outcome === "worked"}
+              disabled={practiceHistory.length === 0}
+              icon={<CheckCircle2 size={14} />}
+              label="Worked"
+              onClick={() => markLatestOutcome("worked")}
+            />
+            <PracticeOutcomeButton
+              active={practiceHistory[0]?.outcome === "needs_context"}
+              disabled={practiceHistory.length === 0}
+              icon={<CircleAlert size={14} />}
+              label="Needs context"
+              onClick={() => markLatestOutcome("needs_context")}
+            />
+            <PracticeOutcomeButton
+              active={practiceHistory[0]?.outcome === "blocked"}
+              disabled={practiceHistory.length === 0}
+              icon={<CircleX size={14} />}
+              label="Blocked"
+              onClick={() => markLatestOutcome("blocked")}
+            />
+          </div>
+          {practiceHistory.length === 0 ? (
+            <p className="muted">Copy a draft before marking outcome.</p>
+          ) : (
+            <div className="practice-outcome-summary">
+              <span>
+                <strong>{practiceSummary.workedCount}</strong>
+                {"Worked"}
+              </span>
+              <span>
+                <strong>{practiceSummary.needsContextCount}</strong>
+                {"Needs context"}
+              </span>
+              <span>
+                <strong>{practiceSummary.blockedCount}</strong>
+                {"Blocked"}
+              </span>
+              <span>
+                {"Latest outcome:"}
+                <strong>
+                  {practiceSummary.latestOutcome
+                    ? formatPracticeOutcome(practiceSummary.latestOutcome)
+                    : "No outcome yet"}
+                </strong>
+              </span>
+            </div>
+          )}
+        </div>
         {practiceSummary.repeatedGap && (
           <p className="practice-history-gap">
             Repeated practice gap:{" "}
@@ -1911,6 +1981,33 @@ function PracticeView({
   );
 }
 
+function PracticeOutcomeButton({
+  active,
+  disabled,
+  icon,
+  label,
+  onClick,
+}: {
+  active: boolean;
+  disabled: boolean;
+  icon: ReactNode;
+  label: string;
+  onClick(): void;
+}) {
+  return (
+    <button
+      aria-pressed={active}
+      className="practice-outcome-button"
+      disabled={disabled}
+      onClick={onClick}
+      type="button"
+    >
+      {icon}
+      {label}
+    </button>
+  );
+}
+
 function readBrowserPracticeHistory(): PracticeHistoryItem[] {
   try {
     return readPracticeHistory(window.localStorage);
@@ -1941,6 +2038,18 @@ function formatPracticeDelta(delta?: number): string {
 
 function formatPracticeCopyCount(count: number): string {
   return count === 1 ? "1 copied draft" : `${count} copied drafts`;
+}
+
+function formatPracticeOutcome(outcome: PracticeOutcome): string {
+  if (outcome === "worked") {
+    return "Worked";
+  }
+
+  if (outcome === "needs_context") {
+    return "Needs context";
+  }
+
+  return "Blocked";
 }
 
 function ScoresView({
