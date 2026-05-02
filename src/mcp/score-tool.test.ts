@@ -113,6 +113,13 @@ describe("scorePromptTool", () => {
         project: "project",
       }),
     ]);
+    expect(result.practice_plan[0]).toEqual(
+      expect.objectContaining({
+        priority: 1,
+        prompt_rule: expect.any(String),
+      }),
+    );
+    expect(result.next_prompt_template).toContain("Goal:");
     expect(result.privacy).toMatchObject({
       local_only: true,
       external_calls: false,

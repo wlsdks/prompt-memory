@@ -123,10 +123,10 @@ stored prompt with the same local deterministic `0-100` Prompt Quality Score
 used by the web UI. `improve_prompt` returns an approval-ready copy-based
 rewrite draft for direct prompt text, a stored prompt id, or the latest stored
 prompt. `score_prompt_archive` scores accumulated prompt habits across recent
-stored prompts and returns aggregate score, recurring gaps, and low-score prompt
-ids. `review_project_instructions` scores local
-`AGENTS.md` / `CLAUDE.md` rules for the latest or selected project and returns
-file metadata, checklist status, and improvement hints.
+stored prompts and returns aggregate score, recurring gaps, a practice plan, a
+next prompt template, and low-score prompt ids. `review_project_instructions`
+scores local `AGENTS.md` / `CLAUDE.md` rules for the latest or selected project
+and returns file metadata, checklist status, and improvement hints.
 
 These tools do not call external LLMs. Archive-backed score/rewrite flows do not
 return stored original prompt bodies. The archive and status tools avoid raw

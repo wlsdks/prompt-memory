@@ -535,6 +535,29 @@ export const SCORE_PROMPT_ARCHIVE_TOOL_DEFINITION = {
           },
         },
       },
+      practice_plan: {
+        type: "array",
+        items: {
+          type: "object",
+          required: [
+            "priority",
+            "label",
+            "prompt_rule",
+            "reason",
+            "count",
+            "rate",
+          ],
+          properties: {
+            priority: { type: "integer", minimum: 1 },
+            label: { type: "string" },
+            prompt_rule: { type: "string" },
+            reason: { type: "string" },
+            count: { type: "integer", minimum: 0 },
+            rate: { type: "number", minimum: 0, maximum: 1 },
+          },
+        },
+      },
+      next_prompt_template: { type: "string" },
       low_score_prompts: {
         type: "array",
         items: {
@@ -600,6 +623,8 @@ export const SCORE_PROMPT_ARCHIVE_TOOL_DEFINITION = {
           "archive_score",
           "distribution",
           "top_gaps",
+          "practice_plan",
+          "next_prompt_template",
           "low_score_prompts",
           "filters",
           "has_more",

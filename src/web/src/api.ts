@@ -236,6 +236,15 @@ export type ArchiveScoreReport = {
     count: number;
     rate: number;
   }>;
+  practice_plan: Array<{
+    priority: number;
+    label: string;
+    prompt_rule: string;
+    reason: string;
+    count: number;
+    rate: number;
+  }>;
+  next_prompt_template: string;
   low_score_prompts: ArchivePromptScoreSummary[];
   filters: {
     tool?: string;

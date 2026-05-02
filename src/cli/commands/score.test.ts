@@ -35,11 +35,15 @@ describe("score CLI command", () => {
     const report = JSON.parse(json) as {
       archive_score: { average: number; scored_prompts: number };
       low_score_prompts: Array<{ id: string; project: string }>;
+      next_prompt_template: string;
+      practice_plan: Array<{ prompt_rule: string }>;
       privacy: { returns_prompt_bodies: boolean; returns_raw_paths: boolean };
     };
 
     expect(report.archive_score.scored_prompts).toBe(3);
     expect(report.archive_score.average).toBeLessThan(100);
+    expect(report.practice_plan[0]?.prompt_rule).toBeTruthy();
+    expect(report.next_prompt_template).toContain("Goal:");
     expect(report.low_score_prompts.map((prompt) => prompt.id)).toContain(
       ids.weak,
     );
@@ -54,6 +58,8 @@ describe("score CLI command", () => {
     const text = scoreArchiveForCli({ dataDir, lowScoreLimit: 1 });
 
     expect(text).toContain("Prompt archive score");
+    expect(text).toContain("Practice plan");
+    expect(text).toContain("Next prompt template");
     expect(text).toContain("Lowest scoring prompts");
     expect(text).toContain(ids.weak);
     expect(text).not.toContain("Make this better");

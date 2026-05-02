@@ -631,6 +631,12 @@ const UI_TRANSLATIONS: Record<string, string> = {
   "Average archive score": "평균 아카이브 점수",
   "Score distribution": "점수 분포",
   "Top quality gaps": "주요 부족 항목",
+  "Practice plan": "연습 계획",
+  "Copy this into your next Claude Code or Codex request.":
+    "다음 Claude Code 또는 Codex 요청에 복사해 넣으세요.",
+  "Copy practice template": "연습 템플릿 복사",
+  "No repeated practice item yet.": "반복 연습 항목이 아직 없습니다.",
+  "Copied template": "템플릿 복사됨",
   "Prompts to review": "리뷰할 프롬프트",
   "No prompts need score review.": "점수 리뷰가 필요한 프롬프트가 없습니다.",
   excellent: "우수",

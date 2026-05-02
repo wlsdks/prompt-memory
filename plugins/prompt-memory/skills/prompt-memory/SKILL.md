@@ -64,7 +64,7 @@ The MCP tools are:
 - `score_prompt` for one current, pasted, stored, or latest prompt
 - `improve_prompt` for an approval-ready draft the user can copy and resubmit
 - `score_prompt_archive` for accumulated prompt habit review across the local
-  archive
+  archive, including a practice plan and next prompt template
 - `review_project_instructions` for AGENTS.md / CLAUDE.md rule quality review
 
 Use `score_prompt_archive` when the user asks to score all recent prompts, find

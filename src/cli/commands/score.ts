@@ -98,6 +98,13 @@ function formatArchiveScoreReport(report: ArchiveScoreReport): string {
             `- ${gap.label}: ${gap.count} (${Math.round(gap.rate * 100)}%)`,
         )
       : ["- none"];
+  const practiceRows =
+    report.practice_plan.length > 0
+      ? report.practice_plan.map(
+          (item) =>
+            `- ${item.priority}. ${item.label}: ${item.prompt_rule} (${item.reason})`,
+        )
+      : ["- none"];
 
   return [
     "Prompt archive score",
@@ -107,6 +114,12 @@ function formatArchiveScoreReport(report: ArchiveScoreReport): string {
     "",
     "Top quality gaps",
     ...gapRows,
+    "",
+    "Practice plan",
+    ...practiceRows,
+    "",
+    "Next prompt template",
+    report.next_prompt_template,
     "",
     "Lowest scoring prompts",
     ...lowScoreRows,

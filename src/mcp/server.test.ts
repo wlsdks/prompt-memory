@@ -115,6 +115,8 @@ describe("MCP stdio server", () => {
           outputSchema: expect.objectContaining({
             properties: expect.objectContaining({
               archive_score: expect.any(Object),
+              next_prompt_template: expect.any(Object),
+              practice_plan: expect.any(Object),
               top_gaps: expect.any(Object),
               privacy: expect.any(Object),
             }),

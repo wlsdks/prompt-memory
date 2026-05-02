@@ -192,6 +192,14 @@ try {
     "Prompts to review",
     "Scores should show prompts that need review.",
   );
+  await assertText(
+    page,
+    "Practice plan",
+    "Scores should show actionable practice plan.",
+  );
+  await page
+    .getByRole("button", { name: "Copy practice template" })
+    .waitFor();
   await assertChartVisible(page, "scores", 3);
   await assertBrowserSafe(page, "scores");
 

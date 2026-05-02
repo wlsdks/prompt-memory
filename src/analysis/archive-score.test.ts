@@ -59,6 +59,13 @@ describe("createArchiveScoreReport", () => {
       "prmt_low",
       "prmt_mid",
     ]);
+    expect(report.practice_plan[0]).toMatchObject({
+      priority: 1,
+      label: "Goal clarity",
+      prompt_rule: "Name the exact goal and target behavior first.",
+    });
+    expect(report.next_prompt_template).toContain("Goal:");
+    expect(report.next_prompt_template).toContain("Verification:");
     expect(serialized).not.toContain("/Users/example");
     expect(serialized).not.toContain("secret prompt body");
   });

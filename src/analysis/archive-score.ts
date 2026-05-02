@@ -32,6 +32,8 @@ export type ArchiveScoreReport = {
     count: number;
     rate: number;
   }>;
+  practice_plan: ArchivePracticePlanItem[];
+  next_prompt_template: string;
   low_score_prompts: ArchivePromptScoreSummary[];
   filters: {
     tool?: string;
@@ -49,6 +51,15 @@ export type ArchiveScoreReport = {
   };
 };
 
+export type ArchivePracticePlanItem = {
+  priority: number;
+  label: string;
+  prompt_rule: string;
+  reason: string;
+  count: number;
+  rate: number;
+};
+
 export type ArchivePromptScoreSummary = {
   id: string;
   tool: string;
@@ -64,6 +75,49 @@ export type ArchivePromptScoreSummary = {
 const DEFAULT_MAX_PROMPTS = 200;
 const DEFAULT_LOW_SCORE_LIMIT = 10;
 const PAGE_LIMIT = 100;
+const DEFAULT_PROMPT_TEMPLATE = [
+  "Goal:",
+  "Context:",
+  "Scope:",
+  "Verification:",
+  "Output:",
+].join("\n");
+
+const GAP_RULES: Record<
+  string,
+  {
+    label: string;
+    promptRule: string;
+    templateLine: string;
+  }
+> = {
+  "goal clarity": {
+    label: "Goal clarity",
+    promptRule: "Name the exact goal and target behavior first.",
+    templateLine: "Goal: state the exact target and expected behavior.",
+  },
+  "background context": {
+    label: "Background context",
+    promptRule: "Add the relevant files, current state, and constraints.",
+    templateLine:
+      "Context: include relevant files, current state, and constraints.",
+  },
+  "scope limits": {
+    label: "Scope limits",
+    promptRule: "State what may change and what must stay untouched.",
+    templateLine: "Scope: list allowed changes and explicit non-goals.",
+  },
+  "output format": {
+    label: "Output format",
+    promptRule: "Specify the response format before the agent starts work.",
+    templateLine: "Output: define the exact format you want back.",
+  },
+  "verification criteria": {
+    label: "Verification criteria",
+    promptRule: "Include the test command, check, or acceptance criteria.",
+    templateLine: "Verification: name commands or acceptance checks.",
+  },
+};
 
 export function createArchiveScoreReport(
   storage: Pick<PromptReadStoragePort, "listPrompts">,
@@ -89,6 +143,14 @@ export function createArchiveScoreReport(
   const average =
     prompts.length > 0 ? Math.round(totalScore / prompts.length) : 0;
   const gapCounts = countGaps(prompts);
+  const topGaps = [...gapCounts.entries()]
+    .map(([label, count]) => ({
+      label,
+      count,
+      rate: prompts.length > 0 ? roundRatio(count / prompts.length) : 0,
+    }))
+    .sort((a, b) => b.count - a.count || a.label.localeCompare(b.label))
+    .slice(0, 8);
 
   return {
     generated_at: now.toISOString(),
@@ -100,14 +162,9 @@ export function createArchiveScoreReport(
       total_prompts: prompts.length,
     },
     distribution: countBands(prompts),
-    top_gaps: [...gapCounts.entries()]
-      .map(([label, count]) => ({
-        label,
-        count,
-        rate: prompts.length > 0 ? roundRatio(count / prompts.length) : 0,
-      }))
-      .sort((a, b) => b.count - a.count || a.label.localeCompare(b.label))
-      .slice(0, 8),
+    top_gaps: topGaps,
+    practice_plan: buildPracticePlan(topGaps),
+    next_prompt_template: buildNextPromptTemplate(topGaps),
     low_score_prompts: prompts
       .map(toArchivePromptScoreSummary)
       .sort(
@@ -132,6 +189,57 @@ export function createArchiveScoreReport(
       returns_raw_paths: false,
     },
   };
+}
+
+function buildPracticePlan(
+  gaps: ArchiveScoreReport["top_gaps"],
+): ArchivePracticePlanItem[] {
+  return gaps.slice(0, 3).map((gap, index) => {
+    const rule = ruleFor(gap.label);
+
+    return {
+      priority: index + 1,
+      label: rule.label,
+      prompt_rule: rule.promptRule,
+      reason: `${gap.count} measured prompt${gap.count === 1 ? "" : "s"} missed this habit.`,
+      count: gap.count,
+      rate: gap.rate,
+    };
+  });
+}
+
+function buildNextPromptTemplate(gaps: ArchiveScoreReport["top_gaps"]): string {
+  if (gaps.length === 0) {
+    return DEFAULT_PROMPT_TEMPLATE;
+  }
+
+  const selected = gaps.slice(0, 3).map((gap) => ruleFor(gap.label));
+  const lines = [
+    ...selected.map((rule) => rule.templateLine),
+    ...DEFAULT_PROMPT_TEMPLATE.split("\n").filter(
+      (line) =>
+        !selected.some((rule) =>
+          rule.templateLine.toLowerCase().startsWith(line.toLowerCase()),
+        ),
+    ),
+  ];
+
+  return lines.join("\n");
+}
+
+function ruleFor(label: string): {
+  label: string;
+  promptRule: string;
+  templateLine: string;
+} {
+  const normalized = label.trim().toLowerCase();
+  return (
+    GAP_RULES[normalized] ?? {
+      label,
+      promptRule: `Make "${label}" explicit before asking for implementation.`,
+      templateLine: `${label}: make this expectation explicit.`,
+    }
+  );
 }
 
 function readPromptPage(

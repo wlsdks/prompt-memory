@@ -164,6 +164,18 @@ function archiveScoreFixture(): ArchiveScoreReport {
         rate: 0.75,
       },
     ],
+    practice_plan: [
+      {
+        priority: 1,
+        label: "Verification criteria",
+        prompt_rule: "Include the test command, check, or acceptance criteria.",
+        reason: "3 measured prompts missed this habit.",
+        count: 3,
+        rate: 0.75,
+      },
+    ],
+    next_prompt_template:
+      "Verification: name commands or acceptance checks.\nGoal:\nContext:\nScope:\nOutput:",
     low_score_prompts: [
       {
         id: "prmt_low",

@@ -2308,11 +2308,38 @@ function ArchiveScoreReviewPanel({
   onRefresh(): void;
   onSelect(id: string): void;
 }) {
+  const [practiceCopied, setPracticeCopied] = useState(false);
   const reviewPrompts =
     report?.low_score_prompts.filter(isReviewableScorePrompt).slice(0, 6) ?? [];
   const weakOrNeedsWorkCount = report
     ? report.distribution.weak + report.distribution.needs_work
     : 0;
+  const practiceCopy = report
+    ? [
+        "Next prompt template",
+        report.next_prompt_template,
+        "",
+        "Practice plan",
+        ...report.practice_plan.map(
+          (item) =>
+            `${item.priority}. ${item.label}: ${item.prompt_rule} (${item.reason})`,
+        ),
+      ].join("\n")
+    : "";
+
+  async function copyPracticePlan(): Promise<void> {
+    if (!practiceCopy) {
+      return;
+    }
+
+    const copied = await copyTextToClipboard(practiceCopy);
+    if (!copied) {
+      return;
+    }
+
+    setPracticeCopied(true);
+    window.setTimeout(() => setPracticeCopied(false), 2500);
+  }
 
   return (
     <section
@@ -2381,6 +2408,40 @@ function ArchiveScoreReviewPanel({
           <div className="archive-gaps">
             <h3>Top quality gaps</h3>
             <GapRateChart gaps={report.top_gaps.slice(0, 5)} />
+          </div>
+          <div className="archive-practice-plan">
+            <div className="archive-practice-heading">
+              <div>
+                <h3>Practice plan</h3>
+                <p>Copy this into your next Claude Code or Codex request.</p>
+              </div>
+              <button
+                aria-label="Copy practice template"
+                className="icon-button"
+                onClick={() => void copyPracticePlan()}
+                title="Copy practice template"
+                type="button"
+              >
+                <Copy size={15} />
+              </button>
+            </div>
+            <pre>{report.next_prompt_template}</pre>
+            <div className="archive-practice-list">
+              {report.practice_plan.length === 0 && (
+                <p className="muted">No repeated practice item yet.</p>
+              )}
+              {report.practice_plan.map((item) => (
+                <div className="archive-practice-row" key={item.priority}>
+                  <span>{item.priority}</span>
+                  <div>
+                    <strong>{item.label}</strong>
+                    <p>{item.prompt_rule}</p>
+                    <small>{item.reason}</small>
+                  </div>
+                </div>
+              ))}
+            </div>
+            {practiceCopied && <small>Copied template</small>}
           </div>
           <div className="archive-low-scores">
             <h3>Prompts to review</h3>

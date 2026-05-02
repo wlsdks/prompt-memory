@@ -1749,6 +1749,7 @@ dd {
 .archive-score-summary,
 .archive-distribution,
 .archive-gaps,
+.archive-practice-plan,
 .archive-low-scores {
   background: var(--pm-surface);
   border: 1px solid var(--pm-border);
@@ -1773,6 +1774,7 @@ dd {
 .archive-score-summary strong,
 .archive-distribution h3,
 .archive-gaps h3,
+.archive-practice-plan h3,
 .archive-low-scores h3 {
   font-size: 13px;
   line-height: 18px;
@@ -1781,6 +1783,7 @@ dd {
 
 .archive-score-summary small,
 .archive-band-row span,
+.archive-practice-plan small,
 .archive-low-score-row small {
   color: var(--pm-text-muted);
   font-size: 12px;
@@ -1861,6 +1864,80 @@ dd {
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
+}
+
+.archive-practice-plan {
+  align-content: start;
+  grid-column: 1 / -1;
+}
+
+.archive-practice-heading {
+  align-items: start;
+  display: grid;
+  gap: 12px;
+  grid-template-columns: minmax(0, 1fr) 32px;
+}
+
+.archive-practice-heading p {
+  color: var(--pm-text-muted);
+  font-size: 12px;
+  line-height: 18px;
+  margin: 2px 0 0;
+}
+
+.archive-practice-plan pre {
+  background: var(--color-canvas);
+  border: 1px solid var(--color-border-soft);
+  border-radius: 8px;
+  color: var(--color-text-secondary);
+  font-size: 12px;
+  line-height: 20px;
+  margin: 0;
+  overflow-wrap: anywhere;
+  padding: 12px;
+  white-space: pre-wrap;
+}
+
+.archive-practice-list {
+  display: grid;
+  gap: 8px;
+}
+
+.archive-practice-row {
+  align-items: start;
+  border-top: 1px solid var(--color-border-soft);
+  display: grid;
+  gap: 10px;
+  grid-template-columns: 24px minmax(0, 1fr);
+  padding-top: 8px;
+}
+
+.archive-practice-row > span {
+  align-items: center;
+  background: rgba(130, 143, 255, 0.12);
+  border: 1px solid rgba(130, 143, 255, 0.28);
+  border-radius: 999px;
+  color: var(--color-indigo-hover);
+  display: inline-flex;
+  font-size: 11px;
+  font-weight: 750;
+  height: 22px;
+  justify-content: center;
+  width: 22px;
+}
+
+.archive-practice-row strong {
+  display: block;
+  font-size: 13px;
+  line-height: 18px;
+  margin-bottom: 2px;
+}
+
+.archive-practice-row p {
+  color: var(--pm-text-muted);
+  font-size: 13px;
+  line-height: 20px;
+  margin: 0 0 2px;
 }
 
 .distribution-list,

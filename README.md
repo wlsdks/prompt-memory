@@ -461,7 +461,8 @@ The MCP server exposes five tools:
 - `improve_prompt`: generate an approval-ready improved prompt draft for direct
   prompt text, a stored `prompt_id`, or the latest stored prompt.
 - `score_prompt_archive`: score accumulated prompt habits across recent stored
-  prompts and return aggregate score, recurring gaps, and low-score prompt ids.
+  prompts and return aggregate score, recurring gaps, a practice plan, a next
+  prompt template, and low-score prompt ids.
 - `review_project_instructions`: review local `AGENTS.md` / `CLAUDE.md`
   instruction files for the latest or selected project and return score,
   checklist status, and improvement hints.

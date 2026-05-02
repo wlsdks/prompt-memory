@@ -1,5 +1,19 @@
 # 작업 계획
 
+## 2026-05-03 Archive Practice Plan UX
+
+- [x] `score_prompt_archive`가 점수뿐 아니라 다음 연습 행동을 줄 수 있는지 재평가
+- [x] privacy-safe practice plan과 next prompt template을 TDD로 추가
+- [x] Scores UI에서 practice plan, copy template, 그래프 주변 정보 구조 보강
+- [x] MCP schema/docs/browser E2E/release gate 검증
+- [ ] 커밋, 푸시, CI 확인
+
+### 판단 기준
+
+- 사용자는 점수와 그래프를 본 뒤 바로 다음 prompt에 넣을 문장을 얻어야 한다.
+- practice plan은 prompt body, raw absolute path, secret을 포함하지 않는다.
+- 새 MCP tool을 추가하지 않고 기존 `score_prompt_archive`를 더 actionable하게 만들어 tool 선택 부담을 늘리지 않는다.
+
 ## 2026-05-03 MCP Output Schema Contract Polish
 
 - [x] MCP `structuredContent`와 tool definition 사이의 남은 contract gap 확인

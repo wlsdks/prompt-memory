@@ -146,8 +146,8 @@ Hard delete removes:
    id, or `latest: true`, then returns a copy-based draft that requires user
    approval before resubmission.
 9. Archive scoring reads recent prompt summaries from SQLite and returns an
-   aggregate score, distribution, recurring quality gaps, and low-score prompt
-   ids without prompt bodies or raw paths.
+   aggregate score, distribution, recurring quality gaps, practice plan, next
+   prompt template, and low-score prompt ids without prompt bodies or raw paths.
 10. Project instruction review reads local project metadata from SQLite, can
    rescan `AGENTS.md` / `CLAUDE.md`, and returns checklist metadata without
    instruction file bodies or raw paths.
