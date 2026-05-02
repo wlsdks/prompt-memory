@@ -5,7 +5,7 @@
 - [x] raw-free brief preview 모델을 TDD로 추가
 - [x] Coach command center에서 생성된 brief 내용을 확인하고 복사할 수 있게 UI 개선
 - [x] 브라우저 E2E와 스크린샷으로 desktop/mobile 확인
-- [ ] release gate 검증, 커밋, 푸시, CI 확인
+- [x] release gate 검증, 커밋, 푸시, CI 확인
 
 ### 판단 기준
 
