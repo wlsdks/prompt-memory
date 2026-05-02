@@ -19,4 +19,15 @@ describe("redactPrompt", () => {
       "secret_assignment",
     );
   });
+
+  it("masks absolute filesystem paths in prompt bodies", () => {
+    const rawPath = "/Users/example/private-project/src/secret.ts";
+    const result = redactPrompt(`Open ${rawPath} and inspect it.`, "mask");
+
+    expect(result.stored_text).toContain("[REDACTED:path]");
+    expect(result.stored_text).not.toContain(rawPath);
+    expect(result.findings.map((finding) => finding.detector_type)).toContain(
+      "path",
+    );
+  });
 });

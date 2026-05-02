@@ -6,7 +6,7 @@
 - [x] Browser raw-path boundary 결정: archive/detail/dashboard/projects에서 path를 그대로 보여줄지, masked display 옵션을 둘지 확정
 - [x] Playwright 자동 E2E 추가: archive -> detail -> coach copy/save -> projects -> export -> mobile overflow
 - [x] Benchmark v1 설계 및 구현: privacy, retrieval, coach quality, analytics, latency를 JSON report로 측정
-- [ ] Privacy regression fixture 확장: Markdown/SQLite/FTS/API/export/log/stdout raw secret/path 누출 검사
+- [x] Privacy regression fixture 확장: Markdown/SQLite/FTS/API/export/log/stdout raw secret/path 누출 검사
 - [ ] Release checklist 갱신: PRD2에서 추가된 import/export/project/coach 검증 항목 반영
 - [ ] README/문서 public beta 정리: 설치, hook, local-first, external analysis 미구현, Codex beta, uninstall/delete 경계 확인
 - [ ] Node 22/24와 package smoke 재검증: 현재 Node 20 warning을 실제 지원 버전에서 제거

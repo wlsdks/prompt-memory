@@ -34,6 +34,11 @@ const DETECTORS: Detector[] = [
     type: "database_url",
     pattern: /\b(?:postgres|postgresql|mysql|mongodb|redis):\/\/[^\s]+/gi,
   },
+  {
+    type: "path",
+    pattern:
+      /\/(?:Users|home|private|tmp|var|opt|workspace|Volumes)\/[^\s)'"`]+/gi,
+  },
   { type: "webhook_url", pattern: /https:\/\/hooks\.[^\s]+/gi },
   { type: "email", pattern: /\b[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}\b/gi },
   { type: "phone", pattern: /\+?\d[\d\s().-]{7,}\d/g },
