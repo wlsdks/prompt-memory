@@ -5,7 +5,7 @@
 - [x] Prompt habit coach가 raw-free next request brief를 만들도록 TDD로 추가
 - [x] Coach command center에 copy next request brief 액션과 상태 표시
 - [x] 브라우저 E2E와 스크린샷으로 실제 사용성/디자인 확인
-- [ ] release gate 검증, 커밋, 푸시, CI 확인
+- [x] release gate 검증, 커밋, 푸시, CI 확인
 
 ### 판단 기준
 
