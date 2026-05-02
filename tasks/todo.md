@@ -6,7 +6,7 @@
 - [x] 모든 MCP tool에 `outputSchema`를 추가하고 TDD로 고정
 - [x] Web MCP catalog와 문서에 output schema 보장 문구 반영
 - [x] MCP stdio, browser E2E, release gate 검증
-- [ ] 커밋, 푸시, CI 확인
+- [x] 커밋, 푸시, CI 확인
 
 ### 판단 기준
 
