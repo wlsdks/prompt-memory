@@ -99,6 +99,42 @@ integrations/claude-code/settings.example.json
 That example is intentionally PATH-based. The installer is preferred because it
 uses the exact CLI path from the current installation.
 
+## MCP Prompt Scoring
+
+`prompt-memory` also ships a local stdio MCP server:
+
+```sh
+prompt-memory mcp
+```
+
+This server exposes one model-controlled tool:
+
+- `score_prompt`
+
+The tool scores direct prompt text, a stored prompt id, or the latest stored
+prompt with the same local deterministic `0-100` Prompt Quality Score used by
+the web UI. It returns score metadata, checklist breakdown, warnings, and
+improvement hints. It does not store direct prompt text, call external LLMs, or
+return prompt bodies.
+
+Claude Code registration:
+
+```sh
+claude mcp add --transport stdio prompt-memory -- prompt-memory mcp
+```
+
+Codex registration:
+
+```sh
+codex mcp add prompt-memory -- prompt-memory mcp
+```
+
+Use `--data-dir` when the archive is not in the default location:
+
+```sh
+prompt-memory mcp --data-dir /path/to/prompt-memory-data
+```
+
 ## Local-First Boundary
 
 The plugin and hook commands do not contain the ingest token. The hook wrapper

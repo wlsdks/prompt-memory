@@ -52,6 +52,16 @@ prompt-memory server
 
 Then visit `http://127.0.0.1:17373`.
 
+Run the local MCP score server when Codex needs to score a prompt on request:
+
+```sh
+prompt-memory mcp
+```
+
+The MCP tool is `score_prompt`. Use it for prompt quality scoring only. It
+returns a local `0-100` score and checklist breakdown without storing direct
+prompt text or calling external LLMs.
+
 ## Safety Rules
 
 - Do not print raw prompt bodies or raw hook payloads unless the user explicitly

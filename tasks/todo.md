@@ -1360,3 +1360,20 @@
 - 상태 점수: good은 full weight, weak은 half weight, missing은 0점이다.
 - band는 excellent >= 85, good >= 60, needs_work >= 40, weak < 40으로 계산한다.
 - benchmark는 `prompt_quality_score_calibration`으로 list/detail score 일치, vague prompt 저점, fixture 간 점수 spread를 확인한다.
+
+## 2026-05-02 MCP Prompt Scoring
+
+- [x] MCP tool 계약 설계: 사용자 요청에 따라 current prompt text 또는 저장 prompt id를 점수화
+- [x] MCP tool handler 단위 테스트 추가
+- [x] `prompt-memory mcp` stdio JSON-RPC 서버 구현
+- [x] Claude Code/Codex 연결 문서화
+- [x] 직접 JSON-RPC smoke, test/lint/build/pack 검증
+- [x] 커밋 및 PR 브랜치 푸시
+
+### 설계 메모
+
+- MCP 서버는 `prompt-memory mcp`로 실행되는 stdio JSON-RPC 서버다.
+- 노출 tool은 `score_prompt` 하나만 둔다. 입력은 `prompt`, `prompt_id`, `latest: true` 중 정확히 하나다.
+- 직접 전달된 prompt text는 저장하지 않고, 결과에도 prompt body를 반환하지 않는다.
+- 저장 prompt scoring은 기존 SQLite analysis를 읽고 score/checklist metadata만 반환한다.
+- Claude Code는 `claude mcp add --transport stdio prompt-memory -- prompt-memory mcp`, Codex는 `codex mcp add prompt-memory -- prompt-memory mcp`로 연결하도록 문서화했다.

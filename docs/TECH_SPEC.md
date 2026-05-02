@@ -50,6 +50,7 @@ src/
   exporter/
   hooks/
   importer/
+  mcp/
   redaction/
   server/
   shared/
@@ -125,6 +126,26 @@ Hard delete removes:
 ### Rebuild Flow
 
 `rebuild-index` treats Markdown as the source of truth and rebuilds prompt index/FTS state. User-owned policy/job tables are preserved.
+
+### MCP Prompt Scoring Flow
+
+1. User registers `prompt-memory mcp` with a local MCP client such as Claude Code
+   or Codex.
+2. The client launches the command as a stdio subprocess.
+3. The MCP server exposes one tool, `score_prompt`.
+4. The tool accepts exactly one of direct prompt text, a stored prompt id, or
+   `latest: true`.
+5. Direct prompt text is analyzed locally and is not stored.
+6. Stored prompt scoring reads existing local analysis from SQLite and does not
+   return prompt bodies.
+
+Important rules:
+
+- stdout is reserved for newline-delimited JSON-RPC MCP messages
+- no external LLM calls are made
+- direct MCP prompt input is not written to Markdown or SQLite
+- MCP tool results return score metadata and checklist explanations, not prompt
+  bodies
 
 ## 6. Adapter Contract
 

@@ -5,7 +5,7 @@ import { pathToFileURL } from "node:url";
 import { randomUUID } from "node:crypto";
 import { afterEach, describe, expect, it } from "vitest";
 
-import { isCliEntryPoint } from "./index.js";
+import { createProgram, isCliEntryPoint } from "./index.js";
 
 const tempDirs: string[] = [];
 
@@ -29,6 +29,16 @@ describe("CLI entrypoint detection", () => {
     symlinkSync(target, link);
 
     expect(isCliEntryPoint(pathToFileURL(target).href, link)).toBe(true);
+  });
+});
+
+describe("CLI command surface", () => {
+  it("registers the MCP stdio server command", () => {
+    const commands = createProgram()
+      .commands.map((command) => command.name())
+      .sort();
+
+    expect(commands).toContain("mcp");
   });
 });
 

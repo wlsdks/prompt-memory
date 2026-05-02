@@ -18,6 +18,7 @@ This repository is pre-release software.
 - Codex support: beta adapter
 - Local rule-based analysis preview: implemented
 - Prompt Quality Score: implemented as a local deterministic `0-100` rubric
+- MCP prompt scoring tool: implemented as a local stdio server
 - Copy-based Prompt Coach: implemented
 - Transcript import: CLI only
 - Anonymized export: web UI and CLI preview/job flow
@@ -422,6 +423,42 @@ pnpm prompt-memory improve --text "make this request clearer" --json
 Prompt detail views include a local rule-based analysis preview. It summarizes whether a prompt includes clear targets, context, constraints, output format, and verification criteria. Each prompt also receives a deterministic `0-100` Prompt Quality Score with a checklist-based breakdown.
 
 This preview runs locally against the stored, redacted prompt body. It does not call an external LLM provider.
+
+## MCP Prompt Scoring
+
+`prompt-memory` can expose the same local Prompt Quality Score to Claude Code,
+Codex, or any MCP client through a stdio MCP server:
+
+```sh
+prompt-memory mcp
+```
+
+The MCP server exposes one tool:
+
+- `score_prompt`: score either direct prompt text, a stored `prompt_id`, or the
+  latest stored prompt.
+
+The tool returns the score, band, checklist breakdown, warnings, and improvement
+hints. It does not store direct prompt text, does not call external LLMs, and
+does not return prompt bodies.
+
+Example Claude Code registration:
+
+```sh
+claude mcp add --transport stdio prompt-memory -- prompt-memory mcp
+```
+
+Example Codex registration:
+
+```sh
+codex mcp add prompt-memory -- prompt-memory mcp
+```
+
+If you use a custom data directory:
+
+```sh
+prompt-memory mcp --data-dir /path/to/prompt-memory-data
+```
 
 ## Benchmark
 
