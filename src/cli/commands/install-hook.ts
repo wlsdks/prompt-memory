@@ -7,6 +7,7 @@ import {
 } from "node:fs";
 import { homedir } from "node:os";
 import { dirname, join } from "node:path";
+import { fileURLToPath } from "node:url";
 import type { Command } from "commander";
 
 import {
@@ -350,9 +351,20 @@ function ensureHook(
   command: string,
 ): ClaudeSettings & { hooks: Record<string, ClaudeHookGroup[]> } {
   const hooks = { ...(settings.hooks ?? {}) };
-  const userPromptSubmit = [...(hooks.UserPromptSubmit ?? [])];
+  let found = false;
+  const userPromptSubmit = [...(hooks.UserPromptSubmit ?? [])].map((group) => ({
+    ...group,
+    hooks: group.hooks.map((hook) => {
+      if (!isClaudePromptMemoryHook(hook.command)) {
+        return hook;
+      }
 
-  if (!hasPromptMemoryHook(settings)) {
+      found = true;
+      return { ...hook, command };
+    }),
+  }));
+
+  if (!found) {
     userPromptSubmit.push({
       hooks: [
         {
@@ -380,7 +392,7 @@ function removeHook(
     .map((group) => ({
       ...group,
       hooks: group.hooks.filter(
-        (hook) => !hook.command.includes(PROMPT_MEMORY_MARKER),
+        (hook) => !isClaudePromptMemoryHook(hook.command),
       ),
     }))
     .filter((group) => group.hooks.length > 0);
@@ -398,9 +410,20 @@ function ensureCodexHook(
   command: string,
 ): CodexHooksSettings & { hooks: Record<string, ClaudeHookGroup[]> } {
   const hooks = { ...(settings.hooks ?? {}) };
-  const userPromptSubmit = [...(hooks.UserPromptSubmit ?? [])];
+  let found = false;
+  const userPromptSubmit = [...(hooks.UserPromptSubmit ?? [])].map((group) => ({
+    ...group,
+    hooks: group.hooks.map((hook) => {
+      if (!isCodexPromptMemoryHook(hook.command)) {
+        return hook;
+      }
 
-  if (!hasPromptMemoryCodexHook(settings)) {
+      found = true;
+      return { ...hook, command };
+    }),
+  }));
+
+  if (!found) {
     userPromptSubmit.push({
       hooks: [
         {
@@ -428,7 +451,7 @@ function removeCodexHook(
     .map((group) => ({
       ...group,
       hooks: group.hooks.filter(
-        (hook) => !hook.command.includes(CODEX_PROMPT_MEMORY_MARKER),
+        (hook) => !isCodexPromptMemoryHook(hook.command),
       ),
     }))
     .filter((group) => group.hooks.length > 0);
@@ -480,12 +503,36 @@ function ensureCodexHooksFeature(config: string): string {
 
 function buildHookCommand(dataDir?: string): string {
   const dataDirArg = dataDir ? ` --data-dir ${JSON.stringify(dataDir)}` : "";
-  return `prompt-memory hook claude-code${dataDirArg}`;
+  return `${markerAssignment(PROMPT_MEMORY_MARKER)} ${shellQuote(
+    process.execPath,
+  )} ${shellQuote(cliEntryPath())} hook claude-code${dataDirArg}`;
 }
 
 function buildCodexHookCommand(dataDir?: string): string {
   const dataDirArg = dataDir ? ` --data-dir ${JSON.stringify(dataDir)}` : "";
-  return `prompt-memory hook codex${dataDirArg}`;
+  return `${markerAssignment(CODEX_PROMPT_MEMORY_MARKER)} ${shellQuote(
+    process.execPath,
+  )} ${shellQuote(cliEntryPath())} hook codex${dataDirArg}`;
+}
+
+function isClaudePromptMemoryHook(command: string): boolean {
+  return command.includes(PROMPT_MEMORY_MARKER);
+}
+
+function isCodexPromptMemoryHook(command: string): boolean {
+  return command.includes(CODEX_PROMPT_MEMORY_MARKER);
+}
+
+function markerAssignment(marker: string): string {
+  return `PROMPT_MEMORY_HOOK=${shellQuote(marker)}`;
+}
+
+function shellQuote(value: string): string {
+  return JSON.stringify(value);
+}
+
+function cliEntryPath(): string {
+  return fileURLToPath(new URL("../index.js", import.meta.url));
 }
 
 function readSettings(settingsPath: string): ClaudeSettings {

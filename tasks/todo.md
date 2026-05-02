@@ -1,5 +1,28 @@
 # 작업 계획
 
+## 2026-05-02 Claude Code/Codex 실제 Hook 연동 점검
+
+- [x] 실제 `claude`/`codex` CLI 존재 여부 확인
+- [x] 현재 doctor 상태 확인
+- [x] hook 설치 명령의 변경 범위 확인
+- [x] 기본 data dir 초기화 및 로컬 서버 실행
+- [x] Claude Code/Codex hook 설치 후 doctor 재확인
+- [x] 실제 hook wrapper stdin payload 전송으로 저장 검증
+- [x] CLI/UI에서 저장 결과 확인
+- [x] 검증 결과 기록, 커밋 및 푸시
+
+### 점검 결과
+
+- 실제 CLI 존재: `claude --version`은 `2.1.126 (Claude Code)`, `codex --version`은 `codex-cli 0.128.0`.
+- 최초 상태: 기본 data dir 기준 `doctor claude-code`, `doctor codex` 모두 server/token/hook 미설정이었다.
+- 실제 설치: `prompt-memory init`으로 `/Users/jinan/.prompt-memory`를 초기화했고, `install-hook claude-code`, `install-hook codex`를 실행했다. Claude 설정은 `~/.claude/settings.json`, Codex 설정은 `~/.codex/hooks.json`, `~/.codex/config.toml`에 설치됐다.
+- 발견/수정: 설치된 hook command가 `prompt-memory hook ...` 전역 명령을 가정해 실제 셸에서 `command not found`가 났다. installer를 수정해 `PROMPT_MEMORY_HOOK="..." "<node>" "<repo>/dist/cli/index.js" hook ...` 형태의 절대 실행 명령을 기록하고 기존 hook도 갱신하게 했다.
+- 실제 저장 검증: 설치된 설정 파일의 command 문자열을 그대로 읽어 `sh -c`로 실행했고, Claude Code payload와 Codex payload가 각각 `claude-code-v1`, `codex-v1`로 저장됐다.
+- 보안 확인: 실제 저장된 두 prompt 모두 `password/access_token` 계열은 `[REDACTED:secret_assignment]`, API key 계열은 `[REDACTED:api_key]`로 마스킹됐다.
+- doctor 결과: Claude Code와 Codex 모두 server/token/settings ok. Codex는 `codexHooksEnabled=true`, `duplicateHooks=false`, `hookSources=["user"]`. 마지막 ingest status는 `ok=true`, `status=200`.
+- UI 확인: `http://127.0.0.1:17373` 목록에서 Claude Code/Codex 두 건이 최신 행으로 표시되고 원문 비밀값은 노출되지 않았다.
+- 검증 명령: `pnpm test`, `pnpm lint`, `pnpm build`, `pnpm pack:dry-run`, `pnpm smoke:release`, `git diff --check` 통과. Node 20.20.0에서 실행되어 engine 경고는 계속 발생한다.
+
 ## 2026-05-02 전체 기능 점검 및 사용성 평가
 
 - [x] 최신 Web Interface Guidelines와 `DESIGN.md` 기준 확인
