@@ -1,5 +1,31 @@
 # 작업 계획
 
+## 2026-05-02 Post-PRD2 Public Beta Hardening Plan
+
+- [ ] PRD2 core 완료 판정 audit: PRD_PHASE2 수용 기준과 실제 구현 차이 목록화
+- [ ] Browser raw-path boundary 결정: archive/detail/dashboard/projects에서 path를 그대로 보여줄지, masked display 옵션을 둘지 확정
+- [ ] Playwright 자동 E2E 추가: archive -> detail -> coach copy/save -> projects -> export -> mobile overflow
+- [ ] Benchmark v1 설계 및 구현: privacy, retrieval, coach quality, analytics, latency를 JSON report로 측정
+- [ ] Privacy regression fixture 확장: Markdown/SQLite/FTS/API/export/log/stdout raw secret/path 누출 검사
+- [ ] Release checklist 갱신: PRD2에서 추가된 import/export/project/coach 검증 항목 반영
+- [ ] README/문서 public beta 정리: 설치, hook, local-first, external analysis 미구현, Codex beta, uninstall/delete 경계 확인
+- [ ] Node 22/24와 package smoke 재검증: 현재 Node 20 warning을 실제 지원 버전에서 제거
+- [ ] Beta release candidate 태그 전 최종 live smoke: 새 설치 기준으로 Claude Code/Codex 수집과 웹 UI 확인
+
+### 최적 순서
+
+1. 기능을 더 추가하지 말고 PRD2 완료 audit부터 한다.
+2. 공개 신뢰에 직결되는 privacy/display 경계를 먼저 닫는다.
+3. 수동 검증을 Playwright E2E와 benchmark로 자동화한다.
+4. 문서와 release checklist를 실제 구현 기준으로 맞춘다.
+5. Node 22/24, package, 새 설치 smoke를 통과한 뒤 beta release candidate로 본다.
+
+### 이번 단계에서 제외
+
+- Claude Code/Codex에 prompt를 자동으로 바꿔 재입력하는 hook interception은 제외한다.
+- External LLM/tool-assisted analysis는 Phase 2 core 이후 gated beta로만 검토한다.
+- GitHub 연동은 제품 핵심 가치 검증 후 별도 단계로 둔다.
+
 ## 2026-05-02 Runtime Verification And Benchmark Plan
 
 - [x] 현재 브랜치/작업트리 상태 확인
