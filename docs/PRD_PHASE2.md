@@ -37,11 +37,43 @@ Phase 2의 목적은 `prompt-memory`를 "안전하게 저장하고 찾는 도구
 - 분석 결과와 개선 prompt도 redaction pipeline을 다시 통과해야 한다.
 - 자동으로 `AGENTS.md`, `CLAUDE.md`, project settings를 수정하지 않는다. 사용자가 복사하거나 승인한 경우에만 쓴다.
 
-## 4. 포함 범위
+## 4. Phase 2 Core와 Gated Beta
 
-### 4.1 Project Control Plane
+Phase 2 완료 조건은 다음 core 기능으로 제한한다.
+
+- Project identity와 project policy
+- Transcript import dry-run과 imported-only queue
+- Prompt improvement workspace MVP
+- Import execution/resume hardening
+- Anonymized export preset
+
+External LLM Analysis는 Phase 2 core 완료 조건이 아니다. Project Control Plane, import, local improvement workspace, anonymized export가 안정화된 뒤 gated beta로만 제공한다. Phase 2 core 구현 중에는 external analysis route stub이나 network code path를 만들지 않는다. 단, project policy와 audit schema에는 향후 external analysis opt-in을 수용할 필드를 미리 정의할 수 있다.
+
+## 5. 공통 보안 및 API 요구사항
+
+- 모든 Phase 2 read API는 app access를 요구한다.
+- 모든 import/export/external-analysis/project-policy mutation과 preview job 생성 API는 app access와 CSRF를 요구한다.
+- ingest token은 Phase 2 관리 API에서 절대 허용하지 않는다.
+- problem detail, audit event, browser response에는 raw prompt, raw secret, provider API key, token, import payload 원문을 포함하지 않는다.
+- browser API는 raw path를 기본 반환하지 않는다. raw path가 필요한 경우 CLI 또는 explicit debug/detail action으로 분리한다.
+- provider response, rewrite draft, instruction candidate, imported transcript text는 모두 untrusted user content로 취급한다.
+- UI 렌더링은 기존 Markdown sanitizer와 CSP 경계를 재사용하고 raw HTML, external image, `file:`, `data:`, custom scheme, `javascript:` URL을 차단한다.
+- `AGENTS.md`와 `CLAUDE.md` 후보는 copy-only를 기본으로 하며, 파일 쓰기는 별도 명시 확인이 있을 때만 허용한다.
+
+## 6. 포함 범위
+
+### 6.1 Project Control Plane
 
 사용자는 프로젝트별로 수집, 분석, 보존, 외부 전송 가능 여부를 확인하고 조정할 수 있어야 한다.
+
+Project identity:
+
+- Project identity는 우선 normalized `project_root`를 기준으로 한다.
+- `project_root`가 없으면 normalized `cwd` bucket을 read-only inferred project로 표시한다.
+- 사용자가 alias를 지정해도 기존 Markdown frontmatter와 원본 path 값은 변경하지 않는다.
+- Projects API는 기본적으로 `project_id`, `label`, `alias`, `path_kind`, count/rate만 반환한다.
+- raw `cwd`, `project_root`, `transcript_path`는 browser project list에 기본 노출하지 않는다.
+- Settings API는 global defaults와 secret-free diagnostics만 담당한다. Project policy 변경은 Projects API로 분리한다.
 
 요구사항:
 
@@ -52,15 +84,19 @@ Phase 2의 목적은 `prompt-memory`를 "안전하게 저장하고 찾는 도구
 - 프로젝트별 retention 후보를 설정할 수 있다. 실제 자동 삭제 실행은 별도 확인을 요구한다.
 - 외부 분석 opt-in은 전역 opt-in과 프로젝트 opt-in이 모두 켜진 경우에만 가능하다.
 - 모든 policy 변경은 raw prompt 없이 audit event로 저장한다.
+- policy에는 version을 둔다. preview/import/export/external-analysis job은 생성 시점의 policy version을 기록한다.
+- policy lookup은 별도 read port로 허용한다. capture-disabled 프로젝트는 policy lookup 이후 prompt persistence storage를 호출하지 않아야 한다.
 
 수용 기준:
 
 - project policy 변경 API는 app access와 CSRF를 요구한다.
 - 브라우저 settings 응답에는 token, raw prompt, raw secret이 포함되지 않는다.
-- 수집 제외 프로젝트의 hook ingest는 저장소를 호출하지 않는다.
+- Projects API 응답에는 token, raw prompt, raw secret, raw transcript path가 포함되지 않는다.
+- 수집 제외 프로젝트의 hook ingest는 prompt persistence storage를 호출하지 않는다.
 - analysis/export/import 후보 산정이 project policy를 반영한다.
+- `rebuild-index` 후 project profile index는 Markdown frontmatter에서 복구되지만, 사용자 설정인 `project_policies`와 `policy_audit_events`는 보존된다.
 
-### 4.2 Transcript Import Dry Run
+### 6.2 Transcript Import Dry Run
 
 사용자는 Claude Code/Codex transcript 또는 선택한 JSONL 파일에서 과거 사용자 prompt를 preview한 뒤 가져올 수 있어야 한다.
 
@@ -68,12 +104,22 @@ Phase 2의 목적은 `prompt-memory`를 "안전하게 저장하고 찾는 도구
 
 - import는 기본 비활성화이며 사용자가 파일, 기간, 프로젝트를 명시해야 한다.
 - `prompt-memory import --dry-run`을 먼저 제공한다.
-- dry-run은 예상 수집 건수, skipped count, parse errors, sensitive summary, source type을 표시한다.
+- dry-run은 예상 수집 건수, skipped count, parse errors, sensitive summary, source type, 가져온 뒤 생길 dashboard 변화 preview를 표시한다.
 - assistant response, tool output, command output, 파일 내용은 기본 저장 대상에서 제외한다.
 - import source는 `official-hook`, `claude-transcript-best-effort`, `codex-transcript-best-effort`, `manual-jsonl`처럼 구분한다.
 - 한 record 실패가 전체 import를 중단하지 않는다.
 - 재실행 시 idempotency key로 중복 저장을 막는다.
 - import 결과는 job 단위로 저장하고 resume 가능해야 한다.
+- import 입력 파일은 canonical path로 검증하고 symlink traversal을 거부하거나 resolved path를 preview에 표시해야 한다.
+- 기본 허용 위치는 사용자 홈 하위의 Claude/Codex transcript 디렉터리와 사용자가 명시 선택한 단일 파일로 제한한다.
+- 디렉터리 전체 재귀 import와 glob import는 별도 preview와 확인 없이는 금지한다.
+- file size, line size, total records, parse timeout 제한을 둔다.
+- parser는 source별 allowlist parser만 사용한다.
+- 알 수 없는 event type, assistant/tool role, command output, file content, diff blob, attachment/content array는 저장하지 않고 `import_errors`에 raw content 없이 code/count만 기록한다.
+- import job 상태는 `pending`, `dry_run_completed`, `running`, `completed`, `failed`, `canceled` 중 하나로 기록한다.
+- import idempotency key는 `source_type + source_path_hash + record_offset/session_id/turn_id + redacted_prompt_hash` 기반으로 정의한다.
+- import 완료 후 사용자는 job detail에서 imported/skipped/error/sensitive summary를 확인하고, "이번 import 결과만 보기"로 list와 dashboard를 필터링할 수 있어야 한다.
+- imported prompt는 source badge와 best-effort 신뢰도 표시를 가져야 한다.
 
 수용 기준:
 
@@ -81,13 +127,16 @@ Phase 2의 목적은 `prompt-memory`를 "안전하게 저장하고 찾는 도구
 - import 실행은 redaction 이후 저장하고 raw secret을 Markdown/SQLite/FTS/analysis에 남기지 않는다.
 - malformed JSONL record는 import error로 남고 기존 데이터는 유지된다.
 - import된 prompt는 list/search/detail/dashboard에 기존 hook prompt와 동일하게 표시된다.
+- assistant response, tool output, command output, file content가 포함된 transcript fixture는 사용자 prompt 외 내용을 저장하지 않는 회귀 테스트를 가진다.
+- import 완료 후 imported-only filter가 list와 dashboard drilldown에 적용된다.
 
-### 4.3 Prompt Improvement Workspace
+### 6.3 Prompt Improvement Workspace
 
 사용자는 품질 gap이 있는 prompt를 열고, 개선 초안을 만들고, 좋은 버전을 저장 또는 복사할 수 있어야 한다.
 
 요구사항:
 
+- 사용자는 Dashboard 또는 `focus=quality-gap` 큐에서 개선 대상 prompt를 열고, 원문/분석 gap/local rewrite draft를 나란히 비교한 뒤, 개선본을 복사하거나 저장하고 다음 큐 항목으로 이동할 수 있어야 한다.
 - detail 화면에 "개선 작업대" 영역을 추가한다.
 - local rules 기반 rewrite draft를 먼저 제공한다.
 - rewrite draft는 사용자가 복사할 수 있지만 자동으로 원문 Markdown을 바꾸지 않는다.
@@ -100,29 +149,38 @@ Phase 2의 목적은 `prompt-memory`를 "안전하게 저장하고 찾는 도구
 
 - raw secret이 draft, suggestion, SQLite, API response에 남지 않는다.
 - prompt detail에서 원문, 분석 checklist, 개선 draft, instruction candidate가 구분된다.
-- 사용자가 복사하거나 저장한 draft는 usefulness dashboard에 반영된다.
+- 저장/복사된 개선본은 reused focus와 usefulness dashboard에 반영된다.
 - delete prompt 시 관련 draft와 usage metadata도 정리된다.
+- quality-gap 큐에서 prompt를 열고 draft를 저장/복사한 뒤 다음 항목으로 이동할 수 있다.
 
-### 4.4 Anonymized Export
+### 6.4 Anonymized Export
 
 사용자는 저장된 prompt와 분석 결과를 익명화된 형태로 내보낼 수 있어야 한다.
 
 요구사항:
 
 - export는 기본적으로 anonymized export만 UI에 노출한다.
-- raw export는 CLI 전용 또는 강한 경고와 추가 확인 뒤에만 허용한다.
+- raw export는 browser API/UI에서 제공하지 않는다.
+- raw export는 hidden/advanced CLI에서만 제공하고 `--raw --i-understand-local-secrets-may-be-exported --output <path>` 같은 명시 플래그를 요구한다.
 - export preview는 포함될 field, 제외될 field, prompt count, sensitive count를 보여준다.
 - 기본 export는 masked prompt, tags, checklist summary, tool, coarse date, project alias만 포함한다.
 - `cwd`, `project_root`, `transcript_path`, raw metadata는 기본 제외한다.
 - export file에는 app token, ingest token, web session secret, upstream session token이 포함되지 않는다.
+- export preview에는 목적 preset을 둔다: `personal_backup`, `anonymized_review`, `issue_report_attachment`.
+- 각 preset은 포함 field와 제외 field를 고정한다.
+- anonymized export는 secret masking과 별개로 project alias, date bucketing, URL/domain/path/person/email/repo slug redaction, session/turn/id remapping을 적용한다.
+- export preview는 residual identifiers sample을 raw 값 없이 category/count로 보여준다.
+- 작은 집합 export는 재식별 위험 경고를 표시한다.
+- 기본 export는 exact timestamp와 stable prompt id를 포함하지 않는다.
 
 수용 기준:
 
 - anonymized export fixture에서 raw path, raw secret, token 값이 검출되지 않는다.
 - export preview와 실제 export count가 일치한다.
 - delete된 prompt는 export 대상에 포함되지 않는다.
+- raw export는 project/prompt policy, deleted prompts, excluded-from-export 플래그를 적용하고 raw content 없는 audit event를 남긴다.
 
-### 4.5 External LLM Analysis Opt-in
+### 6.5 External LLM Analysis Gated Beta
 
 외부 LLM 분석은 project policy, prompt policy, redaction preview, 감사 로그가 준비된 뒤에만 구현한다.
 
@@ -136,6 +194,10 @@ Phase 2의 목적은 `prompt-memory`를 "안전하게 저장하고 찾는 도구
 - override는 1회성으로만 허용하고 audit event를 남긴다.
 - provider response도 저장 전 redaction pipeline을 통과한다.
 - 외부 분석 실패는 기존 local analysis를 깨지 않는다.
+- `external-analysis/preview`는 `external_analysis_jobs`에 `payload_snapshot`, `payload_hash`, `prompt_id`, `prompt_updated_at` 또는 prompt hash, `project_policy_version`, `prompt_policy_version`, `redaction_version`, `provider`, `model`, `allowed_fields`, `expires_at`을 저장한다.
+- 실행 API는 `job_id`만 받고 preview snapshot과 byte-for-byte 동일한 payload를 전송한다.
+- prompt, policy, redaction version, provider, model이 preview 이후 변경되면 job은 invalid 처리한다.
+- provider response는 untrusted content로 취급하며 Markdown sanitizer와 CSP 경계를 통과해야 UI에 표시할 수 있다.
 
 수용 기준:
 
@@ -143,10 +205,11 @@ Phase 2의 목적은 `prompt-memory`를 "안전하게 저장하고 찾는 도구
 - preview payload는 raw secret과 금지된 path field를 포함하지 않는다.
 - 외부 분석 결과 저장 전 redaction 회귀 테스트가 있다.
 - provider API key는 Markdown, SQLite, logs, export에 포함되지 않는다.
+- preview payload와 실제 전송 payload의 hash가 일치하지 않으면 전송하지 않는다.
 
-## 5. 제외 범위
+## 7. 제외 범위
 
-Phase 2에서 제외한다.
+Phase 2 core에서 제외한다.
 
 - 팀 계정과 권한 관리
 - 클라우드 동기화
@@ -156,8 +219,9 @@ Phase 2에서 제외한다.
 - upstream AI 도구의 OAuth/session token 사용
 - assistant response와 tool output의 기본 저장
 - semantic clustering을 위한 외부 embedding 기본 사용
+- external LLM analysis의 core release 포함
 
-## 6. 데이터 모델 후보
+## 8. 데이터 모델 후보
 
 Phase 2에서 추가 또는 상세화할 테이블:
 
@@ -173,7 +237,62 @@ Phase 2에서 추가 또는 상세화할 테이블:
 
 모든 새 테이블은 prompt hard delete와 source-of-truth rebuild 정책을 정의해야 한다.
 
-## 7. API/CLI 후보
+`project_policies` 최소 필드:
+
+- `project_key`
+- `display_alias`
+- `capture_disabled`
+- `analysis_disabled`
+- `retention_candidate_days`
+- `external_analysis_opt_in`
+- `export_disabled`
+- `version`
+- `updated_at`
+
+`policy_audit_events` 최소 필드:
+
+- `id`
+- `project_key`
+- `changed_fields`
+- `previous_policy_hash`
+- `next_policy_hash`
+- `created_at`
+- `actor`: `cli`, `web`, `system`
+
+`import_jobs` 최소 필드:
+
+- `id`
+- `source_type`
+- `source_path_hash`
+- `status`
+- `dry_run`
+- `started_at`
+- `completed_at`
+- `project_policy_version`
+- `summary_json`
+
+`import_records` 최소 필드:
+
+- `job_id`
+- `record_key`
+- `record_offset`
+- `status`
+- `prompt_id`
+- `error_code`
+
+## 9. Phase 2 Artifact Lifecycle
+
+| Artifact | Prompt hard delete | `rebuild-index` 관계 | Raw content 저장 |
+| --- | --- | --- | --- |
+| `project_policies` | 유지 | Markdown에서 재생성 불가. 보존한다. | 없음 |
+| `policy_audit_events` | 유지하되 raw 없는 tombstone만 허용 | 재생성 불가. 보존한다. | 없음 |
+| `import_jobs` | 유지 가능. 삭제 prompt count만 업데이트 | 재생성 불가. 보존한다. | 없음 |
+| `import_records` | prompt hard delete 시 `prompt_id`를 null 처리하거나 row 삭제. 정책을 migration에서 고정한다. | 재생성 불가. 보존한다. | 없음 |
+| `prompt_improvement_drafts` | 삭제 | 재생성 불가. 삭제된 prompt의 draft는 유지하지 않는다. | redacted draft만 |
+| `export_jobs` | 유지 가능하나 export file content/path는 저장하지 않는다. | 재생성 불가. 보존한다. | 없음 |
+| `external_analysis_jobs` | `payload_snapshot`과 provider response를 삭제한다. raw 없는 audit tombstone만 허용한다. | 재생성 불가. 보존한다. | redacted snapshot만 gated beta에서 허용 |
+
+## 10. API/CLI 후보
 
 CLI:
 
@@ -182,7 +301,6 @@ CLI:
 - `prompt-memory import --dry-run`
 - `prompt-memory import --resume <job-id>`
 - `prompt-memory export --anonymized`
-- `prompt-memory analyze external --preview <prompt-id>`
 
 API:
 
@@ -194,19 +312,23 @@ API:
 - `POST /api/v1/prompts/:id/improvements`
 - `POST /api/v1/exports/preview`
 - `POST /api/v1/exports`
-- `POST /api/v1/prompts/:id/external-analysis/preview`
 
-## 8. 개발 순서
+Gated beta API 후보:
+
+- `POST /api/v1/prompts/:id/external-analysis/preview`
+- `POST /api/v1/external-analysis-jobs/:id/run`
+
+## 11. 개발 순서
 
 1. Project Control Plane
-2. Import job schema와 dry-run CLI
-3. Import execution과 resume
-4. Prompt Improvement Workspace local draft
-5. Anonymized export preview/export
-6. External LLM analysis opt-in preview
-7. External LLM analysis execution
+2. Import dry-run과 imported-only preview/filter
+3. Prompt Improvement Workspace MVP
+4. Import execution/resume hardening
+5. Anonymized export preset
+6. External LLM analysis gated beta preview
+7. External LLM analysis gated beta execution
 
-## 9. 검증 게이트
+## 12. 검증 게이트
 
 기능 변경 후 기본 게이트:
 
@@ -227,9 +349,17 @@ pnpm prompt-memory server -- --data-dir <temp-data-dir>
 
 그 다음 실제 브라우저에서 desktop/mobile 렌더링, console/network 오류, 주요 흐름을 확인한다.
 
-## 10. 첫 구현 후보
+## 13. Phase 2 UX Acceptance
 
-첫 구현 단위는 Project Control Plane이 가장 적절하다.
+- 새 사용자는 transcript import dry-run 후 가져올 가치와 위험을 한 화면에서 판단할 수 있다.
+- import 완료 후 이번 import 결과만 필터링하고 quality-gap/reused/duplicated 큐로 바로 이동할 수 있다.
+- 사용자는 quality-gap 큐에서 prompt를 열고 개선 draft를 저장/복사한 뒤 다음 항목으로 이동할 수 있다.
+- Project policy 변경 후 capture/analysis/import/export 후보가 어떻게 달라졌는지 preview로 확인할 수 있다.
+- 프로젝트별 수집 제외를 켠 뒤 같은 프로젝트 prompt가 새로 저장되지 않는 것을 doctor 또는 UI 상태로 확인할 수 있다.
+
+## 14. 첫 구현 후보
+
+첫 구현 단위는 Project Control Plane 최소판이 가장 적절하다.
 
 이유:
 
@@ -241,7 +371,25 @@ pnpm prompt-memory server -- --data-dir <temp-data-dir>
 첫 커밋 범위:
 
 - `project_policies` migration
+- `policy_audit_events` migration
+- `ProjectPolicyStoragePort`: list/get/update/audit
 - storage/API 테스트
 - `GET /api/v1/projects`, `PATCH /api/v1/projects/:id/policy`
-- settings 또는 project panel UI
-- capture exclusion과 analysis exclusion이 policy를 반영하는 최소 경로
+- ingest에서 capture-disabled만 반영
+- UI는 read-only project list와 capture-disabled toggle 하나만 제공
+
+첫 커밋에서 제외:
+
+- analysis exclusion 적용
+- retention 실행
+- external opt-in 실행
+- import/export candidate filtering
+- external-analysis route stub 또는 network code path
+
+필수 테스트:
+
+- `GET /api/v1/projects`가 token, raw prompt, raw secret, raw transcript path를 반환하지 않는다.
+- `PATCH /api/v1/projects/:id/policy`는 app access와 CSRF를 요구한다.
+- capture-disabled project ingest는 prompt persistence storage를 호출하지 않는다.
+- policy audit event는 raw prompt/path/secret 없이 변경 field와 policy hash만 기록한다.
+- `rebuild-index` 후 project profile은 복구되지만 project policies/audit은 보존된다.

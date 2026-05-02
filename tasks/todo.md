@@ -1032,3 +1032,23 @@
 - 첫 구현 후보는 Project Control Plane으로 잡았다. import/export/external analysis가 모두 프로젝트별 policy를 필요로 하므로, 이 기반을 먼저 만드는 것이 후속 기능의 위험을 줄인다.
 - README 문서 링크와 `package.json` package files에 `docs/PRD_PHASE2.md`, `docs/EFFICIENCY_REVIEW.md`를 추가했다.
 - 검증 명령: `pnpm format`, `pnpm test`, `pnpm lint`, `pnpm build`, `pnpm pack:dry-run`, `git diff --check` 통과. Node 20.20.0에서 실행되어 `engines.node >=22 <25` 경고는 계속 발생한다.
+
+## P31 Phase 2 PRD Deep Review
+
+- [x] 서브 에이전트 리뷰 착수
+  - [x] 보안/프라이버시 경계 리뷰
+  - [x] 제품/UX/가치 리뷰
+  - [x] 구현/테스트/아키텍처 리뷰
+- [x] 로컬 코드/문서 기준 추가 검토
+- [x] 리뷰 결과 통합
+- [x] PRD/효율성 문서 보강
+- [x] 검증 명령 실행
+- [x] 커밋 및 `git push origin main`
+
+### P31 설계 메모
+
+- 보안 리뷰에서 지적한 Phase 2 mutation/preview job CSRF 요구, import 파일 경계, allowlist parser, anonymized export 재식별 방지, external LLM preview snapshot 동일성, provider response untrusted content 경계를 PRD에 반영했다.
+- 제품 리뷰에서 지적한 import 이후 imported-only queue, quality-gap 큐 중심 improvement workflow, Phase 2 core와 external LLM gated beta 분리를 반영했다.
+- 구현 리뷰에서 지적한 project identity, Projects API와 Settings API 경계, `ProjectPolicyStoragePort`, policy audit, rebuild/delete lifecycle, 첫 구현 slice 축소와 필수 테스트 목록을 반영했다.
+- 효율성 평가 문서도 external LLM을 Phase 2 core가 아닌 gated beta로 낮추고, import dry-run + imported-only queue를 앞당기는 순서로 갱신했다.
+- 검증 명령: `pnpm format`, `pnpm test`, `pnpm lint`, `pnpm build`, `pnpm pack:dry-run`, `git diff --check` 통과. Node 20.20.0에서 실행되어 `engines.node >=22 <25` 경고는 계속 발생한다.

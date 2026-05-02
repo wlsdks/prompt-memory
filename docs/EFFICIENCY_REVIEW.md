@@ -70,16 +70,17 @@
 | 2 | Transcript Import Dry Run | 매우 높음 | 높음 | 설치 전 과거 prompt를 가져와 초기 가치를 키운다. best-effort 경계가 필수다. |
 | 3 | Prompt Improvement Workspace | 높음 | 중간 | 좋은 prompt를 찾는 데서 끝내지 않고 개선/재사용까지 연결한다. |
 | 4 | Anonymized Export | 중간 | 중간 | 오픈소스 사용자와 팀 공유에 유용하지만 privacy 경계가 중요하다. |
-| 5 | External LLM Analysis Opt-in | 높음 | 높음 | 분석 품질은 좋아지지만 동의, redaction, audit, provider 설정 없이는 위험하다. |
+| 5 | External LLM Analysis Gated Beta | 높음 | 높음 | 분석 품질은 좋아지지만 동의, redaction, audit, provider 설정 없이는 위험하다. Phase 2 core 완료 조건에서 제외한다. |
 | 6 | Semantic Duplicate/Cluster | 중간 | 높음 | 정확도와 privacy 비용이 크다. local-only embedding 또는 opt-in 이후로 미룬다. |
 
 ## 6. 권장 2차 개발 순서
 
 1. Project Control Plane
-2. Transcript Import Dry Run과 import job skeleton
-3. Prompt Improvement Workspace
-4. Anonymized Export
-5. External LLM Analysis Opt-in
+2. Transcript Import Dry Run과 imported-only queue
+3. Prompt Improvement Workspace MVP
+4. Import execution/resume hardening
+5. Anonymized Export preset
+6. External LLM Analysis gated beta
 
 이 순서가 좋은 이유는 privacy와 운영 제어를 먼저 만든 뒤, 과거 데이터와 고급 분석을 얹기 때문이다. 외부 LLM 분석을 먼저 붙이면 제품은 더 화려해 보이지만, 로컬 우선 원칙과 사용자 신뢰 경계가 약해진다.
 
