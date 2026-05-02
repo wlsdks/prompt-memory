@@ -27,6 +27,7 @@ type ImportJobCliOptions = {
 export function registerImportCommand(program: Command): void {
   program
     .command("import")
+    .description("Preview transcript imports without storing prompts.")
     .option("--data-dir <path>", "Override the prompt-memory data directory.")
     .option("--dry-run", "Preview import without writing Markdown or SQLite.")
     .option("--file <path>", "JSONL transcript file to preview.")
@@ -43,6 +44,7 @@ export function registerImportCommand(program: Command): void {
 
   program
     .command("import-job")
+    .description("Show a saved import dry-run job.")
     .argument("<id>", "Import job id.")
     .option("--data-dir <path>", "Override the prompt-memory data directory.")
     .option("--json", "Print JSON.")

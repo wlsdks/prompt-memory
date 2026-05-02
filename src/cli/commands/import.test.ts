@@ -6,6 +6,7 @@ import { afterEach, describe, expect, it } from "vitest";
 
 import { initializePromptMemory } from "../../config/config.js";
 import { createSqlitePromptStorage } from "../../storage/sqlite.js";
+import { createProgram } from "../index.js";
 import { importDryRunForCli, showImportJobForCli } from "./import.js";
 
 const tempDirs: string[] = [];
@@ -20,6 +21,17 @@ afterEach(() => {
 });
 
 describe("import CLI", () => {
+  it("describes import commands in the top-level help", () => {
+    const help = createProgram().helpInformation();
+
+    expect(help).toMatch(
+      /import \[options\]\s+Preview transcript imports without storing prompts\./,
+    );
+    expect(help).toMatch(
+      /import-job \[options\] <id>\s+Show a saved import dry-run job\./,
+    );
+  });
+
   it("prints JSON dry-run summaries without raw prompt secrets", () => {
     const rawSecret = "sk-proj-1234567890abcdef";
     const file = writeJsonl([

@@ -1,5 +1,31 @@
 # 작업 계획
 
+## 2026-05-02 Phase 2 실제 사용 흐름 검증
+
+- [x] 임시 data dir에서 실제 빌드 CLI import dry-run/save-job 검증
+- [x] import job DB row와 CLI 출력의 raw-free 여부 확인
+- [x] hook ingest와 project capture-disabled 회귀 검증
+- [x] 서버 실행 후 웹 archive/projects/dashboard 사용성 점검
+- [x] desktop/mobile 브라우저 렌더링, 콘솔/네트워크 오류 확인
+- [x] CLI help 설명 누락 수정
+- [x] 검증 결과 정리, 필요한 수정 여부 판단
+- [x] 결과 기록 커밋 및 푸시
+
+### 점검 기준
+
+- raw prompt, raw source path, raw secret은 CLI/DB/UI 출력에 나오면 안 된다.
+- import dry-run은 prompt archive를 변경하지 않아야 한다.
+- project capture-disabled는 실제 ingest를 막아야 한다.
+- UI는 운영형 developer tool로서 archive, project policy, dashboard 경로가 찾기 쉬워야 한다.
+
+### 점검 결과
+
+- 실제 빌드 CLI로 `import --dry-run --save-job --json`을 실행했고 prompt 후보 2건, malformed JSONL 1건, assistant/tool skip 2건으로 집계됐다.
+- 저장된 import job과 CLI 조회 결과에는 raw source path와 raw API key가 없었고, dry-run 후 prompt row는 0건이었다.
+- 서버 ingest는 첫 prompt를 저장했고, project `capture_disabled` 설정 후 같은 프로젝트의 다음 ingest는 `reason=project_policy`로 차단됐다.
+- archive/detail/projects/dashboard를 Playwright로 확인했다. desktop/mobile 모두 콘솔 메시지 0건, 확인 범위 네트워크 200, mobile `scrollWidth=390`으로 page horizontal overflow는 없었다.
+- 사용성 문제로 최상위 CLI help에서 `import`, `import-job` 설명이 비어 있는 점을 발견해 설명과 회귀 테스트를 추가했다.
+
 ## 2026-05-02 Import Job Storage
 
 - [x] 현재 import/storage 구조 재확인
