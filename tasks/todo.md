@@ -6,7 +6,7 @@
 - [x] Practice 탭에서 archive template을 불러오고 로컬 점수 preview를 즉시 보여주기
 - [x] copy draft, checklist, missing habit 표시를 desktop web 기준으로 정리
 - [x] browser E2E, MCP stdio, release gate 검증
-- [ ] 커밋, 푸시, CI 확인
+- [x] 커밋, 푸시, CI 확인
 
 ### 판단 기준
 
