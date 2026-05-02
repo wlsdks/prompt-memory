@@ -6,7 +6,7 @@
 - [x] privacy-safe practice plan과 next prompt template을 TDD로 추가
 - [x] Scores UI에서 practice plan, copy template, 그래프 주변 정보 구조 보강
 - [x] MCP schema/docs/browser E2E/release gate 검증
-- [ ] 커밋, 푸시, CI 확인
+- [x] 커밋, 푸시, CI 확인
 
 ### 판단 기준
 
