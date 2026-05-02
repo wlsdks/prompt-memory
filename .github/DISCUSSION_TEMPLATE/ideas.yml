@@ -1,0 +1,36 @@
+title: "[Idea] "
+labels: ["enhancement"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Use this template for feature ideas, workflow gaps, and adapter requests. Keep examples synthetic and redacted.
+  - type: textarea
+    id: problem
+    attributes:
+      label: Problem
+      description: What developer workflow problem should prompt-memory solve?
+    validations:
+      required: true
+  - type: textarea
+    id: proposed
+    attributes:
+      label: Proposed direction
+      description: What behavior would make this useful?
+    validations:
+      required: false
+  - type: dropdown
+    id: area
+    attributes:
+      label: Area
+      options:
+        - Prompt search
+        - Prompt Coach
+        - Privacy/redaction
+        - Claude Code adapter
+        - Codex adapter
+        - Benchmark/evaluation
+        - Documentation
+        - Other
+    validations:
+      required: true

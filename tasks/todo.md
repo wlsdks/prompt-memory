@@ -1,5 +1,16 @@
 # 작업 계획
 
+## 2026-05-02 Pre-Publish Open Source Governance And I18n
+
+- [x] npm tarball에 포함될 파일과 코드 범위 확인
+- [x] 개인 PC 경로/토큰/민감정보 포함 여부 점검
+- [x] `.gitignore`와 npm package allowlist 보강
+- [x] LICENSE, contributing, code of conduct, support, issue/discussion templates 정리
+- [x] GitHub issues/discussions 활성화와 main branch PR approval rule 적용
+- [x] 웹 UI English/Korean 언어 전환 구현
+- [x] 검증 게이트와 pack/install smoke 재실행
+- [x] 커밋 및 origin/main 푸시
+
 ## 2026-05-02 Open Source English/NPM Readiness
 
 - [x] npm에 포함되는 공개 문서의 한국어 잔존 범위 확인

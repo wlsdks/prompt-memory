@@ -19,6 +19,7 @@ This repository is pre-release software.
 - Transcript import: CLI only
 - Anonymized export: web UI and CLI preview/job flow
 - Benchmark v1: implemented as a local regression baseline
+- English/Korean web UI: implemented
 - External LLM analysis: not implemented
 - Default data handling: local only
 
@@ -525,10 +526,22 @@ pnpm pack:dry-run
 
 The dry-run package should include built CLI files, built web assets, README, and release documentation.
 
+See [Package contents](docs/PACKAGE_CONTENTS.md) before publishing to confirm
+which files ship to npm, and [Pre-publish privacy audit](docs/PRE_PUBLISH_PRIVACY_AUDIT.md)
+for the current privacy review checklist.
+
+## Contributing
+
+Please read [CONTRIBUTING](CONTRIBUTING.md), [CODE OF CONDUCT](CODE_OF_CONDUCT.md),
+[SUPPORT](SUPPORT.md), and [SECURITY](SECURITY.md) before opening issues,
+pull requests, or security reports.
+
 ## Documentation
 
 - [PRD](docs/PRD.md)
 - [Phase 2 PRD](docs/PRD_PHASE2.md)
+- [Package contents](docs/PACKAGE_CONTENTS.md)
+- [Pre-publish privacy audit](docs/PRE_PUBLISH_PRIVACY_AUDIT.md)
 - [Efficiency review](docs/EFFICIENCY_REVIEW.md)
 - [Tech spec](docs/TECH_SPEC.md)
 - [Implementation plan](docs/IMPLEMENTATION_PLAN.md)

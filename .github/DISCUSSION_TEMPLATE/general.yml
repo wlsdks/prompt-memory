@@ -1,0 +1,21 @@
+title: "[General] "
+labels: ["discussion"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for discussing prompt-memory. Do not include real prompts, private paths, credentials, session tokens, or proprietary code.
+  - type: textarea
+    id: topic
+    attributes:
+      label: Topic
+      description: What would you like to discuss?
+    validations:
+      required: true
+  - type: textarea
+    id: context
+    attributes:
+      label: Context
+      description: Redacted setup details, workflow notes, or constraints.
+    validations:
+      required: false

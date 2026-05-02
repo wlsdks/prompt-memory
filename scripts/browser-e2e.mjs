@@ -91,6 +91,10 @@ try {
 
   await page.goto(serverBaseUrl);
   await page.getByRole("heading", { name: "Prompt archive" }).waitFor();
+  await page.getByRole("button", { name: "KO" }).click();
+  await page.getByRole("heading", { name: "프롬프트 아카이브" }).waitFor();
+  await page.getByRole("button", { name: "EN" }).click();
+  await page.getByRole("heading", { name: "Prompt archive" }).waitFor();
   await page.getByText("private-project").first().waitFor();
   await assertBrowserSafe(page, "archive");
   await assertText(

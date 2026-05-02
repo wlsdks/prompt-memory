@@ -48,6 +48,12 @@ import {
   type PromptSummary,
   type SettingsResponse,
 } from "./api.js";
+import {
+  detectInitialLanguage,
+  localizeElement,
+  persistLanguage,
+  type Language,
+} from "./i18n.js";
 import { SafeMarkdown } from "./markdown.js";
 
 type View =
@@ -59,6 +65,9 @@ type View =
   | { name: "settings" };
 
 export function App() {
+  const [language, setLanguage] = useState<Language>(() =>
+    detectInitialLanguage(),
+  );
   const [view, setView] = useState<View>({ name: "list" });
   const [filters, setFilters] = useState<PromptFilters>(() =>
     filtersFromLocation(),
@@ -92,6 +101,17 @@ export function App() {
   const [savedImprovementId, setSavedImprovementId] = useState<
     string | undefined
   >();
+
+  useEffect(() => {
+    persistLanguage(language);
+  }, [language]);
+
+  useEffect(() => {
+    const root = document.querySelector<HTMLElement>(".app-shell");
+    if (root) {
+      localizeElement(root, language);
+    }
+  });
 
   useEffect(() => {
     const handlePop = () => {
@@ -238,6 +258,7 @@ export function App() {
     const improvement = improvePrompt({
       prompt: prompt.markdown,
       createdAt: prompt.received_at,
+      language,
     });
     const copied = await copyTextToClipboard(improvement.improved_prompt);
     if (copied) {
@@ -253,6 +274,7 @@ export function App() {
     const improvement = improvePrompt({
       prompt: prompt.markdown,
       createdAt: prompt.received_at,
+      language,
     });
 
     try {
@@ -410,7 +432,7 @@ export function App() {
   }
 
   return (
-    <main className="app-shell">
+    <main className="app-shell" key={language}>
       <a className="skip-link" href="#workspace">
         Skip to content
       </a>
@@ -452,6 +474,24 @@ export function App() {
         <div className="capture-status">
           {health?.ok ? <ShieldCheck size={16} /> : <AlertTriangle size={16} />}
           <span>{health?.ok ? "Server OK" : "Checking status"}</span>
+        </div>
+        <div className="language-switch" aria-label="Language">
+          <button
+            aria-pressed={language === "en"}
+            className={language === "en" ? "active" : ""}
+            onClick={() => setLanguage("en")}
+            type="button"
+          >
+            EN
+          </button>
+          <button
+            aria-pressed={language === "ko"}
+            className={language === "ko" ? "active" : ""}
+            onClick={() => setLanguage("ko")}
+            type="button"
+          >
+            KO
+          </button>
         </div>
       </aside>
 
@@ -617,6 +657,7 @@ export function App() {
           <PromptDetailView
             copied={selected?.id === copiedPromptId}
             copiedImprovement={selected?.id === copiedImprovementId}
+            language={language}
             savedImprovement={selected?.id === savedImprovementId}
             onBookmark={toggleBookmark}
             onBack={() => navigate({ name: "list" })}
@@ -848,6 +889,7 @@ function ActiveFilterBar({
 function PromptDetailView({
   copied,
   copiedImprovement,
+  language,
   savedImprovement,
   onBack,
   onBookmark,
@@ -862,6 +904,7 @@ function PromptDetailView({
 }: {
   copied: boolean;
   copiedImprovement: boolean;
+  language: Language;
   savedImprovement: boolean;
   onBack(): void;
   onBookmark(prompt: PromptDetail): void;
@@ -886,6 +929,7 @@ function PromptDetailView({
   const improvement = improvePrompt({
     prompt: prompt.markdown,
     createdAt: prompt.received_at,
+    language,
   });
 
   return (

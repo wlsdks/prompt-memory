@@ -5,9 +5,16 @@ node_modules/
 dist/
 build/
 coverage/
+*.tgz
+.npm/
+.cache/
+.turbo/
+tmp/
+.temp/
 
 # Runtime data
 .prompt-memory/
+.prompt-memory-*/
 prompt-memory-data/
 *.db
 *.db-*
