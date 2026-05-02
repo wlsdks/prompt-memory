@@ -1,5 +1,18 @@
 # 작업 계획
 
+## 2026-05-03 MCP Live Readiness UI
+
+- [x] MCP 화면이 실제 사용 준비 상태를 판단하는 데 충분한지 재평가
+- [x] MCP 화면에 prompt count, scored count, redaction, next call을 보여주는 live readiness 패널 추가
+- [x] 한국어/영어 UI 문구와 browser E2E 검증 보강
+- [x] 전체 검증, 커밋, 푸시, CI 확인
+
+### 판단 기준
+
+- MCP 화면은 도구 목록만 보여주는 설명 페이지가 아니라 Claude Code/Codex 사용 전에 확인하는 운영 화면이어야 한다.
+- 표시 데이터는 dashboard/settings/health의 안전한 aggregate만 사용하고 prompt body, raw path, secret은 노출하지 않는다.
+- next call은 캡처된 데이터가 없으면 setup/status, 데이터가 있으면 archive score로 자연스럽게 이어져야 한다.
+
 ## 2026-05-03 MCP Tool Catalog UI Polish
 
 - [x] 추가 탭/화면이 실제로 필요한지 IA 기준으로 판단

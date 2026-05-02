@@ -246,6 +246,21 @@ try {
   await page.getByRole("heading", { name: "MCP tools" }).waitFor();
   await assertText(
     page,
+    "MCP readiness",
+    "MCP page should show live readiness before the tool catalog.",
+  );
+  await assertTextAny(
+    page,
+    ["Stored prompts", "저장된 프롬프트"],
+    "MCP page should expose archive readiness metrics.",
+  );
+  await assertTextAny(
+    page,
+    ["First MCP call", "첫 MCP 호출"],
+    "MCP page should recommend the next agent tool call.",
+  );
+  await assertText(
+    page,
     "Recommended call order",
     "MCP page should show recommended tool call order.",
   );
@@ -402,6 +417,19 @@ async function assertBrowserSafe(page, label) {
 async function assertText(page, expected, message) {
   const text = await page.locator("body").innerText();
   assertIncludes(text, expected, message);
+}
+
+async function assertTextAny(page, expectedOptions, message) {
+  const text = await page.locator("body").innerText();
+  const normalized = text.toLowerCase();
+  if (
+    expectedOptions.some((expected) =>
+      normalized.includes(expected.toLowerCase()),
+    )
+  ) {
+    return;
+  }
+  throw new Error(`${message} Missing one of ${expectedOptions.join(", ")}.`);
 }
 
 async function assertChartVisible(page, label, minCount) {

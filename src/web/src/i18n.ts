@@ -528,6 +528,38 @@ const UI_TRANSLATIONS: Record<string, string> = {
   "Server command": "서버 명령",
   "Claude Code": "Claude Code",
   Codex: "Codex",
+  "Live agent preflight": "실시간 에이전트 사전 점검",
+  "MCP readiness": "MCP 준비 상태",
+  "Checking archive": "아카이브 확인 중",
+  "Server unavailable": "서버 연결 안 됨",
+  "Ready to score": "점수 측정 준비됨",
+  "Ready for archive review": "아카이브 리뷰 준비됨",
+  "Scored prompts": "점수화된 프롬프트",
+  "First MCP call": "첫 MCP 호출",
+  "Load local archive status before asking Claude Code or Codex to score prompt habits.":
+    "Claude Code 또는 Codex에 프롬프트 습관 점수를 요청하기 전에 로컬 아카이브 상태를 불러오세요.",
+  "Use the status tool first so the agent can confirm capture, scoring, and privacy readiness.":
+    "에이전트가 수집, 점수화, 개인정보 준비 상태를 확인할 수 있도록 먼저 status tool을 사용하세요.",
+  "Start the local prompt-memory server before using Claude Code or Codex MCP tools.":
+    "Claude Code 또는 Codex MCP 도구를 사용하기 전에 로컬 prompt-memory 서버를 시작하세요.",
+  "Run prompt-memory server, then call get_prompt_memory_status from the agent.":
+    "prompt-memory server를 실행한 뒤 에이전트에서 get_prompt_memory_status를 호출하세요.",
+  "MCP tools avoid prompt bodies, but raw redaction mode should be reviewed before sharing reports.":
+    "MCP 도구는 prompt 본문을 피하지만, raw redaction mode에서는 리포트 공유 전에 설정을 점검하세요.",
+  "Switch redaction to mask or review local settings before asking an agent to summarize results.":
+    "에이전트에 결과 요약을 요청하기 전에 redaction을 mask로 바꾸거나 로컬 설정을 점검하세요.",
+  "No stored prompts are available yet, so archive scoring cannot reveal habit patterns.":
+    "아직 저장된 prompt가 없어 아카이브 점수로 습관 패턴을 볼 수 없습니다.",
+  "Capture a few Claude Code or Codex prompts, then call get_prompt_memory_status again.":
+    "Claude Code 또는 Codex prompt를 몇 개 수집한 뒤 get_prompt_memory_status를 다시 호출하세요.",
+  "Stored prompts are available; the next useful step is an archive quality review.":
+    "저장된 prompt가 있습니다. 다음으로 유용한 단계는 아카이브 품질 리뷰입니다.",
+  "Ask the agent to run score_prompt_archive and summarize recurring prompt habit gaps.":
+    "에이전트에 score_prompt_archive 실행과 반복 프롬프트 습관 부족 항목 요약을 요청하세요.",
+  "Stored and scored prompts are ready for Claude Code or Codex habit analysis.":
+    "저장 및 점수화된 prompt가 Claude Code 또는 Codex 습관 분석에 사용할 준비가 됐습니다.",
+  "Run archive scoring when you want a pattern review, or score_prompt for the latest request.":
+    "패턴 리뷰가 필요하면 archive scoring을 실행하고, 최신 요청만 보려면 score_prompt를 사용하세요.",
   "Recommended MCP flow": "권장 MCP 흐름",
   "Recommended call order": "권장 호출 순서",
   "4 tools": "도구 4개",

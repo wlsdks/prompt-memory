@@ -2279,6 +2279,119 @@ dd {
   min-width: 0;
 }
 
+.mcp-readiness {
+  display: grid;
+  gap: 14px;
+}
+
+.mcp-readiness-header {
+  align-items: start;
+  display: flex;
+  gap: 16px;
+  justify-content: space-between;
+}
+
+.mcp-readiness-header h2 {
+  font-size: 18px;
+  font-weight: 560;
+  line-height: 26px;
+  margin: 4px 0 6px;
+}
+
+.mcp-readiness-header p {
+  color: var(--pm-text-muted);
+  line-height: 22px;
+  margin: 0;
+  max-width: 720px;
+}
+
+.status-pill {
+  align-items: center;
+  border: 1px solid var(--pm-border);
+  border-radius: 999px;
+  color: var(--pm-text-muted);
+  display: inline-flex;
+  flex: 0 0 auto;
+  font-size: 12px;
+  font-weight: 700;
+  line-height: 18px;
+  padding: 4px 10px;
+}
+
+.status-pill.ready {
+  background: var(--pm-accent-weak);
+  border-color: rgba(31, 111, 100, 0.28);
+  color: var(--pm-accent-strong);
+}
+
+.status-pill.warning {
+  background: var(--pm-warning-weak);
+  border-color: rgba(154, 91, 0, 0.24);
+  color: var(--pm-warning);
+}
+
+.status-pill.muted {
+  background: var(--color-canvas);
+  border-color: var(--color-border-soft);
+}
+
+.mcp-readiness-grid {
+  display: grid;
+  gap: 10px;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+}
+
+.mcp-readiness-metric {
+  background: var(--color-canvas);
+  border: 1px solid var(--color-border-soft);
+  border-radius: 10px;
+  display: grid;
+  gap: 4px;
+  min-width: 0;
+  padding: 12px;
+}
+
+.mcp-readiness-metric span,
+.mcp-next-action span {
+  color: var(--pm-text-subtle);
+  font-size: 11px;
+  font-weight: 750;
+  text-transform: uppercase;
+}
+
+.mcp-readiness-metric strong {
+  color: var(--pm-text);
+  font-size: 20px;
+  font-weight: 620;
+  line-height: 26px;
+  overflow-wrap: anywhere;
+}
+
+.mcp-next-action {
+  align-items: center;
+  background: var(--color-canvas);
+  border: 1px solid var(--color-border-soft);
+  border-radius: 10px;
+  display: grid;
+  gap: 10px;
+  grid-template-columns: 112px minmax(170px, 220px) minmax(0, 1fr);
+  min-width: 0;
+  padding: 12px;
+}
+
+.mcp-next-action code {
+  color: var(--color-indigo-hover);
+  font-size: 12px;
+  overflow-wrap: anywhere;
+}
+
+.mcp-next-action p {
+  color: var(--pm-text-muted);
+  font-size: 13px;
+  line-height: 20px;
+  margin: 0;
+}
+
 .copyable-command,
 .mcp-example {
   align-items: center;
@@ -2864,6 +2977,9 @@ dd {
   .export-summary-strip,
   .export-field-grid,
   .mcp-hero,
+  .mcp-readiness-header,
+  .mcp-readiness-grid,
+  .mcp-next-action,
   .mcp-flow-steps,
   .mcp-tool-grid,
   .dashboard-grid,
@@ -2872,6 +2988,7 @@ dd {
   }
 
   .mcp-hero,
+  .mcp-readiness,
   .mcp-flow,
   .mcp-tool-card {
     margin-bottom: 12px;
