@@ -1,4 +1,5 @@
 import type { PromptQualityCriterion } from "../shared/schema.js";
+import { redactPrompt } from "../redaction/redact.js";
 import { analyzePrompt } from "./analyze.js";
 
 export type ImprovePromptInput = {
@@ -26,7 +27,8 @@ const SECTION_LABELS: Record<PromptQualityCriterion, string> = {
 };
 
 export function improvePrompt(input: ImprovePromptInput): PromptImprovement {
-  const sanitizedPrompt = sanitizePrompt(input.prompt);
+  const redaction = redactPrompt(input.prompt, "mask");
+  const sanitizedPrompt = sanitizePrompt(redaction.stored_text);
   const analysis = analyzePrompt({
     prompt: sanitizedPrompt,
     createdAt: input.createdAt,
@@ -51,7 +53,7 @@ export function improvePrompt(input: ImprovePromptInput): PromptImprovement {
       .join("\n")
       .trim(),
     changed_sections: changedSections,
-    safety_notes: buildSafetyNotes(input.prompt),
+    safety_notes: buildSafetyNotes(input.prompt, redaction.is_sensitive),
     created_at: input.createdAt,
     analyzer: "local-rules-v1",
   };
@@ -108,10 +110,14 @@ function sanitizePrompt(prompt: string): string {
     : "요청 내용을 확인해주세요.";
 }
 
-function buildSafetyNotes(prompt: string): string[] {
+function buildSafetyNotes(prompt: string, isSensitive: boolean): string[] {
   const notes = [
     "개선안은 자동 제출되지 않으며 사용자가 복사해 재입력해야 합니다.",
   ];
+
+  if (isSensitive) {
+    notes.push("민감정보는 mask redaction 후 개선안에 반영했습니다.");
+  }
 
   if (/\[REDACTED:[^\]]+\]/i.test(prompt)) {
     notes.push("민감정보 placeholder는 개선안에 포함하지 않았습니다.");

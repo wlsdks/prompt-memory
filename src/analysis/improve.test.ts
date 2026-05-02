@@ -54,4 +54,19 @@ describe("improvePrompt", () => {
       "민감정보 placeholder는 개선안에 포함하지 않았습니다.",
     );
   });
+
+  it("masks raw secrets before building the improved prompt", () => {
+    const rawSecret = "sk-proj-1234567890abcdef";
+    const result = improvePrompt({
+      prompt: `Debug this request with ${rawSecret}`,
+      createdAt: "2026-05-02T10:00:00.000Z",
+    });
+    const serialized = JSON.stringify(result);
+
+    expect(serialized).not.toContain(rawSecret);
+    expect(result.improved_prompt).toContain("민감정보");
+    expect(result.safety_notes).toContain(
+      "민감정보는 mask redaction 후 개선안에 반영했습니다.",
+    );
+  });
 });

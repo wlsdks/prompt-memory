@@ -223,15 +223,6 @@ export function App() {
     if (copied) {
       setCopiedImprovementId(prompt.id);
       window.setTimeout(() => setCopiedImprovementId(undefined), 3000);
-      try {
-        const usefulness = await recordPromptCopied(prompt.id);
-        updatePromptUsefulness(prompt.id, usefulness);
-        void getQualityDashboard()
-          .then(setDashboard)
-          .catch(() => undefined);
-      } catch {
-        setError("개선안 복사는 완료됐지만 사용 기록을 저장하지 못했습니다.");
-      }
       return;
     }
 
