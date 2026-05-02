@@ -1,5 +1,18 @@
 # 작업 계획
 
+## 2026-05-03 Coach Next Request Brief
+
+- [x] Prompt habit coach가 raw-free next request brief를 만들도록 TDD로 추가
+- [x] Coach command center에 copy next request brief 액션과 상태 표시
+- [x] 브라우저 E2E와 스크린샷으로 실제 사용성/디자인 확인
+- [ ] release gate 검증, 커밋, 푸시, CI 확인
+
+### 판단 기준
+
+- 사용자는 분석 결과를 읽고 다시 생각하지 않아도 다음 Claude Code/Codex 요청 초안을 바로 복사할 수 있어야 한다.
+- brief는 반복 약점, 고칠 습관, 검증 요구만 포함하고 prompt body, raw absolute path, secret을 포함하지 않는다.
+- 새 탭이나 새 저장소 데이터를 늘리지 않고 Dashboard/Coach의 핵심 행동만 강화한다.
+
 ## 2026-05-03 Practice Outcome Feedback
 
 - [x] Practice copied draft outcome 모델을 TDD로 추가

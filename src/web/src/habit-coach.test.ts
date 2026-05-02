@@ -1,7 +1,10 @@
 import { describe, expect, it } from "vitest";
 
 import type { ArchiveScoreReport, QualityDashboard } from "./api.js";
-import { createPromptHabitCoach } from "./habit-coach.js";
+import {
+  createHabitNextRequestBrief,
+  createPromptHabitCoach,
+} from "./habit-coach.js";
 
 describe("createPromptHabitCoach", () => {
   it("summarizes habit status, repeated weakness, next fixes, and review queue", () => {
@@ -41,6 +44,38 @@ describe("createPromptHabitCoach", () => {
     ]);
     expect(JSON.stringify(coach)).not.toContain("secret prompt body");
     expect(JSON.stringify(coach)).not.toContain("/Users/example");
+  });
+
+  it("creates a copyable next request brief without raw prompt data", () => {
+    const coach = createPromptHabitCoach(
+      dashboardFixture(),
+      archiveScoreFixture(),
+    );
+
+    const brief = createHabitNextRequestBrief(coach);
+
+    expect(brief).toContain("Goal:");
+    expect(brief).toContain("Improve my next Claude Code/Codex request");
+    expect(brief).toContain("Verification criteria");
+    expect(brief).toContain(
+      "Include the verification command or acceptance check.",
+    );
+    expect(brief).toContain("Verification:");
+    expect(brief).not.toContain("secret prompt body");
+    expect(brief).not.toContain("/Users/example");
+    expect(brief).not.toContain("sk-proj");
+  });
+
+  it("falls back to a safe starter brief when no repeated fixes are ready", () => {
+    const coach = createPromptHabitCoach(
+      dashboardFixture({
+        missing_items: [],
+      }),
+    );
+
+    expect(createHabitNextRequestBrief(coach)).toContain(
+      "Use Goal, Context, Scope, Verification, and Output sections.",
+    );
   });
 
   it("keeps high scoring prompts out of the low score review queue", () => {

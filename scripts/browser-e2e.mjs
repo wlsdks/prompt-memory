@@ -181,6 +181,17 @@ try {
     "Bad prompt review queue",
     "Coach should show low score review queue.",
   );
+  await assertTextAny(
+    page,
+    ["Next request brief", "다음 요청 브리프"],
+    "Coach should expose a copyable next request brief.",
+  );
+  await page.getByRole("button", { name: /Copy brief|브리프 복사/ }).click();
+  await assertTextAny(
+    page,
+    ["Copied brief", "브리프 복사됨"],
+    "Coach should confirm that the next request brief was copied.",
+  );
   await assertBrowserSafe(page, "coach");
 
   await page.getByRole("button", { name: "Practice", exact: true }).click();

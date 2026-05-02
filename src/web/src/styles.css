@@ -1482,6 +1482,39 @@ dd {
   background: var(--color-overlay-1);
 }
 
+.habit-brief-bar {
+  align-items: center;
+  background: color-mix(in srgb, var(--color-overlay-1) 82%, transparent);
+  border-bottom: 1px solid var(--color-border-soft);
+  display: grid;
+  gap: 14px;
+  grid-template-columns: minmax(0, 1fr) auto;
+  padding: 14px 20px;
+}
+
+.habit-brief-bar > div {
+  display: grid;
+  gap: 3px;
+  min-width: 0;
+}
+
+.habit-brief-bar .eyebrow {
+  color: var(--color-indigo-accent);
+}
+
+.habit-brief-bar strong {
+  color: var(--color-text-primary);
+  font-size: 15px;
+  line-height: 20px;
+}
+
+.habit-brief-bar span {
+  color: var(--color-text-tertiary);
+  font-size: 12px;
+  line-height: 18px;
+  overflow-wrap: anywhere;
+}
+
 .habit-cell-title {
   align-items: center;
   color: var(--color-text-tertiary);
@@ -3358,6 +3391,15 @@ dd {
 
   .practice-outcome-actions {
     grid-template-columns: 1fr;
+  }
+
+  .habit-brief-bar {
+    grid-template-columns: 1fr;
+  }
+
+  .habit-brief-bar button {
+    justify-content: center;
+    width: 100%;
   }
 
   .mcp-hero,

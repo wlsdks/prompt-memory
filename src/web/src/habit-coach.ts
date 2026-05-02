@@ -121,6 +121,43 @@ export function createPromptHabitCoach(
   };
 }
 
+export function createHabitNextRequestBrief(coach: PromptHabitCoach): string {
+  const fixes =
+    coach.nextFixes.length > 0
+      ? coach.nextFixes
+          .map((fix, index) => `${index + 1}. ${fix.label}: ${fix.command}`)
+          .join("\n")
+      : "1. Use Goal, Context, Scope, Verification, and Output sections.";
+  const weakness = coach.biggestWeakness
+    ? `${coach.biggestWeakness.label} appears in ${coach.biggestWeakness.count} captured prompts.`
+    : "No repeated weakness has enough samples yet.";
+  const reviewTarget = coach.reviewQueue[0]
+    ? `Review a recent low-score ${coach.reviewQueue[0].tool} prompt from ${coach.reviewQueue[0].project}.`
+    : "No low-score review target is ready yet.";
+
+  return [
+    "Goal:",
+    "Improve my next Claude Code/Codex request using my prompt-memory habit signals.",
+    "",
+    "Context:",
+    `- Current habit score: ${coach.score.value}/${coach.score.max} (${coach.score.band}).`,
+    `- Biggest weakness: ${weakness}`,
+    `- Review target: ${reviewTarget}`,
+    "",
+    "Fix these habits:",
+    fixes,
+    "",
+    "Scope:",
+    "- Rewrite the request only. Do not run tools or change files until I approve the rewritten prompt.",
+    "",
+    "Verification:",
+    "- Include the exact test command, acceptance check, or manual validation I should ask the coding agent to run.",
+    "",
+    "Output:",
+    "- Return one approval-ready prompt draft plus a short list of what changed.",
+  ].join("\n");
+}
+
 function calculateScoreTrend(
   daily: QualityDashboard["trend"]["daily"],
 ): PromptHabitCoach["trend"] {

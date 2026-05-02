@@ -70,6 +70,7 @@ import {
   type Language,
 } from "./i18n.js";
 import {
+  createHabitNextRequestBrief,
   createPromptHabitCoach,
   type PromptHabitCoach,
 } from "./habit-coach.js";
@@ -2562,9 +2563,24 @@ function HabitCoachPanel({
   onOpenFilteredList(filters: PromptFilters): void;
   onSelect(id: string): void;
 }) {
+  const [briefCopied, setBriefCopied] = useState(false);
   const weaknessRate = coach.biggestWeakness
     ? Math.round(coach.biggestWeakness.rate * 100)
     : 0;
+  const nextRequestBrief = useMemo(
+    () => createHabitNextRequestBrief(coach),
+    [coach],
+  );
+
+  async function copyNextRequestBrief(): Promise<void> {
+    const copied = await copyTextToClipboard(nextRequestBrief);
+    if (!copied) {
+      return;
+    }
+
+    setBriefCopied(true);
+    window.setTimeout(() => setBriefCopied(false), 2500);
+  }
 
   return (
     <section className="habit-command-center" aria-label="Prompt habit coach">
@@ -2635,6 +2651,24 @@ function HabitCoachPanel({
             <p className="habit-signal">No repeated weakness yet.</p>
           )}
         </div>
+      </div>
+
+      <div className="habit-brief-bar" aria-label="Next request brief">
+        <div>
+          <p className="eyebrow">Next request brief</p>
+          <strong>Copy an approval-ready coaching prompt</strong>
+          <span>
+            Uses score, repeated weakness, next fixes, and review target without
+            prompt bodies or raw paths.
+          </span>
+        </div>
+        <button
+          className="primary-button"
+          onClick={() => void copyNextRequestBrief()}
+          type="button"
+        >
+          <Copy size={15} /> {briefCopied ? "Copied brief" : "Copy brief"}
+        </button>
       </div>
 
       <div className="habit-command-main">

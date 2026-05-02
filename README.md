@@ -19,7 +19,7 @@ This repository is pre-release software.
 - Local rule-based analysis preview: implemented
 - Prompt Quality Score: implemented as a local deterministic `0-100` rubric
 - MCP prompt scoring tools: implemented as a local stdio server
-- Copy-based Prompt Coach: implemented
+- Copy-based Prompt Coach: implemented, including raw-free next request briefs
 - Prompt Practice workspace: implemented as a local draft-and-score UI with
   score history and outcome feedback that do not store draft text
 - Transcript import: CLI only
