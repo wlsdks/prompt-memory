@@ -6,7 +6,7 @@
 - [x] MCP에서 prompt-memory 준비 상태를 확인하는 preflight tool 추가
 - [x] README/Plugin/Tech spec에 새 MCP tool 사용 맥락 반영
 - [x] MCP 테스트와 release/browser 검증 재실행
-- [ ] 커밋, 푸시, CI 확인
+- [x] 커밋, 푸시, CI 확인
 
 ### 판단 기준
 
