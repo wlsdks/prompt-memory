@@ -1,5 +1,22 @@
 # 작업 계획
 
+## 2026-05-02 Prompt Habit Coach Dashboard v1
+
+- [x] Dashboard를 단순 지표판에서 습관 코치 화면으로 재구성
+- [x] 최근 점수 추세, 가장 큰 약점, 다음 개선 규칙, 낮은 점수 review queue 도출 로직 추가
+- [x] 낮은 점수 프롬프트에서 바로 상세/개선 흐름으로 이동 가능한 UI 추가
+- [x] English/Korean UI 문구와 responsive 스타일 보강
+- [x] 자동 테스트와 browser E2E 업데이트
+- [x] DevTools MCP로 실제 Dashboard 렌더링, 콘솔/네트워크, mobile overflow 점검
+- [ ] 전체 검증, 커밋, 브랜치 푸시, PR CI 확인
+
+### 디자인 기준
+
+- 대시보드 첫 영역은 "내 프롬프트 습관이 지금 어떤 상태인지"를 바로 말해줘야 한다.
+- 점수만 나열하지 않고, 가장 자주 빠뜨리는 항목과 다음 요청에서 넣을 문장을 제안한다.
+- 낮은 점수 prompt는 review queue로 보여주고, 클릭하면 기존 상세 화면의 Prompt Coach로 이어진다.
+- 원문 prompt body, raw path, secret은 Dashboard에 표시하지 않는다.
+
 ## 2026-05-02 Archive Score Review / MCP Batch Scoring
 
 - [x] 누적 프롬프트 archive score 공통 엔진과 privacy-safe report 구현

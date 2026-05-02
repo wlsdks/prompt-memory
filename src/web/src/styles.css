@@ -945,6 +945,207 @@ dd {
   margin-top: 8px;
 }
 
+.habit-coach-panel {
+  display: grid;
+  gap: 14px;
+}
+
+.habit-coach-header {
+  align-items: start;
+  display: flex;
+  gap: 12px;
+  justify-content: space-between;
+}
+
+.habit-coach-header h2 {
+  margin-bottom: 0;
+}
+
+.habit-status {
+  border: 1px solid var(--pm-border);
+  border-radius: 999px;
+  font-size: 12px;
+  font-weight: 700;
+  line-height: 18px;
+  padding: 4px 10px;
+  white-space: nowrap;
+}
+
+.habit-status.good,
+.habit-status.steady {
+  background: var(--pm-accent-weak);
+  color: var(--pm-accent-strong);
+}
+
+.habit-status.attention {
+  background: var(--pm-warning-weak);
+  color: var(--pm-warning);
+}
+
+.habit-status.empty {
+  background: var(--pm-surface-muted);
+  color: var(--pm-text-muted);
+}
+
+.habit-coach-grid,
+.habit-action-grid {
+  display: grid;
+  gap: 12px;
+}
+
+.habit-coach-grid {
+  grid-template-columns: minmax(220px, 0.85fr) repeat(2, minmax(0, 1fr));
+}
+
+.habit-action-grid {
+  grid-template-columns: minmax(0, 1fr) minmax(280px, 0.9fr);
+}
+
+.habit-score-card,
+.habit-insight-card,
+.habit-next-fixes,
+.habit-review-queue,
+.habit-pattern-note {
+  background: var(--pm-surface);
+  border: 1px solid var(--pm-border);
+  border-radius: 6px;
+  min-width: 0;
+  padding: 12px;
+}
+
+.habit-score-card {
+  align-content: start;
+  display: grid;
+  gap: 12px;
+  grid-template-columns: auto minmax(0, 1fr);
+}
+
+.habit-score-card strong,
+.habit-insight-card p,
+.habit-card-title strong,
+.habit-fix-row strong,
+.habit-review-row strong {
+  color: var(--pm-text);
+}
+
+.habit-score-card small,
+.habit-insight-card small,
+.habit-fix-row small,
+.habit-review-row small,
+.habit-pattern-note span {
+  color: var(--pm-text-muted);
+  font-size: 12px;
+  line-height: 18px;
+}
+
+.habit-insight-card,
+.habit-next-fixes,
+.habit-review-queue {
+  display: grid;
+  gap: 10px;
+}
+
+.habit-card-title {
+  align-items: center;
+  color: var(--pm-text-muted);
+  display: flex;
+  gap: 6px;
+  min-width: 0;
+}
+
+.habit-insight-card p {
+  font-size: 17px;
+  font-weight: 700;
+  line-height: 24px;
+  margin: 0;
+}
+
+.habit-insight-card p span {
+  color: var(--pm-accent-strong);
+}
+
+.habit-card-action {
+  background: var(--pm-surface-raised);
+  border: 1px solid var(--pm-border);
+  border-radius: 6px;
+  color: var(--pm-text);
+  font-size: 12px;
+  font-weight: 650;
+  justify-self: start;
+  min-height: 32px;
+  padding: 0 10px;
+}
+
+.habit-card-action:hover,
+.habit-fix-row:hover,
+.habit-review-row:hover {
+  background: var(--pm-accent-weak);
+  border-color: var(--pm-border-strong);
+}
+
+.habit-fix-row,
+.habit-review-row {
+  background: transparent;
+  border: 1px solid transparent;
+  border-radius: 6px;
+  color: var(--pm-text);
+  min-width: 0;
+  padding: 8px;
+  text-align: left;
+  width: 100%;
+}
+
+.habit-fix-row {
+  align-items: center;
+  display: grid;
+  gap: 10px;
+  grid-template-columns: minmax(0, 1fr) auto;
+}
+
+.habit-fix-row span,
+.habit-review-row > span:last-child {
+  display: grid;
+  gap: 2px;
+  min-width: 0;
+}
+
+.habit-fix-row em {
+  color: var(--pm-warning);
+  font-size: 12px;
+  font-style: normal;
+  font-weight: 700;
+}
+
+.habit-review-row {
+  align-items: start;
+  display: grid;
+  gap: 10px;
+  grid-template-columns: auto minmax(0, 1fr);
+}
+
+.habit-review-row em {
+  color: var(--pm-text-subtle);
+  font-size: 12px;
+  font-style: normal;
+  line-height: 18px;
+  overflow-wrap: anywhere;
+}
+
+.habit-fix-row strong,
+.habit-fix-row small,
+.habit-review-row strong,
+.habit-review-row small {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.habit-pattern-note {
+  align-items: center;
+  display: grid;
+  gap: 4px;
+}
+
 .trend-panel {
   display: grid;
   gap: 12px;
@@ -1945,6 +2146,8 @@ dd {
   .detail-layout,
   .settings-grid,
   .metric-strip,
+  .habit-coach-grid,
+  .habit-action-grid,
   .archive-score-grid,
   .export-summary-strip,
   .export-field-grid,
@@ -1959,6 +2162,10 @@ dd {
 
   h1 {
     white-space: normal;
+  }
+
+  .habit-coach-header {
+    display: grid;
   }
 
   .search-box {
@@ -2118,7 +2325,10 @@ dd {
 
   .archive-low-score-row,
   .archive-score-summary,
-  .archive-band-row {
+  .archive-band-row,
+  .habit-score-card,
+  .habit-fix-row,
+  .habit-review-row {
     grid-template-columns: 1fr;
   }
 

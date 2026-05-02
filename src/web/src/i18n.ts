@@ -101,6 +101,27 @@ function translateDynamic(value: string): string | undefined {
         hasMore ? `${count}개 평가됨 / 더 있음` : `${count}개 평가됨`,
     );
   }
+  if (/^\d+ prompts scored \/ \d+$/.test(value)) {
+    return value.replace(
+      /^(\d+) prompts scored \/ (\d+)$/,
+      "$1개 프롬프트 평가됨 / $2",
+    );
+  }
+  if (/^recent \d+ \/ previous \d+$/.test(value)) {
+    return value.replace(
+      /^recent (\d+) \/ previous (\d+)$/,
+      "최근 $1 / 이전 $2",
+    );
+  }
+  if (/^\d+ prompts \/ \d+%$/.test(value)) {
+    return value.replace(/^(\d+) prompts \/ (\d+)%$/, "$1개 프롬프트 / $2%");
+  }
+  if (/^\d+ prompts need this habit\.$/.test(value)) {
+    return value.replace(
+      /^(\d+) prompts need this habit\.$/,
+      "$1개 프롬프트에 이 습관이 필요합니다.",
+    );
+  }
   if (/^\d+ reuse candidates$/.test(value)) {
     return value.replace(/^(\d+) reuse candidates$/, "재사용 후보 $1개");
   }
@@ -200,6 +221,40 @@ const UI_TRANSLATIONS: Record<string, string> = {
   "Improvement hints": "개선 힌트",
   "Loading dashboard.": "대시보드를 불러오는 중입니다.",
   "Prompt quality metrics": "프롬프트 품질 지표",
+  "Prompt habit coach": "프롬프트 습관 코치",
+  "Your prompting pattern": "나의 프롬프트 패턴",
+  "Strong habits": "좋은 습관",
+  Improving: "개선 중",
+  "Needs practice": "연습 필요",
+  "No data yet": "아직 데이터 없음",
+  "Your Prompt Habit Score": "나의 프롬프트 습관 점수",
+  "Progress trend": "개선 추세",
+  Flat: "정체",
+  Sliding: "하락 중",
+  "Not enough data": "데이터 부족",
+  "Your biggest weakness": "가장 큰 약점",
+  "No repeated weakness yet.": "아직 반복 약점이 없습니다.",
+  "Fix these next": "다음에 고칠 것",
+  "No repeated habit fix is ready yet.":
+    "아직 반복 습관 개선 항목이 충분하지 않습니다.",
+  "Bad prompt review queue": "낮은 점수 프롬프트 리뷰 큐",
+  "No low score prompts need review yet.":
+    "리뷰할 낮은 점수 프롬프트가 없습니다.",
+  "Most repeated pattern": "가장 반복되는 패턴",
+  "No repeated weak prompting pattern has enough samples yet.":
+    "아직 반복 약점 패턴을 판단할 표본이 충분하지 않습니다.",
+  "Name the exact goal before asking for changes.":
+    "변경을 요청하기 전에 정확한 목표를 먼저 적으세요.",
+  "Add the relevant context, files, and constraints.":
+    "관련 맥락, 파일, 제약 조건을 추가하세요.",
+  "State the allowed scope and what should not change.":
+    "허용 범위와 바꾸면 안 되는 대상을 명시하세요.",
+  "Specify the expected output format.": "원하는 출력 형식을 지정하세요.",
+  "Include the verification command or acceptance check.":
+    "검증 명령이나 완료 기준을 포함하세요.",
+  "Make the missing expectation explicit next time.":
+    "다음에는 빠진 기대사항을 명확히 적으세요.",
+  "Open and improve": "열어서 개선",
   "Total prompts": "전체 프롬프트",
   "Average prompt score": "평균 프롬프트 점수",
   "Prompt score": "프롬프트 점수",

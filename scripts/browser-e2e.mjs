@@ -128,6 +128,21 @@ try {
   );
   await assertText(
     page,
+    "Prompt habit coach",
+    "Dashboard should show prompt habit coach.",
+  );
+  await assertText(
+    page,
+    "Fix these next",
+    "Dashboard should show next habit fixes.",
+  );
+  await assertText(
+    page,
+    "Bad prompt review queue",
+    "Dashboard should show low score review queue.",
+  );
+  await assertText(
+    page,
     "Archive score review",
     "Dashboard should show archive score review.",
   );

@@ -10,12 +10,15 @@ import {
   FileText,
   FolderCog,
   GitCompare,
+  ListChecks,
   RefreshCw,
   Search,
   Settings,
   ShieldCheck,
   Star,
   Tags,
+  Target,
+  TrendingUp,
   Trash2,
 } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
@@ -57,6 +60,10 @@ import {
   persistLanguage,
   type Language,
 } from "./i18n.js";
+import {
+  createPromptHabitCoach,
+  type PromptHabitCoach,
+} from "./habit-coach.js";
 import { SafeMarkdown } from "./markdown.js";
 
 type View =
@@ -1227,8 +1234,16 @@ function DashboardView({
     return <div className="panel empty">Loading dashboard.</div>;
   }
 
+  const habitCoach = createPromptHabitCoach(dashboard, archiveScore);
+
   return (
     <div className="dashboard-layout">
+      <HabitCoachPanel
+        coach={habitCoach}
+        onOpenFilteredList={onOpenFilteredList}
+        onSelect={onSelect}
+      />
+
       <section className="metric-strip" aria-label="Prompt quality metrics">
         <Metric
           label="Total prompts"
@@ -1459,6 +1474,162 @@ function DashboardView({
         </div>
       </section>
     </div>
+  );
+}
+
+function HabitCoachPanel({
+  coach,
+  onOpenFilteredList,
+  onSelect,
+}: {
+  coach: PromptHabitCoach;
+  onOpenFilteredList(filters: PromptFilters): void;
+  onSelect(id: string): void;
+}) {
+  return (
+    <section
+      className="panel habit-coach-panel"
+      aria-label="Prompt habit coach"
+    >
+      <div className="habit-coach-header">
+        <div>
+          <p className="eyebrow">Prompt habit coach</p>
+          <h2>Your prompting pattern</h2>
+        </div>
+        <span className={`habit-status ${coach.status.tone}`}>
+          {coach.status.label}
+        </span>
+      </div>
+      <div className="habit-coach-grid">
+        <div className="habit-score-card">
+          <span className={`score-value ${coach.score.band}`}>
+            {coach.score.value}
+          </span>
+          <div>
+            <strong>Your Prompt Habit Score</strong>
+            <small>
+              {coach.score.scoredPrompts} prompts scored / {coach.score.max}
+            </small>
+          </div>
+        </div>
+        <div className="habit-insight-card">
+          <div className="habit-card-title">
+            <TrendingUp size={15} />
+            <strong>Progress trend</strong>
+          </div>
+          <p>
+            {coach.trend.label}
+            {coach.trend.label !== "Not enough data" && (
+              <span> {formatSignedNumber(coach.trend.delta)} points</span>
+            )}
+          </p>
+          <small>
+            recent {coach.trend.currentAverage} / previous{" "}
+            {coach.trend.previousAverage}
+          </small>
+        </div>
+        <div className="habit-insight-card">
+          <div className="habit-card-title">
+            <Target size={15} />
+            <strong>Your biggest weakness</strong>
+          </div>
+          {coach.biggestWeakness ? (
+            <>
+              <p>{coach.biggestWeakness.label}</p>
+              <small>
+                {coach.biggestWeakness.count} prompts /{" "}
+                {Math.round(coach.biggestWeakness.rate * 100)}%
+              </small>
+              <button
+                className="habit-card-action"
+                onClick={() =>
+                  onOpenFilteredList({
+                    focus: "quality-gap",
+                    qualityGap: coach.biggestWeakness?.key,
+                  })
+                }
+                type="button"
+              >
+                View matching prompts
+              </button>
+            </>
+          ) : (
+            <p>No repeated weakness yet.</p>
+          )}
+        </div>
+      </div>
+
+      <div className="habit-action-grid">
+        <div className="habit-next-fixes">
+          <div className="habit-card-title">
+            <ListChecks size={15} />
+            <strong>Fix these next</strong>
+          </div>
+          {coach.nextFixes.length === 0 && (
+            <p className="muted">No repeated habit fix is ready yet.</p>
+          )}
+          {coach.nextFixes.map((fix) => (
+            <button
+              className="habit-fix-row"
+              key={fix.label}
+              onClick={() =>
+                onOpenFilteredList({
+                  focus: "quality-gap",
+                  qualityGap: fix.key,
+                })
+              }
+              type="button"
+            >
+              <span>
+                <strong>{fix.command}</strong>
+                <small>{fix.reason}</small>
+              </span>
+              <em>{Math.round(fix.rate * 100)}%</em>
+            </button>
+          ))}
+        </div>
+
+        <div className="habit-review-queue">
+          <div className="habit-card-title">
+            <FileText size={15} />
+            <strong>Bad prompt review queue</strong>
+          </div>
+          {coach.reviewQueue.length === 0 && (
+            <p className="muted">No low score prompts need review yet.</p>
+          )}
+          {coach.reviewQueue.map((prompt) => (
+            <button
+              className="habit-review-row"
+              key={prompt.id}
+              onClick={() => onSelect(prompt.id)}
+              type="button"
+            >
+              <span
+                className={`badge score-badge ${prompt.quality_score_band}`}
+              >
+                {prompt.quality_score}
+              </span>
+              <span>
+                <strong>{prompt.project}</strong>
+                <small>
+                  {prompt.tool} / {formatDate(prompt.received_at)}
+                </small>
+                <em>
+                  {prompt.reasons.length > 0
+                    ? prompt.reasons.join(", ")
+                    : "Open and improve"}
+                </em>
+              </span>
+            </button>
+          ))}
+        </div>
+      </div>
+
+      <div className="habit-pattern-note">
+        <strong>{coach.patternSummary.title}</strong>
+        <span>{coach.patternSummary.detail}</span>
+      </div>
+    </section>
   );
 }
 
@@ -2411,6 +2582,10 @@ function formatTrendDate(value: string): string {
     day: "2-digit",
     month: "2-digit",
   }).format(new Date(`${value}T00:00:00.000Z`));
+}
+
+function formatSignedNumber(value: number): string {
+  return value > 0 ? `+${value}` : String(value);
 }
 
 function daysAgoDateInput(days: number): string {
