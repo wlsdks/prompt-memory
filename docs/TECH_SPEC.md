@@ -6,7 +6,9 @@
 
 ## 1. 목적
 
-이 문서는 `prompt-memory` MVP를 구현하기 위한 기술 설계서다. PRD가 제품 요구사항과 정책 경계를 정의한다면, 이 문서는 코드 구조, API 계약, 저장소 스키마, 보안 흐름, hook adapter 구현 기준을 정의한다.
+이 문서는 `prompt-memory` MVP를 구현하기 위한 기술 설계서다. `prompt-memory`의 제품 정체성은 "AI coding prompt memory and improvement workspace, local-first"이며, Claude Code, Codex 같은 AI 코딩 도구에 입력한 프롬프트를 로컬에 안전하게 기록하고, 다시 찾고, 분석하고, 다음 요청을 더 잘 쓰도록 돕는 developer tool이다.
+
+PRD가 제품 요구사항과 정책 경계를 정의한다면, 이 문서는 코드 구조, API 계약, 저장소 스키마, 보안 흐름, hook adapter 구현 기준을 정의한다.
 
 MVP core의 구현 목표는 다음이다.
 
@@ -14,6 +16,7 @@ MVP core의 구현 목표는 다음이다.
 - 저장 전 redaction을 적용한다.
 - prompt를 Markdown 파일로 저장하고 SQLite로 색인한다.
 - CLI와 최소 웹 UI에서 저장된 prompt를 조회/검색/삭제한다.
+- local rule 기반 분석과 copy-based Prompt Coach로 사용자의 반복적인 약한 prompting 패턴을 드러내고 다음 요청 개선을 돕는다.
 - 서버가 꺼져 있거나 hook이 실패해도 원래 AI 도구 사용 흐름을 막지 않는다.
 - 첫 public beta release에는 Codex adapter를 같은 계약을 검증하는 beta 범위로 포함한다.
 

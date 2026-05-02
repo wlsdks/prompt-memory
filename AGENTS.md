@@ -4,7 +4,9 @@
 
 ## 프로젝트 요약
 
-- `prompt-memory`는 Claude Code, Codex 같은 AI 코딩 도구에 입력한 프롬프트를 로컬 우선 방식으로 수집, 저장, 검색, 분석하는 오픈소스 도구다.
+- `prompt-memory`는 Claude Code, Codex 같은 AI 코딩 도구에 입력한 프롬프트를 로컬에 안전하게 기록하고, 다시 찾고, 분석하고, 다음 요청을 더 잘 쓰도록 돕는 developer tool이다.
+- 제품 포지셔닝은 "AI coding prompt memory and improvement workspace, local-first"다.
+- 이 도구는 프롬프트 코치이자, 사용자가 반복해서 넣는 좋지 않은 프롬프트 패턴을 회고하고 개선하도록 돕는 로컬 작업대다.
 - MVP의 핵심 원칙은 로컬 저장, 명시적 설치, 비밀정보 보호, Markdown을 사람이 읽을 수 있는 원본으로 유지하는 것이다.
 - 현재 스택은 TypeScript, Node.js, Commander CLI, Fastify, SQLite, Vitest, pnpm이다.
 

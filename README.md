@@ -1,8 +1,10 @@
 # prompt-memory
 
-Local-first prompt archive for AI coding tools.
+AI coding prompt memory and improvement workspace, local-first.
 
-`prompt-memory` collects user prompts from supported coding tools, redacts sensitive values before storage, writes Markdown files, indexes them in SQLite, and serves a local web UI for search, review, and deletion.
+`prompt-memory` is a developer tool that safely records prompts you enter into AI coding tools such as Claude Code and Codex, helps you find them again, analyzes weak prompting patterns, and helps you write better follow-up requests.
+
+It collects supported tool prompts locally, redacts sensitive values before storage, writes Markdown files, indexes them in SQLite, and serves a local web UI for search, review, analysis, deletion, and copy-based prompt improvement.
 
 This project is not affiliated with, endorsed by, or sponsored by Anthropic, OpenAI, or any other AI tool provider. Product names such as Claude Code and Codex are used only to describe compatibility.
 
@@ -13,6 +15,7 @@ This repository is pre-release software.
 - Claude Code support: MVP path
 - Codex support: beta adapter
 - Local rule-based analysis preview: implemented
+- Copy-based Prompt Coach: implemented
 - External LLM analysis: not implemented
 - Default data handling: local only
 

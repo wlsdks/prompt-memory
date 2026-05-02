@@ -1,5 +1,18 @@
 # 작업 계획
 
+## 2026-05-02 Product Identity Documentation
+
+- [x] README 첫머리에 local-first prompt memory and improvement workspace 포지셔닝 반영
+- [x] PRD/Phase 2 PRD/Technical Spec/Implementation Plan의 목적 문장을 같은 정체성으로 정렬
+- [x] CLAUDE.md/AGENTS.md 프로젝트 요약에 prompt coach와 패턴 분석 가치 반영
+- [x] 문서 변경 검증, 커밋 및 푸시
+
+### 정체성 기준
+
+- `prompt-memory`는 단순 프롬프트 저장소가 아니다.
+- 핵심 정체성은 "Claude Code, Codex 같은 AI 코딩 도구에 입력한 프롬프트를 로컬에 안전하게 기록하고, 다시 찾고, 분석하고, 다음 요청을 더 잘 쓰도록 돕는 developer tool"이다.
+- 제품 포지셔닝은 "AI coding prompt memory and improvement workspace, local-first"로 통일한다.
+
 ## 2026-05-02 Prompt Coach 승인형 개선 흐름
 
 - [x] local prompt improver 실패 테스트 작성

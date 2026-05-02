@@ -6,7 +6,9 @@
 
 ## 1. 목적
 
-이 문서는 `prompt-memory` MVP 구현을 실제 작업 단위로 분해한다. PRD는 제품 요구사항을, TECH_SPEC은 기술 설계를 정의한다. 이 문서는 어떤 순서로 구현하고, 각 단계가 언제 완료됐다고 볼지 정의한다.
+이 문서는 `prompt-memory` MVP 구현을 실제 작업 단위로 분해한다. `prompt-memory`는 "AI coding prompt memory and improvement workspace, local-first"라는 정체성을 가진다. 즉 Claude Code, Codex 같은 AI 코딩 도구에 입력한 프롬프트를 로컬에 안전하게 기록하고, 다시 찾고, 분석하고, 다음 요청을 더 잘 쓰도록 돕는 developer tool이다.
+
+PRD는 제품 요구사항을, TECH_SPEC은 기술 설계를 정의한다. 이 문서는 어떤 순서로 구현하고, 각 단계가 언제 완료됐다고 볼지 정의한다.
 
 MVP core 완료 기준은 다음이다.
 
@@ -14,6 +16,7 @@ MVP core 완료 기준은 다음이다.
 - 저장 전 redaction이 적용된다.
 - Markdown 파일과 SQLite 인덱스가 생성된다.
 - CLI와 최소 웹 UI에서 목록/검색/상세/삭제가 가능하다.
+- local rule 기반 분석과 copy-based Prompt Coach로 다음 요청 개선을 돕는다.
 - 서버가 꺼져 있어도 Claude Code 사용 흐름을 막지 않는다.
 - 첫 public beta release 기준에는 Codex adapter가 beta 수준으로 fixture 기반 검증을 통과해야 한다.
 

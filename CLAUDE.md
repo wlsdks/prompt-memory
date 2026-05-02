@@ -4,9 +4,10 @@
 
 ## 프로젝트
 
-- 목적: AI 코딩 도구에 입력한 프롬프트를 로컬 우선으로 수집, 저장, 검색, 분석하는 오픈소스 도구.
+- 목적: Claude Code, Codex 같은 AI 코딩 도구에 입력한 프롬프트를 로컬에 안전하게 기록하고, 다시 찾고, 분석하고, 다음 요청을 더 잘 쓰도록 돕는 developer tool.
+- 포지셔닝: AI coding prompt memory and improvement workspace, local-first.
 - 핵심 사용자: Claude Code, Codex 등 AI 도구를 많이 쓰는 개발자.
-- 핵심 가치: 로컬 저장, 명확한 동의, 비밀정보 보호, 사람이 읽을 수 있는 Markdown archive, 검증 가능한 동작.
+- 핵심 가치: 로컬 저장, 명확한 동의, 비밀정보 보호, 사람이 읽을 수 있는 Markdown archive, 검증 가능한 동작, 프롬프트 코칭, 좋지 않은 요청 패턴의 회고와 개선.
 - 주요 문서: `docs/PRD.md`, `docs/TECH_SPEC.md`, `docs/IMPLEMENTATION_PLAN.md`, `DESIGN.md`, `AGENTS.md`.
 
 ## 기본 워크플로
