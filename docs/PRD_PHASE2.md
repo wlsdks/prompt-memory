@@ -193,10 +193,15 @@ Project identity:
 
 외부 LLM 분석은 project policy, prompt policy, redaction preview, 감사 로그가 준비된 뒤에만 구현한다.
 
+Claude Code 또는 Codex CLI를 설치된 로컬 도구처럼 호출해 분석을 맡기는 방식도 이 범위에 포함한다. 별도 provider API key를 직접 저장하지 않을 수는 있지만, 분석 payload는 결국 사용자의 Claude Code/Codex 계정과 upstream provider로 전달될 수 있으므로 local-only 기능으로 간주하지 않는다. 이 경로의 명칭은 `tool-assisted-analysis`로 두고, Phase 2 core에서는 구현하지 않는다.
+
 요구사항:
 
 - 기본값은 비활성화다.
 - provider API key는 OS keychain 또는 owner-only 권한 파일에 저장한다.
+- Claude Code/Codex CLI 기반 실행은 별도 API key 저장이 없어도 전역 opt-in, 프로젝트 opt-in, prompt 단위 preview를 모두 요구한다.
+- tool-assisted analysis는 읽기 전용 payload 파일 또는 stdin만 사용해야 하며, 대상 프로젝트 파일을 자동 수정하거나 `AGENTS.md`, `CLAUDE.md`를 직접 쓰지 않는다.
+- tool-assisted analysis 실행 시 사용할 모델/명령/working directory/timeout을 preview에 표시하고, 사용자의 기존 Claude Code/Codex 설정이 추가 context를 읽을 수 있다는 경고를 보여준다.
 - 전역 opt-in, 프로젝트 opt-in, prompt 단위 preview를 모두 통과해야 한다.
 - 외부 전송 전 payload preview를 보여준다.
 - 민감정보가 감지된 prompt는 기본 제외한다.

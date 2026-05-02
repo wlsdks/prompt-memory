@@ -22,6 +22,31 @@
 - UI는 project list와 capture-disabled toggle만 제공한다.
 - import/export/external analysis 후보 산정, retention 실행, external network path는 제외한다.
 
+### 구현 범위 재검토
+
+- Project Control Plane은 의미 있는 선행 작업이다. import, export, 외부/도구 보조 분석이 모두 프로젝트별 opt-in/out과 audit를 필요로 하므로 공통 안전장치로 재사용된다.
+- 이번 구현에서 의미가 약한 부분은 없다. 다만 현재 UI는 `capture_disabled`만 다루는 최소판이므로 `analysis_disabled`, retention, export 정책은 다음 기능이 실제로 붙을 때 노출하는 것이 맞다.
+- Claude Code/Codex CLI를 분석 실행기로 쓰는 것은 기술적으로 가능하지만 local-only 내부 분석이 아니다. 별도 API key 저장을 피할 수 있을 뿐, payload가 사용자의 Claude Code/Codex 계정과 upstream provider로 나갈 수 있으므로 gated beta의 `tool-assisted-analysis`로 분리한다.
+- tool-assisted-analysis는 Phase 2 core가 아니다. preview, explicit opt-in, project policy, redaction, timeout, no auto-write, audit가 갖춰진 뒤에만 다룬다.
+
+## 2026-05-02 Transcript Import Dry Run
+
+- [ ] import dry-run 범위 확정
+- [ ] source별 allowlist parser 실패 테스트 작성
+- [ ] `prompt-memory import --dry-run --file <path>` CLI 추가
+- [ ] raw-free dry-run summary 출력 구현
+- [ ] assistant/tool/command/file content 제외 회귀 테스트
+- [ ] malformed JSONL이 전체 dry-run을 깨지 않는지 검증
+- [ ] dry-run이 Markdown, prompt index, FTS를 변경하지 않는지 검증
+- [ ] targeted/full 검증, 커밋 및 푸시
+
+### 첫 구현 범위
+
+- 단일 파일 dry-run만 지원한다.
+- Claude Code/Codex transcript best-effort parser는 사용자 prompt 후보만 카운트한다.
+- 실행 import, resume, imported-only filter, UI import 화면은 제외한다.
+- dry-run 결과는 stdout JSON/텍스트 summary로만 반환하고 prompt 저장소는 변경하지 않는다.
+
 ## 2026-05-02 README Marketplace Install Flow
 
 - [x] Claude Code/Codex 외부 사용자 설치 순서 정리
