@@ -148,9 +148,9 @@ export function parseImportSourceType(value: string): ImportSourceType {
   throw new Error(`Unsupported import source: ${value}`);
 }
 
-function parseJsonLine(line: string):
-  | { ok: true; value: unknown }
-  | { ok: false } {
+function parseJsonLine(
+  line: string,
+): { ok: true; value: unknown } | { ok: false } {
   try {
     return { ok: true, value: JSON.parse(line) as unknown };
   } catch {

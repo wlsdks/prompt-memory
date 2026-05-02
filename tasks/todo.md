@@ -1,5 +1,29 @@
 # 작업 계획
 
+## 2026-05-02 Prompt Coach 승인형 개선 흐름
+
+- [x] local prompt improver 실패 테스트 작성
+- [x] `improvePrompt` rule 기반 개선안 생성 구현
+- [x] `prompt-memory improve --stdin|--text --json` CLI 추가
+- [x] prompt detail UI에 개선안 preview와 복사 버튼 추가
+- [x] hook 자동 대체/자동 재제출은 제외하고 사용자 승인형 copy flow로 제한
+- [x] CLI/UI 실제 사용성 검증
+- [x] 전체 검증, 커밋 및 브랜치 푸시
+
+### 첫 구현 범위
+
+- 원문 prompt를 Claude Code/Codex에 자동으로 대체 제출하지 않는다.
+- raw prompt는 서버 로그나 hook stdout에 노출하지 않는다.
+- 개선안은 목표, 맥락, 범위, 검증, 출력 형식을 보강한 Markdown prompt로 만든다.
+- 저장된 redacted prompt 기준으로 UI 개선안을 생성하고, 사용자가 복사해서 직접 재입력한다.
+
+### 점검 결과
+
+- `prompt-memory improve --text "이거 좀 고쳐줘" --json`이 승인형 copy 개선안을 생성하는 것을 확인했다.
+- 상세 화면에 "승인 후 재입력할 개선안" preview와 "개선안 복사" 버튼을 추가했다.
+- Playwright로 desktop/mobile 상세 화면을 확인했고, 개선안 복사 후 copy count가 증가했다.
+- mobile 390px에서 document horizontal overflow는 없었다.
+
 ## 2026-05-02 Phase 2 실제 사용 흐름 검증
 
 - [x] 임시 data dir에서 실제 빌드 CLI import dry-run/save-job 검증

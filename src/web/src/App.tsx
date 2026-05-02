@@ -19,6 +19,10 @@ import {
 import { useEffect, useMemo, useState } from "react";
 
 import {
+  improvePrompt,
+  type PromptImprovement,
+} from "../../analysis/improve.js";
+import {
   deletePrompt,
   getHealth,
   getPrompt,
@@ -66,6 +70,9 @@ export function App() {
     PromptDetail | undefined
   >();
   const [copiedPromptId, setCopiedPromptId] = useState<string | undefined>();
+  const [copiedImprovementId, setCopiedImprovementId] = useState<
+    string | undefined
+  >();
 
   useEffect(() => {
     const handlePop = () => {
@@ -207,6 +214,30 @@ export function App() {
     setError("프롬프트를 복사하지 못했습니다.");
   }
 
+  async function copyImprovedPrompt(prompt: PromptDetail): Promise<void> {
+    const improvement = improvePrompt({
+      prompt: prompt.markdown,
+      createdAt: prompt.received_at,
+    });
+    const copied = await copyTextToClipboard(improvement.improved_prompt);
+    if (copied) {
+      setCopiedImprovementId(prompt.id);
+      window.setTimeout(() => setCopiedImprovementId(undefined), 3000);
+      try {
+        const usefulness = await recordPromptCopied(prompt.id);
+        updatePromptUsefulness(prompt.id, usefulness);
+        void getQualityDashboard()
+          .then(setDashboard)
+          .catch(() => undefined);
+      } catch {
+        setError("개선안 복사는 완료됐지만 사용 기록을 저장하지 못했습니다.");
+      }
+      return;
+    }
+
+    setError("개선안을 복사하지 못했습니다.");
+  }
+
   async function toggleBookmark(prompt: PromptDetail): Promise<void> {
     try {
       const usefulness = await setPromptBookmark(
@@ -252,16 +283,16 @@ export function App() {
   }
 
   function navigate(next: View): void {
-	  const path =
-	    next.name === "detail"
-	      ? `/prompts/${next.id}`
-	      : next.name === "dashboard"
-	        ? "/dashboard"
-	        : next.name === "projects"
-	          ? "/projects"
-	          : next.name === "settings"
-	            ? "/settings"
-	            : "/";
+    const path =
+      next.name === "detail"
+        ? `/prompts/${next.id}`
+        : next.name === "dashboard"
+          ? "/dashboard"
+          : next.name === "projects"
+            ? "/projects"
+            : next.name === "settings"
+              ? "/settings"
+              : "/";
     window.history.pushState({}, "", path);
     setView(next);
   }
@@ -282,19 +313,19 @@ export function App() {
         >
           <FileText size={16} /> 프롬프트
         </button>
-	        <button
-	          className={`nav-button ${view.name === "dashboard" ? "active" : ""}`}
-	          onClick={() => navigate({ name: "dashboard" })}
-	        >
-	          <BarChart3 size={16} /> 대시보드
-	        </button>
-	        <button
-	          className={`nav-button ${view.name === "projects" ? "active" : ""}`}
-	          onClick={() => navigate({ name: "projects" })}
-	        >
-	          <FolderCog size={16} /> 프로젝트
-	        </button>
-	        <button
+        <button
+          className={`nav-button ${view.name === "dashboard" ? "active" : ""}`}
+          onClick={() => navigate({ name: "dashboard" })}
+        >
+          <BarChart3 size={16} /> 대시보드
+        </button>
+        <button
+          className={`nav-button ${view.name === "projects" ? "active" : ""}`}
+          onClick={() => navigate({ name: "projects" })}
+        >
+          <FolderCog size={16} /> 프로젝트
+        </button>
+        <button
           className={`nav-button ${view.name === "settings" ? "active" : ""}`}
           onClick={() => navigate({ name: "settings" })}
         >
@@ -467,9 +498,11 @@ export function App() {
         {view.name === "detail" && (
           <PromptDetailView
             copied={selected?.id === copiedPromptId}
+            copiedImprovement={selected?.id === copiedImprovementId}
             onBookmark={toggleBookmark}
             onBack={() => navigate({ name: "list" })}
             onCopy={copyPrompt}
+            onCopyImprovement={copyImprovedPrompt}
             onDelete={setPendingDelete}
             onOpenQualityGap={(qualityGap) => {
               setFilters({
@@ -484,8 +517,8 @@ export function App() {
             queueNavigation={queueNavigation}
           />
         )}
-	        {view.name === "dashboard" && (
-	          <DashboardView
+        {view.name === "dashboard" && (
+          <DashboardView
             dashboard={dashboard}
             loading={!dashboard}
             onOpenFilteredList={(nextFilters) => {
@@ -493,15 +526,15 @@ export function App() {
               navigate({ name: "list" });
             }}
             onSelect={(id) => navigate({ name: "detail", id })}
-	          />
-	        )}
-	        {view.name === "projects" && (
-	          <ProjectsView
-	            onToggleCapture={(project) => void toggleProjectCapture(project)}
-	            projects={projects}
-	          />
-	        )}
-	        {view.name === "settings" && (
+          />
+        )}
+        {view.name === "projects" && (
+          <ProjectsView
+            onToggleCapture={(project) => void toggleProjectCapture(project)}
+            projects={projects}
+          />
+        )}
+        {view.name === "settings" && (
           <SettingsView
             dashboard={dashboard}
             health={health}
@@ -673,9 +706,11 @@ function ActiveFilterBar({
 
 function PromptDetailView({
   copied,
+  copiedImprovement,
   onBack,
   onBookmark,
   onCopy,
+  onCopyImprovement,
   onDelete,
   onNavigate,
   onOpenQualityGap,
@@ -683,9 +718,11 @@ function PromptDetailView({
   queueNavigation,
 }: {
   copied: boolean;
+  copiedImprovement: boolean;
   onBack(): void;
   onBookmark(prompt: PromptDetail): void;
   onCopy(prompt: PromptDetail): void;
+  onCopyImprovement(prompt: PromptDetail): void;
   onDelete(prompt: PromptDetail): void;
   onNavigate(id: string): void;
   onOpenQualityGap(gap: PromptQualityGap): void;
@@ -700,6 +737,11 @@ function PromptDetailView({
   if (!prompt) {
     return <div className="panel empty">상세 정보를 불러오는 중입니다.</div>;
   }
+
+  const improvement = improvePrompt({
+    prompt: prompt.markdown,
+    createdAt: prompt.received_at,
+  });
 
   return (
     <div className="detail-layout">
@@ -739,6 +781,11 @@ function PromptDetailView({
             onOpenQualityGap={onOpenQualityGap}
           />
         )}
+        <PromptCoachPanel
+          copied={copiedImprovement}
+          improvement={improvement}
+          onCopy={() => onCopyImprovement(prompt)}
+        />
         <div className="prompt-actions">
           <button className="secondary-action" onClick={onBack}>
             <ArrowLeft size={16} /> 목록으로
@@ -785,6 +832,42 @@ function PromptDetailView({
         <SafeMarkdown markdown={prompt.markdown} />
       </article>
     </div>
+  );
+}
+
+function PromptCoachPanel({
+  copied,
+  improvement,
+  onCopy,
+}: {
+  copied: boolean;
+  improvement: PromptImprovement;
+  onCopy(): void;
+}) {
+  return (
+    <section className="coach-panel" aria-label="프롬프트 개선안">
+      <div className="analysis-header">
+        <div>
+          <p className="eyebrow">Prompt coach</p>
+          <h2>승인 후 재입력할 개선안</h2>
+        </div>
+        <span className="badge">{improvement.mode}</span>
+      </div>
+      <p className="analysis-summary">{improvement.summary}</p>
+      <pre className="improved-prompt-preview">
+        {improvement.improved_prompt}
+      </pre>
+      <div className="coach-footer">
+        <div className="coach-notes">
+          {improvement.safety_notes.map((note) => (
+            <span key={note}>{note}</span>
+          ))}
+        </div>
+        <button className="coach-copy-button" onClick={onCopy} type="button">
+          <Copy size={16} /> {copied ? "복사됨" : "개선안 복사"}
+        </button>
+      </div>
+    </section>
   );
 }
 
@@ -1442,8 +1525,8 @@ function ProjectsView({
             <span className="project-name-cell">
               <strong>{project.label}</strong>
               <small>
-                {project.path_kind === "project_root" ? "project root" : "cwd"} ·{" "}
-                {project.project_id}
+                {project.path_kind === "project_root" ? "project root" : "cwd"}{" "}
+                · {project.project_id}
               </small>
             </span>
             <span>
@@ -1460,7 +1543,9 @@ function ProjectsView({
               )}
             </span>
             <span className="status-cell">
-              <span className="badge reuse-badge">copy {project.copied_count}</span>
+              <span className="badge reuse-badge">
+                copy {project.copied_count}
+              </span>
               <span className="badge saved-badge">
                 saved {project.bookmarked_count}
               </span>
