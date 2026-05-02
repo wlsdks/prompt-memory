@@ -2247,6 +2247,183 @@ dd {
   overflow: hidden;
 }
 
+.mcp-layout {
+  display: grid;
+  gap: 16px;
+}
+
+.mcp-hero {
+  align-items: start;
+  display: grid;
+  gap: 24px;
+  grid-template-columns: minmax(0, 0.9fr) minmax(420px, 1.1fr);
+}
+
+.mcp-hero h2 {
+  font-size: 22px;
+  font-weight: 520;
+  line-height: 30px;
+  margin: 4px 0 8px;
+}
+
+.mcp-hero p {
+  color: var(--pm-text-muted);
+  line-height: 22px;
+  margin: 0;
+  max-width: 640px;
+}
+
+.mcp-command-stack {
+  display: grid;
+  gap: 8px;
+  min-width: 0;
+}
+
+.copyable-command,
+.mcp-example {
+  align-items: center;
+  background: var(--color-canvas);
+  border: 1px solid var(--color-border-soft);
+  border-radius: 10px;
+  display: grid;
+  gap: 10px;
+  grid-template-columns: 120px minmax(0, 1fr) 32px;
+  min-width: 0;
+  padding: 8px;
+}
+
+.copyable-command span,
+.mcp-example span {
+  color: var(--pm-text-subtle);
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+}
+
+.copyable-command code,
+.mcp-example code {
+  background: transparent;
+  color: var(--pm-text);
+  font-size: 12px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.mcp-flow {
+  display: grid;
+  gap: 14px;
+}
+
+.mcp-flow-steps {
+  display: grid;
+  gap: 10px;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+}
+
+.mcp-flow-step {
+  background: var(--color-canvas);
+  border: 1px solid var(--color-border-soft);
+  border-radius: 10px;
+  display: grid;
+  gap: 10px;
+  grid-template-columns: auto minmax(0, 1fr);
+  min-width: 0;
+  padding: 12px;
+}
+
+.mcp-flow-step > span {
+  align-items: center;
+  background: rgba(130, 143, 255, 0.14);
+  border: 1px solid rgba(130, 143, 255, 0.28);
+  border-radius: 999px;
+  color: var(--color-indigo-hover);
+  display: inline-flex;
+  font-size: 12px;
+  font-weight: 750;
+  height: 26px;
+  justify-content: center;
+  width: 26px;
+}
+
+.mcp-flow-step strong,
+.mcp-tool-card code {
+  overflow-wrap: anywhere;
+}
+
+.mcp-flow-step p {
+  color: var(--pm-text-muted);
+  font-size: 13px;
+  line-height: 20px;
+  margin: 3px 0 0;
+}
+
+.mcp-tool-grid {
+  display: grid;
+  gap: 12px;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.mcp-tool-card {
+  background: var(--pm-surface);
+  border: 1px solid var(--pm-border);
+  border-radius: 12px;
+  display: grid;
+  gap: 12px;
+  min-width: 0;
+  padding: 16px;
+}
+
+.mcp-tool-header {
+  align-items: center;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  min-width: 0;
+}
+
+.mcp-tool-header code {
+  color: var(--color-indigo-hover);
+  font-size: 13px;
+}
+
+.mcp-tool-card h2 {
+  font-size: 16px;
+  font-weight: 560;
+  line-height: 24px;
+  margin: 0;
+}
+
+.mcp-tool-card dl {
+  display: grid;
+  gap: 8px 12px;
+  grid-template-columns: 86px minmax(0, 1fr);
+  margin: 0;
+}
+
+.mcp-tool-card dt {
+  color: var(--pm-text-subtle);
+  font-size: 11px;
+  font-weight: 750;
+  text-transform: uppercase;
+}
+
+.mcp-tool-card dd {
+  color: var(--pm-text-muted);
+  font-size: 13px;
+  line-height: 20px;
+  margin: 0;
+}
+
+.mcp-example {
+  grid-template-columns: 96px minmax(0, 1fr) 32px;
+}
+
+.mcp-tool-card > small {
+  color: var(--color-indigo-hover);
+  font-size: 12px;
+}
+
 .project-table {
   display: grid;
 }
@@ -2686,9 +2863,32 @@ dd {
   .archive-score-grid,
   .export-summary-strip,
   .export-field-grid,
+  .mcp-hero,
+  .mcp-flow-steps,
+  .mcp-tool-grid,
   .dashboard-grid,
   .checklist-grid {
     display: block;
+  }
+
+  .mcp-hero,
+  .mcp-flow,
+  .mcp-tool-card {
+    margin-bottom: 12px;
+  }
+
+  .copyable-command,
+  .mcp-example {
+    grid-template-columns: 1fr 32px;
+  }
+
+  .copyable-command span,
+  .mcp-example span {
+    grid-column: 1 / -1;
+  }
+
+  .mcp-tool-card dl {
+    grid-template-columns: 1fr;
   }
 
   .topbar > div:first-child {

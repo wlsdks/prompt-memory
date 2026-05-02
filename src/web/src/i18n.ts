@@ -307,6 +307,7 @@ const UI_TRANSLATIONS: Record<string, string> = {
   Benchmark: "벤치마크",
   Insights: "인사이트",
   Projects: "프로젝트",
+  MCP: "MCP",
   Export: "내보내기",
   Settings: "설정",
   Language: "언어",
@@ -320,6 +321,7 @@ const UI_TRANSLATIONS: Record<string, string> = {
   "Prompt scores": "프롬프트 점수",
   "Prompt benchmark": "프롬프트 벤치마크",
   "Prompt insights": "프롬프트 인사이트",
+  "MCP tools": "MCP 도구",
   "Anonymized export": "익명화 Export",
   "Prompts Search": "프롬프트 검색",
   "Prompts Search...": "프롬프트 검색...",
@@ -517,6 +519,63 @@ const UI_TRANSLATIONS: Record<string, string> = {
   "No project quality signals yet.": "프로젝트별 품질 신호가 아직 없습니다.",
   "View all": "전체 보기",
   Sensitive: "민감정보",
+  "Agent tool surface": "에이전트 도구 표면",
+  "Use prompt-memory from Claude Code or Codex":
+    "Claude Code 또는 Codex에서 prompt-memory 사용",
+  "Start with status, then choose the scoring or project-rule review tool that matches the user request.":
+    "먼저 상태를 확인한 뒤 사용자 요청에 맞는 점수 측정 또는 프로젝트 규칙 리뷰 도구를 선택하세요.",
+  "MCP setup commands": "MCP 설정 명령",
+  "Server command": "서버 명령",
+  "Claude Code": "Claude Code",
+  Codex: "Codex",
+  "Recommended MCP flow": "권장 MCP 흐름",
+  "Recommended call order": "권장 호출 순서",
+  "4 tools": "도구 4개",
+  "Check setup, capture readiness, latest safe metadata, and the next tool to call.":
+    "설정, 캡처 준비 상태, 안전한 최신 metadata, 다음에 호출할 도구를 확인합니다.",
+  "Score the latest, a pasted prompt, or a stored prompt id when the user asks about one request.":
+    "사용자가 하나의 요청을 묻는 경우 최신 prompt, 붙여넣은 prompt, 저장된 prompt id를 점수화합니다.",
+  "Review accumulated prompt habits, recurring gaps, and low-score review candidates.":
+    "누적 prompt 습관, 반복 부족 항목, 낮은 점수 리뷰 후보를 확인합니다.",
+  "Score AGENTS.md / CLAUDE.md rules when the user asks whether agent instructions are strong enough.":
+    "사용자가 에이전트 지침이 충분한지 묻는 경우 AGENTS.md / CLAUDE.md 규칙을 점수화합니다.",
+  "MCP tool catalog": "MCP 도구 카탈로그",
+  preflight: "사전 점검",
+  "single prompt": "단일 프롬프트",
+  archive: "아카이브",
+  "project rules": "프로젝트 규칙",
+  "Check capture readiness first": "먼저 캡처 준비 상태 확인",
+  "Evaluate one request": "요청 하나 평가",
+  "Find habit patterns": "습관 패턴 찾기",
+  "Review AGENTS.md / CLAUDE.md": "AGENTS.md / CLAUDE.md 리뷰",
+  "Use when": "사용 시점",
+  Returns: "반환",
+  "The user asks if prompt-memory is working, whether prompts are being captured, or what to do next.":
+    "사용자가 prompt-memory가 동작하는지, prompt가 캡처되는지, 다음에 무엇을 해야 하는지 물을 때 사용합니다.",
+  "Ready/setup status, safe prompt counts, latest prompt metadata, available tools, and next actions.":
+    "준비/설정 상태, 안전한 prompt 개수, 최신 prompt metadata, 사용 가능한 도구, 다음 행동을 반환합니다.",
+  "No prompt body, no raw absolute path, no external LLM call, no secret value.":
+    "prompt 본문, raw absolute path, 외부 LLM 호출, secret 값을 반환하지 않습니다.",
+  "The user wants feedback on the current request, a pasted prompt, one stored prompt id, or the latest captured prompt.":
+    "사용자가 현재 요청, 붙여넣은 prompt, 저장된 prompt id 하나, 또는 최신 캡처 prompt에 대한 피드백을 원할 때 사용합니다.",
+  "0-100 quality score, checklist, warnings, and concise improvement suggestions.":
+    "0-100 품질 점수, checklist, warning, 간결한 개선 제안을 반환합니다.",
+  "Direct prompt input is analyzed locally and not stored by this MCP tool.":
+    "직접 전달한 prompt 입력은 로컬에서 분석되며 이 MCP tool이 저장하지 않습니다.",
+  "The user wants Claude Code or Codex to review many stored prompts and identify repeated weak habits.":
+    "사용자가 Claude Code 또는 Codex로 여러 저장 prompt를 리뷰하고 반복 약점을 찾고 싶을 때 사용합니다.",
+  "Aggregate archive score, distribution, recurring gaps, and low-score prompt metadata.":
+    "집계 archive 점수, 분포, 반복 부족 항목, 낮은 점수 prompt metadata를 반환합니다.",
+  "Returns metadata only; no prompt bodies and no raw absolute paths.":
+    "metadata만 반환하며 prompt 본문과 raw absolute path는 반환하지 않습니다.",
+  "The user asks if coding-agent rules are strong enough for a captured project.":
+    "사용자가 캡처된 프로젝트의 코딩 에이전트 규칙이 충분한지 물을 때 사용합니다.",
+  "Project instruction score, checklist status, file metadata, suggestions, and next action.":
+    "프로젝트 지침 점수, checklist 상태, file metadata, 제안, 다음 행동을 반환합니다.",
+  "Returns no instruction file bodies and no raw absolute paths.":
+    "instruction file 본문과 raw absolute path를 반환하지 않습니다.",
+  "Agent prompt": "에이전트 프롬프트",
+  "Copied example": "예시 복사됨",
   "Recent quality trend": "최근 품질 트렌드",
   "7 days": "7일",
   "Archive score review": "아카이브 점수 리뷰",

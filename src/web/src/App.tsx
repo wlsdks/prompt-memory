@@ -12,6 +12,7 @@ import {
   Gauge,
   GitCompare,
   ListChecks,
+  Plug,
   RefreshCw,
   Search,
   Settings,
@@ -87,6 +88,7 @@ type View =
   | { name: "benchmark" }
   | { name: "insights" }
   | { name: "projects" }
+  | { name: "mcp" }
   | { name: "exports" }
   | { name: "settings" };
 
@@ -262,6 +264,7 @@ export function App() {
   const visibleTitle = useMemo(() => {
     if (view.name === "settings") return "Settings";
     if (view.name === "exports") return "Anonymized export";
+    if (view.name === "mcp") return "MCP tools";
     if (view.name === "projects") return "Projects";
     if (view.name === "insights") return "Prompt insights";
     if (view.name === "benchmark") return "Prompt benchmark";
@@ -579,11 +582,13 @@ export function App() {
                   ? "/insights"
                   : next.name === "projects"
                     ? "/projects"
-                    : next.name === "exports"
-                      ? "/exports"
-                      : next.name === "settings"
-                        ? "/settings"
-                        : "/";
+                    : next.name === "mcp"
+                      ? "/mcp"
+                      : next.name === "exports"
+                        ? "/exports"
+                        : next.name === "settings"
+                          ? "/settings"
+                          : "/";
     window.history.pushState({}, "", path);
     setView(next);
   }
@@ -639,6 +644,12 @@ export function App() {
           onClick={() => navigate({ name: "projects" })}
         >
           <FolderCog size={16} /> Projects
+        </button>
+        <button
+          className={`nav-button ${view.name === "mcp" ? "active" : ""}`}
+          onClick={() => navigate({ name: "mcp" })}
+        >
+          <Plug size={16} /> MCP
         </button>
         <button
           className={`nav-button ${view.name === "exports" ? "active" : ""}`}
@@ -935,6 +946,7 @@ export function App() {
             projects={projects}
           />
         )}
+        {view.name === "mcp" && <McpToolsView />}
         {view.name === "exports" && (
           <ExportView
             busy={exportBusy}
@@ -2812,6 +2824,142 @@ function ProjectsView({
   );
 }
 
+function McpToolsView() {
+  const [copiedKey, setCopiedKey] = useState<string | undefined>();
+
+  async function copySnippet(key: string, value: string): Promise<void> {
+    const copied = await copyTextToClipboard(value);
+    if (!copied) return;
+    setCopiedKey(key);
+    window.setTimeout(() => setCopiedKey(undefined), 2200);
+  }
+
+  return (
+    <div className="mcp-layout">
+      <section className="mcp-hero panel">
+        <div>
+          <p className="eyebrow">Agent tool surface</p>
+          <h2>Use prompt-memory from Claude Code or Codex</h2>
+          <p>
+            Start with status, then choose the scoring or project-rule review
+            tool that matches the user request.
+          </p>
+        </div>
+        <div className="mcp-command-stack" aria-label="MCP setup commands">
+          <CopyableCommand
+            copied={copiedKey === "mcp-command"}
+            label="Server command"
+            onCopy={() => void copySnippet("mcp-command", "prompt-memory mcp")}
+            value="prompt-memory mcp"
+          />
+          <CopyableCommand
+            copied={copiedKey === "claude-command"}
+            label="Claude Code"
+            onCopy={() =>
+              void copySnippet(
+                "claude-command",
+                "claude mcp add --transport stdio prompt-memory -- prompt-memory mcp",
+              )
+            }
+            value="claude mcp add --transport stdio prompt-memory -- prompt-memory mcp"
+          />
+          <CopyableCommand
+            copied={copiedKey === "codex-command"}
+            label="Codex"
+            onCopy={() =>
+              void copySnippet(
+                "codex-command",
+                "codex mcp add prompt-memory -- prompt-memory mcp",
+              )
+            }
+            value="codex mcp add prompt-memory -- prompt-memory mcp"
+          />
+        </div>
+      </section>
+
+      <section className="mcp-flow panel" aria-label="Recommended MCP flow">
+        <div className="panel-heading-row">
+          <h2>Recommended call order</h2>
+          <span>4 tools</span>
+        </div>
+        <div className="mcp-flow-steps">
+          {MCP_FLOW_STEPS.map((step, index) => (
+            <article className="mcp-flow-step" key={step.tool}>
+              <span>{index + 1}</span>
+              <div>
+                <strong>{step.tool}</strong>
+                <p>{step.detail}</p>
+              </div>
+            </article>
+          ))}
+        </div>
+      </section>
+
+      <section className="mcp-tool-grid" aria-label="MCP tool catalog">
+        {MCP_TOOL_CATALOG.map((tool) => (
+          <article className="mcp-tool-card" key={tool.name}>
+            <div className="mcp-tool-header">
+              <span className="badge">{tool.kind}</span>
+              <code>{tool.name}</code>
+            </div>
+            <h2>{tool.title}</h2>
+            <dl>
+              <dt>Use when</dt>
+              <dd>{tool.when}</dd>
+              <dt>Returns</dt>
+              <dd>{tool.returns}</dd>
+              <dt>Privacy</dt>
+              <dd>{tool.privacy}</dd>
+            </dl>
+            <div className="mcp-example">
+              <span>Agent prompt</span>
+              <code>{tool.prompt}</code>
+              <button
+                aria-label={`Copy ${tool.name} example`}
+                className="icon-button"
+                onClick={() => void copySnippet(tool.name, tool.prompt)}
+                title={`Copy ${tool.name} example`}
+                type="button"
+              >
+                <Copy size={15} />
+              </button>
+            </div>
+            {copiedKey === tool.name && <small>Copied example</small>}
+          </article>
+        ))}
+      </section>
+    </div>
+  );
+}
+
+function CopyableCommand({
+  copied,
+  label,
+  onCopy,
+  value,
+}: {
+  copied: boolean;
+  label: string;
+  onCopy(): void;
+  value: string;
+}) {
+  return (
+    <div className="copyable-command">
+      <span>{label}</span>
+      <code>{value}</code>
+      <button
+        aria-label={`Copy ${label}`}
+        className="icon-button"
+        onClick={onCopy}
+        title={`Copy ${label}`}
+        type="button"
+      >
+        {copied ? <ShieldCheck size={15} /> : <Copy size={15} />}
+      </button>
+    </div>
+  );
+}
+
 function ExportView({
   busy,
   copied,
@@ -3116,6 +3264,10 @@ function routeFromLocation(): View {
     return { name: "projects" };
   }
 
+  if (window.location.pathname === "/mcp") {
+    return { name: "mcp" };
+  }
+
   if (window.location.pathname === "/exports") {
     return { name: "exports" };
   }
@@ -3274,6 +3426,79 @@ const FOCUS_LABELS: Record<NonNullable<PromptFilters["focus"]>, string> = {
   duplicated: "Duplicate candidates",
   "quality-gap": "Quality gaps",
 };
+
+const MCP_FLOW_STEPS = [
+  {
+    tool: "get_prompt_memory_status",
+    detail:
+      "Check setup, capture readiness, latest safe metadata, and the next tool to call.",
+  },
+  {
+    tool: "score_prompt",
+    detail:
+      "Score the latest, a pasted prompt, or a stored prompt id when the user asks about one request.",
+  },
+  {
+    tool: "score_prompt_archive",
+    detail:
+      "Review accumulated prompt habits, recurring gaps, and low-score review candidates.",
+  },
+  {
+    tool: "review_project_instructions",
+    detail:
+      "Score AGENTS.md / CLAUDE.md rules when the user asks whether agent instructions are strong enough.",
+  },
+];
+
+const MCP_TOOL_CATALOG = [
+  {
+    kind: "preflight",
+    name: "get_prompt_memory_status",
+    title: "Check capture readiness first",
+    when: "The user asks if prompt-memory is working, whether prompts are being captured, or what to do next.",
+    returns:
+      "Ready/setup status, safe prompt counts, latest prompt metadata, available tools, and next actions.",
+    privacy:
+      "No prompt body, no raw absolute path, no external LLM call, no secret value.",
+    prompt:
+      "Use prompt-memory get_prompt_memory_status and tell me whether capture is working before scoring anything.",
+  },
+  {
+    kind: "single prompt",
+    name: "score_prompt",
+    title: "Evaluate one request",
+    when: "The user wants feedback on the current request, a pasted prompt, one stored prompt id, or the latest captured prompt.",
+    returns:
+      "0-100 quality score, checklist, warnings, and concise improvement suggestions.",
+    privacy:
+      "Direct prompt input is analyzed locally and not stored by this MCP tool.",
+    prompt:
+      "Use prompt-memory score_prompt with latest=true and tell me what to improve in my last request.",
+  },
+  {
+    kind: "archive",
+    name: "score_prompt_archive",
+    title: "Find habit patterns",
+    when: "The user wants Claude Code or Codex to review many stored prompts and identify repeated weak habits.",
+    returns:
+      "Aggregate archive score, distribution, recurring gaps, and low-score prompt metadata.",
+    privacy:
+      "Returns metadata only; no prompt bodies and no raw absolute paths.",
+    prompt:
+      "Use prompt-memory score_prompt_archive for recent Codex prompts and summarize my recurring prompt habit gaps.",
+  },
+  {
+    kind: "project rules",
+    name: "review_project_instructions",
+    title: "Review AGENTS.md / CLAUDE.md",
+    when: "The user asks if coding-agent rules are strong enough for a captured project.",
+    returns:
+      "Project instruction score, checklist status, file metadata, suggestions, and next action.",
+    privacy: "Returns no instruction file bodies and no raw absolute paths.",
+    prompt:
+      "Use prompt-memory review_project_instructions with latest=true and tell me whether my AGENTS.md/CLAUDE.md rules are strong enough.",
+  },
+];
 
 function formatRulesFileCount(count: number): string {
   return `${count} rules file${count === 1 ? "" : "s"}`;

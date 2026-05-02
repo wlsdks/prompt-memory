@@ -242,6 +242,25 @@ try {
   await page.getByRole("button", { name: "capture on" }).click();
   await page.getByRole("button", { name: "paused" }).waitFor();
 
+  await page.getByRole("button", { name: "MCP", exact: true }).click();
+  await page.getByRole("heading", { name: "MCP tools" }).waitFor();
+  await assertText(
+    page,
+    "Recommended call order",
+    "MCP page should show recommended tool call order.",
+  );
+  await assertText(
+    page,
+    "get_prompt_memory_status",
+    "MCP page should expose the preflight status tool.",
+  );
+  await assertText(
+    page,
+    "review_project_instructions",
+    "MCP page should expose project instruction review.",
+  );
+  await assertBrowserSafe(page, "mcp");
+
   await page.getByRole("button", { name: "Export" }).click();
   await page
     .getByRole("heading", { name: "Anonymized export", level: 1 })

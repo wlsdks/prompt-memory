@@ -1,5 +1,18 @@
 # 작업 계획
 
+## 2026-05-03 MCP Tool Catalog UI Polish
+
+- [x] 추가 탭/화면이 실제로 필요한지 IA 기준으로 판단
+- [x] MCP tool catalog 화면을 추가해 tool 선택 기준과 예시 prompt를 웹에서 확인 가능하게 만들기
+- [x] 한국어/영어 UI 문구와 browser E2E 검증 보강
+- [x] 전체 검증, 커밋, 푸시, CI 확인
+
+### 판단 기준
+
+- MCP 화면은 마케팅 설명이 아니라 Claude Code/Codex 사용자가 바로 호출할 tool을 고르는 작업 화면이어야 한다.
+- tool 설명은 what/when/returns/privacy가 분리되어 있어야 한다.
+- prompt body, raw path, secret을 화면에 새로 노출하지 않는다.
+
 ## 2026-05-03 MCP Status Preflight And Final Polish
 
 - [x] UI/UX 추가 탭 필요성 재평가

@@ -427,6 +427,9 @@ describe("createServer P2 ingest boundary", () => {
       "/benchmark",
       "/insights",
       "/projects",
+      "/mcp",
+      "/exports",
+      "/settings",
     ]) {
       const route = await server.inject({
         method: "GET",
