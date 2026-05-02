@@ -1,5 +1,25 @@
 # 작업 계획
 
+## 2026-05-02 전체 기능 점검 및 사용성 평가
+
+- [x] 최신 Web Interface Guidelines와 `DESIGN.md` 기준 확인
+- [x] 기능/API/스토리지/CLI 테스트 게이트 실행
+- [x] 임시 data dir로 서버 실행 및 샘플 데이터 ingest
+- [x] Chrome DevTools MCP로 dashboard/list/detail/settings 주요 흐름 재점검
+- [x] desktop/mobile 렌더링, 접근성 이름, overflow, 콘솔/네트워크 상태 확인
+- [x] 사용성 평가와 개선 후보 정리
+- [x] 결과 기록, 커밋 및 푸시
+
+### 점검 결과
+
+- 자동 검증: `pnpm test`, `pnpm lint`, `pnpm build`, `pnpm pack:dry-run`, `pnpm smoke:release`, `git diff --check` 통과.
+- 기능 흐름: init/server/ingest/list/search/show/delete/rebuild-index CLI smoke 통과. 웹 UI에서 list 검색, 품질 gap 필터 이동, detail 분석 preview, copy event, bookmark, delete modal/confirm, dashboard, settings를 확인했다.
+- 발견/수정: `password=super-secret-value` 같은 명시적 secret assignment가 마스킹되지 않고 목록에 노출되는 문제를 발견했다. `secret_assignment` detector와 회귀 테스트를 추가했고, 새 빌드 서버에서 `[REDACTED:secret_assignment]`로 표시되는 것을 확인했다.
+- 브라우저 검증: desktop 1440x900, mobile 390x844 screenshot을 저장했고, mobile에서 document 단위 horizontal overflow는 없었다. 긴 경로는 truncation 내부 overflow만 있었고 페이지 폭은 깨지지 않았다.
+- 콘솔/네트워크: Chrome DevTools MCP 기준 콘솔 메시지 없음. 확인 범위 네트워크 요청은 API/asset `200`, favicon `204`.
+- 사용성 평가: 현재 구조는 첫 화면 archive 중심, dashboard drill-down, detail action이 이어져 운영형 developer tool로 적합하다. 다만 browser navigation은 `<button>` + `history.pushState` 기반이라 Cmd/Ctrl-click deep link 같은 링크 네이티브 동작은 아직 없다.
+- 남은 리스크: 현재 로컬 셸은 Node 20.20.0이라 모든 pnpm 명령에서 `engines.node >=22 <25` 경고가 난다. Node 22 환경에서는 `better-sqlite3` 네이티브 모듈을 Node 22 ABI로 재빌드해야 한다.
+
 ## 2026-05-02 Chrome DevTools MCP 기능 점검
 
 - [x] 실행 중인 서버/포트 확인

@@ -26,6 +26,11 @@ const DETECTORS: Detector[] = [
     pattern: /\b(?:sk|pk|ghp|github_pat|xoxb|AKIA)[a-zA-Z0-9_-]{8,}\b/g,
   },
   {
+    type: "secret_assignment",
+    pattern:
+      /\b(?:password|passwd|pwd|secret|api[_-]?key|access[_-]?token|refresh[_-]?token|client[_-]?secret|private[_-]?key)\b\s*[:=]\s*["']?[^\s"',;]+["']?/gi,
+  },
+  {
     type: "database_url",
     pattern: /\b(?:postgres|postgresql|mysql|mongodb|redis):\/\/[^\s]+/gi,
   },
