@@ -1440,6 +1440,176 @@ dd {
   color: var(--pm-danger);
 }
 
+.export-layout {
+  display: grid;
+  gap: 16px;
+}
+
+.export-control-panel {
+  align-items: end;
+  display: flex;
+  gap: 16px;
+  justify-content: space-between;
+}
+
+.export-controls {
+  align-items: end;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.export-controls label {
+  display: grid;
+  gap: 4px;
+}
+
+.export-controls label span {
+  color: var(--pm-text-subtle);
+  font-size: 12px;
+  font-weight: 650;
+}
+
+.export-controls select {
+  background: var(--pm-surface);
+  border: 1px solid var(--pm-border);
+  border-radius: 6px;
+  color: var(--pm-text);
+  font-size: 13px;
+  height: 36px;
+  min-width: 220px;
+  padding: 0 10px;
+}
+
+.primary-action {
+  align-items: center;
+  background: var(--pm-accent);
+  border: 1px solid var(--pm-accent-strong);
+  border-radius: 6px;
+  color: #fff;
+  display: inline-flex;
+  font-size: 13px;
+  font-weight: 650;
+  justify-content: center;
+  min-height: 36px;
+  padding: 0 12px;
+}
+
+.primary-action:hover {
+  background: var(--pm-accent-strong);
+}
+
+.primary-action:disabled {
+  cursor: not-allowed;
+  opacity: 0.62;
+}
+
+.export-summary-strip {
+  display: grid;
+  gap: 12px;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+}
+
+.export-metric {
+  min-height: 96px;
+}
+
+.export-preview-panel,
+.export-result-panel {
+  display: grid;
+  gap: 12px;
+}
+
+.warning-line {
+  background: var(--pm-warning-weak);
+  border: 1px solid color-mix(in srgb, var(--pm-warning) 24%, transparent);
+  border-radius: 6px;
+  color: var(--pm-warning);
+  font-size: 13px;
+  line-height: 20px;
+  margin: 0;
+  padding: 9px 10px;
+}
+
+.export-field-grid {
+  display: grid;
+  gap: 12px;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+
+.field-list {
+  background: var(--pm-surface);
+  border: 1px solid var(--pm-border);
+  border-radius: 6px;
+  min-width: 0;
+  padding: 12px;
+}
+
+.field-list h3 {
+  color: var(--pm-text-muted);
+  font-size: 12px;
+  line-height: 18px;
+  margin: 0 0 8px;
+}
+
+.field-list ul {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.field-list li {
+  background: var(--pm-surface-muted);
+  border-radius: 999px;
+  color: var(--pm-text-muted);
+  font-size: 12px;
+  line-height: 18px;
+  max-width: 100%;
+  overflow-wrap: anywhere;
+  padding: 2px 8px;
+}
+
+.export-action-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.export-action-row button {
+  align-items: center;
+  background: var(--pm-surface);
+  border: 1px solid var(--pm-border);
+  border-radius: 6px;
+  color: var(--pm-text);
+  display: inline-flex;
+  font-size: 13px;
+  font-weight: 650;
+  gap: 6px;
+  min-height: 34px;
+  padding: 0 12px;
+}
+
+.export-action-row button:hover {
+  background: var(--pm-surface-muted);
+}
+
+.export-json-preview {
+  background: var(--pm-code-bg);
+  border: 1px solid var(--pm-border);
+  border-radius: 6px;
+  font-size: 12px;
+  line-height: 19px;
+  margin: 0;
+  max-height: 420px;
+  overflow: auto;
+  overflow-wrap: anywhere;
+  padding: 12px;
+  white-space: pre-wrap;
+}
+
 .setup-panel {
   grid-column: 1 / -1;
 }
@@ -1590,6 +1760,8 @@ dd {
   .detail-layout,
   .settings-grid,
   .metric-strip,
+  .export-summary-strip,
+  .export-field-grid,
   .dashboard-grid,
   .checklist-grid {
     display: block;
@@ -1699,6 +1871,21 @@ dd {
     display: grid;
   }
 
+  .export-control-panel,
+  .export-controls,
+  .panel-heading-row,
+  .export-action-row {
+    align-items: stretch;
+    display: grid;
+  }
+
+  .export-controls select,
+  .primary-action,
+  .export-action-row button {
+    min-height: 40px;
+    width: 100%;
+  }
+
   .coach-copy-button {
     justify-content: center;
     min-height: 40px;
@@ -1725,6 +1912,8 @@ dd {
   }
 
   .metric,
+  .export-metric,
+  .field-list,
   .dashboard-grid .panel,
   .checklist-item,
   .setup-check {

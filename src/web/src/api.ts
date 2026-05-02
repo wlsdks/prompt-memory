@@ -227,6 +227,47 @@ export type ProjectPolicyPatch = {
   export_disabled?: boolean;
 };
 
+export type ExportPreset =
+  | "personal_backup"
+  | "anonymized_review"
+  | "issue_report_attachment";
+
+export type ExportJob = {
+  id: string;
+  preset: ExportPreset;
+  status: "previewed" | "completed" | "invalid";
+  prompt_id_hashes: string[];
+  project_policy_versions: Record<string, number>;
+  redaction_version: string;
+  counts: {
+    prompt_count: number;
+    sensitive_count: number;
+    included_fields: string[];
+    excluded_fields: string[];
+    residual_identifier_counts: Record<string, number>;
+    small_set_warning: boolean;
+  };
+  expires_at: string;
+  created_at: string;
+};
+
+export type AnonymizedExportPayload = {
+  job_id: string;
+  preset: ExportPreset;
+  redaction_version: string;
+  generated_at: string;
+  count: number;
+  items: Array<{
+    anonymous_id: string;
+    tool: string;
+    coarse_date: string;
+    project_alias: string;
+    prompt: string;
+    tags: string[];
+    quality_gaps: string[];
+  }>;
+};
+
 let csrfToken: string | undefined;
 
 export async function ensureSession(): Promise<void> {
@@ -340,6 +381,50 @@ export async function updateProjectPolicy(
   }
 
   const body = (await response.json()) as { data: ProjectSummary };
+  return body.data;
+}
+
+export async function createExportPreview(
+  preset: ExportPreset,
+): Promise<ExportJob> {
+  await ensureSession();
+  const response = await fetch("/api/v1/exports/preview", {
+    method: "POST",
+    credentials: "same-origin",
+    headers: {
+      "content-type": "application/json",
+      "x-csrf-token": csrfToken ?? "",
+    },
+    body: JSON.stringify({ preset }),
+  });
+
+  if (!response.ok) {
+    throw new Error("Export preview failed");
+  }
+
+  const body = (await response.json()) as { data: ExportJob };
+  return body.data;
+}
+
+export async function executeExportJob(
+  jobId: string,
+): Promise<AnonymizedExportPayload> {
+  await ensureSession();
+  const response = await fetch("/api/v1/exports", {
+    method: "POST",
+    credentials: "same-origin",
+    headers: {
+      "content-type": "application/json",
+      "x-csrf-token": csrfToken ?? "",
+    },
+    body: JSON.stringify({ job_id: jobId }),
+  });
+
+  if (!response.ok) {
+    throw new Error("Export job execution failed");
+  }
+
+  const body = (await response.json()) as { data: AnonymizedExportPayload };
   return body.data;
 }
 

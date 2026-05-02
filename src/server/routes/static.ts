@@ -26,6 +26,7 @@ export function registerStaticRoutes(
     sendIndex(reply, options),
   );
   server.get("/projects", async (_request, reply) => sendIndex(reply, options));
+  server.get("/exports", async (_request, reply) => sendIndex(reply, options));
   server.get("/prompts", async (_request, reply) => sendIndex(reply, options));
   server.get("/prompts/:id", async (_request, reply) =>
     sendIndex(reply, options),

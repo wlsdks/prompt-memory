@@ -1,5 +1,21 @@
 # 작업 계획
 
+## 2026-05-02 Anonymized Export Web UI
+
+- [x] Export UI 범위와 raw-free 브라우저 경계 확정
+- [x] 웹 API client 실패 테스트 작성
+- [x] `/exports` 화면, preset 선택, preview, 실행, JSON 복사/다운로드 구현
+- [x] desktop/mobile 렌더링과 raw-free 동작 검증
+- [x] 전체 검증, 커밋 및 푸시
+
+### 첫 구현 범위
+
+- 기존 anonymized export API만 브라우저에서 사용한다.
+- raw export, GitHub 연계, 외부 전송은 제외한다.
+- export preview는 included/excluded field, prompt count, sensitive count, residual identifier count, small-set warning을 보여준다.
+- 실행 결과는 브라우저에서 JSON preview, copy, download만 제공한다.
+- export 화면과 API 응답에는 raw prompt id, raw cwd, raw path, raw secret을 표시하지 않는다.
+
 ## 2026-05-02 Anonymized Export Preview Job
 
 - [x] 익명화 export 범위와 raw-free 저장 조건 확정

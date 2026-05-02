@@ -243,7 +243,13 @@ function anonymizePromptText(value: string): string {
   let result = value;
 
   for (const [type, pattern] of Object.entries(ANONYMIZATION_PATTERNS)) {
-    result = result.replace(pattern, `[REDACTED:${type}]`);
+    result =
+      type === "path"
+        ? result.replace(
+            pattern,
+            (_match, prefix: string) => `${prefix}[REDACTED:path]`,
+          )
+        : result.replace(pattern, `[REDACTED:${type}]`);
   }
 
   return result;
@@ -252,7 +258,7 @@ function anonymizePromptText(value: string): string {
 const ANONYMIZATION_PATTERNS: Record<string, RegExp> = {
   url: /https?:\/\/[^\s)'"`]+/gi,
   email: /\b[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}\b/gi,
-  path: /(?:^|[\s('"`])\/(?:Users|home|private|tmp|var|opt|workspace|Volumes)\/[^\s)'"`]+/gi,
+  path: /(^|[\s('"`])\/(?:Users|home|private|tmp|var|opt|workspace|Volumes)\/[^\s)'"`]+/gi,
   repo_slug: /\b[A-Za-z0-9_.-]+\/[A-Za-z0-9_.-]+\b/g,
 };
 

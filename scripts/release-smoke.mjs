@@ -240,6 +240,7 @@ try {
     "Executed export must not contain raw home directory paths.",
   );
   verifyExportJobs(importSecret);
+  await verifyExportWebRoute();
 
   step("Verify SQLite, Markdown, FTS, and delete cleanup");
   verifyDatabaseBeforeDelete(claudeId);
@@ -340,6 +341,24 @@ async function ingest(path, payload) {
     throw new Error(`Ingest failed for ${path}: ${JSON.stringify(body)}`);
   }
   return body.data.id;
+}
+
+async function verifyExportWebRoute() {
+  const response = await fetch(`${serverBaseUrl}/exports`);
+  const text = await response.text();
+  if (!response.ok) {
+    throw new Error(`Export web route failed: ${response.status}`);
+  }
+  assertIncludes(
+    text,
+    '<div id="root"></div>',
+    "Export web route should serve the SPA shell.",
+  );
+  assertIncludes(
+    response.headers.get("content-security-policy") ?? "",
+    "default-src 'self'",
+    "Export web route should include CSP.",
+  );
 }
 
 function verifyDatabaseBeforeDelete(promptId) {

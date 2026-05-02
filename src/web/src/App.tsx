@@ -6,6 +6,7 @@ import {
   ChevronRight,
   Copy,
   Database,
+  Download,
   FileText,
   FolderCog,
   GitCompare,
@@ -23,7 +24,9 @@ import {
   type PromptImprovement,
 } from "../../analysis/improve.js";
 import {
+  createExportPreview,
   deletePrompt,
+  executeExportJob,
   getHealth,
   getPrompt,
   getQualityDashboard,
@@ -34,6 +37,9 @@ import {
   savePromptImprovementDraft,
   setPromptBookmark,
   updateProjectPolicy,
+  type AnonymizedExportPayload,
+  type ExportJob,
+  type ExportPreset,
   type ProjectSummary,
   type QualityDashboard,
   type PromptFilters,
@@ -49,6 +55,7 @@ type View =
   | { name: "detail"; id: string }
   | { name: "dashboard" }
   | { name: "projects" }
+  | { name: "exports" }
   | { name: "settings" };
 
 export function App() {
@@ -65,6 +72,14 @@ export function App() {
   const [settings, setSettings] = useState<SettingsResponse | undefined>();
   const [dashboard, setDashboard] = useState<QualityDashboard | undefined>();
   const [projects, setProjects] = useState<ProjectSummary[]>([]);
+  const [exportPreset, setExportPreset] =
+    useState<ExportPreset>("anonymized_review");
+  const [exportPreview, setExportPreview] = useState<ExportJob | undefined>();
+  const [exportPayload, setExportPayload] = useState<
+    AnonymizedExportPayload | undefined
+  >();
+  const [exportBusy, setExportBusy] = useState(false);
+  const [exportCopied, setExportCopied] = useState(false);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | undefined>();
   const [pendingDelete, setPendingDelete] = useState<
@@ -136,6 +151,7 @@ export function App() {
 
   const visibleTitle = useMemo(() => {
     if (view.name === "settings") return "설정";
+    if (view.name === "exports") return "익명화 Export";
     if (view.name === "projects") return "프로젝트";
     if (view.name === "detail") return "프롬프트 상세";
     if (view.name === "dashboard") return "품질 대시보드";
@@ -296,6 +312,72 @@ export function App() {
     }
   }
 
+  async function previewExport(): Promise<void> {
+    setExportBusy(true);
+    setError(undefined);
+    try {
+      const preview = await createExportPreview(exportPreset);
+      setExportPreview(preview);
+      setExportPayload(undefined);
+    } catch {
+      setError("익명화 export preview를 생성하지 못했습니다.");
+    } finally {
+      setExportBusy(false);
+    }
+  }
+
+  async function executeExport(): Promise<void> {
+    if (!exportPreview) {
+      return;
+    }
+
+    setExportBusy(true);
+    setError(undefined);
+    try {
+      const payload = await executeExportJob(exportPreview.id);
+      setExportPayload(payload);
+    } catch {
+      setError(
+        "익명화 export를 실행하지 못했습니다. preview를 다시 생성하세요.",
+      );
+    } finally {
+      setExportBusy(false);
+    }
+  }
+
+  async function copyExportPayload(): Promise<void> {
+    if (!exportPayload) {
+      return;
+    }
+
+    const copied = await copyTextToClipboard(
+      JSON.stringify(exportPayload, null, 2),
+    );
+    if (copied) {
+      setExportCopied(true);
+      window.setTimeout(() => setExportCopied(false), 3000);
+      return;
+    }
+
+    setError("Export JSON을 복사하지 못했습니다.");
+  }
+
+  function downloadExportPayload(): void {
+    if (!exportPayload) {
+      return;
+    }
+
+    const blob = new Blob([JSON.stringify(exportPayload, null, 2)], {
+      type: "application/json",
+    });
+    const url = URL.createObjectURL(blob);
+    const anchor = document.createElement("a");
+    anchor.href = url;
+    anchor.download = `prompt-memory-${exportPayload.job_id}.json`;
+    anchor.click();
+    URL.revokeObjectURL(url);
+  }
+
   function updatePromptUsefulness(
     id: string,
     usefulness: PromptDetail["usefulness"],
@@ -318,9 +400,11 @@ export function App() {
           ? "/dashboard"
           : next.name === "projects"
             ? "/projects"
-            : next.name === "settings"
-              ? "/settings"
-              : "/";
+            : next.name === "exports"
+              ? "/exports"
+              : next.name === "settings"
+                ? "/settings"
+                : "/";
     window.history.pushState({}, "", path);
     setView(next);
   }
@@ -352,6 +436,12 @@ export function App() {
           onClick={() => navigate({ name: "projects" })}
         >
           <FolderCog size={16} /> 프로젝트
+        </button>
+        <button
+          className={`nav-button ${view.name === "exports" ? "active" : ""}`}
+          onClick={() => navigate({ name: "exports" })}
+        >
+          <Download size={16} /> Export
         </button>
         <button
           className={`nav-button ${view.name === "settings" ? "active" : ""}`}
@@ -562,6 +652,25 @@ export function App() {
           <ProjectsView
             onToggleCapture={(project) => void toggleProjectCapture(project)}
             projects={projects}
+          />
+        )}
+        {view.name === "exports" && (
+          <ExportView
+            busy={exportBusy}
+            copied={exportCopied}
+            dashboard={dashboard}
+            onCopy={() => void copyExportPayload()}
+            onDownload={downloadExportPayload}
+            onExecute={() => void executeExport()}
+            onPresetChange={(preset) => {
+              setExportPreset(preset);
+              setExportPreview(undefined);
+              setExportPayload(undefined);
+            }}
+            onPreview={() => void previewExport()}
+            payload={exportPayload}
+            preset={exportPreset}
+            preview={exportPreview}
           />
         )}
         {view.name === "settings" && (
@@ -1635,6 +1744,195 @@ function ProjectsView({
   );
 }
 
+function ExportView({
+  busy,
+  copied,
+  dashboard,
+  onCopy,
+  onDownload,
+  onExecute,
+  onPresetChange,
+  onPreview,
+  payload,
+  preset,
+  preview,
+}: {
+  busy: boolean;
+  copied: boolean;
+  dashboard?: QualityDashboard;
+  onCopy(): void;
+  onDownload(): void;
+  onExecute(): void;
+  onPresetChange(preset: ExportPreset): void;
+  onPreview(): void;
+  payload?: AnonymizedExportPayload;
+  preset: ExportPreset;
+  preview?: ExportJob;
+}) {
+  const payloadText = payload ? JSON.stringify(payload, null, 2) : "";
+
+  return (
+    <div className="export-layout">
+      <section className="panel export-control-panel">
+        <div>
+          <h2>익명화 Export</h2>
+          <p className="muted">
+            로컬 archive를 raw path와 stable prompt id 없이 JSON으로 만듭니다.
+          </p>
+        </div>
+        <div className="export-controls">
+          <label>
+            <span>Preset</span>
+            <select
+              aria-label="Export preset"
+              name="export-preset"
+              onChange={(event) =>
+                onPresetChange(event.target.value as ExportPreset)
+              }
+              value={preset}
+            >
+              <option value="personal_backup">personal backup</option>
+              <option value="anonymized_review">anonymized review</option>
+              <option value="issue_report_attachment">
+                issue report attachment
+              </option>
+            </select>
+          </label>
+          <button
+            className="primary-action"
+            disabled={busy}
+            onClick={onPreview}
+            type="button"
+          >
+            Preview 생성
+          </button>
+        </div>
+      </section>
+
+      <section className="export-summary-strip" aria-label="Export 요약">
+        <MetricCard
+          label="저장된 프롬프트"
+          value={dashboard?.total_prompts ?? 0}
+        />
+        <MetricCard
+          label="민감정보 포함"
+          value={dashboard?.sensitive_prompts ?? 0}
+        />
+        <MetricCard
+          label="Preview 대상"
+          value={preview?.counts.prompt_count ?? "-"}
+        />
+        <MetricCard
+          label="작은 집합 경고"
+          value={preview?.counts.small_set_warning ? "on" : "off"}
+        />
+      </section>
+
+      {preview ? (
+        <section className="panel export-preview-panel">
+          <div className="panel-heading-row">
+            <div>
+              <h2>Preview job</h2>
+              <p className="muted">
+                {preview.id} · 만료 {formatDate(preview.expires_at)}
+              </p>
+            </div>
+            <button
+              className="primary-action"
+              disabled={busy || preview.status !== "previewed"}
+              onClick={onExecute}
+              type="button"
+            >
+              Export 실행
+            </button>
+          </div>
+          {preview.counts.small_set_warning && (
+            <p className="warning-line">
+              작은 prompt 집합은 익명화 후에도 재식별 위험이 있습니다.
+            </p>
+          )}
+          <div className="export-field-grid">
+            <FieldList
+              items={preview.counts.included_fields}
+              title="포함되는 필드"
+            />
+            <FieldList
+              items={preview.counts.excluded_fields}
+              title="제외되는 필드"
+            />
+            <FieldList
+              items={Object.entries(
+                preview.counts.residual_identifier_counts,
+              ).map(([key, count]) => `${key}: ${count}`)}
+              title="잔여 identifier count"
+            />
+          </div>
+        </section>
+      ) : (
+        <section className="panel empty">
+          <h2>아직 preview가 없습니다.</h2>
+          <code>prompt-memory export --anonymized --preview</code>
+        </section>
+      )}
+
+      {payload && (
+        <section className="panel export-result-panel">
+          <div className="panel-heading-row">
+            <div>
+              <h2>Export JSON</h2>
+              <p className="muted">
+                {payload.count} prompts · {payload.redaction_version} ·{" "}
+                {formatDate(payload.generated_at)}
+              </p>
+            </div>
+            <div className="export-action-row">
+              <button onClick={onCopy} type="button">
+                <Copy size={14} /> {copied ? "복사됨" : "JSON 복사"}
+              </button>
+              <button onClick={onDownload} type="button">
+                <Download size={14} /> 다운로드
+              </button>
+            </div>
+          </div>
+          <pre className="export-json-preview">{payloadText}</pre>
+        </section>
+      )}
+    </div>
+  );
+}
+
+function MetricCard({
+  label,
+  value,
+}: {
+  label: string;
+  value: number | string;
+}) {
+  return (
+    <div className="metric export-metric">
+      <span>{label}</span>
+      <strong>{value}</strong>
+    </div>
+  );
+}
+
+function FieldList({ items, title }: { items: string[]; title: string }) {
+  return (
+    <div className="field-list">
+      <h3>{title}</h3>
+      {items.length > 0 ? (
+        <ul>
+          {items.map((item) => (
+            <li key={item}>{exportFieldLabel(item)}</li>
+          ))}
+        </ul>
+      ) : (
+        <p className="muted">검출된 항목 없음</p>
+      )}
+    </div>
+  );
+}
+
 type SetupCheckStatus = "good" | "attention" | "pending";
 
 type SetupCheck = {
@@ -1728,6 +2026,10 @@ function routeFromLocation(): View {
 
   if (window.location.pathname === "/projects") {
     return { name: "projects" };
+  }
+
+  if (window.location.pathname === "/exports") {
+    return { name: "exports" };
   }
 
   if (window.location.pathname === "/settings") {
@@ -1983,6 +2285,25 @@ function isQualityGapKey(value: string | null): value is PromptQualityGap {
 
 function qualityGapLabel(key?: PromptQualityGap): string | undefined {
   return QUALITY_GAP_OPTIONS.find((item) => item.key === key)?.label;
+}
+
+function exportFieldLabel(value: string): string {
+  const labels: Record<string, string> = {
+    masked_prompt: "masked prompt",
+    tags: "tags",
+    quality_gaps: "quality gaps",
+    tool: "tool",
+    coarse_date: "coarse date",
+    project_alias: "project alias",
+    cwd: "cwd",
+    project_root: "project root",
+    transcript_path: "transcript path",
+    raw_metadata: "raw metadata",
+    stable_prompt_id: "stable prompt id",
+    exact_timestamp: "exact timestamp",
+  };
+
+  return labels[value] ?? value;
 }
 
 function emptyPromptTitle(
