@@ -9,6 +9,7 @@
   "commands": [
     "./commands/setup.md",
     "./commands/status.md",
+    "./commands/score.md",
     "./commands/open.md"
   ],
   "homepage": "https://github.com/wlsdks/prompt-memory",

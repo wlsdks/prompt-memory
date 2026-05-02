@@ -94,6 +94,13 @@ function translateDynamic(value: string): string | undefined {
   if (/^\d+ stored$/.test(value)) {
     return value.replace(/^(\d+) stored$/, "$1개 저장됨");
   }
+  if (/^\d+ scored( \/ more available)?$/.test(value)) {
+    return value.replace(
+      /^(\d+) scored( \/ more available)?$/,
+      (_match, count: string, hasMore: string | undefined) =>
+        hasMore ? `${count}개 평가됨 / 더 있음` : `${count}개 평가됨`,
+    );
+  }
   if (/^\d+ reuse candidates$/.test(value)) {
     return value.replace(/^(\d+) reuse candidates$/, "재사용 후보 $1개");
   }
@@ -221,6 +228,18 @@ const UI_TRANSLATIONS: Record<string, string> = {
   Sensitive: "민감정보",
   "Recent quality trend": "최근 품질 트렌드",
   "7 days": "7일",
+  "Archive score review": "아카이브 점수 리뷰",
+  "Evaluate archive": "아카이브 평가",
+  "No archive score report yet.": "아직 아카이브 점수 리포트가 없습니다.",
+  "Average archive score": "평균 아카이브 점수",
+  "Score distribution": "점수 분포",
+  "Top quality gaps": "주요 부족 항목",
+  "Lowest scoring prompts": "낮은 점수 프롬프트",
+  "No low score prompts yet.": "낮은 점수 프롬프트가 없습니다.",
+  excellent: "우수",
+  good: "좋음",
+  needs_work: "보강 필요",
+  weak: "약함",
   score: "점수",
   "No trend data yet.": "트렌드 데이터가 없습니다.",
   "No data.": "데이터가 없습니다.",

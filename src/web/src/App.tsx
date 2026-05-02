@@ -10,6 +10,7 @@ import {
   FileText,
   FolderCog,
   GitCompare,
+  RefreshCw,
   Search,
   Settings,
   ShieldCheck,
@@ -27,6 +28,7 @@ import {
   createExportPreview,
   deletePrompt,
   executeExportJob,
+  getArchiveScoreReport,
   getHealth,
   getPrompt,
   getQualityDashboard,
@@ -38,6 +40,7 @@ import {
   setPromptBookmark,
   updateProjectPolicy,
   type AnonymizedExportPayload,
+  type ArchiveScoreReport,
   type ExportJob,
   type ExportPreset,
   type ProjectSummary,
@@ -80,6 +83,9 @@ export function App() {
   >();
   const [settings, setSettings] = useState<SettingsResponse | undefined>();
   const [dashboard, setDashboard] = useState<QualityDashboard | undefined>();
+  const [archiveScore, setArchiveScore] = useState<
+    ArchiveScoreReport | undefined
+  >();
   const [projects, setProjects] = useState<ProjectSummary[]>([]);
   const [exportPreset, setExportPreset] =
     useState<ExportPreset>("anonymized_review");
@@ -152,6 +158,9 @@ export function App() {
       .catch(() => undefined);
     void getQualityDashboard()
       .then(setDashboard)
+      .catch(() => undefined);
+    void getArchiveScoreReport()
+      .then(setArchiveScore)
       .catch(() => undefined);
     void listProjects()
       .then(setProjects)
@@ -227,6 +236,9 @@ export function App() {
     await refreshList(filters, { replace: true });
     void getQualityDashboard()
       .then(setDashboard)
+      .catch(() => undefined);
+    void getArchiveScoreReport()
+      .then(setArchiveScore)
       .catch(() => undefined);
   }
 
@@ -331,6 +343,15 @@ export function App() {
       );
     } catch {
       setError("Could not save the project capture policy.");
+    }
+  }
+
+  async function refreshArchiveScore(): Promise<void> {
+    try {
+      const report = await getArchiveScoreReport();
+      setArchiveScore(report);
+    } catch {
+      setError("Could not evaluate the prompt archive.");
     }
   }
 
@@ -680,8 +701,10 @@ export function App() {
         )}
         {view.name === "dashboard" && (
           <DashboardView
+            archiveScore={archiveScore}
             dashboard={dashboard}
             loading={!dashboard}
+            onRefreshArchiveScore={() => void refreshArchiveScore()}
             onOpenFilteredList={(nextFilters) => {
               setFilters({ isSensitive: "all", ...nextFilters });
               navigate({ name: "list" });
@@ -1186,14 +1209,18 @@ function AnalysisPreview({
 }
 
 function DashboardView({
+  archiveScore,
   dashboard,
   loading,
   onOpenFilteredList,
+  onRefreshArchiveScore,
   onSelect,
 }: {
+  archiveScore?: ArchiveScoreReport;
   dashboard?: QualityDashboard;
   loading: boolean;
   onOpenFilteredList(filters: PromptFilters): void;
+  onRefreshArchiveScore(): void;
   onSelect(id: string): void;
 }) {
   if (loading || !dashboard) {
@@ -1254,6 +1281,12 @@ function DashboardView({
             receivedTo: date,
           })
         }
+      />
+
+      <ArchiveScoreReviewPanel
+        report={archiveScore}
+        onRefresh={onRefreshArchiveScore}
+        onSelect={onSelect}
       />
 
       <section className="dashboard-grid">
@@ -1426,6 +1459,127 @@ function DashboardView({
         </div>
       </section>
     </div>
+  );
+}
+
+function ArchiveScoreReviewPanel({
+  report,
+  onRefresh,
+  onSelect,
+}: {
+  report?: ArchiveScoreReport;
+  onRefresh(): void;
+  onSelect(id: string): void;
+}) {
+  const distribution = report
+    ? ([
+        ["excellent", report.distribution.excellent],
+        ["good", report.distribution.good],
+        ["needs_work", report.distribution.needs_work],
+        ["weak", report.distribution.weak],
+      ] as const)
+    : [];
+  const maxBandCount = Math.max(1, ...distribution.map(([, count]) => count));
+
+  return (
+    <section
+      className="panel archive-score-panel"
+      aria-label="Archive score review"
+    >
+      <div className="panel-heading-row">
+        <div>
+          <h2>Archive score review</h2>
+          {report && (
+            <span>
+              {report.archive_score.scored_prompts} scored
+              {report.has_more ? " / more available" : ""}
+            </span>
+          )}
+        </div>
+        <button className="panel-link-button" onClick={onRefresh} type="button">
+          <RefreshCw size={14} /> Evaluate archive
+        </button>
+      </div>
+      {!report && <p className="muted">No archive score report yet.</p>}
+      {report && (
+        <div className="archive-score-grid">
+          <div className="archive-score-summary">
+            <span className={`score-value ${report.archive_score.band}`}>
+              {report.archive_score.average}
+            </span>
+            <div>
+              <strong>Average archive score</strong>
+              <small>
+                {report.archive_score.band} / {report.archive_score.max}
+              </small>
+            </div>
+          </div>
+          <div className="archive-distribution" aria-label="Score distribution">
+            <h3>Score distribution</h3>
+            {distribution.map(([band, count]) => (
+              <div className="archive-band-row" key={band}>
+                <span>{band}</span>
+                <div aria-hidden="true">
+                  <span
+                    className={`archive-band-fill ${band}`}
+                    style={{
+                      width: `${Math.max((count / maxBandCount) * 100, count > 0 ? 8 : 0)}%`,
+                    }}
+                  />
+                </div>
+                <strong>{count}</strong>
+              </div>
+            ))}
+          </div>
+          <div className="archive-gaps">
+            <h3>Top quality gaps</h3>
+            {report.top_gaps.length === 0 && (
+              <p className="muted">No repeated gaps yet.</p>
+            )}
+            {report.top_gaps.slice(0, 5).map((gap) => (
+              <div className="gap-row" key={gap.label}>
+                <div>
+                  <strong>{gap.label}</strong>
+                  <p>{gap.count} prompts</p>
+                </div>
+                <span>{Math.round(gap.rate * 100)}%</span>
+              </div>
+            ))}
+          </div>
+          <div className="archive-low-scores">
+            <h3>Lowest scoring prompts</h3>
+            {report.low_score_prompts.length === 0 && (
+              <p className="muted">No low score prompts yet.</p>
+            )}
+            {report.low_score_prompts.slice(0, 6).map((prompt) => (
+              <button
+                className="archive-low-score-row"
+                key={prompt.id}
+                onClick={() => onSelect(prompt.id)}
+                type="button"
+              >
+                <span>
+                  <strong>{prompt.project}</strong>
+                  <small>{formatDate(prompt.received_at)}</small>
+                </span>
+                <span className="status-cell">
+                  <span
+                    className={`badge score-badge ${prompt.quality_score_band}`}
+                  >
+                    {prompt.quality_score}
+                  </span>
+                  {prompt.quality_gaps.slice(0, 2).map((gap) => (
+                    <span className="badge gap-badge" key={gap}>
+                      {gap}
+                    </span>
+                  ))}
+                </span>
+              </button>
+            ))}
+          </div>
+        </div>
+      )}
+    </section>
   );
 }
 

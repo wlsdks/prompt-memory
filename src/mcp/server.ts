@@ -3,8 +3,12 @@ import type { Readable, Writable } from "node:stream";
 
 import { VERSION } from "../shared/version.js";
 import {
+  SCORE_PROMPT_ARCHIVE_TOOL_DEFINITION,
   SCORE_PROMPT_TOOL_DEFINITION,
+  scorePromptArchiveTool,
   scorePromptTool,
+  type ScorePromptArchiveToolArguments,
+  type ScorePromptToolArguments,
   type ScorePromptToolOptions,
 } from "./score-tool.js";
 
@@ -107,13 +111,16 @@ export function handleMcpMessage(
           version: VERSION,
         },
         instructions:
-          "Use score_prompt when the user asks to evaluate a coding prompt or inspect prompt-memory quality score. This server is local-only and does not call external LLMs.",
+          "Use score_prompt for one coding prompt and score_prompt_archive for accumulated prompt habit review. This server is local-only and does not call external LLMs.",
       });
     case "ping":
       return jsonRpcResult(id, {});
     case "tools/list":
       return jsonRpcResult(id, {
-        tools: [SCORE_PROMPT_TOOL_DEFINITION],
+        tools: [
+          SCORE_PROMPT_TOOL_DEFINITION,
+          SCORE_PROMPT_ARCHIVE_TOOL_DEFINITION,
+        ],
       });
     case "tools/call":
       return handleToolCall(id, message.params, options);
@@ -135,11 +142,20 @@ function handleToolCall(
     );
   }
 
-  if (params.name !== SCORE_PROMPT_TOOL_DEFINITION.name) {
+  const result =
+    params.name === SCORE_PROMPT_TOOL_DEFINITION.name
+      ? scorePromptTool(params.arguments as ScorePromptToolArguments, options)
+      : params.name === SCORE_PROMPT_ARCHIVE_TOOL_DEFINITION.name
+        ? scorePromptArchiveTool(
+            params.arguments as ScorePromptArchiveToolArguments,
+            options,
+          )
+        : undefined;
+
+  if (!result) {
     return jsonRpcError(id, -32602, `Unknown tool: ${params.name}`);
   }
 
-  const result = scorePromptTool(params.arguments, options);
   const isError = "is_error" in result;
 
   return jsonRpcResult(id, {

@@ -1058,6 +1058,120 @@ dd {
   padding: 1px 7px;
 }
 
+.archive-score-panel {
+  display: grid;
+  gap: 12px;
+}
+
+.archive-score-panel .panel-heading-row > div {
+  display: grid;
+  gap: 2px;
+}
+
+.archive-score-panel .panel-link-button {
+  align-items: center;
+  display: inline-flex;
+  gap: 6px;
+}
+
+.archive-score-grid {
+  display: grid;
+  gap: 12px;
+  grid-template-columns: minmax(180px, 0.7fr) minmax(240px, 1fr);
+}
+
+.archive-score-summary,
+.archive-distribution,
+.archive-gaps,
+.archive-low-scores {
+  background: var(--pm-surface);
+  border: 1px solid var(--pm-border);
+  border-radius: 6px;
+  display: grid;
+  gap: 10px;
+  min-width: 0;
+  padding: 12px;
+}
+
+.archive-score-summary {
+  align-content: start;
+  grid-template-columns: auto minmax(0, 1fr);
+}
+
+.archive-score-summary strong,
+.archive-distribution h3,
+.archive-gaps h3,
+.archive-low-scores h3 {
+  font-size: 13px;
+  line-height: 18px;
+  margin: 0;
+}
+
+.archive-score-summary small,
+.archive-band-row span,
+.archive-low-score-row small {
+  color: var(--pm-text-muted);
+  font-size: 12px;
+}
+
+.archive-band-row {
+  align-items: center;
+  display: grid;
+  gap: 8px;
+  grid-template-columns: 84px minmax(0, 1fr) 28px;
+}
+
+.archive-band-row > div {
+  background: var(--pm-surface-muted);
+  border-radius: 999px;
+  min-width: 0;
+  padding: 3px;
+}
+
+.archive-band-fill {
+  background: var(--pm-accent);
+  border-radius: 999px;
+  display: block;
+  height: 7px;
+}
+
+.archive-band-fill.needs_work,
+.archive-band-fill.weak {
+  background: var(--pm-warning);
+}
+
+.archive-low-score-row {
+  align-items: center;
+  background: transparent;
+  border: 1px solid transparent;
+  border-radius: 6px;
+  color: var(--pm-text);
+  display: grid;
+  gap: 10px;
+  grid-template-columns: minmax(0, 1fr) minmax(120px, auto);
+  padding: 6px;
+  text-align: left;
+  width: 100%;
+}
+
+.archive-low-score-row:hover {
+  background: var(--pm-accent-weak);
+  border-color: var(--pm-border);
+}
+
+.archive-low-score-row > span:first-child {
+  display: grid;
+  gap: 2px;
+  min-width: 0;
+}
+
+.archive-low-score-row strong,
+.archive-low-score-row small {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
 .distribution-list,
 .gap-list,
 .pattern-list,
@@ -1831,6 +1945,7 @@ dd {
   .detail-layout,
   .settings-grid,
   .metric-strip,
+  .archive-score-grid,
   .export-summary-strip,
   .export-field-grid,
   .dashboard-grid,
@@ -1998,6 +2113,12 @@ dd {
 
   .trend-row {
     align-items: stretch;
+    grid-template-columns: 1fr;
+  }
+
+  .archive-low-score-row,
+  .archive-score-summary,
+  .archive-band-row {
     grid-template-columns: 1fr;
   }
 

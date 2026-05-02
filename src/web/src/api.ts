@@ -209,6 +209,50 @@ export type DistributionBucket = {
   ratio: number;
 };
 
+export type ArchivePromptScoreSummary = {
+  id: string;
+  tool: string;
+  project: string;
+  received_at: string;
+  quality_score: number;
+  quality_score_band: PromptQualityScoreBand;
+  quality_gaps: string[];
+  tags: string[];
+  is_sensitive: boolean;
+};
+
+export type ArchiveScoreReport = {
+  generated_at: string;
+  archive_score: {
+    average: number;
+    max: 100;
+    band: PromptQualityScoreBand;
+    scored_prompts: number;
+    total_prompts: number;
+  };
+  distribution: Record<PromptQualityScoreBand, number>;
+  top_gaps: Array<{
+    label: string;
+    count: number;
+    rate: number;
+  }>;
+  low_score_prompts: ArchivePromptScoreSummary[];
+  filters: {
+    tool?: string;
+    project?: string;
+    received_from?: string;
+    received_to?: string;
+    max_prompts: number;
+  };
+  has_more: boolean;
+  privacy: {
+    local_only: true;
+    external_calls: false;
+    returns_prompt_bodies: false;
+    returns_raw_paths: false;
+  };
+};
+
 export type SettingsResponse = {
   data_dir: string;
   excluded_project_roots: string[];
@@ -365,6 +409,15 @@ export async function getQualityDashboard(): Promise<QualityDashboard> {
     credentials: "same-origin",
   });
   const body = (await response.json()) as { data: QualityDashboard };
+  return body.data;
+}
+
+export async function getArchiveScoreReport(): Promise<ArchiveScoreReport> {
+  await ensureSession();
+  const response = await fetch("/api/v1/score?limit=200&low_score_limit=8", {
+    credentials: "same-origin",
+  });
+  const body = (await response.json()) as { data: ArchiveScoreReport };
   return body.data;
 }
 

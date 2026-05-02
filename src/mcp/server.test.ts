@@ -1,9 +1,12 @@
+import { randomUUID } from "node:crypto";
+import { tmpdir } from "node:os";
+import { join } from "node:path";
 import { describe, expect, it } from "vitest";
 
 import { handleMcpMessage } from "./server.js";
 
 describe("MCP stdio server", () => {
-  it("declares score_prompt through tools/list", () => {
+  it("declares prompt scoring tools through tools/list", () => {
     const response = handleMcpMessage({
       jsonrpc: "2.0",
       id: 1,
@@ -18,7 +21,43 @@ describe("MCP stdio server", () => {
           expect.objectContaining({
             name: "score_prompt",
           }),
+          expect.objectContaining({
+            name: "score_prompt_archive",
+          }),
         ],
+      },
+    });
+  });
+
+  it("returns text MCP content for score_prompt_archive calls", () => {
+    const response = handleMcpMessage(
+      {
+        jsonrpc: "2.0",
+        id: "archive-score-1",
+        method: "tools/call",
+        params: {
+          name: "score_prompt_archive",
+          arguments: {
+            max_prompts: 100,
+          },
+        },
+      },
+      {
+        dataDir: join(tmpdir(), `prompt-memory-missing-${randomUUID()}`),
+      },
+    );
+
+    expect(response).toMatchObject({
+      jsonrpc: "2.0",
+      id: "archive-score-1",
+      result: {
+        content: [
+          {
+            type: "text",
+            text: expect.stringContaining('"error_code"'),
+          },
+        ],
+        isError: true,
       },
     });
   });

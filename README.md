@@ -6,7 +6,7 @@ AI coding prompt memory and improvement workspace, local-first.
 
 `prompt-memory` is a developer tool that safely records prompts you enter into AI coding tools such as Claude Code and Codex, helps you find them again, analyzes weak prompting patterns, and helps you write better follow-up requests.
 
-It collects supported tool prompts locally, redacts sensitive values before storage, writes Markdown files, indexes them in SQLite, and serves a local web UI for search, review, analysis, deletion, and copy-based prompt improvement.
+It collects supported tool prompts locally, redacts sensitive values before storage, writes Markdown files, indexes them in SQLite, and serves a local web UI for search, review, archive scoring, analysis, deletion, and copy-based prompt improvement.
 
 This project is not affiliated with, endorsed by, or sponsored by Anthropic, OpenAI, or any other AI tool provider. Product names such as Claude Code and Codex are used only to describe compatibility.
 
@@ -18,7 +18,7 @@ This repository is pre-release software.
 - Codex support: beta adapter
 - Local rule-based analysis preview: implemented
 - Prompt Quality Score: implemented as a local deterministic `0-100` rubric
-- MCP prompt scoring tool: implemented as a local stdio server
+- MCP prompt scoring tools: implemented as a local stdio server
 - Copy-based Prompt Coach: implemented
 - Transcript import: CLI only
 - Anonymized export: web UI and CLI preview/job flow
@@ -310,6 +310,7 @@ The Claude Code plugin provides slash commands:
 ```text
 /prompt-memory:setup
 /prompt-memory:status
+/prompt-memory:score
 /prompt-memory:open
 ```
 
@@ -418,6 +419,13 @@ Generate a copy-based Prompt Coach draft:
 pnpm prompt-memory improve --text "make this request clearer" --json
 ```
 
+Score accumulated prompt habits without returning prompt bodies:
+
+```sh
+pnpm prompt-memory score --json
+pnpm prompt-memory score --tool codex --json
+```
+
 ## Local Analysis Preview
 
 Prompt detail views include a local rule-based analysis preview. It summarizes whether a prompt includes clear targets, context, constraints, output format, and verification criteria. Each prompt also receives a deterministic `0-100` Prompt Quality Score with a checklist-based breakdown.
@@ -433,14 +441,17 @@ Codex, or any MCP client through a stdio MCP server:
 prompt-memory mcp
 ```
 
-The MCP server exposes one tool:
+The MCP server exposes two tools:
 
 - `score_prompt`: score either direct prompt text, a stored `prompt_id`, or the
   latest stored prompt.
+- `score_prompt_archive`: score accumulated prompt habits across recent stored
+  prompts and return aggregate score, recurring gaps, and low-score prompt ids.
 
-The tool returns the score, band, checklist breakdown, warnings, and improvement
-hints. It does not store direct prompt text, does not call external LLMs, and
-does not return prompt bodies.
+The tools return score metadata, checklist breakdowns, warnings, recurring gaps,
+and improvement hints. They do not store direct prompt text, do not call
+external LLMs, and do not return prompt bodies. The archive scoring tool also
+avoids raw absolute paths.
 
 Example Claude Code registration:
 

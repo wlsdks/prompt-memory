@@ -8,7 +8,7 @@ import { normalizeClaudeCodePayload } from "../adapters/claude-code.js";
 import { initializePromptMemory } from "../config/config.js";
 import { redactPrompt } from "../redaction/redact.js";
 import { createSqlitePromptStorage } from "../storage/sqlite.js";
-import { scorePromptTool } from "./score-tool.js";
+import { scorePromptArchiveTool, scorePromptTool } from "./score-tool.js";
 
 const tempDirs: string[] = [];
 
@@ -74,6 +74,49 @@ describe("scorePromptTool", () => {
     expect(serialized).not.toContain("Make this better");
   });
 
+  it("scores the stored prompt archive without returning bodies or raw paths", async () => {
+    const dataDir = createTempDir();
+    const init = initializePromptMemory({ dataDir });
+    const storage = createSqlitePromptStorage({
+      dataDir,
+      hmacSecret: init.hookAuth.web_session_secret,
+      now: nextDate(["2026-05-02T10:00:00.000Z", "2026-05-02T10:01:00.000Z"]),
+    });
+    const weak = await storeClaudePrompt(
+      storage,
+      "Make this better",
+      "2026-05-02T09:59:00.000Z",
+    );
+    await storeClaudePrompt(
+      storage,
+      "Review src/mcp/score-tool.ts, keep changes scoped to MCP scoring, run pnpm vitest run src/mcp/score-tool.test.ts, and return risk notes.",
+      "2026-05-02T10:00:00.000Z",
+    );
+    storage.close();
+
+    const result = scorePromptArchiveTool(
+      { max_prompts: 100, low_score_limit: 1 },
+      { dataDir },
+    );
+    const serialized = JSON.stringify(result);
+
+    expect(result.archive_score.scored_prompts).toBe(2);
+    expect(result.low_score_prompts).toEqual([
+      expect.objectContaining({
+        id: weak.id,
+        project: "project",
+      }),
+    ]);
+    expect(result.privacy).toMatchObject({
+      local_only: true,
+      external_calls: false,
+      returns_prompt_bodies: false,
+      returns_raw_paths: false,
+    });
+    expect(serialized).not.toContain("Make this better");
+    expect(serialized).not.toContain("/Users/example");
+  });
+
   it("returns an actionable tool error for ambiguous input", () => {
     const result = scorePromptTool({});
 
@@ -88,4 +131,33 @@ function createTempDir(): string {
   mkdirSync(dir, { recursive: true });
   tempDirs.push(dir);
   return dir;
+}
+
+async function storeClaudePrompt(
+  storage: ReturnType<typeof createSqlitePromptStorage>,
+  prompt: string,
+  receivedAt: string,
+) {
+  const event = normalizeClaudeCodePayload(
+    {
+      session_id: `session-${receivedAt}`,
+      transcript_path: "/Users/example/.claude/session.jsonl",
+      cwd: "/Users/example/project",
+      permission_mode: "default",
+      hook_event_name: "UserPromptSubmit",
+      prompt,
+    },
+    new Date(receivedAt),
+  );
+
+  return storage.storePrompt({
+    event,
+    redaction: redactPrompt(event.prompt, "mask"),
+  });
+}
+
+function nextDate(values: string[]): () => Date {
+  let index = 0;
+
+  return () => new Date(values[index++] ?? values.at(-1)!);
 }

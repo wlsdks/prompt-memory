@@ -1,5 +1,24 @@
 # 작업 계획
 
+## 2026-05-02 Archive Score Review / MCP Batch Scoring
+
+- [x] 누적 프롬프트 archive score 공통 엔진과 privacy-safe report 구현
+- [x] CLI `prompt-memory score` 추가 및 JSON/text 출력 검증
+- [x] MCP `score_prompt_archive` 도구 추가 및 Claude/Codex 호출 문서화
+- [x] Web API와 Dashboard에서 archive score review 제공
+- [x] Claude Code slash command와 Codex plugin skill에 archive score 흐름 추가
+- [x] README/기술 문서/플러그인 문서 갱신
+- [x] 자동 테스트, browser E2E, release smoke, pack dry-run 검증
+- [ ] 커밋 및 브랜치 푸시
+
+### 첫 구현 범위
+
+- 원문 프롬프트 전체를 MCP 응답으로 반환하지 않는다.
+- 기본 점수는 로컬 deterministic Prompt Quality Score를 사용한다.
+- Claude Code/Codex는 `/prompt-memory:score` 또는 MCP 요청 시 report를 해석하고 개선 방향을 제안한다.
+- CLI와 Web도 같은 archive score report를 사용한다.
+- 외부 LLM judge나 자동 원문 재입력은 이번 단위에서 제외한다.
+
 ## 2026-05-02 Full Open Source Readiness And Agent Rules Audit
 
 - [x] 저장소 공개 문서/라이선스/커뮤니티 파일 완비 여부 점검

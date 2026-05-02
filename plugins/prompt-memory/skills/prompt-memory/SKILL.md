@@ -58,9 +58,23 @@ Run the local MCP score server when Codex needs to score a prompt on request:
 prompt-memory mcp
 ```
 
-The MCP tool is `score_prompt`. Use it for prompt quality scoring only. It
-returns a local `0-100` score and checklist breakdown without storing direct
-prompt text or calling external LLMs.
+The MCP tools are:
+
+- `score_prompt` for one current, pasted, stored, or latest prompt
+- `score_prompt_archive` for accumulated prompt habit review across the local
+  archive
+
+Use `score_prompt_archive` when the user asks to score all recent prompts, find
+low scoring prompts, or summarize recurring prompt quality gaps. If MCP is not
+configured, fall back to:
+
+```sh
+prompt-memory score --json
+```
+
+Both MCP tools return local score metadata without storing direct prompt text or
+calling external LLMs. The archive tool does not return prompt bodies or raw
+paths.
 
 ## Safety Rules
 

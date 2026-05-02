@@ -68,6 +68,7 @@ The plugin exposes:
 
 - `/prompt-memory:setup` to preview and run local setup
 - `/prompt-memory:status` to run doctor and statusLine checks
+- `/prompt-memory:score` to score accumulated prompt habits
 - `/prompt-memory:open` to open the local archive
 
 Prompt capture still uses Claude Code hook configuration in settings files. The
@@ -107,15 +108,24 @@ uses the exact CLI path from the current installation.
 prompt-memory mcp
 ```
 
-This server exposes one model-controlled tool:
+This server exposes two model-controlled tools:
 
 - `score_prompt`
+- `score_prompt_archive`
 
-The tool scores direct prompt text, a stored prompt id, or the latest stored
-prompt with the same local deterministic `0-100` Prompt Quality Score used by
-the web UI. It returns score metadata, checklist breakdown, warnings, and
-improvement hints. It does not store direct prompt text, call external LLMs, or
-return prompt bodies.
+`score_prompt` scores direct prompt text, a stored prompt id, or the latest
+stored prompt with the same local deterministic `0-100` Prompt Quality Score
+used by the web UI. `score_prompt_archive` scores accumulated prompt habits
+across recent stored prompts and returns aggregate score, recurring gaps, and
+low-score prompt ids.
+
+Both tools return score metadata without calling external LLMs or returning
+prompt bodies. The archive tool also avoids raw absolute paths. If MCP is not
+configured, users can run the same archive review through:
+
+```sh
+prompt-memory score --json
+```
 
 Claude Code registration:
 

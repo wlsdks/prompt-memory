@@ -1,6 +1,10 @@
 import type { FastifyInstance } from "fastify";
 import { z } from "zod";
 
+import {
+  createArchiveScoreReport,
+  type ArchiveScoreReport,
+} from "../../analysis/archive-score.js";
 import type {
   PromptDetail,
   PromptQualityDashboard,
@@ -35,6 +39,15 @@ const ListQuerySchema = z.object({
       "verification_criteria",
     ])
     .optional(),
+  from: z.string().trim().min(1).optional(),
+  to: z.string().trim().min(1).optional(),
+});
+
+const ArchiveScoreQuerySchema = z.object({
+  limit: z.coerce.number().int().positive().max(1000).optional(),
+  low_score_limit: z.coerce.number().int().positive().max(50).optional(),
+  tool: z.string().trim().min(1).max(80).optional(),
+  cwd_prefix: z.string().trim().min(1).max(1000).optional(),
   from: z.string().trim().min(1).optional(),
   to: z.string().trim().min(1).optional(),
 });
@@ -142,6 +155,25 @@ export function registerPromptRoutes(
     const storage = requireReadStorage(options.storage, request.url);
 
     return { data: toBrowserQualityDashboard(storage.getQualityDashboard()) };
+  });
+
+  server.get("/api/v1/score", async (request) => {
+    requireAppAccess(request, options.auth);
+    const storage = requireReadStorage(options.storage, request.url);
+    const query = ArchiveScoreQuerySchema.parse(request.query);
+
+    return {
+      data: toBrowserArchiveScoreReport(
+        createArchiveScoreReport(storage, {
+          maxPrompts: query.limit,
+          lowScoreLimit: query.low_score_limit,
+          tool: query.tool,
+          cwdPrefix: query.cwd_prefix,
+          receivedFrom: query.from,
+          receivedTo: query.to,
+        }),
+      ),
+    };
   });
 
   server.post("/api/v1/prompts/:id/events", async (request) => {
@@ -261,6 +293,24 @@ function toBrowserQualityDashboard(
         reason: maskBrowserPathText(suggestion.reason),
       }),
     ),
+  };
+}
+
+function toBrowserArchiveScoreReport(
+  report: ArchiveScoreReport,
+): ArchiveScoreReport {
+  return {
+    ...report,
+    low_score_prompts: report.low_score_prompts.map((prompt) => ({
+      ...prompt,
+      project: browserProjectLabel(prompt.project),
+    })),
+    filters: {
+      ...report.filters,
+      project: report.filters.project
+        ? browserProjectLabel(report.filters.project)
+        : undefined,
+    },
   };
 }
 

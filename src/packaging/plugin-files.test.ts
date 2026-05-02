@@ -27,11 +27,12 @@ describe("plugin packaging files", () => {
     expect(manifest.commands).toEqual([
       "./commands/setup.md",
       "./commands/status.md",
+      "./commands/score.md",
       "./commands/open.md",
     ]);
   });
 
-  it("ships Claude Code command docs for setup, status, and open", () => {
+  it("ships Claude Code command docs for setup, status, score, and open", () => {
     const setup = readFileSync(
       join(process.cwd(), "commands/setup.md"),
       "utf8",
@@ -40,12 +41,18 @@ describe("plugin packaging files", () => {
       join(process.cwd(), "commands/status.md"),
       "utf8",
     );
+    const score = readFileSync(
+      join(process.cwd(), "commands/score.md"),
+      "utf8",
+    );
     const open = readFileSync(join(process.cwd(), "commands/open.md"), "utf8");
 
     expect(setup).toContain("prompt-memory setup --dry-run");
     expect(setup).toContain("prompt-memory install-statusline claude-code");
     expect(status).toContain("prompt-memory doctor claude-code");
     expect(status).toContain("prompt-memory statusline claude-code");
+    expect(score).toContain("prompt-memory score --json");
+    expect(score).toContain("prompt-memory:score_prompt_archive");
     expect(open).toContain("http://127.0.0.1:17373");
   });
 

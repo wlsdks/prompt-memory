@@ -1,4 +1,8 @@
 import { analyzePrompt } from "../analysis/analyze.js";
+import {
+  createArchiveScoreReport,
+  type ArchiveScoreReport,
+} from "../analysis/archive-score.js";
 import { loadHookAuth, loadPromptMemoryConfig } from "../config/config.js";
 import type {
   PromptAnalysisPreview,
@@ -16,6 +20,15 @@ export type ScorePromptToolArguments = {
 export type ScorePromptToolOptions = {
   dataDir?: string;
   now?: Date;
+};
+
+export type ScorePromptArchiveToolArguments = {
+  max_prompts?: number;
+  low_score_limit?: number;
+  tool?: string;
+  cwd_prefix?: string;
+  received_from?: string;
+  received_to?: string;
 };
 
 export type ScorePromptToolResult =
@@ -46,6 +59,14 @@ export type ScorePromptToolResult =
       message: string;
     };
 
+export type ScorePromptArchiveToolResult =
+  | ArchiveScoreReport
+  | {
+      is_error: true;
+      error_code: "storage_unavailable";
+      message: string;
+    };
+
 export const SCORE_PROMPT_TOOL_DEFINITION = {
   name: "score_prompt",
   description:
@@ -72,6 +93,52 @@ export const SCORE_PROMPT_TOOL_DEFINITION = {
         type: "boolean",
         description:
           "Whether to include concise improvement suggestions in the result. Defaults to true.",
+      },
+    },
+    additionalProperties: false,
+  },
+} as const;
+
+export const SCORE_PROMPT_ARCHIVE_TOOL_DEFINITION = {
+  name: "score_prompt_archive",
+  description:
+    "Score the local prompt-memory archive across many stored Claude Code or Codex prompts. Use this when the user asks to evaluate accumulated prompt habits, score all recent prompts, find low scoring prompts, or summarize recurring prompt quality gaps. The result is a local-only aggregate report and low-score metadata; it does not return prompt bodies, raw paths, or call external LLMs.",
+  inputSchema: {
+    type: "object",
+    properties: {
+      max_prompts: {
+        type: "integer",
+        minimum: 1,
+        maximum: 1000,
+        description:
+          "Maximum number of recent stored prompts to score. Defaults to 200.",
+      },
+      low_score_limit: {
+        type: "integer",
+        minimum: 1,
+        maximum: 50,
+        description:
+          "Maximum number of lowest scoring prompt summaries to return. Defaults to 10.",
+      },
+      tool: {
+        type: "string",
+        description:
+          "Optional exact tool filter, for example claude-code or codex.",
+      },
+      cwd_prefix: {
+        type: "string",
+        description:
+          "Optional project/path prefix filter. The response returns only a project label, not a raw path.",
+      },
+      received_from: {
+        type: "string",
+        description:
+          "Optional lower received_at bound. Date-only or ISO timestamp.",
+      },
+      received_to: {
+        type: "string",
+        description:
+          "Optional upper received_at bound. Date-only or ISO timestamp.",
       },
     },
     additionalProperties: false,
@@ -110,6 +177,43 @@ export function scorePromptTool(
   }
 
   return withStoredPrompt(args, options);
+}
+
+export function scorePromptArchiveTool(
+  args: ScorePromptArchiveToolArguments,
+  options: ScorePromptToolOptions = {},
+): ScorePromptArchiveToolResult {
+  try {
+    const config = loadPromptMemoryConfig(options.dataDir);
+    const auth = loadHookAuth(options.dataDir);
+    const storage = createSqlitePromptStorage({
+      dataDir: config.data_dir,
+      hmacSecret: auth.web_session_secret,
+    });
+
+    try {
+      return createArchiveScoreReport(
+        storage,
+        {
+          maxPrompts: args.max_prompts,
+          lowScoreLimit: args.low_score_limit,
+          tool: args.tool,
+          cwdPrefix: args.cwd_prefix,
+          receivedFrom: args.received_from,
+          receivedTo: args.received_to,
+        },
+        options.now,
+      );
+    } finally {
+      storage.close();
+    }
+  } catch (error) {
+    return {
+      is_error: true,
+      error_code: "storage_unavailable",
+      message: `Local prompt-memory archive is not available. Run \`prompt-memory init\` first or pass --data-dir. ${errorMessage(error)}`,
+    };
+  }
 }
 
 function withStoredPrompt(

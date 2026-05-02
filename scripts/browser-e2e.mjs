@@ -126,6 +126,17 @@ try {
     "Average prompt score",
     "Dashboard should show average prompt score.",
   );
+  await assertText(
+    page,
+    "Archive score review",
+    "Dashboard should show archive score review.",
+  );
+  await page.getByRole("button", { name: "Evaluate archive" }).click();
+  await assertText(
+    page,
+    "Lowest scoring prompts",
+    "Dashboard should show lowest scoring prompts.",
+  );
   await assertBrowserSafe(page, "dashboard");
 
   await page.getByRole("button", { name: "Projects", exact: true }).click();
