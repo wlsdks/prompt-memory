@@ -1008,3 +1008,27 @@
 - 제품 효용은 “좋았던 프롬프트를 다시 찾기”를 dashboard뿐 아니라 목록 필터와 프로젝트별 큐에서도 일관되게 지원하는 데 있다.
 - URL에는 `focus=reused`와 선택적 `cwd`만 들어가며 raw prompt, snippet, secret은 포함하지 않는다.
 - Playwright MCP로 `?focus=reused` 목록, 프로젝트 프로필 `재사용됨` drilldown, `?focus=reused&cwd=/Users/example/project-a` active filter, mobile 390px 렌더링, 콘솔 경고/오류 0개를 확인했다.
+
+## P30 Efficiency Review / Phase 2 PRD
+
+- [x] 현재 구현과 기존 PRD의 Phase 2 항목 대조
+- [x] 효율성 평가 문서 작성
+  - [x] 사용 흐름 효율성
+  - [x] 분석/재사용 루프 효율성
+  - [x] 운영/복구 효율성
+  - [x] 구현 복잡도와 위험 대비 효용
+- [x] 2차 PRD 작성
+  - [x] 이미 구현된 Phase 2성 기능을 기준선으로 명시
+  - [x] 다음 개발 후보를 문제/범위/수용 기준으로 분해
+  - [x] 외부 LLM 분석, transcript import, project control, export 경계를 명확히 구분
+- [x] 문서 링크와 package 포함 범위 검토
+- [x] 검증 명령 실행
+- [x] 커밋 및 `git push origin main`
+
+### P30 설계 메모
+
+- 효율성 평가는 이미 구현된 Phase 2성 기능을 기준선으로 보고, 다음 병목을 project control, transcript import, prompt improvement, anonymized export, external LLM opt-in 순서로 정리했다.
+- 2차 PRD는 비즈니스 KPI가 아니라 개발용 요구사항으로 유지했다.
+- 첫 구현 후보는 Project Control Plane으로 잡았다. import/export/external analysis가 모두 프로젝트별 policy를 필요로 하므로, 이 기반을 먼저 만드는 것이 후속 기능의 위험을 줄인다.
+- README 문서 링크와 `package.json` package files에 `docs/PRD_PHASE2.md`, `docs/EFFICIENCY_REVIEW.md`를 추가했다.
+- 검증 명령: `pnpm format`, `pnpm test`, `pnpm lint`, `pnpm build`, `pnpm pack:dry-run`, `git diff --check` 통과. Node 20.20.0에서 실행되어 `engines.node >=22 <25` 경고는 계속 발생한다.

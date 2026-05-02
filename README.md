@@ -469,6 +469,8 @@ The dry-run package should include built CLI files, built web assets, README, an
 ## Documentation
 
 - [PRD](docs/PRD.md)
+- [Phase 2 PRD](docs/PRD_PHASE2.md)
+- [Efficiency review](docs/EFFICIENCY_REVIEW.md)
 - [Tech spec](docs/TECH_SPEC.md)
 - [Implementation plan](docs/IMPLEMENTATION_PLAN.md)
 - [Adapter guide](docs/ADAPTERS.md)
