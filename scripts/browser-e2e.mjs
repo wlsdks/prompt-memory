@@ -281,6 +281,11 @@ try {
   );
   await assertTextAny(
     page,
+    ["output schema", "출력 스키마"],
+    "MCP page should explain the MCP output schema contract.",
+  );
+  await assertTextAny(
+    page,
     ["read-only", "읽기 전용"],
     "MCP page should expose read-only tool behavior.",
   );

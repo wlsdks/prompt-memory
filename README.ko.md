@@ -367,8 +367,9 @@ MCP server는 다섯 개의 tool을 제공합니다.
 - `review_project_instructions`: 최신 또는 선택한 프로젝트의 `AGENTS.md` / `CLAUDE.md` 규칙 파일을 리뷰하고 점수, checklist 상태, 개선 힌트를 반환합니다.
 
 모든 tool은 read-only, idempotent, local-only로 선언되며 구조화 JSON
-metadata와 text JSON fallback을 함께 반환합니다. archive 기반 tool은 저장된
-prompt 본문, raw absolute path, secret, 외부 LLM 결과를 반환하지 않습니다.
+metadata에 대한 MCP `outputSchema`와 text JSON fallback을 함께 제공합니다.
+archive 기반 tool은 저장된 prompt 본문, raw absolute path, secret, 외부 LLM
+결과를 반환하지 않습니다.
 
 Agent에게 이렇게 요청할 수 있습니다.
 

@@ -60,10 +60,12 @@ prompt-memory mcp
 
 The MCP tools are:
 
+- `get_prompt_memory_status` for local setup, capture readiness, and next calls
 - `score_prompt` for one current, pasted, stored, or latest prompt
 - `improve_prompt` for an approval-ready draft the user can copy and resubmit
 - `score_prompt_archive` for accumulated prompt habit review across the local
   archive
+- `review_project_instructions` for AGENTS.md / CLAUDE.md rule quality review
 
 Use `score_prompt_archive` when the user asks to score all recent prompts, find
 low scoring prompts, or summarize recurring prompt quality gaps. If MCP is not
@@ -73,9 +75,9 @@ configured, fall back to:
 prompt-memory score --json
 ```
 
-Both MCP tools return local score metadata without storing direct prompt text or
-calling external LLMs. The archive tool does not return prompt bodies or raw
-paths.
+MCP tools return local structured metadata with declared output schemas without
+storing direct prompt text or calling external LLMs. Archive-backed tools do not
+return prompt bodies or raw paths.
 
 When the user asks to review the prompt they just typed, call `score_prompt`
 with `latest=true` if hook capture is enabled. If they paste a prompt explicitly,

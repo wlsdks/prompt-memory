@@ -152,14 +152,16 @@ Hard delete removes:
    rescan `AGENTS.md` / `CLAUDE.md`, and returns checklist metadata without
    instruction file bodies or raw paths.
 11. Every MCP tool is declared as read-only, idempotent, and local-only through
-    tool annotations, and `tools/call` returns both serialized JSON text and
-    `structuredContent` for clients that can consume structured tool results.
+    tool annotations, declares an MCP `outputSchema`, and `tools/call` returns
+    both serialized JSON text and `structuredContent` for clients that can
+    consume structured tool results.
 
 Important rules:
 
 - stdout is reserved for newline-delimited JSON-RPC MCP messages
 - no external LLM calls are made
 - MCP tool definitions include read-only/local-only risk hints
+- MCP tool definitions include `outputSchema` for structured result fields
 - MCP tool responses include `structuredContent` plus a JSON text content block
 - direct MCP prompt input is not written to Markdown or SQLite
 - improvement MCP results are copy-based drafts, are never auto-submitted, and

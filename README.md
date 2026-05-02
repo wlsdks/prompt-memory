@@ -466,9 +466,10 @@ The MCP server exposes five tools:
   instruction files for the latest or selected project and return score,
   checklist status, and improvement hints.
 
-All tools are read-only, idempotent, local-only, and return structured JSON
-metadata plus a text JSON fallback. Archive-backed tools do not return stored
-prompt bodies, raw absolute paths, secrets, or external LLM results.
+All tools are read-only, idempotent, local-only, and declare an MCP
+`outputSchema` for their structured JSON metadata plus a text JSON fallback.
+Archive-backed tools do not return stored prompt bodies, raw absolute paths,
+secrets, or external LLM results.
 
 Practical agent prompts:
 

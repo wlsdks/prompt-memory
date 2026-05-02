@@ -134,8 +134,9 @@ absolute paths, and the instruction review tool avoids file bodies and raw
 absolute paths. Tool definitions are marked read-only, idempotent, and
 local-only through MCP annotations. Each `tools/call` response includes
 `structuredContent` plus a JSON text block for clients that still expect text
-content. If MCP is not configured, users can run the same archive review
-through:
+content, and each tool definition declares an MCP `outputSchema` for the
+structured result. If MCP is not configured, users can run the same archive
+review through:
 
 ```sh
 prompt-memory score --json

@@ -62,6 +62,68 @@ describe("MCP stdio server", () => {
     }
   });
 
+  it("declares output schemas for structured MCP results", () => {
+    const response = handleMcpMessage({
+      jsonrpc: "2.0",
+      id: "tool-output-contract",
+      method: "tools/list",
+    });
+
+    const tools = (response?.result as { tools: Array<unknown> }).tools;
+
+    for (const tool of tools) {
+      expect(tool).toEqual(
+        expect.objectContaining({
+          outputSchema: expect.objectContaining({
+            type: "object",
+            properties: expect.any(Object),
+          }),
+        }),
+      );
+    }
+
+    expect(tools).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({
+          name: "improve_prompt",
+          outputSchema: expect.objectContaining({
+            properties: expect.objectContaining({
+              improved_prompt: expect.any(Object),
+              requires_user_approval: expect.any(Object),
+              privacy: expect.any(Object),
+            }),
+            oneOf: expect.arrayContaining([
+              expect.objectContaining({
+                required: expect.arrayContaining([
+                  "improved_prompt",
+                  "requires_user_approval",
+                  "privacy",
+                ]),
+              }),
+              expect.objectContaining({
+                required: expect.arrayContaining([
+                  "is_error",
+                  "error_code",
+                  "message",
+                ]),
+              }),
+            ]),
+          }),
+        }),
+        expect.objectContaining({
+          name: "score_prompt_archive",
+          outputSchema: expect.objectContaining({
+            properties: expect.objectContaining({
+              archive_score: expect.any(Object),
+              top_gaps: expect.any(Object),
+              privacy: expect.any(Object),
+            }),
+          }),
+        }),
+      ]),
+    );
+  });
+
   it("returns text MCP content for score_prompt_archive calls", () => {
     const response = handleMcpMessage(
       {

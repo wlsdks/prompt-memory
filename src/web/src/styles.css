@@ -100,7 +100,7 @@ pre {
 
 .app-shell {
   display: grid;
-  grid-template-columns: 288px minmax(0, 1fr);
+  grid-template-columns: 316px minmax(0, 1fr);
   min-height: 100vh;
 }
 
@@ -138,28 +138,28 @@ pre {
 }
 
 .brand {
-  font-size: 22px;
+  font-size: 24px;
   font-weight: 760;
   letter-spacing: 0;
-  margin-bottom: 34px;
+  margin-bottom: 38px;
 }
 
 .brand svg {
-  height: 26px;
-  width: 26px;
+  height: 28px;
+  width: 28px;
 }
 
 .nav-button {
   width: 100%;
-  height: 52px;
-  border: 0;
+  min-height: 58px;
+  border: 1px solid transparent;
   border-radius: 12px;
   color: var(--pm-text-muted);
   background: transparent;
-  font-size: 16px;
+  font-size: 17px;
   font-weight: 720;
-  margin-bottom: 6px;
-  padding: 0 18px;
+  margin-bottom: 8px;
+  padding: 0 20px;
   text-align: left;
 }
 
@@ -176,8 +176,8 @@ pre {
 
 .nav-button svg {
   flex: 0 0 auto;
-  height: 21px;
-  width: 21px;
+  height: 23px;
+  width: 23px;
 }
 
 .capture-status {
@@ -2431,7 +2431,7 @@ dd {
 .mcp-flow-steps {
   display: grid;
   gap: 10px;
-  grid-template-columns: repeat(4, minmax(0, 1fr));
+  grid-template-columns: repeat(5, minmax(0, 1fr));
 }
 
 .mcp-flow-step {
@@ -2535,10 +2535,10 @@ dd {
 }
 
 .mcp-assurance {
-  background: var(--color-canvas);
-  border: 1px solid var(--color-border-soft);
+  background: rgba(130, 143, 255, 0.1);
+  border: 1px solid rgba(130, 143, 255, 0.24);
   border-radius: 999px;
-  color: var(--pm-text);
+  color: var(--color-text-secondary);
   display: inline-flex;
   font-size: 11px;
   font-weight: 700;

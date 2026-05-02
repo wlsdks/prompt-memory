@@ -1,5 +1,19 @@
 # 작업 계획
 
+## 2026-05-03 MCP Output Schema Contract Polish
+
+- [x] MCP `structuredContent`와 tool definition 사이의 남은 contract gap 확인
+- [x] 모든 MCP tool에 `outputSchema`를 추가하고 TDD로 고정
+- [x] Web MCP catalog와 문서에 output schema 보장 문구 반영
+- [x] MCP stdio, browser E2E, release gate 검증
+- [ ] 커밋, 푸시, CI 확인
+
+### 판단 기준
+
+- `structuredContent`를 반환하는 tool은 에이전트가 예상 가능한 `outputSchema`를 함께 제공해야 한다.
+- schema는 prompt body, raw absolute path, secret 반환을 허용하지 않는 privacy contract와 맞아야 한다.
+- UI에는 “기능이 많다”보다 “Claude Code/Codex가 안전하게 호출할 수 있다”는 판단 근거가 보여야 한다.
+
 ## 2026-05-03 MCP Improve Prompt Tool
 
 - [x] MCP 기능 gap 재평가: score 이후 승인 가능한 개선안 생성 흐름 필요성 판단

@@ -157,6 +157,45 @@ const LOCAL_READ_ONLY_TOOL_ANNOTATIONS = {
   readOnlyHint: true,
 } as const;
 
+const QUALITY_BAND_SCHEMA = {
+  type: "string",
+  enum: ["excellent", "good", "needs_work", "weak"],
+} as const;
+
+const QUALITY_SCORE_SCHEMA = {
+  type: "object",
+  required: ["value", "max", "band", "breakdown"],
+  properties: {
+    value: { type: "integer", minimum: 0, maximum: 100 },
+    max: { const: 100 },
+    band: QUALITY_BAND_SCHEMA,
+    breakdown: {
+      type: "array",
+      items: {
+        type: "object",
+        required: ["key", "label", "status", "weight", "earned"],
+        properties: {
+          key: { type: "string" },
+          label: { type: "string" },
+          status: { type: "string", enum: ["good", "partial", "missing"] },
+          weight: { type: "integer", minimum: 1 },
+          earned: { type: "integer", minimum: 0 },
+        },
+      },
+    },
+  },
+} as const;
+
+const TOOL_ERROR_OUTPUT_SCHEMA = {
+  type: "object",
+  required: ["is_error", "error_code", "message"],
+  properties: {
+    is_error: { const: true },
+    error_code: { type: "string" },
+    message: { type: "string" },
+  },
+} as const;
+
 export const GET_PROMPT_MEMORY_STATUS_TOOL_DEFINITION = {
   name: "get_prompt_memory_status",
   description:
@@ -175,6 +214,55 @@ export const GET_PROMPT_MEMORY_STATUS_TOOL_DEFINITION = {
       },
     },
     additionalProperties: false,
+  },
+  outputSchema: {
+    type: "object",
+    required: [
+      "status",
+      "total_prompts",
+      "scored_prompts",
+      "sensitive_prompts",
+      "project_count",
+      "available_tools",
+      "next_actions",
+      "privacy",
+    ],
+    properties: {
+      status: { type: "string", enum: ["ready", "empty", "setup_needed"] },
+      total_prompts: { type: "integer", minimum: 0 },
+      scored_prompts: { type: "integer", minimum: 0 },
+      sensitive_prompts: { type: "integer", minimum: 0 },
+      project_count: { type: "integer", minimum: 0 },
+      latest_prompt: {
+        type: "object",
+        properties: {
+          id: { type: "string" },
+          tool: { type: "string" },
+          project: { type: "string" },
+          received_at: { type: "string" },
+          quality_score: { type: "integer", minimum: 0, maximum: 100 },
+          quality_score_band: QUALITY_BAND_SCHEMA,
+          is_sensitive: { type: "boolean" },
+        },
+      },
+      available_tools: { type: "array", items: { type: "string" } },
+      next_actions: { type: "array", items: { type: "string" } },
+      privacy: {
+        type: "object",
+        required: [
+          "local_only",
+          "external_calls",
+          "returns_prompt_bodies",
+          "returns_raw_paths",
+        ],
+        properties: {
+          local_only: { const: true },
+          external_calls: { const: false },
+          returns_prompt_bodies: { const: false },
+          returns_raw_paths: { const: false },
+        },
+      },
+    },
   },
 } as const;
 
@@ -212,6 +300,66 @@ export const SCORE_PROMPT_TOOL_DEFINITION = {
     },
     additionalProperties: false,
   },
+  outputSchema: {
+    type: "object",
+    properties: {
+      source: { type: "string", enum: ["text", "prompt_id", "latest"] },
+      prompt_id: { type: "string" },
+      quality_score: QUALITY_SCORE_SCHEMA,
+      summary: { type: "string" },
+      checklist: {
+        type: "array",
+        items: {
+          type: "object",
+          required: ["key", "label", "status", "reason", "weight", "earned"],
+          properties: {
+            key: { type: "string" },
+            label: { type: "string" },
+            status: { type: "string", enum: ["good", "partial", "missing"] },
+            reason: { type: "string" },
+            suggestion: { type: "string" },
+            weight: { type: "integer", minimum: 1 },
+            earned: { type: "integer", minimum: 0 },
+          },
+        },
+      },
+      warnings: { type: "array", items: { type: "string" } },
+      suggestions: { type: "array", items: { type: "string" } },
+      analyzer: { type: "string" },
+      privacy: {
+        type: "object",
+        required: [
+          "local_only",
+          "stores_input",
+          "external_calls",
+          "returns_prompt_body",
+        ],
+        properties: {
+          local_only: { const: true },
+          stores_input: { const: false },
+          external_calls: { const: false },
+          returns_prompt_body: { const: false },
+        },
+      },
+      is_error: TOOL_ERROR_OUTPUT_SCHEMA.properties.is_error,
+      error_code: TOOL_ERROR_OUTPUT_SCHEMA.properties.error_code,
+      message: TOOL_ERROR_OUTPUT_SCHEMA.properties.message,
+    },
+    oneOf: [
+      {
+        required: [
+          "source",
+          "quality_score",
+          "summary",
+          "checklist",
+          "warnings",
+          "analyzer",
+          "privacy",
+        ],
+      },
+      TOOL_ERROR_OUTPUT_SCHEMA,
+    ],
+  },
 } as const;
 
 export const IMPROVE_PROMPT_TOOL_DEFINITION = {
@@ -248,6 +396,58 @@ export const IMPROVE_PROMPT_TOOL_DEFINITION = {
       },
     },
     additionalProperties: false,
+  },
+  outputSchema: {
+    type: "object",
+    properties: {
+      source: { type: "string", enum: ["text", "prompt_id", "latest"] },
+      prompt_id: { type: "string" },
+      mode: { const: "copy" },
+      requires_user_approval: { const: true },
+      summary: { type: "string" },
+      improved_prompt: { type: "string" },
+      changed_sections: { type: "array", items: { type: "string" } },
+      safety_notes: { type: "array", items: { type: "string" } },
+      created_at: { type: "string" },
+      analyzer: { type: "string" },
+      next_action: { type: "string" },
+      privacy: {
+        type: "object",
+        required: [
+          "local_only",
+          "stores_input",
+          "external_calls",
+          "returns_stored_prompt_body",
+        ],
+        properties: {
+          local_only: { const: true },
+          stores_input: { const: false },
+          external_calls: { const: false },
+          returns_stored_prompt_body: { const: false },
+        },
+      },
+      is_error: TOOL_ERROR_OUTPUT_SCHEMA.properties.is_error,
+      error_code: TOOL_ERROR_OUTPUT_SCHEMA.properties.error_code,
+      message: TOOL_ERROR_OUTPUT_SCHEMA.properties.message,
+    },
+    oneOf: [
+      {
+        required: [
+          "source",
+          "mode",
+          "requires_user_approval",
+          "summary",
+          "improved_prompt",
+          "changed_sections",
+          "safety_notes",
+          "created_at",
+          "analyzer",
+          "next_action",
+          "privacy",
+        ],
+      },
+      TOOL_ERROR_OUTPUT_SCHEMA,
+    ],
   },
 } as const;
 
@@ -299,6 +499,116 @@ export const SCORE_PROMPT_ARCHIVE_TOOL_DEFINITION = {
     },
     additionalProperties: false,
   },
+  outputSchema: {
+    type: "object",
+    properties: {
+      generated_at: { type: "string" },
+      archive_score: {
+        type: "object",
+        required: ["average", "max", "band", "scored_prompts", "total_prompts"],
+        properties: {
+          average: { type: "integer", minimum: 0, maximum: 100 },
+          max: { const: 100 },
+          band: QUALITY_BAND_SCHEMA,
+          scored_prompts: { type: "integer", minimum: 0 },
+          total_prompts: { type: "integer", minimum: 0 },
+        },
+      },
+      distribution: {
+        type: "object",
+        properties: {
+          excellent: { type: "integer", minimum: 0 },
+          good: { type: "integer", minimum: 0 },
+          needs_work: { type: "integer", minimum: 0 },
+          weak: { type: "integer", minimum: 0 },
+        },
+      },
+      top_gaps: {
+        type: "array",
+        items: {
+          type: "object",
+          required: ["label", "count", "rate"],
+          properties: {
+            label: { type: "string" },
+            count: { type: "integer", minimum: 0 },
+            rate: { type: "number", minimum: 0, maximum: 1 },
+          },
+        },
+      },
+      low_score_prompts: {
+        type: "array",
+        items: {
+          type: "object",
+          required: [
+            "id",
+            "tool",
+            "project",
+            "received_at",
+            "quality_score",
+            "quality_score_band",
+            "quality_gaps",
+            "tags",
+            "is_sensitive",
+          ],
+          properties: {
+            id: { type: "string" },
+            tool: { type: "string" },
+            project: { type: "string" },
+            received_at: { type: "string" },
+            quality_score: { type: "integer", minimum: 0, maximum: 100 },
+            quality_score_band: QUALITY_BAND_SCHEMA,
+            quality_gaps: { type: "array", items: { type: "string" } },
+            tags: { type: "array", items: { type: "string" } },
+            is_sensitive: { type: "boolean" },
+          },
+        },
+      },
+      filters: {
+        type: "object",
+        properties: {
+          tool: { type: "string" },
+          project: { type: "string" },
+          received_from: { type: "string" },
+          received_to: { type: "string" },
+          max_prompts: { type: "integer", minimum: 1 },
+        },
+      },
+      has_more: { type: "boolean" },
+      privacy: {
+        type: "object",
+        required: [
+          "local_only",
+          "external_calls",
+          "returns_prompt_bodies",
+          "returns_raw_paths",
+        ],
+        properties: {
+          local_only: { const: true },
+          external_calls: { const: false },
+          returns_prompt_bodies: { const: false },
+          returns_raw_paths: { const: false },
+        },
+      },
+      is_error: TOOL_ERROR_OUTPUT_SCHEMA.properties.is_error,
+      error_code: TOOL_ERROR_OUTPUT_SCHEMA.properties.error_code,
+      message: TOOL_ERROR_OUTPUT_SCHEMA.properties.message,
+    },
+    oneOf: [
+      {
+        required: [
+          "generated_at",
+          "archive_score",
+          "distribution",
+          "top_gaps",
+          "low_score_prompts",
+          "filters",
+          "has_more",
+          "privacy",
+        ],
+      },
+      TOOL_ERROR_OUTPUT_SCHEMA,
+    ],
+  },
 } as const;
 
 export const REVIEW_PROJECT_INSTRUCTIONS_TOOL_DEFINITION = {
@@ -334,6 +644,131 @@ export const REVIEW_PROJECT_INSTRUCTIONS_TOOL_DEFINITION = {
       },
     },
     additionalProperties: false,
+  },
+  outputSchema: {
+    type: "object",
+    properties: {
+      source: { type: "string", enum: ["project_id", "latest"] },
+      project_id: { type: "string" },
+      project_label: { type: "string" },
+      generated_fresh: { type: "boolean" },
+      review: {
+        type: "object",
+        required: [
+          "generated_at",
+          "analyzer",
+          "score",
+          "files",
+          "files_found",
+          "checklist",
+          "suggestions",
+          "privacy",
+        ],
+        properties: {
+          generated_at: { type: "string" },
+          analyzer: { type: "string" },
+          score: {
+            type: "object",
+            required: ["value", "max", "band"],
+            properties: {
+              value: { type: "integer", minimum: 0, maximum: 100 },
+              max: { const: 100 },
+              band: QUALITY_BAND_SCHEMA,
+            },
+          },
+          files: {
+            type: "array",
+            items: {
+              type: "object",
+              required: [
+                "file_name",
+                "bytes",
+                "modified_at",
+                "content_hash",
+                "truncated",
+              ],
+              properties: {
+                file_name: { type: "string" },
+                bytes: { type: "integer", minimum: 0 },
+                modified_at: { type: "string" },
+                content_hash: { type: "string" },
+                truncated: { type: "boolean" },
+              },
+            },
+          },
+          files_found: { type: "integer", minimum: 0 },
+          checklist: {
+            type: "array",
+            items: {
+              type: "object",
+              properties: {
+                key: { type: "string" },
+                label: { type: "string" },
+                status: { type: "string" },
+                points: { type: "integer", minimum: 0 },
+                max_points: { type: "integer", minimum: 0 },
+                evidence: { type: "string" },
+                suggestion: { type: "string" },
+              },
+            },
+          },
+          suggestions: { type: "array", items: { type: "string" } },
+          privacy: {
+            type: "object",
+            required: [
+              "local_only",
+              "external_calls",
+              "stores_file_bodies",
+              "returns_file_bodies",
+              "returns_raw_paths",
+            ],
+            properties: {
+              local_only: { const: true },
+              external_calls: { const: false },
+              stores_file_bodies: { const: false },
+              returns_file_bodies: { const: false },
+              returns_raw_paths: { const: false },
+            },
+          },
+        },
+      },
+      suggestions: { type: "array", items: { type: "string" } },
+      next_action: { type: "string" },
+      privacy: {
+        type: "object",
+        required: [
+          "local_only",
+          "external_calls",
+          "stores_file_bodies",
+          "returns_file_bodies",
+          "returns_raw_paths",
+        ],
+        properties: {
+          local_only: { const: true },
+          external_calls: { const: false },
+          stores_file_bodies: { const: false },
+          returns_file_bodies: { const: false },
+          returns_raw_paths: { const: false },
+        },
+      },
+      is_error: TOOL_ERROR_OUTPUT_SCHEMA.properties.is_error,
+      error_code: TOOL_ERROR_OUTPUT_SCHEMA.properties.error_code,
+      message: TOOL_ERROR_OUTPUT_SCHEMA.properties.message,
+    },
+    oneOf: [
+      {
+        required: [
+          "source",
+          "project_id",
+          "project_label",
+          "generated_fresh",
+          "review",
+          "next_action",
+          "privacy",
+        ],
+      },
+      TOOL_ERROR_OUTPUT_SCHEMA,
+    ],
   },
 } as const;
 

@@ -590,6 +590,7 @@ const UI_TRANSLATIONS: Record<string, string> = {
   "read-only": "읽기 전용",
   "local-only": "로컬 전용",
   "structured JSON": "구조화 JSON",
+  "output schema": "출력 스키마",
   "The user asks if prompt-memory is working, whether prompts are being captured, or what to do next.":
     "사용자가 prompt-memory가 동작하는지, prompt가 캡처되는지, 다음에 무엇을 해야 하는지 물을 때 사용합니다.",
   "Ready/setup status, safe prompt counts, latest prompt metadata, available tools, and next actions.":

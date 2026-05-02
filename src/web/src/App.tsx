@@ -3521,7 +3521,7 @@ const MCP_TOOL_CATALOG = [
     when: "The user asks if prompt-memory is working, whether prompts are being captured, or what to do next.",
     returns:
       "Ready/setup status, safe prompt counts, latest prompt metadata, available tools, and next actions.",
-    assurances: ["read-only", "local-only", "structured JSON"],
+    assurances: ["read-only", "local-only", "structured JSON", "output schema"],
     privacy:
       "No prompt body, no raw absolute path, no external LLM call, no secret value.",
     prompt:
@@ -3534,7 +3534,7 @@ const MCP_TOOL_CATALOG = [
     when: "The user wants feedback on the current request, a pasted prompt, one stored prompt id, or the latest captured prompt.",
     returns:
       "0-100 quality score, checklist, warnings, and concise improvement suggestions.",
-    assurances: ["read-only", "local-only", "structured JSON"],
+    assurances: ["read-only", "local-only", "structured JSON", "output schema"],
     privacy:
       "Direct prompt input is analyzed locally and not stored by this MCP tool.",
     prompt:
@@ -3547,7 +3547,7 @@ const MCP_TOOL_CATALOG = [
     when: "The user wants a clearer prompt draft to approve, copy, and manually resubmit to Claude Code or Codex.",
     returns:
       "Approval-ready improved prompt draft, changed sections, safety notes, and next action.",
-    assurances: ["read-only", "local-only", "structured JSON"],
+    assurances: ["read-only", "local-only", "structured JSON", "output schema"],
     privacy:
       "No auto-submit, no external LLM call, and direct prompt input is not stored.",
     prompt:
@@ -3560,7 +3560,7 @@ const MCP_TOOL_CATALOG = [
     when: "The user wants Claude Code or Codex to review many stored prompts and identify repeated weak habits.",
     returns:
       "Aggregate archive score, distribution, recurring gaps, and low-score prompt metadata.",
-    assurances: ["read-only", "local-only", "structured JSON"],
+    assurances: ["read-only", "local-only", "structured JSON", "output schema"],
     privacy:
       "Returns metadata only; no prompt bodies and no raw absolute paths.",
     prompt:
@@ -3573,7 +3573,7 @@ const MCP_TOOL_CATALOG = [
     when: "The user asks if coding-agent rules are strong enough for a captured project.",
     returns:
       "Project instruction score, checklist status, file metadata, suggestions, and next action.",
-    assurances: ["read-only", "local-only", "structured JSON"],
+    assurances: ["read-only", "local-only", "structured JSON", "output schema"],
     privacy: "Returns no instruction file bodies and no raw absolute paths.",
     prompt:
       "Use prompt-memory review_project_instructions with latest=true and tell me whether my AGENTS.md/CLAUDE.md rules are strong enough.",
