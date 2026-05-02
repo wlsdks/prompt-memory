@@ -9,7 +9,10 @@ import type {
   PromptQualityScore,
 } from "../shared/schema.js";
 import { createSqlitePromptStorage } from "../storage/sqlite.js";
-import type { ProjectInstructionReview } from "../storage/ports.js";
+import type {
+  ProjectInstructionReview,
+  PromptSummary,
+} from "../storage/ports.js";
 
 export type ScorePromptToolArguments = {
   prompt?: string;
@@ -37,6 +40,10 @@ export type ReviewProjectInstructionsToolArguments = {
   latest?: boolean;
   analyze?: boolean;
   include_suggestions?: boolean;
+};
+
+export type GetPromptMemoryStatusToolArguments = {
+  include_latest?: boolean;
 };
 
 export type ScorePromptToolResult =
@@ -91,6 +98,48 @@ export type ReviewProjectInstructionsToolResult =
       error_code: "invalid_input" | "not_found" | "storage_unavailable";
       message: string;
     };
+
+export type GetPromptMemoryStatusToolResult = {
+  status: "ready" | "empty" | "setup_needed";
+  total_prompts: number;
+  scored_prompts: number;
+  sensitive_prompts: number;
+  project_count: number;
+  latest_prompt?: {
+    id: string;
+    tool: string;
+    project: string;
+    received_at: string;
+    quality_score: number;
+    quality_score_band: string;
+    is_sensitive: boolean;
+  };
+  available_tools: string[];
+  next_actions: string[];
+  privacy: {
+    local_only: true;
+    external_calls: false;
+    returns_prompt_bodies: false;
+    returns_raw_paths: false;
+  };
+};
+
+export const GET_PROMPT_MEMORY_STATUS_TOOL_DEFINITION = {
+  name: "get_prompt_memory_status",
+  description:
+    "Check whether the local prompt-memory archive is initialized and has captured prompts before calling scoring tools. Use this first when the user asks if prompt-memory is working, whether Claude Code/Codex prompts are being captured, or which prompt-memory MCP tool to call next. Returns local readiness, safe counts, latest prompt metadata, available tool names, and next actions. It never returns prompt bodies, raw absolute paths, secrets, or external LLM results.",
+  inputSchema: {
+    type: "object",
+    properties: {
+      include_latest: {
+        type: "boolean",
+        description:
+          "Whether to include safe metadata for the latest stored prompt. Defaults to true.",
+      },
+    },
+    additionalProperties: false,
+  },
+} as const;
 
 export const SCORE_PROMPT_TOOL_DEFINITION = {
   name: "score_prompt",
@@ -273,6 +322,74 @@ export function scorePromptArchiveTool(
   }
 }
 
+export function getPromptMemoryStatusTool(
+  args: GetPromptMemoryStatusToolArguments,
+  options: ScorePromptToolOptions = {},
+): GetPromptMemoryStatusToolResult {
+  const privacy = {
+    local_only: true,
+    external_calls: false,
+    returns_prompt_bodies: false,
+    returns_raw_paths: false,
+  } as const;
+
+  try {
+    const config = loadPromptMemoryConfig(options.dataDir);
+    const auth = loadHookAuth(options.dataDir);
+    const storage = createSqlitePromptStorage({
+      dataDir: config.data_dir,
+      hmacSecret: auth.web_session_secret,
+    });
+
+    try {
+      const dashboard = storage.getQualityDashboard();
+      const projects = storage.listProjects();
+      const latest =
+        args.include_latest === false
+          ? undefined
+          : storage.listPrompts({ limit: 1 }).items[0];
+
+      return {
+        status: dashboard.total_prompts > 0 ? "ready" : "empty",
+        total_prompts: dashboard.total_prompts,
+        scored_prompts: dashboard.quality_score.scored_prompts,
+        sensitive_prompts: dashboard.sensitive_prompts,
+        project_count: projects.items.length,
+        ...(latest ? { latest_prompt: toSafeLatestPrompt(latest) } : {}),
+        available_tools: availableMcpToolNames(),
+        next_actions:
+          dashboard.total_prompts > 0
+            ? [
+                "Use score_prompt with latest=true to evaluate the latest captured prompt.",
+                "Use score_prompt_archive to review accumulated prompt habits.",
+                "Use review_project_instructions to check AGENTS.md/CLAUDE.md quality for a captured project.",
+              ]
+            : [
+                "Capture at least one Claude Code or Codex prompt, then rerun get_prompt_memory_status.",
+                "Run prompt-memory setup if hooks are not installed yet.",
+              ],
+        privacy,
+      };
+    } finally {
+      storage.close();
+    }
+  } catch {
+    return {
+      status: "setup_needed",
+      total_prompts: 0,
+      scored_prompts: 0,
+      sensitive_prompts: 0,
+      project_count: 0,
+      available_tools: availableMcpToolNames(),
+      next_actions: [
+        "Run prompt-memory init or prompt-memory setup before using archive-backed MCP tools.",
+        "After setup, capture a Claude Code or Codex prompt and rerun get_prompt_memory_status.",
+      ],
+      privacy,
+    };
+  }
+}
+
 export function reviewProjectInstructionsTool(
   args: ReviewProjectInstructionsToolArguments,
   options: ScorePromptToolOptions = {},
@@ -435,6 +552,31 @@ function toToolResult(input: {
       returns_prompt_body: false,
     },
   };
+}
+
+function toSafeLatestPrompt(prompt: PromptSummary) {
+  return {
+    id: prompt.id,
+    tool: prompt.tool,
+    project: projectLabel(prompt.cwd),
+    received_at: prompt.received_at,
+    quality_score: prompt.quality_score,
+    quality_score_band: prompt.quality_score_band,
+    is_sensitive: prompt.is_sensitive,
+  };
+}
+
+function projectLabel(cwd: string): string {
+  return cwd.split(/[\\/]/).filter(Boolean).at(-1) ?? "project";
+}
+
+function availableMcpToolNames(): string[] {
+  return [
+    GET_PROMPT_MEMORY_STATUS_TOOL_DEFINITION.name,
+    SCORE_PROMPT_TOOL_DEFINITION.name,
+    SCORE_PROMPT_ARCHIVE_TOOL_DEFINITION.name,
+    REVIEW_PROJECT_INSTRUCTIONS_TOOL_DEFINITION.name,
+  ];
 }
 
 function toolError(

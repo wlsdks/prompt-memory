@@ -1,5 +1,19 @@
 # 작업 계획
 
+## 2026-05-03 MCP Status Preflight And Final Polish
+
+- [x] UI/UX 추가 탭 필요성 재평가
+- [x] MCP에서 prompt-memory 준비 상태를 확인하는 preflight tool 추가
+- [x] README/Plugin/Tech spec에 새 MCP tool 사용 맥락 반영
+- [x] MCP 테스트와 release/browser 검증 재실행
+- [ ] 커밋, 푸시, CI 확인
+
+### 판단 기준
+
+- 탭은 정보를 숨기기보다 탐색을 더 쉽게 만들 때만 추가한다.
+- MCP status tool은 score tool과 겹치지 않고, 에이전트가 캡처/저장/측정 준비 상태를 판단하는 데만 쓴다.
+- status tool도 prompt body, raw path, secret을 반환하지 않는다.
+
 ## 2026-05-03 Product Polish: Charts, MCP Tools, UX Review
 
 - [x] 현재 기능 표면이 실제 사용 가치와 맞는지 재점검

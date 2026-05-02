@@ -19,6 +19,9 @@ describe("MCP stdio server", () => {
       result: {
         tools: [
           expect.objectContaining({
+            name: "get_prompt_memory_status",
+          }),
+          expect.objectContaining({
             name: "score_prompt",
           }),
           expect.objectContaining({
@@ -123,6 +126,37 @@ describe("MCP stdio server", () => {
           },
         ],
         isError: true,
+      },
+    });
+  });
+
+  it("returns text MCP content for get_prompt_memory_status calls", () => {
+    const response = handleMcpMessage(
+      {
+        jsonrpc: "2.0",
+        id: "status-1",
+        method: "tools/call",
+        params: {
+          name: "get_prompt_memory_status",
+          arguments: {},
+        },
+      },
+      {
+        dataDir: join(tmpdir(), `prompt-memory-missing-${randomUUID()}`),
+      },
+    );
+
+    expect(response).toMatchObject({
+      jsonrpc: "2.0",
+      id: "status-1",
+      result: {
+        content: [
+          {
+            type: "text",
+            text: expect.stringContaining('"setup_needed"'),
+          },
+        ],
+        isError: false,
       },
     });
   });

@@ -9,6 +9,7 @@ import { initializePromptMemory } from "../config/config.js";
 import { redactPrompt } from "../redaction/redact.js";
 import { createSqlitePromptStorage } from "../storage/sqlite.js";
 import {
+  getPromptMemoryStatusTool,
   reviewProjectInstructionsTool,
   scorePromptArchiveTool,
   scorePromptTool,
@@ -188,6 +189,55 @@ describe("reviewProjectInstructionsTool", () => {
     expect(result.is_error).toBe(true);
     expect(result.error_code).toBe("not_found");
     expect(result.message).toContain("No stored project");
+  });
+});
+
+describe("getPromptMemoryStatusTool", () => {
+  it("returns local archive readiness without prompt bodies or raw paths", async () => {
+    const dataDir = createTempDir();
+    const init = initializePromptMemory({ dataDir });
+    const storage = createSqlitePromptStorage({
+      dataDir,
+      hmacSecret: init.hookAuth.web_session_secret,
+      now: () => new Date("2026-05-03T11:00:00.000Z"),
+    });
+    await storeClaudePrompt(
+      storage,
+      "Review src/mcp/score-tool.ts and run pnpm test.",
+      "2026-05-03T10:59:00.000Z",
+    );
+    storage.close();
+
+    const result = getPromptMemoryStatusTool({}, { dataDir });
+    const serialized = JSON.stringify(result);
+
+    expect(result.status).toBe("ready");
+    expect(result.total_prompts).toBe(1);
+    expect(result.project_count).toBe(1);
+    expect(result.latest_prompt).toMatchObject({
+      tool: "claude-code",
+      project: "project",
+    });
+    expect(result.available_tools).toContain("score_prompt");
+    expect(result.available_tools).toContain("get_prompt_memory_status");
+    expect(result.privacy).toEqual({
+      local_only: true,
+      external_calls: false,
+      returns_prompt_bodies: false,
+      returns_raw_paths: false,
+    });
+    expect(serialized).not.toContain("src/mcp/score-tool.ts");
+    expect(serialized).not.toContain("/Users/example");
+  });
+
+  it("returns a setup-needed status when storage is unavailable", () => {
+    const result = getPromptMemoryStatusTool(
+      {},
+      { dataDir: join(tmpdir(), `prompt-memory-missing-${randomUUID()}`) },
+    );
+
+    expect(result.status).toBe("setup_needed");
+    expect(result.next_actions[0]).toContain("prompt-memory init");
   });
 });
 

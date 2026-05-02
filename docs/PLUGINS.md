@@ -108,12 +108,15 @@ uses the exact CLI path from the current installation.
 prompt-memory mcp
 ```
 
-This server exposes three model-controlled tools:
+This server exposes four model-controlled tools:
 
+- `get_prompt_memory_status`
 - `score_prompt`
 - `score_prompt_archive`
 - `review_project_instructions`
 
+`get_prompt_memory_status` checks local archive readiness and returns safe
+counts, latest prompt metadata, available tool names, and next actions.
 `score_prompt` scores direct prompt text, a stored prompt id, or the latest
 stored prompt with the same local deterministic `0-100` Prompt Quality Score
 used by the web UI. `score_prompt_archive` scores accumulated prompt habits
@@ -122,8 +125,8 @@ low-score prompt ids. `review_project_instructions` scores local
 `AGENTS.md` / `CLAUDE.md` rules for the latest or selected project and returns
 file metadata, checklist status, and improvement hints.
 
-Both tools return score metadata without calling external LLMs or returning
-prompt bodies. The archive tool also avoids raw absolute paths, and the
+These tools return metadata without calling external LLMs or returning prompt
+bodies. The archive and status tools avoid raw absolute paths, and the
 instruction review tool avoids file bodies and raw absolute paths. If MCP is not
 configured, users can run the same archive review through:
 

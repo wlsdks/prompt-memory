@@ -452,8 +452,10 @@ Codex, or any MCP client through a stdio MCP server:
 prompt-memory mcp
 ```
 
-The MCP server exposes three tools:
+The MCP server exposes four tools:
 
+- `get_prompt_memory_status`: check whether the local archive is initialized,
+  whether prompts have been captured, and which MCP tool to call next.
 - `score_prompt`: score either direct prompt text, a stored `prompt_id`, or the
   latest stored prompt.
 - `score_prompt_archive`: score accumulated prompt habits across recent stored
@@ -465,6 +467,9 @@ The MCP server exposes three tools:
 Practical agent prompts:
 
 ```text
+Use prompt-memory get_prompt_memory_status and tell me whether prompt capture is
+working before you score anything.
+
 Use prompt-memory score_prompt with latest=true and tell me what to improve in
 my last request.
 
@@ -479,7 +484,8 @@ The tools return score metadata, checklist breakdowns, warnings, recurring gaps,
 and improvement hints. They do not store direct prompt text, do not call
 external LLMs, and do not return prompt bodies. The archive scoring tool also
 avoids raw absolute paths. The project instruction review tool also avoids
-instruction file bodies and raw absolute paths.
+instruction file bodies and raw absolute paths. The status tool returns only
+safe counts, latest prompt metadata, available tool names, and next actions.
 
 Example Claude Code registration:
 

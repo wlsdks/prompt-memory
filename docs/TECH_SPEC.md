@@ -132,17 +132,19 @@ Hard delete removes:
 1. User registers `prompt-memory mcp` with a local MCP client such as Claude Code
    or Codex.
 2. The client launches the command as a stdio subprocess.
-3. The MCP server exposes `score_prompt`, `score_prompt_archive`, and
-   `review_project_instructions`.
-4. `score_prompt` accepts exactly one of direct prompt text, a stored prompt id,
+3. The MCP server exposes `get_prompt_memory_status`, `score_prompt`,
+   `score_prompt_archive`, and `review_project_instructions`.
+4. `get_prompt_memory_status` checks whether local storage is initialized,
+   whether prompts have been captured, and which MCP tool to call next.
+5. `score_prompt` accepts exactly one of direct prompt text, a stored prompt id,
    or `latest: true`.
-5. Direct prompt text is analyzed locally and is not stored.
-6. Stored prompt scoring reads existing local analysis from SQLite and does not
+6. Direct prompt text is analyzed locally and is not stored.
+7. Stored prompt scoring reads existing local analysis from SQLite and does not
    return prompt bodies.
-7. Archive scoring reads recent prompt summaries from SQLite and returns an
+8. Archive scoring reads recent prompt summaries from SQLite and returns an
    aggregate score, distribution, recurring quality gaps, and low-score prompt
    ids without prompt bodies or raw paths.
-8. Project instruction review reads local project metadata from SQLite, can
+9. Project instruction review reads local project metadata from SQLite, can
    rescan `AGENTS.md` / `CLAUDE.md`, and returns checklist metadata without
    instruction file bodies or raw paths.
 
@@ -153,6 +155,8 @@ Important rules:
 - direct MCP prompt input is not written to Markdown or SQLite
 - MCP tool results return score metadata and checklist explanations, not prompt
   bodies
+- status MCP results are readiness metadata only and never include prompt bodies
+  or raw absolute paths
 - archive MCP results are metadata-only and bounded by `max_prompts`
 - project instruction MCP results are metadata-only and never include file
   bodies or raw absolute paths

@@ -3,12 +3,15 @@ import type { Readable, Writable } from "node:stream";
 
 import { VERSION } from "../shared/version.js";
 import {
+  GET_PROMPT_MEMORY_STATUS_TOOL_DEFINITION,
   SCORE_PROMPT_ARCHIVE_TOOL_DEFINITION,
   SCORE_PROMPT_TOOL_DEFINITION,
   REVIEW_PROJECT_INSTRUCTIONS_TOOL_DEFINITION,
+  getPromptMemoryStatusTool,
   reviewProjectInstructionsTool,
   scorePromptArchiveTool,
   scorePromptTool,
+  type GetPromptMemoryStatusToolArguments,
   type ReviewProjectInstructionsToolArguments,
   type ScorePromptArchiveToolArguments,
   type ScorePromptToolArguments,
@@ -114,13 +117,14 @@ export function handleMcpMessage(
           version: VERSION,
         },
         instructions:
-          "Use score_prompt for one coding prompt, score_prompt_archive for accumulated prompt habit review, and review_project_instructions for AGENTS.md/CLAUDE.md quality checks. This server is local-only and does not call external LLMs.",
+          "Use get_prompt_memory_status first when you need readiness or capture status, score_prompt for one coding prompt, score_prompt_archive for accumulated prompt habit review, and review_project_instructions for AGENTS.md/CLAUDE.md quality checks. This server is local-only and does not call external LLMs.",
       });
     case "ping":
       return jsonRpcResult(id, {});
     case "tools/list":
       return jsonRpcResult(id, {
         tools: [
+          GET_PROMPT_MEMORY_STATUS_TOOL_DEFINITION,
           SCORE_PROMPT_TOOL_DEFINITION,
           SCORE_PROMPT_ARCHIVE_TOOL_DEFINITION,
           REVIEW_PROJECT_INSTRUCTIONS_TOOL_DEFINITION,
@@ -147,19 +151,24 @@ function handleToolCall(
   }
 
   const result =
-    params.name === SCORE_PROMPT_TOOL_DEFINITION.name
-      ? scorePromptTool(params.arguments as ScorePromptToolArguments, options)
-      : params.name === SCORE_PROMPT_ARCHIVE_TOOL_DEFINITION.name
-        ? scorePromptArchiveTool(
-            params.arguments as ScorePromptArchiveToolArguments,
-            options,
-          )
-        : params.name === REVIEW_PROJECT_INSTRUCTIONS_TOOL_DEFINITION.name
-          ? reviewProjectInstructionsTool(
-              params.arguments as ReviewProjectInstructionsToolArguments,
+    params.name === GET_PROMPT_MEMORY_STATUS_TOOL_DEFINITION.name
+      ? getPromptMemoryStatusTool(
+          params.arguments as GetPromptMemoryStatusToolArguments,
+          options,
+        )
+      : params.name === SCORE_PROMPT_TOOL_DEFINITION.name
+        ? scorePromptTool(params.arguments as ScorePromptToolArguments, options)
+        : params.name === SCORE_PROMPT_ARCHIVE_TOOL_DEFINITION.name
+          ? scorePromptArchiveTool(
+              params.arguments as ScorePromptArchiveToolArguments,
               options,
             )
-          : undefined;
+          : params.name === REVIEW_PROJECT_INSTRUCTIONS_TOOL_DEFINITION.name
+            ? reviewProjectInstructionsTool(
+                params.arguments as ReviewProjectInstructionsToolArguments,
+                options,
+              )
+            : undefined;
 
   if (!result) {
     return jsonRpcError(id, -32602, `Unknown tool: ${params.name}`);
