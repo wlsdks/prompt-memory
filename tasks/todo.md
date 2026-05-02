@@ -1,5 +1,23 @@
 # 작업 계획
 
+## 2026-05-02 Chrome DevTools MCP 기능 점검
+
+- [x] 실행 중인 서버/포트 확인
+- [x] Chrome DevTools MCP로 앱 접속
+- [x] Dashboard/List/Detail/Settings 주요 화면 점검
+- [x] 검색/필터/복사/삭제 등 핵심 상호작용 점검
+- [x] desktop/mobile 렌더링, 콘솔/네트워크 오류 확인
+- [x] 점검 결과 정리
+
+### 점검 결과
+
+- `localhost:3100`은 `excalidraw-mcp-server`였고, `prompt-memory`는 임시 data dir `/tmp/prompt-memory-devtools.5BogJo`로 `http://127.0.0.1:17373`에서 별도 실행했다.
+- 샘플 prompt 3건을 ingest했고, 1건은 삭제 흐름 확인 후 정상 삭제되어 최종 UI에는 2건이 남았다.
+- 목록, 검색, 태그 필터, 민감정보 필터, 상세 분석 preview, prompt 복사 이벤트, bookmark, 삭제 modal/confirm, dashboard, settings를 Chrome DevTools MCP로 확인했다.
+- desktop 1440x900, mobile 390x844에서 screenshot과 accessibility snapshot을 확인했고, mobile horizontal overflow는 없었다.
+- 콘솔 메시지는 없었고, 네트워크 요청은 확인 범위에서 모두 `200` 또는 favicon `204`였다.
+- Node 22 실행은 기존 `better-sqlite3` 네이티브 모듈이 Node 20 ABI로 빌드되어 실패했다. 이번 브라우저 점검은 현재 설치 상태에 맞춰 Node 20으로 진행했다.
+
 ## P6 Web UI
 
 - [x] P6 Web UI 계획 세분화
