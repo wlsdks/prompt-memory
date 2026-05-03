@@ -5,6 +5,7 @@ import {
   readFileSync,
   writeFileSync,
 } from "node:fs";
+import { spawnSync } from "node:child_process";
 import { homedir } from "node:os";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
@@ -45,10 +46,30 @@ export type StatusLineInstallResult = {
   nextSettings: StatusLineSettings;
 };
 
+type ChainedStatusLineOptions = {
+  previous: string;
+  promptMemory: string;
+};
+
+type RenderChainedStatusLineOptions = {
+  previousCommand: string;
+  promptMemoryCommand: string;
+  stdin?: string;
+  runCommand?: StatusLineCommandRunner;
+};
+
+type StatusLineCommandRunner = (
+  command: string,
+  input: string | undefined,
+) => {
+  stdout?: string | Buffer | null;
+};
+
 const STATUSLINE_MARKER = "prompt-memory statusline claude-code";
 
 export function registerStatusLineCommand(program: Command): void {
   registerRenderStatusLineCommand(program);
+  registerChainedStatusLineCommand(program);
   registerInstallStatusLineCommand(program);
   registerUninstallStatusLineCommand(program);
 }
@@ -65,6 +86,30 @@ function registerRenderStatusLineCommand(program: Command): void {
       }
 
       console.log(await renderClaudeCodeStatusLine(options));
+    });
+}
+
+function registerChainedStatusLineCommand(program: Command): void {
+  program
+    .command("statusline-chain")
+    .argument("<tool>", "Tool to render a chained status line for.")
+    .requiredOption("--previous <base64url>", "Previous status line command.")
+    .requiredOption(
+      "--prompt-memory <base64url>",
+      "prompt-memory status line command.",
+    )
+    .action((tool: string, options: ChainedStatusLineOptions) => {
+      if (tool !== "claude-code") {
+        throw new Error(`Unsupported statusline target: ${tool}`);
+      }
+
+      console.log(
+        renderChainedClaudeCodeStatusLine({
+          previousCommand: decodeStatusLineCommand(options.previous),
+          promptMemoryCommand: decodeStatusLineCommand(options.promptMemory),
+          stdin: readStatusLineStdin(),
+        }),
+      );
     });
 }
 
@@ -163,6 +208,20 @@ export async function renderClaudeCodeStatusLine(
   return parts.join(" | ");
 }
 
+export function renderChainedClaudeCodeStatusLine(
+  options: RenderChainedStatusLineOptions,
+): string {
+  const runCommand = options.runCommand ?? runStatusLineCommand;
+  const previous = normalizeStatusLineOutput(
+    runCommand(options.previousCommand, options.stdin).stdout,
+  );
+  const promptMemory = normalizeStatusLineOutput(
+    runCommand(options.promptMemoryCommand, options.stdin).stdout,
+  );
+
+  return [previous, promptMemory].filter(Boolean).join(" | ");
+}
+
 function formatLatestScoreForStatusLine(
   result: ScorePromptToolResult,
 ): string | undefined {
@@ -249,18 +308,39 @@ function ensureStatusLine(
   settings: StatusLineSettings,
   command: string,
 ): StatusLineSettings {
+  const currentCommand = settings.statusLine?.command;
+  const previousCommand = currentCommand
+    ? (extractPreviousStatusLineCommand(currentCommand) ??
+      (isPromptMemoryStatusLine(currentCommand) ? undefined : currentCommand))
+    : undefined;
+
   return {
     ...settings,
     statusLine: {
       type: "command",
-      command,
+      command: previousCommand
+        ? buildChainedStatusLineCommand(previousCommand, command)
+        : command,
     },
   };
 }
 
 function removeStatusLine(settings: StatusLineSettings): StatusLineSettings {
-  if (!isPromptMemoryStatusLine(settings.statusLine?.command)) {
+  const command = settings.statusLine?.command;
+
+  if (!command || !isPromptMemoryStatusLine(command)) {
     return settings;
+  }
+
+  const previousCommand = extractPreviousStatusLineCommand(command);
+  if (previousCommand) {
+    return {
+      ...settings,
+      statusLine: {
+        type: "command",
+        command: previousCommand,
+      },
+    };
   }
 
   const next = { ...settings };
@@ -275,8 +355,90 @@ function buildStatusLineCommand(dataDir?: string): string {
   )} ${shellQuote(cliEntryPath())} statusline claude-code${dataDirArg}`;
 }
 
+function buildChainedStatusLineCommand(
+  previousCommand: string,
+  promptMemoryCommand: string,
+): string {
+  return `${markerAssignment(STATUSLINE_MARKER)} ${shellQuote(
+    process.execPath,
+  )} ${shellQuote(cliEntryPath())} statusline-chain claude-code --previous ${shellQuote(
+    encodeStatusLineCommand(previousCommand),
+  )} --prompt-memory ${shellQuote(encodeStatusLineCommand(promptMemoryCommand))}`;
+}
+
 function isPromptMemoryStatusLine(command: string | undefined): boolean {
   return Boolean(command?.includes(STATUSLINE_MARKER));
+}
+
+function extractPreviousStatusLineCommand(command: string): string | undefined {
+  const match = command.match(/--previous\s+("(?:\\.|[^"\\])*"|[^\s]+)/);
+  if (!match) {
+    return undefined;
+  }
+
+  const encoded = parseShellQuotedToken(match[1]);
+  if (!encoded) {
+    return undefined;
+  }
+
+  return decodeStatusLineCommand(encoded);
+}
+
+function parseShellQuotedToken(token: string): string | undefined {
+  if (token.startsWith('"')) {
+    try {
+      return JSON.parse(token) as string;
+    } catch {
+      return undefined;
+    }
+  }
+
+  return token;
+}
+
+function encodeStatusLineCommand(command: string): string {
+  return Buffer.from(command, "utf8").toString("base64url");
+}
+
+function decodeStatusLineCommand(encoded: string): string {
+  return Buffer.from(encoded, "base64url").toString("utf8");
+}
+
+function runStatusLineCommand(
+  command: string,
+  input: string | undefined,
+): { stdout: string } {
+  const result = spawnSync(command, {
+    shell: true,
+    encoding: "utf8",
+    input,
+    stdio: ["pipe", "pipe", "ignore"],
+    timeout: 1_200,
+  });
+
+  return { stdout: result.stdout ?? "" };
+}
+
+function readStatusLineStdin(): string | undefined {
+  if (process.stdin.isTTY) {
+    return undefined;
+  }
+
+  try {
+    return readFileSync(0, "utf8");
+  } catch {
+    return undefined;
+  }
+}
+
+function normalizeStatusLineOutput(
+  output: string | Buffer | null | undefined,
+): string {
+  if (!output) {
+    return "";
+  }
+
+  return output.toString("utf8").trim().replace(/\s+/g, " ");
 }
 
 function markerAssignment(marker: string): string {

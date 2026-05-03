@@ -183,7 +183,8 @@ The setup command:
 - with `--profile coach`, adds low-friction rewrite guidance through hook
   context instead of making you run separate score/improve commands
 - with `--profile coach`, installs the Claude Code status line when Claude Code
-  is detected
+  is detected. Existing Claude Code status line commands are chained and
+  restored on uninstall where possible.
 - with `--register-mcp`, registers `prompt-memory mcp` with detected Claude
   Code and/or Codex CLIs
 - with `--open-web`, installs a `SessionStart` hook that ensures the local
@@ -467,6 +468,10 @@ writing local settings, and can optionally install a small Claude Code
 ```sh
 pnpm prompt-memory install-statusline claude-code
 ```
+
+If another Claude Code HUD is already installed, prompt-memory preserves it by
+running both commands through one chained `statusLine` command. Uninstalling
+prompt-memory restores the previous command when it was captured during install.
 
 For Claude Code or Codex, open a second terminal pane beside the agent and run
 the always-on prompt buddy:

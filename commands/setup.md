@@ -34,7 +34,9 @@ prompt-memory setup --profile coach --register-mcp --dry-run
 Explain the planned changes to the user. The setup may initialize
 `~/.prompt-memory`, add Claude Code or Codex hooks, and install a local server
 service where supported. The coach profile also installs low-friction rewrite
-guidance and the Claude Code status line when Claude Code is detected. With
+guidance and the Claude Code status line when Claude Code is detected. If an
+existing Claude Code status line is already configured, prompt-memory chains it
+instead of replacing it and restores it on uninstall where possible. With
 `--register-mcp`, it also runs the detected `claude mcp add` or `codex mcp add`
 command so this active agent can use prompt-memory tools.
 

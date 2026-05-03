@@ -12,6 +12,7 @@ import { createSqlitePromptStorage } from "../../storage/sqlite.js";
 import { installClaudeCodeHook } from "./install-hook.js";
 import {
   installClaudeCodeStatusLine,
+  renderChainedClaudeCodeStatusLine,
   renderClaudeCodeStatusLine,
   uninstallClaudeCodeStatusLine,
 } from "./statusline.js";
@@ -127,6 +128,84 @@ describe("installClaudeCodeStatusLine", () => {
     expect(() => readFileSync(settingsPath, "utf8")).toThrow();
   });
 
+  it("chains an existing Claude Code statusLine instead of replacing it", () => {
+    const dir = createTempDir();
+    const settingsPath = join(dir, "settings.json");
+    writeFileSync(
+      settingsPath,
+      `${JSON.stringify({
+        statusLine: {
+          type: "command",
+          command: "claude-hud statusline --compact",
+        },
+      })}\n`,
+    );
+
+    const result = installClaudeCodeStatusLine({ settingsPath });
+
+    expect(result.changed).toBe(true);
+    const settings = JSON.parse(readFileSync(settingsPath, "utf8")) as {
+      statusLine: { command: string };
+    };
+    expect(settings.statusLine.command).toContain(
+      "prompt-memory statusline claude-code",
+    );
+    expect(settings.statusLine.command).toContain("statusline-chain");
+    expect(settings.statusLine.command).toContain("--previous");
+    expect(settings.statusLine.command).not.toContain(
+      "claude-hud statusline --compact",
+    );
+  });
+
+  it("does not wrap an already chained Claude Code statusLine again", () => {
+    const dir = createTempDir();
+    const settingsPath = join(dir, "settings.json");
+    writeFileSync(
+      settingsPath,
+      `${JSON.stringify({
+        statusLine: {
+          type: "command",
+          command: "claude-hud statusline --compact",
+        },
+      })}\n`,
+    );
+
+    installClaudeCodeStatusLine({ settingsPath });
+    const result = installClaudeCodeStatusLine({ settingsPath });
+
+    expect(result.changed).toBe(false);
+    const settings = JSON.parse(readFileSync(settingsPath, "utf8")) as {
+      statusLine: { command: string };
+    };
+    expect(settings.statusLine.command.match(/--previous/g)).toHaveLength(1);
+  });
+
+  it("restores the previous Claude Code statusLine when uninstalling a chain", () => {
+    const dir = createTempDir();
+    const settingsPath = join(dir, "settings.json");
+    writeFileSync(
+      settingsPath,
+      `${JSON.stringify({
+        statusLine: {
+          type: "command",
+          command: "claude-hud statusline --compact",
+        },
+      })}\n`,
+    );
+    installClaudeCodeStatusLine({ settingsPath });
+
+    const result = uninstallClaudeCodeStatusLine({ settingsPath });
+
+    expect(result.changed).toBe(true);
+    const settings = JSON.parse(readFileSync(settingsPath, "utf8")) as {
+      statusLine: { type: string; command: string };
+    };
+    expect(settings.statusLine).toEqual({
+      type: "command",
+      command: "claude-hud statusline --compact",
+    });
+  });
+
   it("uninstalls only prompt-memory statusLine entries", () => {
     const dir = createTempDir();
     const settingsPath = join(dir, "settings.json");
@@ -139,6 +218,51 @@ describe("installClaudeCodeStatusLine", () => {
       statusLine?: unknown;
     };
     expect(settings.statusLine).toBeUndefined();
+  });
+});
+
+describe("renderChainedClaudeCodeStatusLine", () => {
+  it("prints previous and prompt-memory status lines together", () => {
+    const line = renderChainedClaudeCodeStatusLine({
+      previousCommand: "previous",
+      promptMemoryCommand: "prompt-memory",
+      runCommand: (command) => ({
+        stdout: command === "previous" ? "HUD ready\n" : "PM capture on\n",
+      }),
+    });
+
+    expect(line).toBe("HUD ready | PM capture on");
+  });
+
+  it("keeps prompt-memory output when the previous status line fails", () => {
+    const line = renderChainedClaudeCodeStatusLine({
+      previousCommand: "previous",
+      promptMemoryCommand: "prompt-memory",
+      runCommand: (command) => ({
+        stdout: command === "previous" ? "" : "PM capture on\n",
+      }),
+    });
+
+    expect(line).toBe("PM capture on");
+  });
+
+  it("passes Claude Code statusLine stdin to chained commands", () => {
+    const calls: Array<{ command: string; input?: string }> = [];
+
+    renderChainedClaudeCodeStatusLine({
+      previousCommand: "previous",
+      promptMemoryCommand: "prompt-memory",
+      stdin: '{"cwd":"/Users/example/project"}',
+      runCommand: (command, input) => {
+        calls.push({ command, input });
+        return { stdout: command };
+      },
+    });
+
+    expect(calls).toEqual([
+      { command: "previous", input: '{"cwd":"/Users/example/project"}' },
+      { command: "prompt-memory", input: '{"cwd":"/Users/example/project"}' },
+    ]);
   });
 });
 

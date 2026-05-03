@@ -1,5 +1,21 @@
 # 작업 계획
 
+## 2026-05-03 Preserve Existing Claude StatusLine
+
+- [x] 기존 Claude Code statusLine overwrite 원인 확인
+- [x] 기존 statusLine chain/restore TDD 추가
+- [x] installer/uninstaller에서 기존 HUD 보존 구현
+- [x] README/Plugin 문서에 coexistence 동작 반영
+- [x] 테스트/릴리스 게이트 실행
+- [ ] PR 생성, CI 확인, main merge, branch cleanup
+
+### 판단 기준
+
+- Claude Code는 `statusLine`을 하나만 지원하므로 여러 설정을 만들지 않고 하나의 command 안에서 기존 HUD와 prompt-memory를 같이 실행한다.
+- 기존 `claude-hud` 같은 command는 설치 시 보존되고, prompt-memory 제거 시 가능한 경우 원래 command로 복구되어야 한다.
+- reinstall은 기존 command를 중첩 wrapping하지 않고 prompt-memory command만 갱신해야 한다.
+- statusLine 출력과 로그는 prompt body, raw path, secret을 노출하지 않아야 한다.
+
 ## 2026-05-03 Coach Release Readiness
 
 - [x] benchmark v1에 coach actionability 지표 추가
