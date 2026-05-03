@@ -7,6 +7,11 @@ export const MCP_FLOW_STEPS = [
       "Check setup, capture readiness, latest safe metadata, and the next tool to call.",
   },
   {
+    tool: "coach_prompt",
+    detail:
+      "Run the default one-call coach: latest score, rewrite guidance, habit review, project rules, and next request guidance.",
+  },
+  {
     tool: "score_prompt",
     detail:
       "Score the latest, a pasted prompt, or a stored prompt id when the user asks about one request.",
@@ -41,6 +46,19 @@ export const MCP_TOOL_CATALOG = [
       "No prompt body, no raw absolute path, no external LLM call, no secret value.",
     prompt:
       "Use prompt-memory get_prompt_memory_status and tell me whether capture is working before scoring anything.",
+  },
+  {
+    kind: "coach",
+    name: "coach_prompt",
+    title: "Run the default prompt coach",
+    when: "The user asks to review the latest request, improve the next prompt, summarize habits, or get one agent-native coaching result without opening the web UI.",
+    returns:
+      "Local readiness, latest prompt score, approval-required rewrite status, archive habit review, project rule review, next actions, and privacy guarantees.",
+    assurances: ["read-only", "local-only", "structured JSON", "output schema"],
+    privacy:
+      "No prompt body, no raw absolute path, no instruction file body, no external LLM call, and no auto-submit.",
+    prompt:
+      "Use prompt-memory coach_prompt and give me the latest score, first fix, recurring habit gap, and next request guidance.",
   },
   {
     kind: "single prompt",
@@ -208,18 +226,18 @@ export function createMcpReadiness({
     status = "Ready to score";
     tone = "ready";
     summary =
-      "Stored prompts are available; the next useful step is an archive quality review.";
-    firstCall = "score_prompt_archive";
+      "Stored prompts are available; the next useful step is the default one-call coach.";
+    firstCall = "coach_prompt";
     nextAction =
-      "Ask the agent to run score_prompt_archive and summarize recurring prompt habit gaps.";
+      "Ask the agent to run coach_prompt for score, rewrite guidance, and recurring habit gaps.";
   } else if (typeof scoredPrompts === "number" && scoredPrompts > 0) {
     status = "Ready for archive review";
     tone = "ready";
     summary =
       "Stored and scored prompts are ready for Claude Code or Codex habit analysis.";
-    firstCall = "score_prompt_archive";
+    firstCall = "coach_prompt";
     nextAction =
-      "Run archive scoring when you want a pattern review, or score_prompt for the latest request.";
+      "Run coach_prompt for the default one-call coach, or score_prompt_archive when you only want a pattern review.";
   }
 
   return {

@@ -321,6 +321,10 @@ const UI_TRANSLATIONS: Record<string, string> = {
   "Server OK": "서버 정상",
   "Checking status": "상태 확인 중",
   "Local prompt archive": "로컬 프롬프트 아카이브",
+  "Prompt improvement workspace": "프롬프트 개선 작업공간",
+  "Agent-native coach tools": "에이전트 네이티브 코치 도구",
+  "Prompt habit analysis": "프롬프트 습관 분석",
+  "Prompt quality benchmark": "프롬프트 품질 벤치마크",
   "Prompt archive": "프롬프트 아카이브",
   "Prompt detail": "프롬프트 상세",
   "Quality dashboard": "품질 대시보드",
@@ -577,17 +581,25 @@ const UI_TRANSLATIONS: Record<string, string> = {
     "Claude Code 또는 Codex prompt를 몇 개 수집한 뒤 get_prompt_memory_status를 다시 호출하세요.",
   "Stored prompts are available; the next useful step is an archive quality review.":
     "저장된 prompt가 있습니다. 다음으로 유용한 단계는 아카이브 품질 리뷰입니다.",
+  "Stored prompts are available; the next useful step is the default one-call coach.":
+    "저장된 prompt가 있습니다. 다음으로 유용한 단계는 기본 one-call coach입니다.",
   "Ask the agent to run score_prompt_archive and summarize recurring prompt habit gaps.":
     "에이전트에 score_prompt_archive 실행과 반복 프롬프트 습관 부족 항목 요약을 요청하세요.",
+  "Ask the agent to run coach_prompt for score, rewrite guidance, and recurring habit gaps.":
+    "에이전트에 coach_prompt 실행을 요청해 점수, 재작성 안내, 반복 습관 부족 항목을 확인하세요.",
   "Stored and scored prompts are ready for Claude Code or Codex habit analysis.":
     "저장 및 점수화된 prompt가 Claude Code 또는 Codex 습관 분석에 사용할 준비가 됐습니다.",
   "Run archive scoring when you want a pattern review, or score_prompt for the latest request.":
     "패턴 리뷰가 필요하면 archive scoring을 실행하고, 최신 요청만 보려면 score_prompt를 사용하세요.",
+  "Run coach_prompt for the default one-call coach, or score_prompt_archive when you only want a pattern review.":
+    "기본 one-call coach에는 coach_prompt를 사용하고, 패턴 리뷰만 필요할 때는 score_prompt_archive를 사용하세요.",
   "Recommended MCP flow": "권장 MCP 흐름",
   "Recommended call order": "권장 호출 순서",
-  "5 tools": "도구 5개",
+  "6 core tools": "핵심 도구 6개",
   "Check setup, capture readiness, latest safe metadata, and the next tool to call.":
     "설정, 캡처 준비 상태, 안전한 최신 metadata, 다음에 호출할 도구를 확인합니다.",
+  "Run the default one-call coach: latest score, rewrite guidance, habit review, project rules, and next request guidance.":
+    "기본 one-call coach를 실행합니다: 최신 점수, 재작성 안내, 습관 리뷰, 프로젝트 규칙, 다음 요청 안내.",
   "Score the latest, a pasted prompt, or a stored prompt id when the user asks about one request.":
     "사용자가 하나의 요청을 묻는 경우 최신 prompt, 붙여넣은 prompt, 저장된 prompt id를 점수화합니다.",
   "Generate an approval-ready rewritten request when the user wants to resubmit a better prompt.":
@@ -602,7 +614,9 @@ const UI_TRANSLATIONS: Record<string, string> = {
   rewrite: "재작성",
   archive: "아카이브",
   "project rules": "프로젝트 규칙",
+  coach: "코치",
   "Check capture readiness first": "먼저 캡처 준비 상태 확인",
+  "Run the default prompt coach": "기본 프롬프트 코치 실행",
   "Evaluate one request": "요청 하나 평가",
   "Rewrite before resubmission": "재입력 전 재작성",
   "Find habit patterns": "습관 패턴 찾기",
@@ -616,10 +630,16 @@ const UI_TRANSLATIONS: Record<string, string> = {
   "output schema": "출력 스키마",
   "The user asks if prompt-memory is working, whether prompts are being captured, or what to do next.":
     "사용자가 prompt-memory가 동작하는지, prompt가 캡처되는지, 다음에 무엇을 해야 하는지 물을 때 사용합니다.",
+  "The user asks to review the latest request, improve the next prompt, summarize habits, or get one agent-native coaching result without opening the web UI.":
+    "사용자가 웹 UI를 열지 않고 최신 요청 리뷰, 다음 prompt 개선, 습관 요약, agent-native coach 결과를 원할 때 사용합니다.",
   "Ready/setup status, safe prompt counts, latest prompt metadata, available tools, and next actions.":
     "준비/설정 상태, 안전한 prompt 개수, 최신 prompt metadata, 사용 가능한 도구, 다음 행동을 반환합니다.",
+  "Local readiness, latest prompt score, approval-required rewrite status, archive habit review, project rule review, next actions, and privacy guarantees.":
+    "로컬 준비 상태, 최신 prompt 점수, 승인 필요한 재작성 상태, archive 습관 리뷰, 프로젝트 규칙 리뷰, 다음 행동, privacy 보장을 반환합니다.",
   "No prompt body, no raw absolute path, no external LLM call, no secret value.":
     "prompt 본문, raw absolute path, 외부 LLM 호출, secret 값을 반환하지 않습니다.",
+  "No prompt body, no raw absolute path, no instruction file body, no external LLM call, and no auto-submit.":
+    "prompt 본문, raw absolute path, instruction 파일 본문, 외부 LLM 호출, 자동 제출이 없습니다.",
   "The user wants feedback on the current request, a pasted prompt, one stored prompt id, or the latest captured prompt.":
     "사용자가 현재 요청, 붙여넣은 prompt, 저장된 prompt id 하나, 또는 최신 캡처 prompt에 대한 피드백을 원할 때 사용합니다.",
   "0-100 quality score, checklist, warnings, and concise improvement suggestions.":

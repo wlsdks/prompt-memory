@@ -508,11 +508,13 @@ function createAgentCoachBrief(input: {
       summary:
         "No captured prompt archive is available for coaching in this data directory.",
       next_actions: [
-        "Run prompt-memory setup, then submit one Claude Code or Codex prompt.",
+        "Run prompt-memory start to see the shortest setup -> real prompt -> coach path.",
+        "Run prompt-memory setup --profile coach --register-mcp, then submit one real Claude Code or Codex prompt.",
+        "Run prompt-memory server if connected tools cannot reach the local service.",
         "Run prompt-memory doctor claude-code or prompt-memory doctor codex if capture still does not work.",
       ],
       suggested_user_response:
-        "I cannot coach the latest prompt yet because prompt-memory has no ready archive. Run prompt-memory setup and capture one request first.",
+        "I cannot coach the latest prompt yet because prompt-memory has no ready archive. Run prompt-memory start, finish the coach setup, then capture one real request first.",
     };
   }
 

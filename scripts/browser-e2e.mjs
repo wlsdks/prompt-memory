@@ -165,6 +165,11 @@ try {
 
   await page.getByRole("button", { name: "Coach", exact: true }).click();
   await page.getByRole("heading", { name: "Prompt coach" }).waitFor();
+  await assertTextAny(
+    page,
+    ["Prompt improvement workspace", "프롬프트 개선 작업공간"],
+    "Coach should use the prompt improvement product identity.",
+  );
   await page.getByText("Prompt habit command center").waitFor();
   await assertText(
     page,
@@ -393,6 +398,11 @@ try {
 
   await page.getByRole("button", { name: "MCP", exact: true }).click();
   await page.getByRole("heading", { name: "MCP tools" }).waitFor();
+  await assertTextAny(
+    page,
+    ["Agent-native coach tools", "에이전트 네이티브 코치 도구"],
+    "MCP page should use the agent-native coach identity.",
+  );
   await assertText(
     page,
     "MCP readiness",
@@ -412,6 +422,16 @@ try {
     page,
     "Core call order",
     "MCP page should show the core tool call order.",
+  );
+  await assertTextAny(
+    page,
+    ["6 core tools", "핵심 도구 6개"],
+    "MCP page should show the updated core tool count.",
+  );
+  await assertText(
+    page,
+    "coach_prompt",
+    "MCP page should recommend the default one-call coach tool.",
   );
   await assertText(
     page,

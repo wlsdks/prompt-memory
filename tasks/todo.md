@@ -1,5 +1,23 @@
 # 작업 계획
 
+## 2026-05-03 Product Identity And Usability Audit
+
+- [x] 정체성 기준과 점검 범위 문서화
+- [x] CLI 첫 사용/agent-native coach 흐름 검증
+- [x] 웹 UI/접근성/사용성 실브라우저 검증
+- [x] README/plugin/MCP 문구와 실제 기능 일치 점검
+- [x] 발견한 결함 또는 얇은 지점 개선
+- [x] 테스트/릴리스 게이트 실행
+- [ ] PR 생성, CI 확인, main merge, branch cleanup
+
+### 판단 기준
+
+- 제품 정체성은 “AI coding prompt coach and memory workspace, local-first”로 일관되어야 한다.
+- 첫 사용자는 웹 대시보드보다 `setup -> real prompt -> coach` 루프를 먼저 이해해야 한다.
+- Claude Code/Codex 내부에서 score, habit review, rewrite guidance를 쉽게 호출할 수 있어야 한다.
+- 웹은 기록/대시보드/회고용이어야 하며, agent-native 흐름과 역할이 겹쳐 혼란을 만들면 안 된다.
+- privacy/trust 메시지는 local-first를 과장하지 않고 agent-mediated egress risk를 분명히 해야 한다.
+
 ## 2026-05-03 Coach Activation Runbook
 
 - [x] 현재 `start` / `setup` / README 첫 성공 흐름 점검
