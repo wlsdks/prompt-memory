@@ -12,6 +12,7 @@ import { join } from "node:path";
 import { afterEach, describe, expect, it } from "vitest";
 
 import { normalizeClaudeCodePayload } from "../adapters/claude-code.js";
+import { normalizeCodexPayload } from "../adapters/codex.js";
 import { redactPrompt } from "../redaction/redact.js";
 import { createServer } from "../server/create-server.js";
 import { initializePromptMemory } from "../config/config.js";
@@ -161,6 +162,53 @@ describe("SQLite prompt storage", () => {
     expect(
       JSON.stringify(storage.getPrompt(stored.id)?.analysis),
     ).not.toContain("[REDACTED:api_key]");
+  });
+
+  it("keeps Google API keys out of Markdown, SQLite rows, snippets, and FTS", async () => {
+    const dataDir = createTempDir();
+    initializePromptMemory({ dataDir });
+    const storage = createSqlitePromptStorage({
+      dataDir,
+      hmacSecret: "test-secret",
+      now: () => new Date("2026-05-01T10:35:00.000Z"),
+    });
+    const rawSecret = createFakeGoogleApiKey();
+    const event = normalizeCodexPayload(
+      {
+        session_id: "session-google-key-regression",
+        cwd: "/Users/example/project",
+        hook_event_name: "UserPromptSubmit",
+        prompt: `Run Gemini smoke with GEMINI_API_KEY=${rawSecret}`,
+      },
+      new Date("2026-05-01T10:34:59.000Z"),
+    );
+
+    const stored = await storage.storePrompt({
+      event,
+      redaction: redactPrompt(event.prompt, "mask"),
+    });
+    const row = storage.listPromptRows()[0]!;
+    const markdown = readFileSync(row.markdown_path, "utf8");
+    const db = new Database(join(dataDir, "prompt-memory.sqlite"));
+    const promptRows = db.prepare("SELECT * FROM prompts").all();
+    const redactionRows = db.prepare("SELECT * FROM redaction_events").all();
+    db.close();
+
+    expect(markdown).toContain("[REDACTED:api_key]");
+    expect(markdown).not.toContain(rawSecret);
+    expect(JSON.stringify(promptRows)).not.toContain(rawSecret);
+    expect(JSON.stringify(redactionRows)).not.toContain(rawSecret);
+    expect(storage.searchPromptIds("AIzaSy")).toEqual([]);
+    expect(storage.searchPromptIds(rawSecret)).toEqual([]);
+    expect(storage.searchPromptIds("REDACTED")).toEqual([stored.id]);
+    expect(storage.listPrompts().items[0]).toMatchObject({
+      id: stored.id,
+      is_sensitive: true,
+      snippet: expect.stringContaining("[REDACTED:api_key]"),
+    });
+    expect(JSON.stringify(storage.listPrompts().items)).not.toContain(
+      rawSecret,
+    );
   });
 
   it("stores local rule-based analysis preview with prompt details", async () => {
@@ -533,16 +581,21 @@ describe("SQLite prompt storage", () => {
     });
     const row = storage.listPromptRows()[0]!;
 
+    const rawSecret = createFakeGoogleApiKey();
     writeFileSync(
       row.markdown_path,
-      `${readFileSync(row.markdown_path, "utf8")}\nleaked sk-proj-1234567890abcdef\n`,
+      `${readFileSync(row.markdown_path, "utf8")}\nleaked ${rawSecret}\n`,
     );
 
     const result = storage.rebuildIndex({ redactionMode: "mask" });
 
     expect(result.hashMismatches).toEqual([stored.id]);
     expect(storage.listPromptRows()[0]?.index_status).toBe("hash_mismatch");
-    expect(storage.searchPromptIds("sk-proj")).toEqual([]);
+    expect(storage.searchPromptIds("AIzaSy")).toEqual([]);
+    expect(storage.getPrompt(stored.id)?.markdown).toContain(
+      "[REDACTED:api_key]",
+    );
+    expect(storage.getPrompt(stored.id)?.markdown).not.toContain(rawSecret);
   });
 
   it("marks missing markdown files during reconciliation", async () => {
@@ -1414,4 +1467,8 @@ function createTempDir(): string {
   mkdirSync(dir, { recursive: true });
   tempDirs.push(dir);
   return dir;
+}
+
+function createFakeGoogleApiKey(): string {
+  return ["AI", "za", "Sy", "A1234567890abcdefghijklmnopqrstuvwxyz"].join("");
 }

@@ -1016,7 +1016,10 @@ function getPrompt(
 
   return {
     ...toPromptSummary(db, row),
-    markdown: parsePromptMarkdown(row.markdown_path).body,
+    markdown: redactPrompt(
+      parsePromptMarkdown(row.markdown_path).body,
+      row.redaction_policy as RedactionPolicy,
+    ).stored_text,
     analysis: readPromptAnalysis(db, id),
     improvement_drafts: readPromptImprovementDrafts(db, id),
   };

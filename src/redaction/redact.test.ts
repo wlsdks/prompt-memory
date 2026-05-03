@@ -30,4 +30,23 @@ describe("redactPrompt", () => {
       "path",
     );
   });
+
+  it("masks Google and Gemini API key values", () => {
+    const rawGoogleKey = createFakeGoogleApiKey();
+    const result = redactPrompt(
+      `Set GEMINI_API_KEY=${rawGoogleKey} before running the model smoke.`,
+      "mask",
+    );
+
+    expect(result.is_sensitive).toBe(true);
+    expect(result.stored_text).toContain("[REDACTED:api_key]");
+    expect(result.stored_text).not.toContain(rawGoogleKey);
+    expect(result.findings.map((finding) => finding.detector_type)).toContain(
+      "api_key",
+    );
+  });
 });
+
+function createFakeGoogleApiKey(): string {
+  return ["AI", "za", "Sy", "A1234567890abcdefghijklmnopqrstuvwxyz"].join("");
+}
