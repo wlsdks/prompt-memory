@@ -79,6 +79,12 @@ Use these workflows before sending the user to the web UI:
 - Latest prompt rewrite: call `prompt-memory:improve_prompt` with
   `latest=true`. If MCP is unavailable, run
   `prompt-memory improve --latest --json`.
+- Agent-assisted latest prompt rewrite: call
+  `prompt-memory:prepare_agent_rewrite` with `latest=true`, rewrite the returned
+  redacted prompt in the active Codex/Claude Code session, ask for approval,
+  then call `prompt-memory:record_agent_rewrite` only if the user wants the
+  improved draft saved. Use this when the user wants semantic LLM help beyond
+  the local deterministic rewrite.
 - Habit review: call `prompt-memory:score_prompt_archive` with
   `max_prompts=200` and summarize recurring gaps, practice plan, and low-score
   ids.
@@ -104,9 +110,16 @@ The MCP tools are:
   workflow
 - `score_prompt` for one current, pasted, stored, or latest prompt
 - `improve_prompt` for an approval-ready draft the user can copy and resubmit
+- `prepare_agent_rewrite` for a redacted one-prompt packet the current agent
+  session can semantically rewrite
+- `record_agent_rewrite` for saving that agent-produced rewrite as a redacted
+  improvement draft after user approval
 - `score_prompt_archive` for accumulated prompt habit review across the local
   archive, including a practice plan and next prompt template
 - `review_project_instructions` for AGENTS.md / CLAUDE.md rule quality review
+- `prepare_agent_judge_batch` for a bounded redacted packet the current agent
+  session can judge
+- `record_agent_judgments` for saving advisory agent judgment metadata
 
 Use `score_prompt_archive` when the user asks to score all recent prompts, find
 low scoring prompts, or summarize recurring prompt quality gaps. If MCP is not
@@ -128,6 +141,11 @@ When the user asks to rewrite, clarify, or upgrade the request before
 resubmission, call `improve_prompt`. The returned draft is copy-based and
 requires user approval; do not auto-submit it.
 
+When the user explicitly asks you, the active agent, to improve the stored
+prompt with LLM judgment, use `prepare_agent_rewrite` instead. Do not treat it
+as automatic replacement: produce the improved draft, ask for approval, then
+use `record_agent_rewrite` only to save the draft metadata and redacted draft.
+
 If Prompt Rewrite Guard is installed with `--rewrite-guard block-and-copy`,
 low-score submitted prompts may be blocked before processing and an improved
 draft may be copied for the user to paste manually. Treat that as a
@@ -143,3 +161,6 @@ human-in-the-loop flow, not automatic replacement or auto-submit.
 - Do not add hidden external LLM calls. Archive-backed analysis is local by
   default; agent-judge mode is allowed only through the explicit MCP packet and
   the active user-controlled agent session.
+- Agent-assisted rewrite follows the same boundary: prompt-memory prepares a
+  redacted packet and records a redacted draft, while the current user-controlled
+  agent session performs the semantic rewrite.

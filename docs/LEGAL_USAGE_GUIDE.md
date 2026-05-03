@@ -1,4 +1,4 @@
-# Legal Usage Guide For Agent Judging
+# Legal Usage Guide For Agent Rewrite And Judging
 
 This is an engineering compliance note, not legal advice. It records the public
 documentation reviewed on 2026-05-03 and the product boundary chosen for
@@ -47,9 +47,13 @@ documentation reviewed on 2026-05-03 and the product boundary chosen for
 - It does not make hidden background calls to Claude, Codex, OpenAI, Anthropic,
   or other external LLM providers.
 - Local deterministic scoring remains the default.
-- LLM judge behavior is opt-in and agent-mediated. `prompt-memory` can return a
-  bounded, locally redacted prompt packet through MCP so the active
-  user-controlled Claude Code, Codex, or Gemini CLI session can evaluate it.
+- LLM rewrite and judge behavior is opt-in and agent-mediated. `prompt-memory`
+  can return a bounded, locally redacted prompt packet through MCP so the active
+  user-controlled Claude Code, Codex, or Gemini CLI session can rewrite or
+  evaluate it.
+- The active agent session can call `record_agent_rewrite` to store a redacted
+  improvement draft after user approval. The result must not store the original
+  prompt body, raw absolute paths, tokens, or provider credentials.
 - The active agent session can then call `record_agent_judgments` to store
   advisory judgment metadata. The stored result must not contain prompt bodies,
   raw absolute paths, tokens, or provider credentials.
@@ -65,15 +69,16 @@ The implemented design keeps the provider interaction in the user's already
 active agent session:
 
 1. The user explicitly asks Claude Code, Codex, or another MCP-capable agent to
-   judge stored prompts.
-2. The agent calls `prepare_agent_judge_batch`.
+   rewrite or judge stored prompts.
+2. The agent calls `prepare_agent_rewrite` or `prepare_agent_judge_batch`.
 3. `prompt-memory` returns only bounded metadata and, when requested, locally
    redacted prompt bodies.
-4. The active agent evaluates the redacted packet in its normal user-controlled
-   session.
-5. The agent calls `record_agent_judgments` with scores, confidence, risks, and
+4. The active agent rewrites or evaluates the redacted packet in its normal
+   user-controlled session.
+5. The agent calls `record_agent_rewrite` with the improved draft after user
+   approval, or `record_agent_judgments` with scores, confidence, risks, and
    suggestions.
-6. `prompt-memory` stores only judgment metadata.
+6. `prompt-memory` stores only redacted rewrite drafts or judgment metadata.
 
 This keeps authentication, model choice, billing, plan restrictions, web search,
 and provider policy enforcement inside the user's chosen agent tool rather than
@@ -88,9 +93,8 @@ inside `prompt-memory`.
 - Do not ask users to paste provider tokens into `prompt-memory`.
 - If a future hosted or team feature is added, it must not route requests
   through an individual user's local Claude/Codex credentials.
-- Keep the MCP tool descriptions explicit: agent-judge packets may return
-  redacted prompt bodies, while local score/archive tools must not return stored
-  prompt bodies.
+- Keep the MCP tool descriptions explicit: agent rewrite/judge packets may
+  return redacted prompt bodies, while local score/archive tools must not return
+  stored prompt bodies.
 - Treat LLM judge results as advisory. Do not replace deterministic local scores
   or privacy-safe benchmark gates with an external judge result.
-

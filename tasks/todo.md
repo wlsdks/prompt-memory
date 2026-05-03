@@ -1,5 +1,21 @@
 # 작업 계획
 
+## 2026-05-03 Agent Assisted Rewrite MCP
+
+- [x] 현재 MCP/storage contract에서 agent-assisted rewrite 저장 경계 확정
+- [x] `prepare_agent_rewrite` / `record_agent_rewrite` tool을 TDD로 추가
+- [x] MCP server/tool catalog/agent command 문서에 새 workflow 연결
+- [x] privacy-safe redaction, prompt body/raw path 미노출 회귀 테스트 추가
+- [x] targeted/full 검증 실행
+- [ ] PR 생성, CI 확인, main merge, branch cleanup
+
+### 판단 기준
+
+- `prompt-memory`는 외부 LLM/API를 직접 호출하지 않고 현재 Claude Code/Codex/Gemini CLI 세션이 rewrite를 만든다.
+- prepare tool은 bounded redacted prompt packet과 명확한 rewrite contract만 반환한다.
+- record tool은 승인 가능한 rewrite draft와 metadata만 저장하고 raw prompt body, raw absolute path, secret을 저장/반환하지 않는다.
+- local deterministic rewrite는 빠른 fallback으로 유지하고, agent-assisted rewrite는 사용자가 명시적으로 요청했을 때만 실행한다.
+
 ## 2026-05-03 Critical Usability Flow
 
 - [x] `improve_prompt latest/prompt_id`가 저장 prompt summary가 아니라 redacted archive body를 기반으로 개선하도록 TDD 수정

@@ -37,6 +37,12 @@ describe("MCP stdio server", () => {
             name: "review_project_instructions",
           }),
           expect.objectContaining({
+            name: "prepare_agent_rewrite",
+          }),
+          expect.objectContaining({
+            name: "record_agent_rewrite",
+          }),
+          expect.objectContaining({
             name: "prepare_agent_judge_batch",
           }),
           expect.objectContaining({
@@ -56,9 +62,12 @@ describe("MCP stdio server", () => {
 
     const tools = (response?.result as { tools: Array<unknown> }).tools;
 
-    expect(tools).toHaveLength(8);
+    expect(tools).toHaveLength(10);
     for (const tool of tools.filter(
-      (tool) => (tool as { name?: string }).name !== "record_agent_judgments",
+      (tool) =>
+        !["record_agent_rewrite", "record_agent_judgments"].includes(
+          (tool as { name?: string }).name ?? "",
+        ),
     )) {
       expect(tool).toEqual(
         expect.objectContaining({
@@ -73,6 +82,15 @@ describe("MCP stdio server", () => {
     }
     expect(tools).toEqual(
       expect.arrayContaining([
+        expect.objectContaining({
+          name: "record_agent_rewrite",
+          annotations: expect.objectContaining({
+            destructiveHint: false,
+            idempotentHint: false,
+            openWorldHint: false,
+            readOnlyHint: false,
+          }),
+        }),
         expect.objectContaining({
           name: "record_agent_judgments",
           annotations: expect.objectContaining({
@@ -155,6 +173,28 @@ describe("MCP stdio server", () => {
               next_prompt_template: expect.any(Object),
               practice_plan: expect.any(Object),
               top_gaps: expect.any(Object),
+              privacy: expect.any(Object),
+            }),
+          }),
+        }),
+        expect.objectContaining({
+          name: "prepare_agent_rewrite",
+          outputSchema: expect.objectContaining({
+            properties: expect.objectContaining({
+              mode: expect.any(Object),
+              prompt: expect.any(Object),
+              rewrite_contract: expect.any(Object),
+              agent_instructions: expect.any(Object),
+              privacy: expect.any(Object),
+            }),
+          }),
+        }),
+        expect.objectContaining({
+          name: "record_agent_rewrite",
+          outputSchema: expect.objectContaining({
+            properties: expect.objectContaining({
+              recorded: expect.any(Object),
+              draft: expect.any(Object),
               privacy: expect.any(Object),
             }),
           }),

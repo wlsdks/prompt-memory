@@ -567,7 +567,7 @@ Codex, or any MCP client through a stdio MCP server:
 prompt-memory mcp
 ```
 
-The MCP server exposes eight tools:
+The MCP server exposes ten tools:
 
 - `get_prompt_memory_status`: check whether the local archive is initialized,
   whether prompts have been captured, and which MCP tool to call next.
@@ -578,6 +578,11 @@ The MCP server exposes eight tools:
   latest stored prompt.
 - `improve_prompt`: generate an approval-ready improved prompt draft for direct
   prompt text, a stored `prompt_id`, or the latest stored prompt.
+- `prepare_agent_rewrite`: prepare one locally redacted prompt packet, local
+  score metadata, local baseline draft, and rewrite contract so the active
+  Claude Code/Codex/Gemini CLI session can semantically improve the prompt.
+- `record_agent_rewrite`: save that agent-produced rewrite as a redacted
+  improvement draft after user approval, without returning the rewrite body.
 - `score_prompt_archive`: score accumulated prompt habits across recent stored
   prompts and return aggregate score, recurring gaps, a practice plan, a next
   prompt template, and low-score prompt ids.
@@ -591,11 +596,11 @@ The MCP server exposes eight tools:
   active agent session, without storing prompt bodies or raw paths.
 
 All read tools are local-only and declare an MCP `outputSchema` for structured
-JSON metadata plus a text JSON fallback. `record_agent_judgments` is the only
-write tool; it stores judgment metadata only. Archive-backed local tools do not
-return stored prompt bodies, raw absolute paths, secrets, or hidden external LLM
-results. Agent-judge mode is opt-in and uses the current agent session as the
-evaluator.
+JSON metadata plus a text JSON fallback. `record_agent_rewrite` and
+`record_agent_judgments` are non-destructive write tools. Archive-backed local
+tools do not return stored prompt bodies, raw absolute paths, secrets, or hidden
+external LLM results. Agent rewrite/judge modes are opt-in and use the current
+agent session as the rewriter or evaluator.
 
 Practical agent prompts:
 
@@ -611,6 +616,10 @@ my last request.
 
 Use prompt-memory improve_prompt with latest=true and give me an
 approval-ready draft I can copy and resubmit.
+
+Use prompt-memory prepare_agent_rewrite with latest=true. Rewrite that redacted
+prompt yourself, ask for my approval, then call record_agent_rewrite if I want
+the draft saved.
 
 Use prompt-memory score_prompt_archive for recent Codex prompts and summarize my
 top recurring prompt habit gaps.
