@@ -1,5 +1,21 @@
 # 작업 계획
 
+## 2026-05-03 Coach Activation Runbook
+
+- [x] 현재 `start` / `setup` / README 첫 성공 흐름 점검
+- [x] 첫 5분 happy path를 TDD로 고정
+- [x] `start`와 `setup` 출력에서 MCP fallback/doctor/web archive를 문제 해결 섹션으로 분리
+- [x] README/README.ko/plugin command 문서를 coach-first activation 중심으로 정리
+- [x] CLI targeted tests와 release gate 실행
+- [x] PR 생성, CI 확인, main merge, branch cleanup
+
+### 판단 기준
+
+- 첫 사용자는 MCP, hook, server, dashboard 개념을 모두 이해하지 않아도 첫 prompt score를 확인할 수 있어야 한다.
+- 기본 안내는 `setup -> 실제 prompt 하나 전송 -> coach` 순서가 먼저 보여야 한다.
+- `doctor`, manual MCP registration, web archive는 실패/심화 경로로 분리한다.
+- agent-assisted rewrite/judge가 hidden external call처럼 오해되지 않도록 privacy boundary 문구는 유지한다.
+
 ## 2026-05-03 Google API Key Redaction Privacy Fix
 
 - [x] Google/Gemini API key detector 회귀 테스트 추가

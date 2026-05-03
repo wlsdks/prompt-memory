@@ -10,28 +10,32 @@ It collects supported tool prompts locally, redacts sensitive values before stor
 
 This project is not affiliated with, endorsed by, or sponsored by Anthropic, OpenAI, or any other AI tool provider. Product names such as Claude Code and Codex are used only to describe compatibility.
 
-## What You Get First
+## First 5-Minute Coach Loop
 
-After install and `prompt-memory setup --profile coach`, the core loop is:
+The first success is not the web dashboard. It is seeing a score and one useful
+fix for a real Claude Code or Codex prompt you just sent.
 
-1. capture Claude Code or Codex prompts locally
-2. register MCP so the agent can call coach/rewrite/judge tools inside the session
-3. send one real coding request
-4. run `prompt-memory doctor <tool>` and `prompt-memory coach` to see the first score and improvement suggestion
-5. open the local archive only when you want dashboard/search/history review
-
-For most users, start with:
+For most users, the happy path is:
 
 ```sh
 prompt-memory start
 prompt-memory setup --profile coach --register-mcp
-# If MCP registration fails or you skip --register-mcp:
-# claude mcp add --transport stdio prompt-memory -- prompt-memory mcp
-# or: codex mcp add prompt-memory -- prompt-memory mcp
-# send one real Claude Code or Codex prompt
-prompt-memory doctor claude-code
+# send one real Claude Code or Codex coding prompt
 prompt-memory coach
 ```
+
+Only troubleshoot after that path fails:
+
+```sh
+prompt-memory doctor claude-code
+prompt-memory doctor codex
+# if MCP registration failed:
+# claude mcp add --transport stdio prompt-memory -- prompt-memory mcp
+# codex mcp add prompt-memory -- prompt-memory mcp
+```
+
+Open the local archive only when you want dashboard, search, history review, or
+export.
 
 ## Status
 

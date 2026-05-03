@@ -48,34 +48,40 @@ export function buildStartGuide(options: StartOptions = {}): StartGuide {
     tools,
     steps: [
       {
-        title: "Set up capture, coaching, and MCP",
+        title: "Run the coach setup",
         detail:
           "Installs local storage, hooks, service startup, low-friction rewrite guidance, and agent MCP commands.",
         commands: ["prompt-memory setup --profile coach --register-mcp"],
       },
       {
-        title: "Manual MCP fallback",
-        detail:
-          "Use these only if setup reports MCP registration failed or you skipped --register-mcp.",
-        commands: tools.map((tool) => mcpRegistrationCommand(tool)),
-      },
-      {
-        title: "Send one real prompt",
+        title: "Send one real coding prompt",
         detail:
           "Use Claude Code or Codex normally. The prompt should be a real coding request, not a test string.",
         commands: [],
       },
       {
-        title: "Confirm capture",
+        title: "See the first score",
+        detail:
+          "Shows the latest score, weakest habit, and the next prompt improvement to try.",
+        commands: ["prompt-memory coach"],
+      },
+      {
+        title: "If capture does not appear",
         detail:
           "Checks local server, ingest token, hook status, and MCP access.",
         commands: tools.map((tool) => doctorCommand(tool)),
       },
       {
-        title: "Get the first coach result",
+        title: "If MCP registration needs attention",
         detail:
-          "Shows the latest score, weakest habit, and the next prompt improvement to try.",
-        commands: ["prompt-memory coach"],
+          "Use these only if setup reports MCP registration failed or you skipped --register-mcp.",
+        commands: tools.map((tool) => mcpRegistrationCommand(tool)),
+      },
+      {
+        title: "Optional archive review",
+        detail:
+          "Start the web UI only when you want search, dashboards, export, or visual history review.",
+        commands: ["prompt-memory server"],
       },
     ],
   };
@@ -91,6 +97,12 @@ export function formatStartGuide(guide: StartGuide): string {
   ];
 
   guide.steps.forEach((step, index) => {
+    if (index === 3) {
+      lines.push("", "Troubleshooting:");
+    } else if (index === 5) {
+      lines.push("", "Optional:");
+    }
+
     lines.push(`${index + 1}. ${step.title}`);
     lines.push(`   ${step.detail}`);
     for (const command of step.commands) {

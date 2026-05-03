@@ -122,6 +122,15 @@ describe("runSetup", () => {
         "Send one real coding prompt in Claude Code or Codex, then run prompt-memory coach.",
       ]),
     );
+    expect(
+      result.nextSteps.indexOf(
+        "Send one real coding prompt in Claude Code or Codex, then run prompt-memory coach.",
+      ),
+    ).toBeLessThan(
+      result.nextSteps.indexOf(
+        "Open http://127.0.0.1:17373 when you want archive search, dashboards, or export.",
+      ),
+    );
     expect(result.statusLine.claudeCode?.installed).toBe(true);
 
     const claudeSettings = readFileSync(settingsPath, "utf8");
@@ -262,7 +271,10 @@ describe("runSetup", () => {
     expect(output).toContain("Profile: coach");
     expect(output).toContain("Claude Code hook: installed");
     expect(output).toContain("Codex hook: installed");
-    expect(output).toContain("Next:");
+    expect(output).toContain("First score path:");
+    expect(output.indexOf("Send one real coding prompt")).toBeLessThan(
+      output.indexOf("If capture does not appear:"),
+    );
     expect(output).toContain("Register MCP for agent commands");
     expect(output).toContain("prompt-memory coach");
     expect(output).toContain("Use --json for automation.");
