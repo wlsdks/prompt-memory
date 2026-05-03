@@ -1,5 +1,19 @@
 # 작업 계획
 
+## 2026-05-03 Codebase Quality Pass
+
+- [x] 새 작업 브랜치에서 시작하고 현재 보호/PR 운영 규칙 확인
+- [x] lint, code-quality scanner, 큰 파일/AI스러운 구조 후보를 수집
+- [x] 동작 변경이 작은 모듈화/품질 개선을 우선 적용
+- [x] targeted tests와 전체 quality gate 실행
+- [ ] PR 생성, CI 확인, main merge, branch cleanup
+
+### 판단 기준
+
+- 오픈소스 첫 공개 전에는 큰 파일, 지나치게 많은 책임, 일회성 문서/규칙, raw prompt/privacy 위험을 우선 점검한다.
+- 기능 PR에 대형 리라이트를 섞지 않고, 안전하게 분리 가능한 부분만 이번 패스에서 고친다.
+- 큰 리팩터링이 필요한 파일은 별도 후속 PR 후보로 남긴다.
+
 ## 2026-05-03 Merge And Architecture Handoff
 
 - [x] 현재 PR의 mergeability, CI, review gate를 재확인
