@@ -6,7 +6,7 @@
 - [x] Claude Code/Codex 옆 split pane에서 띄우는 `prompt-memory buddy` CLI를 TDD로 추가
 - [x] `/prompt-memory:coach` / MCP 문서와 plugin 안내를 always-on buddy 흐름과 연결
 - [x] privacy-safe 출력, CLI 실제 실행, release gate 검증
-- [ ] 커밋, 푸시, CI 확인
+- [x] 커밋, 푸시, CI 확인
 
 ### 판단 기준
 
