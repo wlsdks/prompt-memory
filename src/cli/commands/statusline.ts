@@ -8,9 +8,9 @@ import {
 import { spawnSync } from "node:child_process";
 import { homedir } from "node:os";
 import { dirname, join } from "node:path";
-import { fileURLToPath } from "node:url";
 import type { Command } from "commander";
 
+import { resolveCliEntryPath } from "../entry-path.js";
 import type { LastHookStatus } from "../../hooks/hook-status.js";
 import {
   scorePromptTool,
@@ -450,7 +450,7 @@ function shellQuote(value: string): string {
 }
 
 function cliEntryPath(): string {
-  return fileURLToPath(new URL("../index.js", import.meta.url));
+  return resolveCliEntryPath(import.meta.url, "../index.js");
 }
 
 function readStatusLineSettings(settingsPath: string): StatusLineSettings {

@@ -1,5 +1,20 @@
 # 작업 계획
 
+## 2026-05-03 Stable CLI Entry Path For Hooks
+
+- [x] Claude Code hook error 원인 확인 및 로컬 설정 수리
+- [x] source 실행 경로에서도 dist CLI를 우선 선택하는 회귀 테스트 추가
+- [x] hook/statusLine/service/session-start command 생성 경계 하드닝
+- [x] targeted/full 검증 실행
+- [ ] PR 생성, CI 확인, main merge, branch cleanup
+
+### 판단 기준
+
+- Claude Code/Codex hook command는 존재하지 않는 `src/cli/index.js`를 설치하면 안 된다.
+- repo 개발 실행에서는 빌드된 `dist/cli/index.js`가 있으면 그 경로를 우선 사용한다.
+- npm 배포 실행에서는 기존처럼 실행 중인 `dist` CLI 경로를 유지한다.
+- 설정 점검과 검증 과정에서 prompt body, raw path, token을 출력하지 않는다.
+
 ## 2026-05-03 Preserve Existing Claude StatusLine
 
 - [x] 기존 Claude Code statusLine overwrite 원인 확인

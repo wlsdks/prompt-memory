@@ -8,8 +8,9 @@ import {
 import { homedir } from "node:os";
 import { dirname, join } from "node:path";
 import { spawnSync } from "node:child_process";
-import { fileURLToPath } from "node:url";
 import type { Command } from "commander";
+
+import { resolveCliEntryPath } from "../entry-path.js";
 
 export type ServiceActionOptions = {
   dataDir?: string;
@@ -291,7 +292,7 @@ function formatServiceInstallResult(result: ServiceInstallResult): string {
 }
 
 function cliEntryPath(): string {
-  return fileURLToPath(new URL("../index.js", import.meta.url));
+  return resolveCliEntryPath(import.meta.url, "../index.js");
 }
 
 function defaultLaunchAgentPath(): string {
