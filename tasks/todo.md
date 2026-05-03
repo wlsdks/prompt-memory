@@ -6,7 +6,7 @@
 - [x] Dashboard Agent command center에 추천 1순위 명령을 추가
 - [x] Claude Code와 MCP 양쪽 명령 복사 UX 회귀 테스트 추가
 - [x] 브라우저/릴리스 게이트로 실제 동작 검증
-- [ ] PR 생성, CI 확인, main merge, branch cleanup
+- [x] PR 생성, CI 확인, main merge, branch cleanup
 
 ### 판단 기준
 
