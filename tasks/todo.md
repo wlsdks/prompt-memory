@@ -8,7 +8,7 @@
 - [x] README/PLUGINS/architecture 문서에 opt-in, local-first, provider-auth 경계 반영
 - [x] targeted/full 검증 실행
 - [x] PR 생성
-- [ ] CI 확인, main merge, branch cleanup
+- [x] CI 확인, main merge, branch cleanup
 
 ### 판단 기준
 
