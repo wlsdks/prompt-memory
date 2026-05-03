@@ -81,6 +81,12 @@ describe("coach CLI", () => {
     expect(text).toContain("Prompt Memory Coach");
     expect(text).toContain("Latest prompt");
     expect(text).toContain("Next actions");
+    expect(text).toContain("Agent commands");
+    expect(text).toContain("/prompt-memory:coach");
+    expect(text).toContain("/prompt-memory:score-last");
+    expect(text).toContain("/prompt-memory:improve-last");
+    expect(text).toContain("prompt-memory:coach_prompt");
+    expect(text).toContain("prompt-memory buddy");
     expect(text).not.toContain("sk-proj-1234567890abcdef");
     expect(text).not.toContain("/Users/example");
   });
@@ -97,6 +103,8 @@ describe("coach CLI", () => {
       "prompt-memory setup --profile coach --register-mcp",
     );
     expect(text).toContain("prompt-memory server");
+    expect(text).toContain("Agent commands");
+    expect(text).toContain("prompt-memory start --open-web");
     expect(text).not.toContain(dataDir);
   });
 });

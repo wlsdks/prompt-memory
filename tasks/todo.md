@@ -1,5 +1,19 @@
 # 작업 계획
 
+## 2026-05-04 Coach Follow-Up Commands Polish
+
+- [x] 기능/코드/UI 관점에서 다음 고효과 개선 후보 재점검
+- [x] `prompt-memory coach` 텍스트 출력에 agent-native follow-up 명령 추가
+- [x] privacy-safe CLI 회귀 테스트 추가
+- [x] 브라우저/릴리스 게이트로 실제 동작 검증
+- [ ] PR 생성, CI 확인, main merge, branch cleanup
+
+### 판단 기준
+
+- `coach`는 웹으로 보내기 전에 Claude Code/Codex 안에서 바로 쓸 다음 명령을 제안해야 한다.
+- 출력은 prompt body, raw path, token을 포함하지 않아야 한다.
+- MCP 명령과 slash command를 모두 보여주되, 자동 제출이나 숨은 외부 호출처럼 보이면 안 된다.
+
 ## 2026-05-04 Recommended Agent Action Polish
 
 - [x] 기능/코드/UI 관점에서 다음 고효과 개선 후보 재점검

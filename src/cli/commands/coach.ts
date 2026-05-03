@@ -88,6 +88,9 @@ function formatCoach(result: CoachPromptToolResult): string {
     "Next actions",
     ...result.agent_brief.next_actions.map((action) => `- ${action}`),
     "",
+    "Agent commands",
+    ...formatAgentFollowUpCommands(result),
+    "",
     "Suggested response",
     result.agent_brief.suggested_user_response,
     "",
@@ -95,6 +98,31 @@ function formatCoach(result: CoachPromptToolResult): string {
   );
 
   return rows.join("\n");
+}
+
+function formatAgentFollowUpCommands(result: CoachPromptToolResult): string[] {
+  if (result.status.status !== "ready") {
+    return [
+      "- Setup: prompt-memory setup --profile coach --register-mcp",
+      "- Start web review: prompt-memory start --open-web",
+    ];
+  }
+
+  const rows = [
+    "- Claude Code coach: /prompt-memory:coach",
+    "- MCP coach: prompt-memory:coach_prompt include_latest_score=true include_archive=true",
+    "- Side buddy: prompt-memory buddy",
+  ];
+
+  if (result.latest_score && !("is_error" in result.latest_score)) {
+    rows.splice(1, 0, "- Claude Code score: /prompt-memory:score-last");
+  }
+
+  if (result.improvement && !("is_error" in result.improvement)) {
+    rows.splice(2, 0, "- Claude Code improve: /prompt-memory:improve-last");
+  }
+
+  return rows;
 }
 
 function parseCount(value: string | number | undefined): number | undefined {
