@@ -6,7 +6,7 @@
 - [x] `statusline` CLI registration을 작은 함수로 분리
 - [x] Node/TypeScript 모듈화 기준을 `docs/ARCHITECTURE.md`, `CLAUDE.md`, `AGENTS.md`, `.claude/rules`에 반영
 - [x] 문서 패키징/검증 게이트 재실행
-- [ ] 커밋, 푸시, CI 확인
+- [x] 커밋, 푸시, CI 확인
 
 ### 판단 기준
 
