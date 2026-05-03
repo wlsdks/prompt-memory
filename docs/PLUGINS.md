@@ -31,6 +31,17 @@ the detected agent CLI registration commands for `prompt-memory mcp`, which
 gives the active agent session access to coach/rewrite/judge tools. Plain
 `prompt-memory setup` remains available for passive capture only.
 
+Users who want the web workspace to open automatically when Claude Code or Codex
+starts can explicitly add `--open-web`:
+
+```sh
+prompt-memory setup --profile coach --register-mcp --open-web
+```
+
+This installs a `SessionStart` hook, ensures the local server is available, and
+opens the web UI at most once per agent session id. It is opt-in because
+installing a plugin should not surprise users by launching a browser.
+
 Use a preview first when reviewing changes:
 
 ```sh

@@ -5,6 +5,7 @@ import {
   runClaudeCodeHook,
   runCodexHook,
 } from "../../hooks/wrapper.js";
+import { runSessionStartHook } from "../../hooks/session-start.js";
 import {
   parsePromptRewriteGuardMode,
   type PromptRewriteGuardMode,
@@ -15,12 +16,34 @@ type HookCliOptions = {
   rewriteGuard?: string;
   rewriteMinScore?: string;
   rewriteLanguage?: "en" | "ko";
+  openWeb?: boolean;
 };
 
 export function registerHookCommand(program: Command): void {
   const hook = program
     .command("hook")
     .description("Run prompt-memory hook handlers.");
+
+  hook
+    .command("session-start")
+    .argument("<tool>", "Tool that triggered SessionStart.")
+    .description("Handle Claude Code/Codex SessionStart hook payload.")
+    .option("--data-dir <path>", "Override the prompt-memory data directory.")
+    .option("--open-web", "Open the local web UI for this session.")
+    .action(async (tool: string, options: HookCliOptions) => {
+      if (tool !== "claude-code" && tool !== "codex") {
+        throw new Error(`Unsupported SessionStart hook target: ${tool}`);
+      }
+      const result = await runSessionStartHook({
+        stdin: await readStdin(),
+        dataDir: options.dataDir,
+        openWeb: options.openWeb,
+      });
+
+      process.stdout.write(result.stdout);
+      process.stderr.write(result.stderr);
+      process.exitCode = result.exitCode;
+    });
 
   hook
     .command("claude-code")

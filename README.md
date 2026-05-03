@@ -182,6 +182,8 @@ The setup command:
   is detected
 - with `--register-mcp`, registers `prompt-memory mcp` with detected Claude
   Code and/or Codex CLIs
+- with `--open-web`, installs a `SessionStart` hook that ensures the local
+  server is running and opens `http://127.0.0.1:17373` once per agent session
 - enables Codex hooks when Codex is detected
 - installs and starts a macOS LaunchAgent for the local server when supported
 - prints next steps and paths that were changed
@@ -191,6 +193,17 @@ Preview setup without writing files:
 ```sh
 pnpm prompt-memory setup --profile coach --register-mcp --dry-run
 ```
+
+Opt in to a Serena-like startup experience when you want the web workspace to
+open automatically beside Claude Code or Codex:
+
+```sh
+pnpm prompt-memory setup --profile coach --register-mcp --open-web
+```
+
+This is not enabled by default. It writes an explicit `SessionStart` hook, opens
+the browser at most once per agent session id, and keeps the hook fail-open with
+no prompt body, raw path, or token output.
 
 Use passive capture only when you do not want coaching:
 
@@ -269,6 +282,12 @@ Optional Prompt Rewrite Guard:
 pnpm prompt-memory install-hook claude-code --rewrite-guard block-and-copy --rewrite-min-score 80
 ```
 
+Optional web auto-open:
+
+```sh
+pnpm prompt-memory install-hook claude-code --open-web
+```
+
 `block-and-copy` uses the supported `UserPromptSubmit` decision path: weak
 prompts are blocked before Claude Code processes them, an improved local draft
 is shown, and prompt-memory tries to copy that draft to the clipboard. It does
@@ -314,6 +333,12 @@ Optional Prompt Rewrite Guard:
 
 ```sh
 pnpm prompt-memory install-hook codex --rewrite-guard block-and-copy --rewrite-min-score 80
+```
+
+Optional web auto-open:
+
+```sh
+pnpm prompt-memory install-hook codex --open-web
 ```
 
 Codex support uses the same safe hook command path. Because Codex plugin-local

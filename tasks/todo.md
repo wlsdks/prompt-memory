@@ -1,5 +1,22 @@
 # 작업 계획
 
+## 2026-05-03 Session Start Web Auto-Open
+
+- [x] Claude Code/Codex session-start hook 설계와 opt-in 범위 확정
+- [x] TDD로 hook 설치, session-start 실행, setup 출력 고정
+- [x] 로컬 서버 ensure + 웹 open hook 구현
+- [x] README/플러그인 setup 문서 갱신
+- [x] 테스트/릴리스 게이트 실행
+- [ ] PR 생성, CI 확인, main merge, branch cleanup
+
+### 판단 기준
+
+- npm/plugin 설치만으로 브라우저를 몰래 띄우지 않는다.
+- 사용자가 `--open-web`를 명시한 setup/install-hook에서만 자동 웹 open을 설치한다.
+- SessionStart hook은 fail-open이고 stdout/stderr에 prompt, path, token을 노출하지 않는다.
+- 서버가 꺼져 있으면 로컬 server를 detached로 띄우고 웹 UI를 연다.
+- 같은 session id에서 반복 실행되어도 브라우저 spam을 만들지 않는다.
+
 ## 2026-05-03 Product Identity And Usability Audit
 
 - [x] 정체성 기준과 점검 범위 문서화

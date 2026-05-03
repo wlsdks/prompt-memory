@@ -39,6 +39,7 @@ export type SetupOptions = {
   startService?: boolean;
   noStatusLine?: boolean;
   skipStatusline?: boolean;
+  openWeb?: boolean;
   platform?: NodeJS.Platform;
   detectedTools?: SetupTool[];
   commandExists?: (command: string) => boolean;
@@ -100,6 +101,9 @@ export type SetupResult = {
     started: boolean;
     startError?: string;
   };
+  autoOpenWeb: {
+    enabled: boolean;
+  };
   mcp: {
     registerRequested: boolean;
     claudeCode?: McpRegistrationResult;
@@ -152,6 +156,10 @@ export function registerSetupCommand(program: Command): void {
     .option("--no-service", "Do not install a background server service.")
     .option("--no-start-service", "Install service but do not start it now.")
     .option("--skip-statusline", "Do not install the Claude Code status line.")
+    .option(
+      "--open-web",
+      "Open the local web UI automatically when Claude Code/Codex starts a session.",
+    )
     .action((options: SetupOptions & { startService?: boolean }) => {
       const noService = options.noService ?? options.service === false;
       const result = runSetup({
@@ -197,6 +205,7 @@ export function formatSetupResult(result: SetupResult): string {
     `- Codex hook: ${formatBoolean(result.hooks.codex?.installed)}`,
     `- Claude Code status line: ${formatBoolean(result.statusLine.claudeCode?.installed)}`,
     `- Local service: ${formatServiceStatus(result.service)}`,
+    `- Auto web open: ${result.autoOpenWeb.enabled ? "installed on SessionStart" : "off"}`,
   ];
 
   if (result.coach.enabled) {
@@ -306,6 +315,7 @@ export function runSetup(options: SetupOptions = {}): SetupResult {
         settingsPath: options.settingsPath,
         dryRun: options.dryRun,
         ...rewriteGuard.installOptions,
+        openWeb: options.openWeb,
       })
     : undefined;
   const codexResult = detectedTools.includes("codex")
@@ -315,6 +325,7 @@ export function runSetup(options: SetupOptions = {}): SetupResult {
         configPath: options.configPath,
         dryRun: options.dryRun,
         ...rewriteGuard.installOptions,
+        openWeb: options.openWeb,
       })
     : undefined;
   const statusLineResult =
@@ -355,6 +366,9 @@ export function runSetup(options: SetupOptions = {}): SetupResult {
       claudeCode: statusLineResult
         ? formatStatusLine(statusLineResult)
         : undefined,
+    },
+    autoOpenWeb: {
+      enabled: Boolean(options.openWeb),
     },
     service: formatService(serviceResult),
     mcp: mcpResult,

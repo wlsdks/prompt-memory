@@ -38,11 +38,22 @@ guidance and the Claude Code status line when Claude Code is detected. With
 `--register-mcp`, it also runs the detected `claude mcp add` or `codex mcp add`
 command so this active agent can use prompt-memory tools.
 
+If the user wants a Serena-like startup experience where the web workspace opens
+beside Claude Code or Codex, explain that this is opt-in and preview:
+
+```bash
+prompt-memory setup --profile coach --register-mcp --open-web --dry-run
+```
+
 If the user approves, run:
 
 ```bash
 prompt-memory setup --profile coach --register-mcp
 ```
+
+If the user approved automatic web opening, include `--open-web` in the real
+setup command. The hook opens the browser once per agent session id and fails
+open without printing prompts, paths, or tokens.
 
 After setup, keep the first success path short:
 
