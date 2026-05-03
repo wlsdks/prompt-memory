@@ -10,6 +10,23 @@ It collects supported tool prompts locally, redacts sensitive values before stor
 
 This project is not affiliated with, endorsed by, or sponsored by Anthropic, OpenAI, or any other AI tool provider. Product names such as Claude Code and Codex are used only to describe compatibility.
 
+## What You Get First
+
+After install and `prompt-memory setup --profile coach`, the core loop is:
+
+1. capture Claude Code or Codex prompts locally
+2. run `prompt-memory doctor <tool>` to confirm capture
+3. ask the agent to score or improve the latest request
+4. open the local archive only when you want dashboard/search/history review
+
+For most users, start with:
+
+```sh
+prompt-memory setup --profile coach
+prompt-memory doctor claude-code
+prompt-memory coach --json
+```
+
 ## Status
 
 This repository is pre-release software.
@@ -47,6 +64,9 @@ There are two pieces:
 2. the Claude Code or Codex marketplace plugin, which gives the agent an easy setup/status/open workflow
 
 The marketplace plugin does not install the CLI binary by itself. Install the CLI first, then add the marketplace.
+
+The examples below use the published CLI command `prompt-memory`. When running
+from a cloned development checkout, use `pnpm prompt-memory` instead.
 
 ### 1. Install The CLI
 

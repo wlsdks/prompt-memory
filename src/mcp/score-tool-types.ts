@@ -95,6 +95,7 @@ export type ImprovePromptToolResult =
   | (PromptImprovement & {
       source: "text" | "prompt_id" | "latest";
       prompt_id?: string;
+      rewrite_source: "direct_prompt" | "redacted_stored_prompt";
       next_action: string;
       privacy: {
         local_only: true;

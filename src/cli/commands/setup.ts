@@ -37,6 +37,7 @@ export type SetupOptions = {
   platform?: NodeJS.Platform;
   detectedTools?: SetupTool[];
   commandExists?: (command: string) => boolean;
+  json?: boolean;
 };
 
 export type SetupResult = {
@@ -117,6 +118,7 @@ export function registerSetupCommand(program: Command): void {
       "Improvement draft language for rewrite guard: en or ko.",
     )
     .option("--dry-run", "Preview setup without writing files.")
+    .option("--json", "Print machine-readable JSON.")
     .option("--no-service", "Do not install a background server service.")
     .option("--no-start-service", "Install service but do not start it now.")
     .option("--skip-statusline", "Do not install the Claude Code status line.")
@@ -128,11 +130,56 @@ export function registerSetupCommand(program: Command): void {
         startService: options.startService ?? true,
         noStatusLine: options.noStatusLine ?? options.skipStatusline,
       });
-      console.log(JSON.stringify(result, null, 2));
+      console.log(
+        options.json
+          ? JSON.stringify(result, null, 2)
+          : formatSetupResult(result),
+      );
       if (!result.service.supported && !noService) {
         process.exitCode = 1;
       }
     });
+}
+
+export function formatSetupResult(result: SetupResult): string {
+  const lines = [
+    result.dryRun
+      ? "prompt-memory setup preview"
+      : "prompt-memory setup complete",
+    `Profile: ${result.profile}`,
+    `Data: ${result.dataDir}`,
+    `Tools: ${result.detectedTools.length > 0 ? result.detectedTools.join(", ") : "none detected"}`,
+    "",
+    "Status:",
+    `- Claude Code hook: ${formatBoolean(result.hooks.claudeCode?.installed)}`,
+    `- Codex hook: ${formatBoolean(result.hooks.codex?.installed)}`,
+    `- Claude Code status line: ${formatBoolean(result.statusLine.claudeCode?.installed)}`,
+    `- Local service: ${formatServiceStatus(result.service)}`,
+  ];
+
+  if (result.coach.enabled) {
+    lines.push(
+      `- Coach profile: on (${result.coach.rewriteGuard?.mode ?? "default"})`,
+    );
+  }
+
+  lines.push("", "Next:");
+  for (const step of result.nextSteps) {
+    lines.push(`- ${step}`);
+  }
+
+  lines.push("", "Use --json for automation.");
+  return lines.join("\n");
+}
+
+function formatBoolean(value: boolean | undefined): string {
+  return value ? "installed" : "not installed";
+}
+
+function formatServiceStatus(service: SetupResult["service"]): string {
+  if (!service.supported) return "manual start required";
+  if (!service.installed) return "not installed";
+  return service.started ? "installed and running" : "installed";
 }
 
 export function runSetup(options: SetupOptions = {}): SetupResult {

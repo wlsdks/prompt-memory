@@ -203,6 +203,34 @@ describe("improvePromptTool", () => {
     expect(serialized).not.toContain("/Users/example");
   });
 
+  it("improves stored prompts from the redacted archive body instead of the generic analysis summary", async () => {
+    const dataDir = createTempDir();
+    const init = initializePromptMemory({ dataDir });
+    const storage = createSqlitePromptStorage({
+      dataDir,
+      hmacSecret: init.hookAuth.web_session_secret,
+      now: () => new Date("2026-05-03T12:10:00.000Z"),
+    });
+    const originalPrompt =
+      "Review src/mcp/score-tool.ts because latest prompt rewrite ignores stored content. Keep changes scoped to MCP improve_prompt. Run pnpm vitest run src/mcp/score-tool.test.ts. Return a Markdown summary.";
+    await storeClaudePrompt(
+      storage,
+      originalPrompt,
+      "2026-05-03T12:09:00.000Z",
+    );
+    storage.close();
+
+    const result = improvePromptTool({ latest: true }, { dataDir });
+    const serialized = JSON.stringify(result);
+
+    expect(result.source).toBe("latest");
+    expect(result.improved_prompt).toContain("src/mcp/score-tool.ts");
+    expect(result.improved_prompt).toContain("pnpm vitest run");
+    expect(result.improved_prompt).not.toContain(originalPrompt);
+    expect(result.rewrite_source).toBe("redacted_stored_prompt");
+    expect(serialized).not.toContain("/Users/example");
+  });
+
   it("returns an actionable tool error for ambiguous improvement input", () => {
     const result = improvePromptTool({ prompt: "Fix this", latest: true });
 

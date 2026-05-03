@@ -76,8 +76,8 @@ export function McpToolsView({
 
       <section className="mcp-flow panel" aria-label="Recommended MCP flow">
         <div className="panel-heading-row">
-          <h2>Recommended call order</h2>
-          <span>5 tools</span>
+          <h2>Core call order</h2>
+          <span>{MCP_FLOW_STEPS.length} core tools</span>
         </div>
         <div className="mcp-flow-steps">
           {MCP_FLOW_STEPS.map((step, index) => (

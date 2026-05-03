@@ -526,6 +526,17 @@ h2 {
   color: var(--pm-text-muted);
 }
 
+.empty p {
+  margin: 6px 0 0;
+}
+
+.empty-command-list {
+  display: grid;
+  gap: 6px;
+  margin-top: 10px;
+  max-width: 520px;
+}
+
 .empty code,
 .panel code {
   background: var(--pm-code-bg);

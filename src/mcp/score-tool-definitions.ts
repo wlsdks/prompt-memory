@@ -279,6 +279,10 @@ export const IMPROVE_PROMPT_TOOL_DEFINITION: PromptMemoryMcpToolDefinition = {
     properties: {
       source: { type: "string", enum: ["text", "prompt_id", "latest"] },
       prompt_id: { type: "string" },
+      rewrite_source: {
+        type: "string",
+        enum: ["direct_prompt", "redacted_stored_prompt"],
+      },
       mode: { const: "copy" },
       requires_user_approval: { const: true },
       summary: { type: "string" },
@@ -311,6 +315,7 @@ export const IMPROVE_PROMPT_TOOL_DEFINITION: PromptMemoryMcpToolDefinition = {
       {
         required: [
           "source",
+          "rewrite_source",
           "mode",
           "requires_user_approval",
           "summary",

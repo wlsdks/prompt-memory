@@ -93,6 +93,32 @@ export const MCP_TOOL_CATALOG = [
     prompt:
       "Use prompt-memory review_project_instructions with latest=true and tell me whether my AGENTS.md/CLAUDE.md rules are strong enough.",
   },
+  {
+    kind: "advanced judge",
+    name: "prepare_agent_judge_batch",
+    title: "Prepare low-score prompts for agent judgment",
+    when: "The user explicitly asks the active Claude Code, Codex, or Gemini CLI session to judge accumulated prompt quality with an LLM-style review.",
+    returns:
+      "A bounded packet of locally redacted prompt bodies, local score metadata, quality gaps, and a rubric for the active agent session.",
+    assurances: ["read-only", "opt-in", "redacted packet", "output schema"],
+    privacy:
+      "prompt-memory makes no external provider call; redacted prompt bodies are returned only for the active user-controlled agent session.",
+    prompt:
+      "Use prompt-memory prepare_agent_judge_batch with selection=low_score and max_prompts=5. Judge those redacted prompts yourself.",
+  },
+  {
+    kind: "advanced judge",
+    name: "record_agent_judgments",
+    title: "Store advisory agent judgment scores",
+    when: "The active agent has already evaluated a prepare_agent_judge_batch packet and the user wants those advisory scores saved locally.",
+    returns:
+      "Recorded count, saved judgment metadata, failed prompt ids, and the next action.",
+    assurances: ["write tool", "local-only", "metadata only", "output schema"],
+    privacy:
+      "Stores scores, confidence, risks, and suggestions only; no prompt bodies, raw paths, or provider credentials.",
+    prompt:
+      "After judging the prepared packet, call prompt-memory record_agent_judgments with one score, confidence, summary, risks, and suggestions per prompt_id.",
+  },
 ];
 
 type McpReadinessTone = "ready" | "warning" | "muted";

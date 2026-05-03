@@ -4,7 +4,7 @@ import { join } from "node:path";
 import { randomUUID } from "node:crypto";
 import { afterEach, describe, expect, it } from "vitest";
 
-import { runSetup } from "./setup.js";
+import { formatSetupResult, runSetup } from "./setup.js";
 
 const tempDirs: string[] = [];
 
@@ -157,6 +157,24 @@ describe("runSetup", () => {
     expect(settings).toContain("65");
     expect(settings).toContain("--rewrite-language");
     expect(settings).toContain("ko");
+  });
+
+  it("formats setup output for humans by default", () => {
+    const result = runSetup({
+      profile: "coach",
+      noService: true,
+      detectedTools: ["claude-code", "codex"],
+      dryRun: true,
+    });
+
+    const output = formatSetupResult(result);
+
+    expect(output).toContain("prompt-memory setup preview");
+    expect(output).toContain("Profile: coach");
+    expect(output).toContain("Claude Code hook: installed");
+    expect(output).toContain("Codex hook: installed");
+    expect(output).toContain("Next:");
+    expect(output).toContain("Use --json for automation.");
   });
 });
 
