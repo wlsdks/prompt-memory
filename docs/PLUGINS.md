@@ -68,6 +68,8 @@ The plugin exposes:
 
 - `/prompt-memory:setup` to preview and run local setup
 - `/prompt-memory:status` to run doctor and statusLine checks
+- `/prompt-memory:buddy` to show the side-pane buddy command and one-shot
+  checks
 - `/prompt-memory:coach` to run the one-call prompt coach workflow inside
   Claude Code
 - `/prompt-memory:score` to score accumulated prompt habits
@@ -94,10 +96,22 @@ prompt-memory install-statusline claude-code
 prompt-memory statusline claude-code
 ```
 
-This status line reports capture readiness, server health, and the last ingest
-status. Claude Code supports one `statusLine` command, so installing it may
-replace another status line such as a HUD. The setup command must ask before
-installing it.
+This status line reports capture readiness, server health, the latest prompt
+score when available, and the last ingest status. Claude Code supports one
+`statusLine` command, so installing it may replace another status line such as a
+HUD. The setup command must ask before installing it.
+
+Claude Code and Codex can also use an always-on side-pane buddy in a second
+terminal pane:
+
+```sh
+prompt-memory buddy
+prompt-memory buddy --once
+prompt-memory buddy --json
+```
+
+The buddy prints latest prompt score, tool, top gap, habit score, and the next
+move without returning prompt bodies, raw paths, or secrets.
 
 For manual configuration, see:
 

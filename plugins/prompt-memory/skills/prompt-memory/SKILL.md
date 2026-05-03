@@ -62,6 +62,10 @@ prompt-memory mcp
 
 Use these workflows before sending the user to the web UI:
 
+- Always-on side pane: tell the user to open a second terminal pane and run
+  `prompt-memory buddy`. Use `prompt-memory buddy --once` for a one-shot text
+  snapshot or `prompt-memory buddy --json` for automation. This is the
+  cross-agent alternative to a persistent right-side UI panel.
 - Full coach workflow: call `prompt-memory:coach_prompt`. If MCP is
   unavailable, run `prompt-memory coach --json`. Use this as the default when
   the user asks to coach, evaluate, improve, or prepare the next request.

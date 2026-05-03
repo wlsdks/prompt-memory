@@ -24,17 +24,14 @@
     "longDescription": "Prompt Memory captures prompts from supported coding agents through local hooks, redacts sensitive values before storage, indexes Markdown in SQLite, and exposes local MCP/CLI workflows for scoring the latest prompt, rewriting it with user approval, reviewing prompt habits, and checking project AGENTS.md or CLAUDE.md rules.",
     "developerName": "prompt-memory contributors",
     "category": "Coding",
-    "capabilities": [
-      "Interactive",
-      "Read",
-      "Write"
-    ],
+    "capabilities": ["Interactive", "Read", "Write"],
     "websiteURL": "https://github.com/wlsdks/prompt-memory",
     "privacyPolicyURL": "https://github.com/wlsdks/prompt-memory/blob/main/SECURITY.md",
     "termsOfServiceURL": "https://github.com/wlsdks/prompt-memory/blob/main/README.md",
     "defaultPrompt": [
       "Set up prompt-memory for this machine",
       "Check whether prompt-memory is capturing Codex prompts",
+      "Show my prompt-memory buddy side pane command",
       "Run my full prompt coach workflow",
       "Score my latest captured prompt",
       "Improve my latest captured prompt",

@@ -11,6 +11,10 @@ import { fileURLToPath } from "node:url";
 import type { Command } from "commander";
 
 import type { LastHookStatus } from "../../hooks/hook-status.js";
+import {
+  scorePromptTool,
+  type ScorePromptToolResult,
+} from "../../mcp/score-tool.js";
 import { doctorClaudeCode } from "./doctor.js";
 import type { ClaudeSettings } from "./install-hook.js";
 
@@ -123,6 +127,18 @@ export async function renderClaudeCodeStatusLine(
 
   parts.push(result.server.ok ? "server ok" : "server down");
 
+  if (ready) {
+    const latestScore = formatLatestScoreForStatusLine(
+      scorePromptTool(
+        { latest: true, include_suggestions: false },
+        { dataDir: options.dataDir },
+      ),
+    );
+    if (latestScore) {
+      parts.push(latestScore);
+    }
+  }
+
   if (!result.settings.hookInstalled) {
     parts.push("hook missing");
   } else if (!result.token.ok) {
@@ -135,6 +151,21 @@ export async function renderClaudeCodeStatusLine(
   }
 
   return parts.join(" | ");
+}
+
+function formatLatestScoreForStatusLine(
+  result: ScorePromptToolResult,
+): string | undefined {
+  if ("is_error" in result) {
+    return undefined;
+  }
+
+  const gap = result.checklist.find(
+    (item) => item.status === "missing" || item.status === "weak",
+  );
+  const score = `score ${result.quality_score.value}/${result.quality_score.max} ${result.quality_score.band}`;
+
+  return gap ? `${score} | gap ${gap.label}` : score;
 }
 
 export function installClaudeCodeStatusLine(

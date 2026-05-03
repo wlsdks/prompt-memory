@@ -4,6 +4,7 @@ import { fileURLToPath, pathToFileURL } from "node:url";
 
 import { Command } from "commander";
 
+import { registerBuddyCommand } from "./commands/buddy.js";
 import { registerCoachCommand } from "./commands/coach.js";
 import { registerDoctorCommand } from "./commands/doctor.js";
 import { registerExportCommand } from "./commands/export.js";
@@ -29,6 +30,7 @@ export function createProgram(): Command {
     .description("Local-first prompt archive for AI coding tools.")
     .version(VERSION);
 
+  registerBuddyCommand(program);
   registerInitCommand(program);
   registerHookCommand(program);
   registerCoachCommand(program);

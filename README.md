@@ -98,6 +98,7 @@ Codex currently exposes marketplace management through `codex plugin marketplace
 prompt-memory doctor claude-code
 prompt-memory doctor codex
 prompt-memory statusline claude-code
+prompt-memory buddy --once
 ```
 
 Open the local archive:
@@ -312,6 +313,7 @@ The Claude Code plugin provides slash commands:
 ```text
 /prompt-memory:setup
 /prompt-memory:status
+/prompt-memory:buddy
 /prompt-memory:coach
 /prompt-memory:score
 /prompt-memory:score-last
@@ -324,11 +326,21 @@ The Claude Code plugin provides slash commands:
 
 `/prompt-memory:setup` runs `prompt-memory setup --dry-run` first, asks before
 writing local settings, and can optionally install a small Claude Code
-`statusLine` indicator with:
+`statusLine` indicator with the latest prompt score:
 
 ```sh
 pnpm prompt-memory install-statusline claude-code
 ```
+
+For Claude Code or Codex, open a second terminal pane beside the agent and run
+the always-on prompt buddy:
+
+```sh
+pnpm prompt-memory buddy
+```
+
+Use `pnpm prompt-memory buddy --once` for a one-shot text snapshot, or
+`pnpm prompt-memory buddy --json` for automation.
 
 The Codex package under `plugins/prompt-memory` contains a `.codex-plugin`
 manifest, a fail-open `UserPromptSubmit` hook, and a small skill that helps
@@ -350,6 +362,12 @@ Render the Claude Code status line manually:
 
 ```sh
 pnpm prompt-memory statusline claude-code
+```
+
+Render a side-pane buddy snapshot manually:
+
+```sh
+pnpm prompt-memory buddy --once
 ```
 
 Codex can add the same repository as a marketplace:

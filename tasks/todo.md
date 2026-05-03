@@ -1,5 +1,20 @@
 # 작업 계획
 
+## 2026-05-03 Always-On Prompt Buddy
+
+- [x] Claude Code status line에 최신 prompt score HUD를 TDD로 추가
+- [x] Claude Code/Codex 옆 split pane에서 띄우는 `prompt-memory buddy` CLI를 TDD로 추가
+- [x] `/prompt-memory:coach` / MCP 문서와 plugin 안내를 always-on buddy 흐름과 연결
+- [x] privacy-safe 출력, CLI 실제 실행, release gate 검증
+- [ ] 커밋, 푸시, CI 확인
+
+### 판단 기준
+
+- Claude Code/Codex 내부 UI를 해킹하지 않고 공식/안정적인 표면(statusLine, CLI, MCP/slash command)만 사용한다.
+- 최신 점수, 가장 큰 약점, 추세, capture 상태를 prompt body, raw absolute path, secret 없이 보여준다.
+- Codex에는 공식 statusLine이 없으므로 `buddy` split pane을 공통 always-on 경험으로 제공한다.
+- buddy는 기본적으로 TTY에서 반복 갱신하고, `--once`/`--json`으로 테스트와 자동화가 쉬워야 한다.
+
 ## 2026-05-03 Unified Agent Coach
 
 - [x] `coach_prompt` MCP 통합 workflow를 TDD로 추가

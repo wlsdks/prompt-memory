@@ -6,6 +6,9 @@ import { afterEach, describe, expect, it } from "vitest";
 
 import { initializePromptMemory } from "../../config/config.js";
 import { writeLastHookStatus } from "../../hooks/hook-status.js";
+import { normalizeClaudeCodePayload } from "../../adapters/claude-code.js";
+import { redactPrompt } from "../../redaction/redact.js";
+import { createSqlitePromptStorage } from "../../storage/sqlite.js";
 import { installClaudeCodeHook } from "./install-hook.js";
 import {
   installClaudeCodeStatusLine,
@@ -25,12 +28,33 @@ afterEach(() => {
 });
 
 describe("renderClaudeCodeStatusLine", () => {
-  it("renders capture on when server, token, and hook are healthy", async () => {
+  it("renders capture on with latest score when server, token, hook, and archive are healthy", async () => {
     const dir = createTempDir();
     const dataDir = join(dir, "data");
     const settingsPath = join(dir, "settings.json");
-    initializePromptMemory({ dataDir });
+    const init = initializePromptMemory({ dataDir });
     installClaudeCodeHook({ dataDir, settingsPath });
+    const storage = createSqlitePromptStorage({
+      dataDir,
+      hmacSecret: init.hookAuth.web_session_secret,
+      now: () => new Date("2026-05-03T18:00:00.000Z"),
+    });
+    const event = normalizeClaudeCodePayload(
+      {
+        session_id: "session-statusline-score",
+        transcript_path: "/Users/example/.claude/session.jsonl",
+        cwd: "/Users/example/private-project",
+        permission_mode: "default",
+        hook_event_name: "UserPromptSubmit",
+        prompt: "Make this better with token sk-proj-1234567890abcdef",
+      },
+      new Date("2026-05-03T17:59:00.000Z"),
+    );
+    await storage.storePrompt({
+      event,
+      redaction: redactPrompt(event.prompt, "mask"),
+    });
+    storage.close();
     writeLastHookStatus(dataDir, {
       ok: true,
       status: 200,
@@ -43,7 +67,13 @@ describe("renderClaudeCodeStatusLine", () => {
       checkServer: async () => true,
     });
 
-    expect(line).toBe("PM capture on | server ok | last ingest ok");
+    expect(line).toContain("PM capture on");
+    expect(line).toContain("score");
+    expect(line).toContain("needs_work");
+    expect(line).toContain("server ok");
+    expect(line).toContain("last ingest ok");
+    expect(line).not.toContain("sk-proj-1234567890abcdef");
+    expect(line).not.toContain("/Users/example");
   });
 
   it("renders setup hints when capture is not ready", async () => {

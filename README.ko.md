@@ -98,6 +98,7 @@ Codex는 marketplace 관리를 `codex plugin marketplace add/upgrade/remove`로 
 prompt-memory doctor claude-code
 prompt-memory doctor codex
 prompt-memory statusline claude-code
+prompt-memory buddy --once
 ```
 
 로컬 archive 열기:
@@ -253,15 +254,30 @@ Claude Code plugin slash commands:
 ```text
 /prompt-memory:setup
 /prompt-memory:status
+/prompt-memory:buddy
+/prompt-memory:coach
 /prompt-memory:score
+/prompt-memory:score-last
+/prompt-memory:improve-last
+/prompt-memory:habits
+/prompt-memory:rules
+/prompt-memory:coach-next
 /prompt-memory:open
 ```
 
-`/prompt-memory:setup`은 먼저 dry-run을 실행하고, 로컬 설정을 쓰기 전에 승인받습니다. Claude Code status line은 다음 명령으로 설치할 수 있습니다.
+`/prompt-memory:setup`은 먼저 dry-run을 실행하고, 로컬 설정을 쓰기 전에 승인받습니다. Claude Code status line은 최신 prompt score HUD로 쓸 수 있으며 다음 명령으로 설치할 수 있습니다.
 
 ```sh
 pnpm prompt-memory install-statusline claude-code
 ```
+
+Claude Code 또는 Codex 옆에 두 번째 터미널 pane을 열고 항상 켜두는 buddy를 실행할 수도 있습니다.
+
+```sh
+pnpm prompt-memory buddy
+```
+
+한 번만 확인하려면 `pnpm prompt-memory buddy --once`, 자동화에는 `pnpm prompt-memory buddy --json`을 사용합니다.
 
 Codex package는 `.codex-plugin` manifest, fail-open `UserPromptSubmit` hook, 로컬 archive를 설치/진단/사용하도록 돕는 skill을 포함합니다.
 
