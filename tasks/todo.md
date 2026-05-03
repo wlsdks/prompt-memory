@@ -7,7 +7,7 @@
 - [x] Claude/Codex hook CLI와 install-hook 옵션에 안전하게 연결
 - [x] README/Tech spec/plugin docs에 block-and-copy 제약과 사용법 반영
 - [x] targeted/full 검증 실행
-- [ ] PR 생성, CI 확인, main merge, branch cleanup
+- [x] PR 생성, CI 확인, main merge, branch cleanup
 
 ### 판단 기준
 
