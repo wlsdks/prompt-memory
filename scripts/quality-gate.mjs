@@ -5,9 +5,11 @@ const ROOT = process.cwd();
 const SOURCE_DIRS = ["scripts", "src"];
 const SOURCE_EXTENSIONS = new Set([".css", ".js", ".mjs", ".ts", ".tsx"]);
 const LINE_BUDGETS = new Map([
-  ["src/web/src/App.tsx", 4000],
+  ["src/web/src/App.tsx", 3900],
   ["src/web/src/styles.css", 3900],
-  ["src/storage/sqlite.ts", 3600],
+  ["src/storage/sqlite-json.ts", 160],
+  ["src/storage/sqlite-rows.ts", 180],
+  ["src/storage/sqlite.ts", 3350],
   ["src/mcp/score-tool-definitions.ts", 850],
   ["src/mcp/score-tool-types.ts", 220],
   ["src/mcp/score-tool.ts", 750],

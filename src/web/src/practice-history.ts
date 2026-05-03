@@ -176,6 +176,52 @@ export function writePracticeHistory(
   storage.setItem(STORAGE_KEY, JSON.stringify(history.slice(0, HISTORY_LIMIT)));
 }
 
+export function readBrowserPracticeHistory(): PracticeHistoryItem[] {
+  try {
+    return readPracticeHistory(window.localStorage);
+  } catch {
+    return [];
+  }
+}
+
+export function writeBrowserPracticeHistory(
+  history: PracticeHistoryItem[],
+): void {
+  try {
+    writePracticeHistory(window.localStorage, history);
+  } catch {
+    // Ignore private-mode or unavailable storage; the copied draft still works.
+  }
+}
+
+export function formatPracticeDelta(delta?: number): string {
+  if (delta === undefined) {
+    return "-";
+  }
+
+  if (delta > 0) {
+    return `+${delta}`;
+  }
+
+  return `${delta}`;
+}
+
+export function formatPracticeCopyCount(count: number): string {
+  return count === 1 ? "1 copied draft" : `${count} copied drafts`;
+}
+
+export function formatPracticeOutcome(outcome: PracticeOutcome): string {
+  if (outcome === "worked") {
+    return "Worked";
+  }
+
+  if (outcome === "needs_context") {
+    return "Needs context";
+  }
+
+  return "Blocked";
+}
+
 function isPracticeHistoryItem(value: unknown): value is PracticeHistoryItem {
   if (!value || typeof value !== "object") {
     return false;

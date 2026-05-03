@@ -97,10 +97,13 @@ import {
 import {
   appendPracticeHistory,
   createPracticeHistoryItem,
+  formatPracticeCopyCount,
+  formatPracticeDelta,
+  formatPracticeOutcome,
   markPracticeOutcome,
-  readPracticeHistory,
+  readBrowserPracticeHistory,
   summarizePracticeHistory,
-  writePracticeHistory,
+  writeBrowserPracticeHistory,
   type PracticeOutcome,
   type PracticeHistoryItem,
 } from "./practice-history.js";
@@ -2102,50 +2105,6 @@ function PracticeOutcomeButton({
       {label}
     </button>
   );
-}
-
-function readBrowserPracticeHistory(): PracticeHistoryItem[] {
-  try {
-    return readPracticeHistory(window.localStorage);
-  } catch {
-    return [];
-  }
-}
-
-function writeBrowserPracticeHistory(history: PracticeHistoryItem[]): void {
-  try {
-    writePracticeHistory(window.localStorage, history);
-  } catch {
-    // Ignore private-mode or unavailable storage; the copied draft still works.
-  }
-}
-
-function formatPracticeDelta(delta?: number): string {
-  if (delta === undefined) {
-    return "-";
-  }
-
-  if (delta > 0) {
-    return `+${delta}`;
-  }
-
-  return `${delta}`;
-}
-
-function formatPracticeCopyCount(count: number): string {
-  return count === 1 ? "1 copied draft" : `${count} copied drafts`;
-}
-
-function formatPracticeOutcome(outcome: PracticeOutcome): string {
-  if (outcome === "worked") {
-    return "Worked";
-  }
-
-  if (outcome === "needs_context") {
-    return "Needs context";
-  }
-
-  return "Blocked";
 }
 
 function ScoresView({
