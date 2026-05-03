@@ -34,6 +34,9 @@ prompt-memory install-statusline claude-code
 prompt-memory statusline claude-code
 ```
 
+If another Claude Code HUD already exists, explain that prompt-memory chains
+the existing command and restores it on uninstall where possible.
+
 Do not print raw prompt bodies, raw hook payloads, raw absolute paths, tokens,
 or secrets. Explain that the buddy is local-only, reads the prompt-memory
 archive, and never auto-submits improved prompts.

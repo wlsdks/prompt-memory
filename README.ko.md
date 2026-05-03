@@ -161,7 +161,7 @@ pnpm build
 pnpm prompt-memory setup --profile coach --register-mcp
 ```
 
-`setup`은 의도적으로 명시적입니다. npm/pnpm package 설치만으로 Claude Code 또는 Codex 설정을 조용히 수정하거나, login service를 설치하거나, 로컬 background server를 시작하지 않습니다. `prompt-memory setup --profile coach`가 사용자의 동의 단계이며, hook capture, 낮은 마찰의 rewrite guidance, Claude Code status line, 로컬 server startup을 한 번에 준비합니다. `--register-mcp`를 붙이면 감지된 Claude Code/Codex CLI에 `prompt-memory mcp`도 함께 등록합니다.
+`setup`은 의도적으로 명시적입니다. npm/pnpm package 설치만으로 Claude Code 또는 Codex 설정을 조용히 수정하거나, login service를 설치하거나, 로컬 background server를 시작하지 않습니다. `prompt-memory setup --profile coach`가 사용자의 동의 단계이며, hook capture, 낮은 마찰의 rewrite guidance, Claude Code status line, 로컬 server startup을 한 번에 준비합니다. 기존 Claude Code status line이 있으면 덮어쓰지 않고 하나의 chained command 안에서 함께 실행하며, 제거 시 가능한 경우 이전 command를 복구합니다. `--register-mcp`를 붙이면 감지된 Claude Code/Codex CLI에 `prompt-memory mcp`도 함께 등록합니다.
 
 dry-run으로 변경 사항만 preview:
 
@@ -391,6 +391,8 @@ Claude Code plugin slash commands:
 ```sh
 pnpm prompt-memory install-statusline claude-code
 ```
+
+다른 Claude Code HUD가 이미 있으면 prompt-memory는 기존 command를 보존하고 하나의 `statusLine` command에서 둘 다 실행합니다. prompt-memory를 제거하면 설치 시 보존한 이전 command로 복구합니다.
 
 Claude Code 또는 Codex 옆에 두 번째 터미널 pane을 열고 항상 켜두는 buddy를 실행할 수도 있습니다.
 

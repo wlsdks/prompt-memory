@@ -93,7 +93,9 @@ describe("coach CLI", () => {
 
     expect(text).toContain("Prompt-memory is not ready yet.");
     expect(text).toContain("prompt-memory start");
-    expect(text).toContain("prompt-memory setup --profile coach --register-mcp");
+    expect(text).toContain(
+      "prompt-memory setup --profile coach --register-mcp",
+    );
     expect(text).toContain("prompt-memory server");
     expect(text).not.toContain(dataDir);
   });

@@ -123,8 +123,10 @@ prompt-memory statusline claude-code
 
 This status line reports capture readiness, server health, the latest prompt
 score when available, and the last ingest status. Claude Code supports one
-`statusLine` command, so installing it may replace another status line such as a
-HUD. The setup command must ask before installing it.
+`statusLine` command, so prompt-memory preserves an existing HUD by chaining the
+previous command and the prompt-memory command into one status line. Uninstall
+restores the previous command when prompt-memory captured it during install. The
+setup command must ask before installing it.
 
 Claude Code and Codex can also use an always-on side-pane buddy in a second
 terminal pane:
