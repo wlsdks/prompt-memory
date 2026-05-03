@@ -1,5 +1,20 @@
 # 작업 계획
 
+## 2026-05-04 Practice View Module Extraction
+
+- [x] 기능/코드/UI 관점에서 다음 고효과 개선 후보 재점검
+- [x] `App.tsx`의 Practice UI와 local scoring 흐름을 독립 모듈로 분리
+- [x] `App.tsx` line budget을 낮춰 구조 퇴행 방지
+- [x] 브라우저/릴리스 게이트로 Practice와 주요 웹 흐름 검증
+- [ ] PR 생성, CI 확인, main merge, branch cleanup
+
+### 판단 기준
+
+- Practice 화면은 제품의 핵심 가치인 "다음 요청을 더 잘 쓰게 돕기"에 직접 닿으므로 독립적으로 확장 가능해야 한다.
+- 기능 동작과 화면 정보 구조는 유지하되 app shell, routing, practice scoring state를 분리한다.
+- Practice history는 draft 원문을 저장하지 않는 privacy-safe 동작을 유지해야 한다.
+- 품질 게이트는 다음 UI 추가가 `App.tsx`에 다시 몰리는 것을 막아야 한다.
+
 ## 2026-05-04 Prompt Detail CSS Extraction
 
 - [x] 기능/코드/UI 관점에서 다음 고효과 개선 후보 재점검

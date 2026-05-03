@@ -5,7 +5,8 @@ const ROOT = process.cwd();
 const SOURCE_DIRS = ["scripts", "src"];
 const SOURCE_EXTENSIONS = new Set([".css", ".js", ".mjs", ".ts", ".tsx"]);
 const LINE_BUDGETS = new Map([
-  ["src/web/src/App.tsx", 3650],
+  ["src/web/src/App.tsx", 3250],
+  ["src/web/src/practice-view.tsx", 520],
   ["src/web/src/styles.css", 3500],
   ["src/storage/sqlite-json.ts", 160],
   ["src/storage/sqlite-rows.ts", 180],
