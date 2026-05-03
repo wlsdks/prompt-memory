@@ -15,19 +15,24 @@ before writing Markdown files, indexes the archive in SQLite, and exposes a
 local web UI at `http://127.0.0.1:17373`.
 
 The plugin hook is fail-open and expects the `prompt-memory` CLI to be available
-on `PATH`. For the most reliable local setup, run the explicit setup command
-from the installed package:
+on `PATH`. For the most useful local setup, run the coach profile from the
+installed package:
 
 ```sh
-prompt-memory setup
+prompt-memory setup --profile coach
 ```
+
+The coach profile installs capture hooks, low-friction rewrite guidance, local
+server startup where supported, and the Claude Code status line when Claude Code
+is detected. Use plain `prompt-memory setup` only when the user wants passive
+capture without coaching.
 
 When working from this repository during development, build first and use the
 repo script:
 
 ```sh
 pnpm build
-pnpm prompt-memory setup
+pnpm prompt-memory setup --profile coach
 ```
 
 ## Common Checks
@@ -81,6 +86,8 @@ Use these workflows before sending the user to the web UI:
   `latest=true` for AGENTS.md / CLAUDE.md quality checks.
 - Next request template: use `score_prompt_archive` and turn
   `next_prompt_template` plus `practice_plan` into one approval-ready template.
+- One-command setup: prefer `prompt-memory setup --profile coach` over asking
+  the user to install hooks, rewrite guidance, and status line separately.
 
 Open the web UI only when the user wants the dashboard, archive browsing,
 project policy controls, export, or a visual review of trends.

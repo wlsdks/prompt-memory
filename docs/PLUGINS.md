@@ -14,16 +14,21 @@ login services, or start a background server. `prompt-memory setup` is the
 consent step that performs those local changes.
 
 The plugin package is therefore discovery and convenience, not hidden
-installation. Users should still run:
+installation. Users who want active prompt coaching should still run:
 
 ```sh
-prompt-memory setup
+prompt-memory setup --profile coach
 ```
+
+The coach profile installs capture hooks, low-friction rewrite guidance through
+hook context, local server startup where supported, and the Claude Code status
+line when Claude Code is detected. Plain `prompt-memory setup` remains available
+for passive capture only.
 
 Use a preview first when reviewing changes:
 
 ```sh
-prompt-memory setup --dry-run
+prompt-memory setup --profile coach --dry-run
 ```
 
 ## Codex Plugin
@@ -85,11 +90,12 @@ Prompt capture still uses Claude Code hook configuration in settings files. The
 supported install paths are:
 
 ```sh
-prompt-memory setup
+prompt-memory setup --profile coach
 prompt-memory install-hook claude-code
 ```
 
-The plugin can also install an optional Claude Code status line:
+The coach profile also installs the optional Claude Code status line. It can be
+managed manually with:
 
 ```sh
 prompt-memory install-statusline claude-code

@@ -74,7 +74,7 @@ Claude Code 안에서:
 /prompt-memory:setup
 ```
 
-`/prompt-memory:setup`은 CLI 사용 가능 여부를 확인하고, `prompt-memory setup --dry-run`을 먼저 실행한 뒤, 설정 파일을 쓰기 전에 사용자의 승인을 받습니다.
+`/prompt-memory:setup`은 CLI 사용 가능 여부를 확인하고, `prompt-memory setup --profile coach --dry-run`을 먼저 실행한 뒤, 설정 파일을 쓰기 전에 사용자의 승인을 받습니다.
 
 ### 3. Codex Marketplace 추가
 
@@ -84,10 +84,10 @@ Claude Code 안에서:
 codex plugin marketplace add wlsdks/prompt-memory
 ```
 
-그 다음 로컬 setup을 실행합니다.
+그 다음 로컬 coach setup을 실행합니다.
 
 ```sh
-prompt-memory setup
+prompt-memory setup --profile coach
 ```
 
 Codex는 marketplace 관리를 `codex plugin marketplace add/upgrade/remove`로 제공합니다. 프롬프트 capture hook은 `prompt-memory setup`이 Codex hook config를 쓰고 Codex hooks를 활성화하면서 설치합니다.
@@ -123,15 +123,21 @@ agent marketplace 흐름 없이 로컬 개발로 설치:
 ```sh
 pnpm install
 pnpm build
-pnpm prompt-memory setup
+pnpm prompt-memory setup --profile coach
 ```
 
-`setup`은 의도적으로 명시적입니다. npm/pnpm package 설치만으로 Claude Code 또는 Codex 설정을 조용히 수정하거나, login service를 설치하거나, 로컬 background server를 시작하지 않습니다. `prompt-memory setup`이 사용자의 동의 단계입니다.
+`setup`은 의도적으로 명시적입니다. npm/pnpm package 설치만으로 Claude Code 또는 Codex 설정을 조용히 수정하거나, login service를 설치하거나, 로컬 background server를 시작하지 않습니다. `prompt-memory setup --profile coach`가 사용자의 동의 단계이며, hook capture, 낮은 마찰의 rewrite guidance, Claude Code status line, 로컬 server startup을 한 번에 준비합니다.
 
 dry-run으로 변경 사항만 preview:
 
 ```sh
-pnpm prompt-memory setup --dry-run
+pnpm prompt-memory setup --profile coach --dry-run
+```
+
+프롬프트 coaching 없이 수동 capture만 원하면 기본 profile을 사용합니다.
+
+```sh
+pnpm prompt-memory setup
 ```
 
 background service를 원하지 않으면:

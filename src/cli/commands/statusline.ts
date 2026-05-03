@@ -175,7 +175,7 @@ function formatLatestScoreForStatusLine(
   );
   const score = `score ${result.quality_score.value}/${result.quality_score.max} ${result.quality_score.band}`;
 
-  return gap ? `${score} | gap ${gap.label}` : score;
+  return gap ? `${score} | gap ${gap.label} | try improve-last` : score;
 }
 
 export function installClaudeCodeStatusLine(

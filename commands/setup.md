@@ -1,5 +1,5 @@
 ---
-description: Set up prompt-memory capture and optional Claude Code status line
+description: Set up prompt-memory capture or the one-command coach profile
 allowed-tools: Bash, Read, AskUserQuestion
 ---
 
@@ -25,36 +25,28 @@ pnpm install
 pnpm build
 ```
 
-Run a safe preview first:
+For the lowest-friction setup, preview the coach profile first:
 
 ```bash
-prompt-memory setup --dry-run
+prompt-memory setup --profile coach --dry-run
 ```
 
 Explain the planned changes to the user. The setup may initialize
 `~/.prompt-memory`, add Claude Code or Codex hooks, and install a local server
-service where supported.
+service where supported. The coach profile also installs low-friction rewrite
+guidance and the Claude Code status line when Claude Code is detected.
 
 If the user approves, run:
 
 ```bash
+prompt-memory setup --profile coach
+```
+
+Use the default capture-only profile only when the user wants passive recording
+without prompt coaching:
+
+```bash
 prompt-memory setup
-```
-
-Then ask whether they want a small Claude Code status line indicator. It can
-replace an existing Claude Code `statusLine` setting, so do not install it
-without explicit approval.
-
-Preview the status line setting:
-
-```bash
-prompt-memory install-statusline claude-code --dry-run
-```
-
-If approved, install it:
-
-```bash
-prompt-memory install-statusline claude-code
 ```
 
 Verify the result:

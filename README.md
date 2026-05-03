@@ -74,7 +74,9 @@ Inside Claude Code:
 /prompt-memory:setup
 ```
 
-`/prompt-memory:setup` checks that the CLI is available, runs `prompt-memory setup --dry-run`, asks before writing settings, and then runs the real setup if approved.
+`/prompt-memory:setup` checks that the CLI is available, previews
+`prompt-memory setup --profile coach`, asks before writing settings, and then
+runs the real setup if approved.
 
 ### 3. Add The Codex Marketplace
 
@@ -84,10 +86,10 @@ From your shell:
 codex plugin marketplace add wlsdks/prompt-memory
 ```
 
-Then run the local setup:
+Then run the local coach setup:
 
 ```sh
-prompt-memory setup
+prompt-memory setup --profile coach
 ```
 
 Codex currently exposes marketplace management through `codex plugin marketplace add/upgrade/remove`. The prompt capture hook is installed by `prompt-memory setup`, which writes the Codex hook config and enables Codex hooks.
@@ -125,10 +127,10 @@ pnpm install
 pnpm build
 ```
 
-Run the guided local setup:
+Run the guided local coach setup:
 
 ```sh
-pnpm prompt-memory setup
+pnpm prompt-memory setup --profile coach
 ```
 
 `setup` is intentionally explicit. Installing an npm/pnpm package should not
@@ -142,6 +144,10 @@ The setup command:
 - initializes the local data directory
 - detects `claude` and `codex`
 - installs Claude Code and/or Codex hooks for detected tools
+- with `--profile coach`, adds low-friction rewrite guidance through hook
+  context instead of making you run separate score/improve commands
+- with `--profile coach`, installs the Claude Code status line when Claude Code
+  is detected
 - enables Codex hooks when Codex is detected
 - installs and starts a macOS LaunchAgent for the local server when supported
 - prints next steps and paths that were changed
@@ -149,7 +155,13 @@ The setup command:
 Preview setup without writing files:
 
 ```sh
-pnpm prompt-memory setup --dry-run
+pnpm prompt-memory setup --profile coach --dry-run
+```
+
+Use passive capture only when you do not want coaching:
+
+```sh
+pnpm prompt-memory setup
 ```
 
 If you do not want a background service, use:
