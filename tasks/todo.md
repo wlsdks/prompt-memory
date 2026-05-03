@@ -1,5 +1,22 @@
 # 작업 계획
 
+## 2026-05-03 Agent Judge MCP
+
+- [x] Claude Code/Codex 공식 문서와 법적 경계 재확인 후 프로젝트 문서화
+- [x] 현재 MCP/Storage 구조에서 agent judge 결과 저장 경계 설계
+- [x] redacted judge packet / judgment 저장 MCP tool을 TDD로 추가
+- [x] README/PLUGINS/architecture 문서에 opt-in, local-first, provider-auth 경계 반영
+- [x] targeted/full 검증 실행
+- [x] PR 생성
+- [ ] CI 확인, main merge, branch cleanup
+
+### 판단 기준
+
+- `prompt-memory`가 사용자 Claude/OAuth나 Codex 계정을 대신 라우팅하는 숨은 외부 호출을 하지 않는다.
+- Claude Code/Codex 현재 세션이 MCP tool로 redacted prompt packet을 받아 직접 평가하고, 결과만 저장한다.
+- 원문 prompt body, raw absolute path, secret은 judge packet/result/log/stdout/stderr에 노출하지 않는다.
+- LLM judge 결과는 advisory signal로 저장하고, deterministic local score를 기본 기준으로 유지한다.
+
 ## 2026-05-03 Agent Wrapper Experiment
 
 - [x] 로컬 Claude/Codex CLI의 초기 prompt 입력 표면 확인

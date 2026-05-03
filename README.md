@@ -26,7 +26,9 @@ This repository is pre-release software.
 - Anonymized export: web UI and CLI preview/job flow
 - Benchmark v1: implemented as a local regression baseline
 - English/Korean web UI: implemented
-- External LLM analysis: not implemented
+- External LLM analysis: no hidden provider calls; optional MCP agent-judge
+  packet is implemented for the active user-controlled Claude Code/Codex
+  session
 - Default data handling: local only
 
 ## Requirements
@@ -544,7 +546,7 @@ Codex, or any MCP client through a stdio MCP server:
 prompt-memory mcp
 ```
 
-The MCP server exposes six tools:
+The MCP server exposes eight tools:
 
 - `get_prompt_memory_status`: check whether the local archive is initialized,
   whether prompts have been captured, and which MCP tool to call next.
@@ -561,11 +563,18 @@ The MCP server exposes six tools:
 - `review_project_instructions`: review local `AGENTS.md` / `CLAUDE.md`
   instruction files for the latest or selected project and return score,
   checklist status, and improvement hints.
+- `prepare_agent_judge_batch`: prepare a bounded, locally redacted prompt
+  packet and rubric for the active Claude Code/Codex/Gemini CLI session to
+  judge. `prompt-memory` does not call the provider for you.
+- `record_agent_judgments`: store advisory scores and notes produced by the
+  active agent session, without storing prompt bodies or raw paths.
 
-All tools are read-only, idempotent, local-only, and declare an MCP
-`outputSchema` for their structured JSON metadata plus a text JSON fallback.
-Archive-backed tools do not return stored prompt bodies, raw absolute paths,
-secrets, or external LLM results.
+All read tools are local-only and declare an MCP `outputSchema` for structured
+JSON metadata plus a text JSON fallback. `record_agent_judgments` is the only
+write tool; it stores judgment metadata only. Archive-backed local tools do not
+return stored prompt bodies, raw absolute paths, secrets, or hidden external LLM
+results. Agent-judge mode is opt-in and uses the current agent session as the
+evaluator.
 
 Practical agent prompts:
 
@@ -587,15 +596,26 @@ top recurring prompt habit gaps.
 
 Use prompt-memory review_project_instructions with latest=true and tell me
 whether my AGENTS.md/CLAUDE.md rules are strong enough for coding agents.
+
+Use prompt-memory prepare_agent_judge_batch with selection=low_score and
+max_prompts=5. Judge those redacted prompts yourself, then call
+record_agent_judgments with your scores and suggestions.
 ```
 
 The tools return score metadata, checklist breakdowns, warnings, recurring gaps,
 approval-ready rewrite drafts, and improvement hints. They do not store direct
-prompt text or call external LLMs. Archive-backed score/rewrite flows do not
-return stored original prompt bodies. The archive scoring tool also avoids raw
-absolute paths. The project instruction review tool also avoids instruction file
-bodies and raw absolute paths. The status tool returns only safe counts, latest
-prompt metadata, available tool names, and next actions.
+prompt text or make hidden external LLM calls. Archive-backed score/rewrite
+flows do not return stored original prompt bodies. The archive scoring tool also
+avoids raw absolute paths. The project instruction review tool also avoids
+instruction file bodies and raw absolute paths. The status tool returns only
+safe counts, latest prompt metadata, available tool names, and next actions.
+
+Agent-judge packets are different: when explicitly requested, they return
+locally redacted prompt bodies so the active Claude Code/Codex/Gemini CLI
+session can judge them. This is documented in
+[Legal usage guide](docs/LEGAL_USAGE_GUIDE.md). `prompt-memory` does not extract
+or proxy Claude.ai OAuth tokens, Claude Code internal auth tokens,
+OpenAI/Codex/ChatGPT session tokens, or provider API keys.
 
 Example Claude Code registration:
 
@@ -674,7 +694,9 @@ Default behavior:
 - Hook ingest uses a local bearer token stored in `hook-auth.json`.
 - The browser UI uses a same-origin session cookie and CSRF token.
 - Sensitive values are redacted before Markdown, SQLite, and FTS indexing in `mask` mode.
-- External LLM analysis is not implemented and no prompt is sent to an external analysis provider by this app.
+- External LLM analysis is never triggered as a hidden background call. The
+  optional MCP agent-judge workflow returns redacted prompt packets to the
+  active user-controlled agent session only when requested.
 - Prompt Coach is copy-based. It does not automatically type into, replace, or resubmit prompts into Claude Code or Codex.
 - Prompt Rewrite Guard is opt-in. In `block-and-copy` mode it blocks weak prompts and offers a copied local rewrite for manual paste/enter. In `context` mode it adds model-visible rewrite guidance but does not replace the original prompt.
 - Settings and local diagnostics may show local filesystem paths to the local user. Browser prompt/archive/export surfaces mask prompt-body paths and avoid raw prompt identifiers.

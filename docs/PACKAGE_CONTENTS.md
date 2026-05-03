@@ -22,6 +22,8 @@ The npm package intentionally includes:
 - `README.md`, `README.ko.md`, `CHANGELOG.md`, `LICENSE`, `SECURITY.md`,
   `CONTRIBUTING.md`, `CODE_OF_CONDUCT.md`, and `SUPPORT.md`
 - public product and release docs under `docs/`
+  - includes `docs/LEGAL_USAGE_GUIDE.md` so users can inspect the provider
+    documentation boundary for agent-judge mode
 - Claude Code plugin artifacts under `.claude-plugin`, `commands`, and
   `integrations/claude-code`
 - Codex plugin artifacts under `plugins/prompt-memory`

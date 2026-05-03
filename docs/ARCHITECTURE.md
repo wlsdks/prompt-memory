@@ -109,7 +109,7 @@ Current known large modules:
 - `src/storage/sqlite-json.ts`: defensive JSON decoding for SQLite JSON
   columns. Keep malformed data fail-safe and covered by unit tests.
 - `src/mcp/score-tool-definitions.ts`: agent-facing MCP names, descriptions,
-  input schemas, output schemas, and read-only annotations.
+  input schemas, output schemas, and safety annotations.
 - `src/mcp/score-tool-types.ts`: argument/result TypeScript contracts for MCP
   handlers and tests.
 - `src/mcp/score-tool.ts`: MCP handler orchestration and privacy-safe result
@@ -130,9 +130,14 @@ pressure on them rather than expanding them casually.
 - Direct MCP prompt input is analyzed locally and is not stored.
 - Stored prompt scoring returns metadata, score, checklist, and suggestions,
   not the stored original body.
+- Agent-judge MCP mode is explicit and user-session mediated. `prompt-memory`
+  can prepare locally redacted prompt packets and store advisory judgment
+  metadata, but it must not launch hidden provider calls, proxy provider
+  credentials, or store raw prompt bodies for judgments.
 - Markdown remains the human-readable archive source of truth.
 - SQLite/FTS is the index and query layer; delete and rebuild flows must keep
-  Markdown, DB rows, FTS rows, tags, analysis, drafts, and events coherent.
+  Markdown, DB rows, FTS rows, tags, analysis, drafts, judgments, and events
+  coherent.
 
 ## Testing Expectations
 

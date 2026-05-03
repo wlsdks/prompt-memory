@@ -48,6 +48,7 @@ pnpm prompt-memory server -- --data-dir <temp-data-dir>
 - 데이터는 문자열 파싱보다 스키마, 타입, SQLite 쿼리, Markdown/YAML 파서를 우선 사용한다.
 - 사용자 프롬프트, 토큰, 원문 비밀정보를 stdout, stderr, 서버 에러, 로그에 노출하지 않는다.
 - Hook은 fail-open을 기본으로 하며, Claude Code `UserPromptSubmit` stdout은 컨텍스트로 들어갈 수 있으므로 특별히 조심한다.
+- Agent judge 기능은 현재 사용자가 제어하는 Claude Code/Codex/Gemini CLI 세션이 MCP로 redacted packet을 받아 평가하는 opt-in 흐름만 허용한다. `prompt-memory`가 provider 인증정보를 추출, 저장, proxy하거나 숨은 외부 LLM 호출을 해서는 안 된다.
 - 삭제는 Markdown, DB row, FTS, 관련 이벤트/태그/분석 데이터를 함께 정리해야 한다.
 - `rebuild-index`는 Markdown archive를 source of truth로 보고 DB/FTS를 복구해야 한다.
 

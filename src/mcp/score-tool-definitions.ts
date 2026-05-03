@@ -1,3 +1,13 @@
+import {
+  PREPARE_AGENT_JUDGE_BATCH_TOOL_DEFINITION,
+  RECORD_AGENT_JUDGMENTS_TOOL_DEFINITION,
+} from "./agent-judge-tool-definitions.js";
+
+export {
+  PREPARE_AGENT_JUDGE_BATCH_TOOL_DEFINITION,
+  RECORD_AGENT_JUDGMENTS_TOOL_DEFINITION,
+} from "./agent-judge-tool-definitions.js";
+
 type JsonValue =
   | string
   | number
@@ -781,6 +791,8 @@ export const PROMPT_MEMORY_MCP_TOOL_DEFINITIONS: readonly PromptMemoryMcpToolDef
     IMPROVE_PROMPT_TOOL_DEFINITION,
     SCORE_PROMPT_ARCHIVE_TOOL_DEFINITION,
     REVIEW_PROJECT_INSTRUCTIONS_TOOL_DEFINITION,
+    PREPARE_AGENT_JUDGE_BATCH_TOOL_DEFINITION,
+    RECORD_AGENT_JUDGMENTS_TOOL_DEFINITION,
   ];
 
 export function listPromptMemoryMcpToolNames(): string[] {

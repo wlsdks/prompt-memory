@@ -10,8 +10,10 @@ import { redactPrompt } from "../redaction/redact.js";
 import { createSqlitePromptStorage } from "../storage/sqlite.js";
 import {
   coachPromptTool,
+  prepareAgentJudgeBatchTool,
   getPromptMemoryStatusTool,
   improvePromptTool,
+  recordAgentJudgmentsTool,
   reviewProjectInstructionsTool,
   scorePromptArchiveTool,
   scorePromptTool,
@@ -317,6 +319,138 @@ describe("getPromptMemoryStatusTool", () => {
 
     expect(result.status).toBe("setup_needed");
     expect(result.next_actions[0]).toContain("prompt-memory init");
+  });
+});
+
+describe("agent judge MCP tools", () => {
+  it("prepares a redacted LLM judge packet for the current agent session", async () => {
+    const dataDir = createTempDir();
+    const init = initializePromptMemory({ dataDir });
+    const storage = createSqlitePromptStorage({
+      dataDir,
+      hmacSecret: init.hookAuth.web_session_secret,
+      now: nextDate(["2026-05-03T16:00:00.000Z", "2026-05-03T16:01:00.000Z"]),
+    });
+    const weak = await storeClaudePrompt(
+      storage,
+      "Fix this with token sk-proj-1234567890abcdef in /Users/example/private-app",
+      "2026-05-03T15:59:00.000Z",
+    );
+    await storeClaudePrompt(
+      storage,
+      "Review src/mcp/score-tool.ts, keep scope to MCP judge tools, run pnpm vitest run src/mcp/score-tool.test.ts, and return risk notes.",
+      "2026-05-03T16:00:00.000Z",
+    );
+    storage.close();
+
+    const result = prepareAgentJudgeBatchTool(
+      {
+        max_prompts: 2,
+        selection: "low_score",
+        include_redacted_prompt: true,
+      },
+      { dataDir, now: new Date("2026-05-03T16:02:00.000Z") },
+    );
+    const serialized = JSON.stringify(result);
+
+    expect(result.mode).toBe("agent_judge_packet");
+    expect(result.prompts[0]).toEqual(
+      expect.objectContaining({
+        prompt_id: weak.id,
+        local_score: expect.any(Object),
+        redacted_prompt: expect.stringContaining("[REDACTED:api_key]"),
+      }),
+    );
+    expect(result.rubric.criteria).toHaveLength(5);
+    expect(result.agent_instructions).toContain("record_agent_judgments");
+    expect(result.privacy).toEqual({
+      local_only: true,
+      external_calls_by_prompt_memory: false,
+      intended_external_evaluator: "current_agent_session",
+      returns_redacted_prompt_bodies: true,
+      returns_raw_prompt_bodies: false,
+      returns_raw_paths: false,
+      stores_judgment_results: false,
+      auto_submits: false,
+    });
+    expect(serialized).not.toContain("sk-proj-1234567890abcdef");
+    expect(serialized).not.toContain("/Users/example");
+  });
+
+  it("records current-agent judgments without storing prompt bodies", async () => {
+    const dataDir = createTempDir();
+    const init = initializePromptMemory({ dataDir });
+    const storage = createSqlitePromptStorage({
+      dataDir,
+      hmacSecret: init.hookAuth.web_session_secret,
+      now: () => new Date("2026-05-03T17:00:00.000Z"),
+    });
+    const prompt = await storeClaudePrompt(
+      storage,
+      "Make this better with token sk-proj-1234567890abcdef",
+      "2026-05-03T16:59:00.000Z",
+    );
+    storage.close();
+
+    const result = recordAgentJudgmentsTool(
+      {
+        provider: "claude-code",
+        judge_model: "current-session",
+        judgments: [
+          {
+            prompt_id: prompt.id,
+            score: 41,
+            confidence: 0.72,
+            summary:
+              "The request has a goal but lacks scope and verification detail.",
+            strengths: ["Goal is short enough to revise."],
+            risks: ["Scope is vague."],
+            suggestions: ["Add target files and verification command."],
+          },
+        ],
+      },
+      { dataDir, now: new Date("2026-05-03T17:01:00.000Z") },
+    );
+    const serialized = JSON.stringify(result);
+
+    expect(result.recorded).toBe(1);
+    expect(result.judgments[0]).toEqual(
+      expect.objectContaining({
+        prompt_id: prompt.id,
+        provider: "claude-code",
+        score: 41,
+        confidence: 0.72,
+      }),
+    );
+    expect(result.privacy).toEqual({
+      local_only: true,
+      external_calls_by_prompt_memory: false,
+      stores_prompt_bodies: false,
+      stores_raw_paths: false,
+      stores_judgment_results: true,
+    });
+    expect(serialized).not.toContain("Make this better");
+    expect(serialized).not.toContain("sk-proj-1234567890abcdef");
+  });
+
+  it("rejects invalid agent judgment input before storage", () => {
+    const result = recordAgentJudgmentsTool({
+      provider: "claude-code",
+      judgments: [
+        {
+          prompt_id: "prompt_missing",
+          score: 101,
+          confidence: 1.1,
+          summary: "bad",
+          strengths: [],
+          risks: [],
+          suggestions: [],
+        },
+      ],
+    });
+
+    expect(result.is_error).toBe(true);
+    expect(result.error_code).toBe("invalid_input");
   });
 });
 

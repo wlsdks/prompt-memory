@@ -5,6 +5,16 @@ import { loadHookAuth, loadPromptMemoryConfig } from "../config/config.js";
 import type { PromptAnalysisPreview } from "../shared/schema.js";
 import { createSqlitePromptStorage } from "../storage/sqlite.js";
 import type { PromptSummary } from "../storage/ports.js";
+export {
+  prepareAgentJudgeBatchTool,
+  recordAgentJudgmentsTool,
+} from "./agent-judge-tool.js";
+export type {
+  PrepareAgentJudgeBatchToolArguments,
+  PrepareAgentJudgeBatchToolResult,
+  RecordAgentJudgmentsToolArguments,
+  RecordAgentJudgmentsToolResult,
+} from "./agent-judge-tool-types.js";
 import { listPromptMemoryMcpToolNames } from "./score-tool-definitions.js";
 import type {
   CoachPromptToolArguments,
@@ -26,7 +36,9 @@ export {
   COACH_PROMPT_TOOL_DEFINITION,
   GET_PROMPT_MEMORY_STATUS_TOOL_DEFINITION,
   IMPROVE_PROMPT_TOOL_DEFINITION,
+  PREPARE_AGENT_JUDGE_BATCH_TOOL_DEFINITION,
   PROMPT_MEMORY_MCP_TOOL_DEFINITIONS,
+  RECORD_AGENT_JUDGMENTS_TOOL_DEFINITION,
   REVIEW_PROJECT_INSTRUCTIONS_TOOL_DEFINITION,
   SCORE_PROMPT_ARCHIVE_TOOL_DEFINITION,
   SCORE_PROMPT_TOOL_DEFINITION,
@@ -260,6 +272,7 @@ export function getPromptMemoryStatusTool(
                 "Use score_prompt with latest=true to evaluate the latest captured prompt.",
                 "Use improve_prompt with latest=true to generate an approval-ready rewritten request.",
                 "Use score_prompt_archive to review accumulated prompt habits.",
+                "Use prepare_agent_judge_batch, then record_agent_judgments, when the user explicitly asks the active Claude Code/Codex session to judge stored prompts.",
                 "Use review_project_instructions to check AGENTS.md/CLAUDE.md quality for a captured project.",
               ]
             : [
