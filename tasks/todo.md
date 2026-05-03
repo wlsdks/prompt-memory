@@ -7,7 +7,7 @@
 - [x] `prompt-memory start --open-web`로 첫 3분 setup 안내 압축
 - [x] README/README.ko 첫 3분 외부 사용자 흐름 재정리
 - [x] 테스트/벤치마크/릴리스 게이트 실행
-- [ ] PR 생성, CI 확인, main merge, branch cleanup
+- [x] PR 생성, CI 확인, main merge, branch cleanup
 
 ### 판단 기준
 
