@@ -1,5 +1,20 @@
 # 작업 계획
 
+## 2026-05-03 Coach Setup Profile
+
+- [x] coach profile UX 기준과 안전한 기본값 확정
+- [x] `setup --profile coach` TDD 구현
+- [x] statusline / plugin / README 문서 갱신
+- [x] targeted/full 검증 실행
+- [x] PR 생성, CI 확인, main merge, branch cleanup
+
+### 판단 기준
+
+- 기본 `setup`은 기존 capture-only 동작을 유지한다.
+- coach profile은 별도 명령을 여러 번 외우지 않아도 hook, rewrite guidance, statusline까지 한 번에 연결해야 한다.
+- 기본 coach profile은 `context` rewrite guard로 마찰을 줄이고, 더 엄격한 `block-and-copy`는 명시 옵션으로 둔다.
+- statusline은 점수뿐 아니라 다음 행동을 바로 보여줘야 한다.
+
 ## 2026-05-03 Prompt Rewrite Guard
 
 - [x] 공식 hook 표면 안에서 가능한 Query Rewriting 범위 확정

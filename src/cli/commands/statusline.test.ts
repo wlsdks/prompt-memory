@@ -70,6 +70,7 @@ describe("renderClaudeCodeStatusLine", () => {
     expect(line).toContain("PM capture on");
     expect(line).toContain("score");
     expect(line).toContain("needs_work");
+    expect(line).toContain("try improve-last");
     expect(line).toContain("server ok");
     expect(line).toContain("last ingest ok");
     expect(line).not.toContain("sk-proj-1234567890abcdef");
