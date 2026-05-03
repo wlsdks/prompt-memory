@@ -32,6 +32,7 @@ import {
   type PracticeOutcome,
   type PracticePromptAnalysis,
 } from "./practice-history.js";
+import "./practice-view.css";
 
 const COPY_CONFIRMATION_MS = 2_500;
 const MAX_SCORE_PERCENT = 100;

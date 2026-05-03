@@ -1,5 +1,20 @@
 # 작업 계획
 
+## 2026-05-04 Practice CSS Extraction
+
+- [x] 기능/코드/UI 관점에서 다음 고효과 개선 후보 재점검
+- [x] Practice 전용 스타일을 component-owned CSS로 분리
+- [x] `styles.css` line budget을 낮춰 전역 CSS 비대화 방지
+- [x] 브라우저/릴리스 게이트로 Practice와 주요 웹 흐름 검증
+- [ ] PR 생성, CI 확인, main merge, branch cleanup
+
+### 판단 기준
+
+- `practice-*` selector는 `PracticeView`가 소유하고, shared archive score 스타일은 전역에 둔다.
+- 화면 정보 구조와 기능 동작은 바꾸지 않고 스타일 소유권만 명확히 한다.
+- Practice의 fixed draft copy, score preview, quick fix, history, outcome feedback이 그대로 동작해야 한다.
+- 전역 CSS budget을 낮춰 앞으로 Practice 개선이 다시 `styles.css`에 쌓이지 않도록 한다.
+
 ## 2026-05-04 Practice Copy Fixed Draft UX
 
 - [x] 기능/코드/UI 관점에서 다음 고효과 개선 후보 재점검
