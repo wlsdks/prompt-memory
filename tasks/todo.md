@@ -1,5 +1,20 @@
 # 작업 계획
 
+## 2026-05-04 Prompt Detail Module Extraction
+
+- [x] 기능/코드/UI 관점에서 다음 고효과 개선 후보 재점검
+- [x] `App.tsx`의 Prompt detail 관련 UI를 독립 모듈로 분리
+- [x] `App.tsx` line budget을 낮춰 구조 퇴행 방지
+- [x] 브라우저/릴리스 게이트로 detail 화면 동작 검증
+- [ ] PR 생성, CI 확인, main merge, branch cleanup
+
+### 판단 기준
+
+- 기능 동작과 화면 정보 구조는 유지하되 `App.tsx` 집중도를 낮춘다.
+- detail 화면은 prompt body, raw path, token privacy 회귀 없이 유지되어야 한다.
+- 품질 게이트는 다음 UI 추가가 `App.tsx`에 다시 몰리는 것을 막아야 한다.
+- 웹 검증은 detail, coach, practice, scores, MCP 흐름을 포함한다.
+
 ## 2026-05-04 Detail Agent Actions Polish
 
 - [x] 기능/코드/UI 관점에서 다음 고효과 개선 후보 재점검
