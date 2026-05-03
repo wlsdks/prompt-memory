@@ -3,21 +3,28 @@ import { describe, expect, it } from "vitest";
 import { buildStartGuide, formatStartGuide } from "./start.js";
 
 describe("start guide", () => {
-  it("shows the shortest first-success path for both supported agents", () => {
+  it("puts the first-score happy path before troubleshooting commands", () => {
     const guide = buildStartGuide();
+    const output = formatStartGuide(guide);
 
     expect(guide.goal).toContain("Capture one real coding prompt");
     expect(guide.tools).toEqual(["claude-code", "codex"]);
-    expect(guide.steps.flatMap((step) => step.commands)).toEqual(
-      expect.arrayContaining([
-        "prompt-memory setup --profile coach --register-mcp",
-        "claude mcp add --transport stdio prompt-memory -- prompt-memory mcp",
-        "codex mcp add prompt-memory -- prompt-memory mcp",
-        "prompt-memory doctor claude-code",
-        "prompt-memory doctor codex",
-        "prompt-memory coach",
-      ]),
+    expect(guide.steps.slice(0, 3).map((step) => step.title)).toEqual([
+      "Run the coach setup",
+      "Send one real coding prompt",
+      "See the first score",
+    ]);
+    expect(output.indexOf("prompt-memory coach")).toBeLessThan(
+      output.indexOf("Troubleshooting"),
     );
+    expect(output.indexOf("prompt-memory doctor claude-code")).toBeGreaterThan(
+      output.indexOf("Troubleshooting"),
+    );
+    expect(output.indexOf("claude mcp add")).toBeGreaterThan(
+      output.indexOf("Troubleshooting"),
+    );
+    expect(output).toContain("prompt-memory server");
+    expect(output).not.toContain("prompt-memory open");
   });
 
   it("can focus on one tool without hiding the coach flow", () => {

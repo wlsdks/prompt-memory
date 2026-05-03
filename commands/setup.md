@@ -44,6 +44,20 @@ If the user approves, run:
 prompt-memory setup --profile coach --register-mcp
 ```
 
+After setup, keep the first success path short:
+
+```bash
+# ask the user to send one real Claude Code or Codex coding prompt, then:
+prompt-memory coach
+```
+
+Use `doctor` only if the prompt does not appear:
+
+```bash
+prompt-memory doctor claude-code
+prompt-memory doctor codex
+```
+
 If MCP registration fails or the user chooses not to use `--register-mcp`,
 provide the manual command:
 
@@ -61,7 +75,6 @@ prompt-memory setup
 Verify the result:
 
 ```bash
-prompt-memory doctor claude-code
 prompt-memory statusline claude-code
 ```
 

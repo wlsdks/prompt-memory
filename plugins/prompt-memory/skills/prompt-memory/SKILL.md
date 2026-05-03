@@ -19,6 +19,7 @@ on `PATH`. For the most useful local setup, run the coach profile from the
 installed package:
 
 ```sh
+prompt-memory start
 prompt-memory setup --profile coach --register-mcp
 ```
 
@@ -28,6 +29,10 @@ is detected. `--register-mcp` also registers `prompt-memory mcp` with detected
 Claude Code/Codex CLIs so the active agent can call coach/rewrite/judge tools.
 Use plain `prompt-memory setup` only when the user wants passive capture without
 coaching.
+
+After setup, ask the user to send one real coding prompt in Claude Code or
+Codex, then run `prompt-memory coach`. Use `doctor` and manual MCP registration
+only if capture or agent-native commands do not appear.
 
 When working from this repository during development, build first and use the
 repo script:
@@ -96,7 +101,8 @@ Use these workflows before sending the user to the web UI:
   `next_prompt_template` plus `practice_plan` into one approval-ready template.
 - One-command setup: prefer `prompt-memory setup --profile coach --register-mcp`
   over asking the user to install hooks, rewrite guidance, status line, and MCP
-  registration separately.
+  registration separately. For a new user, show `prompt-memory start` first so
+  the happy path stays `setup -> one real prompt -> coach`.
 - Initial prompt wrapper: when the user wants one-click rewrite before launching
   a new agent session, suggest `pm-claude --pm-mode auto -- "..."` or
   `pm-codex --pm-mode auto -- "..."`. Use `--pm-dry-run` first when verifying.

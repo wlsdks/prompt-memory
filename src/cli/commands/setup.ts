@@ -211,8 +211,28 @@ export function formatSetupResult(result: SetupResult): string {
     lines.push(`- Codex MCP: ${formatMcpRegistration(result.mcp.codex)}`);
   }
 
-  lines.push("", "Next:");
-  for (const step of result.nextSteps) {
+  lines.push("", "First score path:");
+  for (const step of result.nextSteps.filter(isFirstScoreStep)) {
+    lines.push(`- ${step}`);
+  }
+
+  const troubleshootingSteps = result.nextSteps.filter(isTroubleshootingStep);
+  if (troubleshootingSteps.length > 0) {
+    lines.push("", "If capture does not appear:");
+    for (const step of troubleshootingSteps) {
+      lines.push(`- ${step}`);
+    }
+  }
+
+  const optionalSteps = result.nextSteps.filter(isOptionalStep);
+  if (optionalSteps.length > 0) {
+    lines.push("", "Optional:");
+    for (const step of optionalSteps) {
+      lines.push(`- ${step}`);
+    }
+  }
+
+  for (const step of result.nextSteps.filter(isOtherStep)) {
     lines.push(`- ${step}`);
   }
 
@@ -236,6 +256,38 @@ function formatMcpRegistration(
   if (!result) return "not detected";
   if (result.dryRun) return "preview";
   return result.ok ? "registered" : `failed (${result.error ?? "unknown"})`;
+}
+
+function isFirstScoreStep(step: string): boolean {
+  return (
+    step.startsWith("Run prompt-memory server") ||
+    step.startsWith("Run prompt-memory service start") ||
+    step.startsWith("Send one real coding prompt")
+  );
+}
+
+function isTroubleshootingStep(step: string): boolean {
+  return (
+    step.startsWith("Register MCP") ||
+    step.startsWith("Retry MCP") ||
+    step.startsWith("Run prompt-memory doctor")
+  );
+}
+
+function isOptionalStep(step: string): boolean {
+  return (
+    step.startsWith("Open http://127.0.0.1:17373") ||
+    step.startsWith("Restart Claude Code") ||
+    step.startsWith("Coach profile enabled")
+  );
+}
+
+function isOtherStep(step: string): boolean {
+  return (
+    !isFirstScoreStep(step) &&
+    !isTroubleshootingStep(step) &&
+    !isOptionalStep(step)
+  );
 }
 
 export function runSetup(options: SetupOptions = {}): SetupResult {
@@ -476,6 +528,9 @@ function buildNextSteps(options: {
 
   if (options.profile === "coach") {
     steps.push(
+      "Send one real coding prompt in Claude Code or Codex, then run prompt-memory coach.",
+    );
+    steps.push(
       "Coach profile enabled: prompt-memory will add low-friction rewrite guidance inside supported hooks.",
     );
     if (!options.mcpResult.registerRequested) {
@@ -502,12 +557,11 @@ function buildNextSteps(options: {
         "Restart Claude Code if the prompt-memory status line is not visible.",
       );
     }
-    steps.push(
-      "Send one real coding prompt in Claude Code or Codex, then run prompt-memory coach.",
-    );
   }
 
-  steps.push("Open http://127.0.0.1:17373 to review captured prompts.");
+  steps.push(
+    "Open http://127.0.0.1:17373 when you want archive search, dashboards, or export.",
+  );
   steps.push(buildDoctorNextStep(options.detectedTools));
 
   return steps;
