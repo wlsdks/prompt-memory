@@ -162,6 +162,11 @@ try {
   );
   await assertText(
     page,
+    "Recommended command",
+    "Dashboard should show one recommended agent command.",
+  );
+  await assertText(
+    page,
     "Draft with live score",
     "Dashboard should route users to prompt practice.",
   );

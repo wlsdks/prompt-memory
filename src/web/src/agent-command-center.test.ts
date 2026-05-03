@@ -16,6 +16,10 @@ describe("createAgentCommandSnapshot", () => {
     expect(snapshot.score).toBe("63");
     expect(snapshot.scoredPrompts).toBe("8/10");
     expect(snapshot.nextAction).toBe("Review Goal clarity");
+    expect(snapshot.recommendedCommand.command).toBe("/prompt-memory:coach");
+    expect(command(snapshot, "setup-coach")).toBe(
+      "prompt-memory setup --profile coach --register-mcp",
+    );
     expect(command(snapshot, "coach")).toBe("/prompt-memory:coach");
     expect(command(snapshot, "mcp-coach")).toBe(
       "prompt-memory:coach_prompt include_latest_score=true include_archive=true",
@@ -34,6 +38,9 @@ describe("createAgentCommandSnapshot", () => {
     expect(snapshot.score).toBe("-");
     expect(snapshot.scoredPrompts).toBe("0/0");
     expect(snapshot.nextAction).toBe("Capture one real prompt");
+    expect(snapshot.recommendedCommand.command).toBe(
+      "prompt-memory setup --profile coach --register-mcp",
+    );
   });
 });
 
