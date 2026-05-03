@@ -6,7 +6,7 @@
 - [x] Practice 전용 스타일을 component-owned CSS로 분리
 - [x] `styles.css` line budget을 낮춰 전역 CSS 비대화 방지
 - [x] 브라우저/릴리스 게이트로 Practice와 주요 웹 흐름 검증
-- [ ] PR 생성, CI 확인, main merge, branch cleanup
+- [x] PR 생성, CI 확인, main merge, branch cleanup
 
 ### 판단 기준
 
