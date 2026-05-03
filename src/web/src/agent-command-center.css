@@ -85,6 +85,37 @@
   font-size: 15px;
 }
 
+.agent-command-recommendation {
+  border-top: 1px solid var(--color-border-soft);
+  display: grid;
+  gap: 8px;
+  margin-top: 4px;
+  padding-top: 12px;
+}
+
+.agent-command-recommendation > span {
+  color: var(--pm-text-subtle);
+  font-size: 11px;
+  font-weight: 650;
+}
+
+.agent-command-recommendation code {
+  background: var(--color-canvas);
+  border: 1px solid var(--color-border-soft);
+  border-radius: 7px;
+  font-size: 11px;
+  line-height: 18px;
+  overflow-wrap: anywhere;
+  padding: 7px;
+}
+
+.agent-command-recommendation-button {
+  align-items: center;
+  display: inline-flex;
+  gap: 6px;
+  justify-content: center;
+}
+
 .agent-command-list {
   display: grid;
 }

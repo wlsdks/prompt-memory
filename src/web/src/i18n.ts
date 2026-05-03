@@ -483,6 +483,9 @@ const UI_TRANSLATIONS: Record<string, string> = {
   "Next best move": "다음 최적 행동",
   "Start with Coach in the agent session, then use the web dashboard only when you want to review history or trends.":
     "에이전트 세션에서는 Coach부터 실행하고, 히스토리나 추세를 볼 때만 웹 대시보드를 사용하세요.",
+  "Recommended command": "추천 명령",
+  "Copy recommendation": "추천 명령 복사",
+  "Run coach setup": "코치 설정 실행",
   "Coach latest prompt": "최근 프롬프트 코칭",
   "Score last prompt": "최근 프롬프트 점수화",
   "Improve last prompt": "최근 프롬프트 개선",
@@ -492,6 +495,8 @@ const UI_TRANSLATIONS: Record<string, string> = {
   "Install HUD line": "HUD 줄 설치",
   "One-call score, habits, rewrite guidance, and next request brief.":
     "점수, 습관, 개선 가이드, 다음 요청 브리프를 한 번에 확인합니다.",
+  "Install capture, coaching, status line, and MCP access in one explicit setup pass.":
+    "수집, 코칭, 상태줄, MCP 접근을 명시적 설정 한 번으로 설치합니다.",
   "Check the prompt you just sent without opening the web UI.":
     "웹 UI를 열지 않고 방금 보낸 프롬프트를 점검합니다.",
   "Generate an approval-ready improvement draft for manual paste.":

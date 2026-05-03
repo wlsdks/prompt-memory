@@ -24,6 +24,7 @@ export type AgentCommandSnapshot = {
   score: string;
   scoredPrompts: string;
   nextAction: string;
+  recommendedCommand: AgentCommand;
   commands: AgentCommand[];
 };
 
@@ -49,6 +50,74 @@ export function createAgentCommandSnapshot({
   const topGap =
     archiveScore?.top_gaps[0]?.label ?? dashboard?.missing_items[0]?.label;
 
+  const commands: AgentCommand[] = [
+    {
+      id: "setup-coach",
+      command: "prompt-memory setup --profile coach --register-mcp",
+      detail:
+        "Install capture, coaching, status line, and MCP access in one explicit setup pass.",
+      label: "Run coach setup",
+      surface: "CLI",
+    },
+    {
+      id: "coach",
+      command: "/prompt-memory:coach",
+      detail:
+        "One-call score, habits, rewrite guidance, and next request brief.",
+      label: "Coach latest prompt",
+      surface: "Claude Code",
+    },
+    {
+      id: "score-last",
+      command: "/prompt-memory:score-last",
+      detail: "Check the prompt you just sent without opening the web UI.",
+      label: "Score last prompt",
+      surface: "Claude Code",
+    },
+    {
+      id: "improve-last",
+      command: "/prompt-memory:improve-last",
+      detail: "Generate an approval-ready improvement draft for manual paste.",
+      label: "Improve last prompt",
+      surface: "Claude Code",
+    },
+    {
+      id: "mcp-coach",
+      command:
+        "prompt-memory:coach_prompt include_latest_score=true include_archive=true",
+      detail:
+        "Use the MCP tool from Claude Code or Codex for one-call score, habits, and next request guidance.",
+      label: "MCP coach workflow",
+      surface: "MCP",
+    },
+    {
+      id: "mcp-score-latest",
+      command: "prompt-memory:score_prompt latest=true",
+      detail: "Use the MCP tool when you only need the latest prompt score.",
+      label: "MCP score latest",
+      surface: "MCP",
+    },
+    {
+      id: "buddy",
+      command: "prompt-memory buddy",
+      detail: "Keep a compact always-on prompt score companion in a side pane.",
+      label: "Open side buddy",
+      surface: "CLI",
+    },
+    {
+      id: "statusline",
+      command: "prompt-memory install-statusline claude-code",
+      detail:
+        "Add prompt-memory under the existing Claude HUD without replacing it.",
+      label: "Install HUD line",
+      surface: "CLI",
+    },
+  ];
+  const recommendedCommand =
+    total > 0
+      ? commandById(commands, "coach")
+      : commandById(commands, "setup-coach");
+
   return {
     score: average === undefined ? "-" : `${average}`,
     scoredPrompts: `${scored}/${total}`,
@@ -57,64 +126,17 @@ export function createAgentCommandSnapshot({
       : reviewCount > 0
         ? `${reviewCount} weak prompts`
         : "Capture one real prompt",
-    commands: [
-      {
-        id: "coach",
-        command: "/prompt-memory:coach",
-        detail:
-          "One-call score, habits, rewrite guidance, and next request brief.",
-        label: "Coach latest prompt",
-        surface: "Claude Code",
-      },
-      {
-        id: "score-last",
-        command: "/prompt-memory:score-last",
-        detail: "Check the prompt you just sent without opening the web UI.",
-        label: "Score last prompt",
-        surface: "Claude Code",
-      },
-      {
-        id: "improve-last",
-        command: "/prompt-memory:improve-last",
-        detail:
-          "Generate an approval-ready improvement draft for manual paste.",
-        label: "Improve last prompt",
-        surface: "Claude Code",
-      },
-      {
-        id: "mcp-coach",
-        command:
-          "prompt-memory:coach_prompt include_latest_score=true include_archive=true",
-        detail:
-          "Use the MCP tool from Claude Code or Codex for one-call score, habits, and next request guidance.",
-        label: "MCP coach workflow",
-        surface: "MCP",
-      },
-      {
-        id: "mcp-score-latest",
-        command: "prompt-memory:score_prompt latest=true",
-        detail: "Use the MCP tool when you only need the latest prompt score.",
-        label: "MCP score latest",
-        surface: "MCP",
-      },
-      {
-        id: "buddy",
-        command: "prompt-memory buddy",
-        detail:
-          "Keep a compact always-on prompt score companion in a side pane.",
-        label: "Open side buddy",
-        surface: "CLI",
-      },
-      {
-        id: "statusline",
-        command: "prompt-memory install-statusline claude-code",
-        detail:
-          "Add prompt-memory under the existing Claude HUD without replacing it.",
-        label: "Install HUD line",
-        surface: "CLI",
-      },
-    ],
+    recommendedCommand,
+    commands,
   };
+}
+
+function commandById(commands: AgentCommand[], id: string): AgentCommand {
+  const command = commands.find((item) => item.id === id);
+  if (!command) {
+    throw new Error(`Missing agent command: ${id}`);
+  }
+  return command;
 }
 
 export function AgentCommandCenter({
@@ -180,6 +202,20 @@ export function AgentCommandCenter({
             Start with Coach in the agent session, then use the web dashboard
             only when you want to review history or trends.
           </p>
+          <div className="agent-command-recommendation">
+            <span>Recommended command</span>
+            <code>{snapshot.recommendedCommand.command}</code>
+            <button
+              className="panel-link-button agent-command-recommendation-button"
+              onClick={() => void copyCommand(snapshot.recommendedCommand)}
+              type="button"
+            >
+              <Copy size={14} />
+              {copiedCommandId === snapshot.recommendedCommand.id
+                ? "Copied command"
+                : "Copy recommendation"}
+            </button>
+          </div>
         </div>
         <div className="agent-command-list" role="list">
           {snapshot.commands.map((command) => (

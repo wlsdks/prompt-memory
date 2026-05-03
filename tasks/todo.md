@@ -1,5 +1,19 @@
 # 작업 계획
 
+## 2026-05-04 Recommended Agent Action Polish
+
+- [x] 기능/코드/UI 관점에서 다음 고효과 개선 후보 재점검
+- [x] Dashboard Agent command center에 추천 1순위 명령을 추가
+- [x] Claude Code와 MCP 양쪽 명령 복사 UX 회귀 테스트 추가
+- [x] 브라우저/릴리스 게이트로 실제 동작 검증
+- [ ] PR 생성, CI 확인, main merge, branch cleanup
+
+### 판단 기준
+
+- 사용자는 웹에서 명령 목록을 해석하지 않아도 바로 다음 행동을 알 수 있어야 한다.
+- 추천 명령은 prompt body, raw path, token을 포함하지 않고 agent-native workflow만 가리킨다.
+- 웹은 회고/대시보드 역할을 유지하고, 실제 실행은 Claude Code/Codex 안에서 하도록 안내한다.
+
 ## 2026-05-04 Vertical StatusLine And Agent UX Polish
 
 - [x] statusLine chain이 `claude-hud`와 prompt-memory multiline 출력을 모두 보존하는지 재점검
