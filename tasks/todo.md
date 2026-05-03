@@ -6,7 +6,7 @@
 - [x] Prompt detail 화면에 선택 프롬프트용 agent-native 후속 명령 추가
 - [x] 명령 스냅샷이 prompt body, raw path, token을 노출하지 않는 회귀 테스트 추가
 - [x] 브라우저/릴리스 게이트로 실제 동작 검증
-- [ ] PR 생성, CI 확인, main merge, branch cleanup
+- [x] PR 생성, CI 확인, main merge, branch cleanup
 
 ### 판단 기준
 
