@@ -17,6 +17,9 @@ stored prompt, not just run the local deterministic rewrite. The first tool
 returns one locally redacted prompt, local score metadata, a local baseline
 draft, and a rewrite contract. Rewrite that redacted prompt in this active
 Claude Code session, then ask the user before saving or reusing the draft.
+Because this happens inside the active Claude Code session, the redacted packet
+may be processed by the user's configured provider session. Make that boundary
+clear when summarizing sensitive workflows.
 
 Only call `record_agent_rewrite` after the user approves saving the improved
 draft. Do not auto-submit the rewrite. Do not call external providers through

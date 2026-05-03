@@ -50,7 +50,9 @@ documentation reviewed on 2026-05-03 and the product boundary chosen for
 - LLM rewrite and judge behavior is opt-in and agent-mediated. `prompt-memory`
   can return a bounded, locally redacted prompt packet through MCP so the active
   user-controlled Claude Code, Codex, or Gemini CLI session can rewrite or
-  evaluate it.
+  evaluate it. That active agent may send the redacted packet through its
+  provider session according to the user's own tool setup, account, and
+  approval mode.
 - The active agent session can call `record_agent_rewrite` to store a redacted
   improvement draft after user approval. The result must not store the original
   prompt body, raw absolute paths, tokens, or provider credentials.

@@ -19,6 +19,7 @@ import { registerScoreCommand } from "./commands/score.js";
 import { registerServerCommand } from "./commands/server.js";
 import { registerServiceCommand } from "./commands/service.js";
 import { registerSetupCommand } from "./commands/setup.js";
+import { registerStartCommand } from "./commands/start.js";
 import { registerStatusLineCommand } from "./commands/statusline.js";
 import { VERSION } from "../shared/version.js";
 
@@ -39,6 +40,7 @@ export function createProgram(): Command {
   registerImportCommand(program);
   registerInstallHookCommands(program);
   registerMcpCommand(program);
+  registerStartCommand(program);
   registerSetupCommand(program);
   registerDoctorCommand(program);
   registerServerCommand(program);

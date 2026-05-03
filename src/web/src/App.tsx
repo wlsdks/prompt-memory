@@ -3841,7 +3841,7 @@ function emptyPromptTitle(
   if (focus === "reused") return "No reused prompts.";
   if (focus === "duplicated") return "No duplicate candidates.";
   if (focus === "quality-gap") return "No prompts need quality improvements.";
-  return "No prompts stored yet.";
+  return "Capture your first coding prompt.";
 }
 
 function emptyPromptHint(
@@ -3858,7 +3858,7 @@ function emptyPromptHint(
     return "Repeated stored prompt bodies will appear here.";
   if (focus === "quality-gap")
     return "Try adding verification criteria, output format, and scope.";
-  return "Connect a coding agent, confirm capture, then use Coach or Scores to improve your next request.";
+  return "Run coach setup, send one real Claude Code or Codex request, then check the first score and improvement suggestion.";
 }
 
 function emptyPromptCommands(
@@ -3870,9 +3870,10 @@ function emptyPromptCommands(
   }
 
   return [
-    "prompt-memory setup --profile coach --dry-run",
+    "prompt-memory start",
     "prompt-memory setup --profile coach",
     "prompt-memory doctor claude-code",
     "prompt-memory doctor codex",
+    "prompt-memory coach",
   ];
 }

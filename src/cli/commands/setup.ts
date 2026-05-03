@@ -14,6 +14,7 @@ import {
   type StatusLineInstallResult,
 } from "./statusline.js";
 import type { PromptRewriteGuardMode } from "../../hooks/rewrite-guard.js";
+import { doctorCommand, mcpRegistrationCommand } from "../agent-access.js";
 
 export type SetupTool = "claude-code" | "codex";
 export type SetupProfile = "capture" | "coach";
@@ -418,19 +419,33 @@ function buildNextSteps(options: {
     steps.push(
       "Coach profile enabled: prompt-memory will add low-friction rewrite guidance inside supported hooks.",
     );
+    for (const tool of options.detectedTools) {
+      steps.push(
+        `Register MCP for agent commands: ${mcpRegistrationCommand(tool)}.`,
+      );
+    }
     if (options.statusLineResult) {
       steps.push(
         "Restart Claude Code if the prompt-memory status line is not visible.",
       );
     }
+    steps.push(
+      "Send one real coding prompt in Claude Code or Codex, then run prompt-memory coach.",
+    );
   }
 
   steps.push("Open http://127.0.0.1:17373 to review captured prompts.");
-  steps.push(
-    "Run prompt-memory doctor claude-code or prompt-memory doctor codex if capture does not appear.",
-  );
+  steps.push(buildDoctorNextStep(options.detectedTools));
 
   return steps;
+}
+
+function buildDoctorNextStep(tools: SetupTool[]): string {
+  if (tools.length === 1) {
+    return `Run ${doctorCommand(tools[0])} if capture does not appear.`;
+  }
+
+  return "Run prompt-memory doctor claude-code or prompt-memory doctor codex if capture does not appear.";
 }
 
 function defaultCommandExists(command: string): boolean {

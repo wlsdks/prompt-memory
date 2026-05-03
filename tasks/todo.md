@@ -1,5 +1,22 @@
 # 작업 계획
 
+## 2026-05-03 Coach First Activation
+
+- [x] 첫 5분 성공 흐름을 `start`/setup/doctor 안내로 압축
+- [x] `doctor`가 MCP 등록 상태와 다음 명령을 함께 보여주도록 TDD 개선
+- [x] README/README.ko를 coach-first quick start로 정리하고 `--json`을 고급 흐름으로 이동
+- [x] agent rewrite/judge privacy 문구를 agent-mediated egress risk 기준으로 강화
+- [x] 웹 빈 상태를 첫 prompt capture + score 확인 중심으로 단순화
+- [x] targeted/full 검증 실행
+- [ ] PR 생성, CI 확인, main merge, branch cleanup
+
+### 판단 기준
+
+- 첫 사용자는 CLI, marketplace, setup, MCP, web 개념을 모두 이해하지 않아도 첫 prompt score까지 도달해야 한다.
+- `doctor`는 capture readiness뿐 아니라 MCP 등록 여부와 바로 실행할 등록 명령을 알려줘야 한다.
+- agent rewrite/judge는 local-only로 과장하지 않고 redacted packet이 active agent provider session으로 전달될 수 있음을 명확히 표시한다.
+- 웹 빈 archive는 기능 목록보다 “프롬프트 하나 보내고 점수 보기”를 우선 안내한다.
+
 ## 2026-05-03 Agent Assisted Rewrite MCP
 
 - [x] 현재 MCP/storage contract에서 agent-assisted rewrite 저장 경계 확정

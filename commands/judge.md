@@ -17,6 +17,9 @@ quality, not just run the local deterministic score. The first tool returns a
 bounded packet of locally redacted prompt bodies, local scores, quality gaps,
 and a rubric. Evaluate those redacted prompts in this active Claude Code
 session, then call `record_agent_judgments` with one score per `prompt_id`.
+Because this happens inside the active Claude Code session, the redacted packet
+may be processed by the user's configured provider session. Make that boundary
+clear when summarizing sensitive workflows.
 
 Do not call external providers through prompt-memory. Do not ask for provider
 tokens. Do not print raw prompt bodies, raw absolute paths, raw hook payloads,
@@ -34,4 +37,3 @@ Summarize the result as:
 If MCP is not configured, say that agent-judge mode needs the local
 `prompt-memory mcp` server. Do not emulate it by manually reading Markdown
 archives unless the user explicitly asks for raw local file inspection.
-

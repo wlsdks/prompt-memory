@@ -834,6 +834,9 @@ const UI_TRANSLATIONS: Record<string, string> = {
   "No prompts need quality improvements.":
     "품질 보강이 필요한 프롬프트가 없습니다.",
   "No prompts stored yet.": "아직 저장된 프롬프트가 없습니다.",
+  "Capture your first coding prompt.": "첫 코딩 프롬프트를 수집하세요.",
+  "Run coach setup, send one real Claude Code or Codex request, then check the first score and improvement suggestion.":
+    "coach 설정을 실행하고 실제 Claude Code 또는 Codex 요청을 하나 보낸 뒤 첫 점수와 개선 제안을 확인하세요.",
   "Save prompts for later from the detail screen.":
     "상세 화면에서 다시 볼 프롬프트를 저장하세요.",
   "Repeated stored prompt bodies will appear here.":
