@@ -167,6 +167,19 @@ Claude Code hook 설치:
 pnpm prompt-memory install-hook claude-code
 ```
 
+선택 기능: Prompt Rewrite Guard
+
+```sh
+pnpm prompt-memory install-hook claude-code --rewrite-guard block-and-copy --rewrite-min-score 80
+```
+
+`block-and-copy`는 공식 `UserPromptSubmit` decision 흐름만 사용합니다.
+점수가 낮은 prompt는 Claude Code가 처리하기 전에 block하고, 로컬 개선안을
+보여주며 clipboard 복사를 best-effort로 시도합니다. 터미널에 자동 입력하거나
+Enter를 누르거나 composer 내용을 비공식적으로 바꾸지는 않습니다. 로컬 ingest
+server가 꺼져 있거나 ingest가 실패하면 hook은 fail-open으로 prompt를 막지
+않습니다.
+
 설정 변경 preview:
 
 ```sh
@@ -196,6 +209,18 @@ Codex hook 설치:
 ```sh
 pnpm prompt-memory install-hook codex
 ```
+
+선택 기능: Prompt Rewrite Guard
+
+```sh
+pnpm prompt-memory install-hook codex --rewrite-guard block-and-copy --rewrite-min-score 80
+```
+
+Codex도 같은 안전한 hook command 경로를 사용합니다. Codex plugin-local hook
+동작은 버전에 따라 다를 수 있으므로 `prompt-memory setup` /
+`install-hook`은 여전히 user-level hook config를 작성합니다. 로컬 ingest
+server가 꺼져 있거나 ingest가 실패하면 hook은 fail-open으로 prompt를 막지
+않습니다.
 
 `hooks.json`과 `config.toml` 변경 preview:
 
@@ -376,7 +401,7 @@ privacy/safety, 보고 규칙을 보는 deterministic local rubric입니다.
 prompt-memory mcp
 ```
 
-MCP server는 다섯 개의 tool을 제공합니다.
+MCP server는 여섯 개의 tool을 제공합니다.
 
 - `get_prompt_memory_status`: 로컬 archive가 초기화되었는지, prompt가 캡처되었는지, 다음에 어떤 MCP tool을 호출하면 좋은지 확인합니다.
 - `score_prompt`: 직접 전달한 prompt text, 저장된 `prompt_id`, 또는 최신 저장 prompt를 점수화합니다.
@@ -480,7 +505,8 @@ POSIX 시스템에서는 민감 directory를 `0700`, token/config 파일을 `060
 - Browser UI는 same-origin session cookie와 CSRF token을 사용합니다.
 - `mask` mode에서는 민감값을 Markdown, SQLite, FTS indexing 전에 redaction합니다.
 - 외부 LLM 분석은 구현되어 있지 않으며, 이 앱은 분석 목적으로 prompt를 외부 provider에 보내지 않습니다.
-- Prompt Coach는 copy-based입니다. Claude Code 또는 Codex에 prompt를 자동으로 바꾸거나 재제출하지 않습니다.
+- Prompt Coach는 copy-based입니다. Claude Code 또는 Codex에 prompt를 자동 입력, 교체, 재제출하지 않습니다.
+- Prompt Rewrite Guard는 opt-in입니다. `block-and-copy` mode에서는 낮은 점수 prompt를 block하고 로컬 개선안을 사용자가 paste/enter할 수 있게 제공합니다. `context` mode는 model-visible rewrite guidance를 추가하지만 원문 prompt를 교체하지는 않습니다.
 - Settings와 local diagnostics는 로컬 사용자에게 filesystem path를 보여줄 수 있습니다. Browser prompt/archive/export 표면은 prompt-body path를 mask하고 raw prompt identifier를 피합니다.
 
 중요한 한계:

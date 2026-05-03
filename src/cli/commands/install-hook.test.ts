@@ -71,6 +71,32 @@ describe("Claude Code hook install/uninstall", () => {
     );
   });
 
+  it("can install Claude Code hook with opt-in rewrite guard flags", () => {
+    const dir = createTempDir();
+    const dataDir = join(dir, "data");
+    const settingsPath = join(dir, "settings.json");
+    initializePromptMemory({ dataDir });
+
+    const result = installClaudeCodeHook({
+      dataDir,
+      settingsPath,
+      dryRun: true,
+      rewriteGuard: "block-and-copy",
+      rewriteMinScore: "85",
+      rewriteLanguage: "ko",
+    });
+
+    const command =
+      result.nextSettings.hooks.UserPromptSubmit[0].hooks[0].command;
+    expect(command).toContain("prompt-memory hook claude-code");
+    expect(command).toContain("--rewrite-guard");
+    expect(command).toContain("block-and-copy");
+    expect(command).toContain("--rewrite-min-score");
+    expect(command).toContain("85");
+    expect(command).toContain("--rewrite-language");
+    expect(command).toContain("ko");
+  });
+
   it("uninstalls hook and revokes the previous ingest token", () => {
     const dir = createTempDir();
     const dataDir = join(dir, "data");
@@ -155,6 +181,30 @@ describe("Codex hook install/uninstall", () => {
     );
     expect(config).toContain('model = "gpt-5.5"');
     expect(config).toContain("codex_hooks = true");
+  });
+
+  it("can install Codex hook with opt-in rewrite guard flags", () => {
+    const dir = createTempDir();
+    const dataDir = join(dir, "data");
+    const hooksPath = join(dir, ".codex", "hooks.json");
+    const configPath = join(dir, ".codex", "config.toml");
+    initializePromptMemory({ dataDir });
+
+    const result = installCodexHook({
+      dataDir,
+      hooksPath,
+      configPath,
+      dryRun: true,
+      rewriteGuard: "context",
+      rewriteMinScore: "70",
+    });
+
+    const command = result.nextHooks.hooks.UserPromptSubmit[0].hooks[0].command;
+    expect(command).toContain("prompt-memory hook codex");
+    expect(command).toContain("--rewrite-guard");
+    expect(command).toContain("context");
+    expect(command).toContain("--rewrite-min-score");
+    expect(command).toContain("70");
   });
 
   it("uninstalls hook and revokes the previous ingest token", () => {

@@ -66,6 +66,8 @@ The beta is implementation-complete when:
 - CLI can list/search/show/delete/open prompts
 - web UI can list/search/detail/delete prompts
 - Prompt Coach can create, copy, and save improvement drafts
+- Prompt Rewrite Guard can optionally block low-score prompts and copy a local
+  rewrite for manual resubmission
 - project capture/export policies are enforced
 - CLI import dry-run/execute/resume works
 - anonymized export preview/job flow works in CLI and web
@@ -165,7 +167,7 @@ Deferred from public beta:
 
 - external LLM analysis
 - Claude Code/Codex tool-assisted analysis
-- automatic prompt rewrite/resubmission
+- automatic input replacement/resubmission inside Claude Code or Codex
 - GitHub integration
 - web import upload UI
 - semantic embedding search

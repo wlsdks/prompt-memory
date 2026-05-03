@@ -7,7 +7,8 @@ Use this checklist before publishing a public beta or npm package.
 - [ ] README describes install, init, server, hook install, doctor, uninstall, and delete flows.
 - [ ] README states the default storage path.
 - [ ] README states that local rule-based analysis preview is implemented.
-- [ ] README states that Prompt Coach is copy-based and does not auto-resubmit prompts into Claude Code or Codex.
+- [ ] README states that Prompt Coach is copy-based and does not auto-type, replace, or resubmit prompts into Claude Code or Codex.
+- [ ] Prompt Rewrite Guard docs state that `block-and-copy` is opt-in and requires manual paste/enter.
 - [ ] README states that transcript import is CLI-centered and has no web upload UI.
 - [ ] README states that browser export is anonymized-only and raw export is not implemented.
 - [ ] README documents Benchmark v1 as a local regression baseline, not a real-user quality proof.
