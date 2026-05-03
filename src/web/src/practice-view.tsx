@@ -30,8 +30,11 @@ import {
   writeBrowserPracticeHistory,
   type PracticeHistoryItem,
   type PracticeOutcome,
+  type PracticePromptAnalysis,
 } from "./practice-history.js";
 
+const COPY_CONFIRMATION_MS = 2_500;
+const MAX_SCORE_PERCENT = 100;
 const DEFAULT_PRACTICE_DRAFT = [
   "Goal:",
   "Context:",
@@ -51,6 +54,7 @@ export function PracticeView({
     archiveScore?.next_prompt_template ?? DEFAULT_PRACTICE_DRAFT;
   const [draft, setDraft] = useState(archiveTemplate);
   const [draftCopied, setDraftCopied] = useState(false);
+  const [fixedDraftCopied, setFixedDraftCopied] = useState(false);
   const [practiceHistory, setPracticeHistory] = useState<PracticeHistoryItem[]>(
     () => readBrowserPracticeHistory(),
   );
@@ -97,19 +101,35 @@ export function PracticeView({
   );
 
   async function copyDraft(): Promise<void> {
-    const copied = await copyTextToClipboard(draft);
+    await copyAndRecordDraft(draft, analysis, setDraftCopied);
+  }
+
+  async function copyFixedDraft(): Promise<void> {
+    await copyAndRecordDraft(
+      projectedDraft,
+      projectedAnalysis,
+      setFixedDraftCopied,
+    );
+  }
+
+  async function copyAndRecordDraft(
+    text: string,
+    nextAnalysis: PracticePromptAnalysis,
+    setCopied: (copied: boolean) => void,
+  ): Promise<void> {
+    const copied = await copyTextToClipboard(text);
     if (!copied) {
       return;
     }
 
-    const nextHistory = appendPracticeHistory(
-      practiceHistory,
-      createPracticeHistoryItem({ analysis }),
-    );
-    setPracticeHistory(nextHistory);
-    writeBrowserPracticeHistory(nextHistory);
-    setDraftCopied(true);
-    window.setTimeout(() => setDraftCopied(false), 2500);
+    const historyItem = createPracticeHistoryItem({ analysis: nextAnalysis });
+    setPracticeHistory((currentHistory) => {
+      const nextHistory = appendPracticeHistory(currentHistory, historyItem);
+      writeBrowserPracticeHistory(nextHistory);
+      return nextHistory;
+    });
+    setCopied(true);
+    window.setTimeout(() => setCopied(false), COPY_CONFIRMATION_MS);
   }
 
   function markLatestOutcome(outcome: PracticeOutcome): void {
@@ -184,7 +204,11 @@ export function PracticeView({
           </div>
         </div>
         <div className="archive-score-meter" aria-hidden="true">
-          <span style={{ width: `${Math.min(score.value, 100)}%` }} />
+          <span
+            style={{
+              width: `${Math.min((score.value / score.max) * MAX_SCORE_PERCENT, MAX_SCORE_PERCENT)}%`,
+            }}
+          />
         </div>
 
         <div className="practice-checklist">
@@ -234,6 +258,14 @@ export function PracticeView({
                     : "No score change from available fixes"}
                 </small>
               </div>
+              <button
+                className="practice-copy-fixed"
+                onClick={() => void copyFixedDraft()}
+                type="button"
+              >
+                <Copy size={14} />{" "}
+                {fixedDraftCopied ? "Copied fixed draft" : "Copy fixed draft"}
+              </button>
             </div>
             <div className="practice-fix-list">
               {quickFixes.map((fix) => {
