@@ -6,7 +6,7 @@
 - [x] Habit Coach panel을 component-owned TSX/CSS로 분리
 - [x] `App.tsx`와 `styles.css` line budget을 낮춰 구조 퇴행 방지
 - [x] 브라우저/릴리스 게이트로 Coach, Dashboard, Practice 흐름 검증
-- [ ] PR 생성, CI 확인, main merge, branch cleanup
+- [x] PR 생성, CI 확인, main merge, branch cleanup
 
 ### 판단 기준
 
