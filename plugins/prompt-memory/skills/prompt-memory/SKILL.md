@@ -116,6 +116,11 @@ When the user asks to rewrite, clarify, or upgrade the request before
 resubmission, call `improve_prompt`. The returned draft is copy-based and
 requires user approval; do not auto-submit it.
 
+If Prompt Rewrite Guard is installed with `--rewrite-guard block-and-copy`,
+low-score submitted prompts may be blocked before processing and an improved
+draft may be copied for the user to paste manually. Treat that as a
+human-in-the-loop flow, not automatic replacement or auto-submit.
+
 ## Safety Rules
 
 - Do not print raw prompt bodies or raw hook payloads unless the user explicitly

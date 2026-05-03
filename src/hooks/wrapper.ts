@@ -7,10 +7,14 @@ import {
   type PostHookPayloadRequest,
 } from "./post-to-server.js";
 import { writeLastHookStatus } from "./hook-status.js";
+import {
+  createPromptRewriteGuardOutput,
+  type PromptRewriteGuardMode,
+} from "./rewrite-guard.js";
 
 export type HookRunResult = {
   exitCode: 0;
-  stdout: "";
+  stdout: string;
   stderr: "";
 };
 
@@ -18,6 +22,12 @@ export type RunClaudeCodeHookOptions = {
   stdin: string;
   dataDir?: string;
   timeoutMs?: number;
+  rewriteGuard?: {
+    mode?: PromptRewriteGuardMode;
+    minScore?: number;
+    language?: "en" | "ko";
+    copyToClipboard?: (text: string) => boolean;
+  };
   postPayload?: (
     request: PostHookPayloadRequest,
   ) => Promise<PostHookPayloadResult>;
@@ -39,6 +49,7 @@ async function runPromptMemoryHook(
   options: RunClaudeCodeHookOptions,
   tool: "claude-code" | "codex",
 ): Promise<HookRunResult> {
+  let stdout = "";
   try {
     const payload = JSON.parse(options.stdin);
     const config = loadPromptMemoryConfig(options.dataDir);
@@ -57,11 +68,19 @@ async function runPromptMemoryHook(
       status: result.status,
       checked_at: new Date().toISOString(),
     });
+
+    if (result.ok) {
+      const rewriteOutput = createPromptRewriteGuardOutput(payload, {
+        ...options.rewriteGuard,
+        now: new Date(),
+      });
+      stdout = rewriteOutput ? `${JSON.stringify(rewriteOutput)}\n` : "";
+    }
   } catch {
     // Hooks must fail open and must not leak prompt text to stdout/stderr.
   }
 
-  return { exitCode: 0, stdout: "", stderr: "" };
+  return { exitCode: 0, stdout, stderr: "" };
 }
 
 export async function readStdin(): Promise<string> {

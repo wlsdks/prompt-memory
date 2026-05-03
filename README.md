@@ -217,6 +217,19 @@ Install the Claude Code hook:
 pnpm prompt-memory install-hook claude-code
 ```
 
+Optional Prompt Rewrite Guard:
+
+```sh
+pnpm prompt-memory install-hook claude-code --rewrite-guard block-and-copy --rewrite-min-score 80
+```
+
+`block-and-copy` uses the supported `UserPromptSubmit` decision path: weak
+prompts are blocked before Claude Code processes them, an improved local draft
+is shown, and prompt-memory tries to copy that draft to the clipboard. It does
+not type into the terminal, press Enter, replace the composer contents, or
+auto-submit anything. If the local ingest server is unavailable or ingest fails,
+the hook fails open and does not block the prompt.
+
 Preview the settings change without writing:
 
 ```sh
@@ -246,6 +259,17 @@ Install the Codex hook:
 ```sh
 pnpm prompt-memory install-hook codex
 ```
+
+Optional Prompt Rewrite Guard:
+
+```sh
+pnpm prompt-memory install-hook codex --rewrite-guard block-and-copy --rewrite-min-score 80
+```
+
+Codex support uses the same safe hook command path. Because Codex plugin-local
+hooks may vary by Codex version, `prompt-memory setup` / `install-hook` still
+writes the user-level hook config. If the local ingest server is unavailable or
+ingest fails, the hook fails open and does not block the prompt.
 
 Preview the `hooks.json` and `config.toml` changes without writing:
 
@@ -612,7 +636,8 @@ Default behavior:
 - The browser UI uses a same-origin session cookie and CSRF token.
 - Sensitive values are redacted before Markdown, SQLite, and FTS indexing in `mask` mode.
 - External LLM analysis is not implemented and no prompt is sent to an external analysis provider by this app.
-- Prompt Coach is copy-based. It does not automatically replace or resubmit prompts into Claude Code or Codex.
+- Prompt Coach is copy-based. It does not automatically type into, replace, or resubmit prompts into Claude Code or Codex.
+- Prompt Rewrite Guard is opt-in. In `block-and-copy` mode it blocks weak prompts and offers a copied local rewrite for manual paste/enter. In `context` mode it adds model-visible rewrite guidance but does not replace the original prompt.
 - Settings and local diagnostics may show local filesystem paths to the local user. Browser prompt/archive/export surfaces mask prompt-body paths and avoid raw prompt identifiers.
 
 Important limits:

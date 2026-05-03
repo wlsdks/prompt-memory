@@ -1,5 +1,21 @@
 # 작업 계획
 
+## 2026-05-03 Prompt Rewrite Guard
+
+- [x] 공식 hook 표면 안에서 가능한 Query Rewriting 범위 확정
+- [x] hook rewrite guard를 opt-in TDD로 추가
+- [x] Claude/Codex hook CLI와 install-hook 옵션에 안전하게 연결
+- [x] README/Tech spec/plugin docs에 block-and-copy 제약과 사용법 반영
+- [x] targeted/full 검증 실행
+- [ ] PR 생성, CI 확인, main merge, branch cleanup
+
+### 판단 기준
+
+- 입력창 조작, 자동 Enter, 비공식 TTY 제어는 하지 않는다.
+- 기본값은 기존처럼 capture-only fail-open이어야 한다.
+- block-and-copy는 원 prompt를 처리하지 못하게 막고, 개선안을 사용자에게 보여주며 clipboard 복사를 best-effort로 시도한다.
+- context 모드는 원문 replacement가 아니라 model-visible rewrite guidance임을 문서에 명확히 적는다.
+
 ## 2026-05-03 Storage Boundary Refactor
 
 - [x] `sqlite.ts`의 현재 책임과 테스트 커버리지 확인

@@ -60,6 +60,64 @@ describe("runClaudeCodeHook", () => {
     expect(result.stderr).toBe("");
     expect(JSON.stringify(result)).not.toContain(rawPrompt);
   });
+
+  it("can block and copy a weak prompt when rewrite guard is enabled", async () => {
+    const dataDir = createTempDir();
+    initializePromptMemory({ dataDir });
+    const copied: string[] = [];
+
+    const result = await runClaudeCodeHook({
+      stdin: JSON.stringify({
+        hook_event_name: "UserPromptSubmit",
+        session_id: "session-rewrite",
+        cwd: "/repo",
+        prompt: "fix this with sk-proj-1234567890abcdef",
+      }),
+      dataDir,
+      rewriteGuard: {
+        mode: "block-and-copy",
+        minScore: 100,
+        copyToClipboard: (text) => {
+          copied.push(text);
+          return true;
+        },
+      },
+      postPayload: async () => ({ ok: true, status: 200 }),
+    });
+
+    const output = JSON.parse(result.stdout) as {
+      decision: "block";
+      reason: string;
+    };
+
+    expect(output.decision).toBe("block");
+    expect(output.reason).toContain("Improved prompt:");
+    expect(output.reason).not.toContain("sk-proj-1234567890abcdef");
+    expect(copied).toHaveLength(1);
+    expect(result.stderr).toBe("");
+  });
+
+  it("does not block when ingest returns a non-ok response", async () => {
+    const dataDir = createTempDir();
+    initializePromptMemory({ dataDir });
+
+    const result = await runClaudeCodeHook({
+      stdin: JSON.stringify({
+        hook_event_name: "UserPromptSubmit",
+        session_id: "session-rewrite-non-ok",
+        cwd: "/repo",
+        prompt: "fix",
+      }),
+      dataDir,
+      rewriteGuard: {
+        mode: "block-and-copy",
+        minScore: 100,
+      },
+      postPayload: async () => ({ ok: false, status: 500 }),
+    });
+
+    expect(result).toEqual({ exitCode: 0, stdout: "", stderr: "" });
+  });
 });
 
 describe("runCodexHook", () => {

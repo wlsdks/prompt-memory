@@ -108,6 +108,12 @@ Important rules:
 - hook failures do not block the AI coding tool
 - prompt bodies are not logged
 - tokens are never printed
+- optional Prompt Rewrite Guard may return supported `UserPromptSubmit` JSON
+  output. `block-and-copy` blocks weak prompts and shows a local improvement
+  draft for manual paste/enter. It does not type into the terminal, replace
+  composer text, or auto-submit prompts.
+- optional `context` mode adds model-visible rewrite guidance and is not a true
+  prompt replacement.
 
 ### Search Flow
 

@@ -168,6 +168,27 @@ review through:
 prompt-memory score --json
 ```
 
+## Prompt Rewrite Guard
+
+For users who want a stronger query-rewriting workflow, the hook can be
+installed with an opt-in guard:
+
+```sh
+prompt-memory install-hook claude-code --rewrite-guard block-and-copy --rewrite-min-score 80
+prompt-memory install-hook codex --rewrite-guard block-and-copy --rewrite-min-score 80
+```
+
+This uses the official `UserPromptSubmit` hook decision path where supported.
+It blocks low-score prompts before the agent processes them, shows a local
+improved draft, and tries to copy the draft to the clipboard. The user still
+pastes and submits the draft manually. It does not simulate keyboard input,
+rewrite the interactive composer, or auto-submit prompts. If local ingest is
+unavailable or fails, the hook fails open and does not block.
+
+`--rewrite-guard context` is less disruptive: it allows the original prompt to
+continue and adds model-visible rewrite guidance. That mode is not a true
+replacement because the original submitted prompt remains part of the turn.
+
 Claude Code registration:
 
 ```sh

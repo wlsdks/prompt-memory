@@ -42,6 +42,9 @@ export type HookInstallOptions = {
   hooksPath?: string;
   configPath?: string;
   dryRun?: boolean;
+  rewriteGuard?: string;
+  rewriteMinScore?: string;
+  rewriteLanguage?: string;
 };
 
 export type HookInstallResult = {
@@ -74,6 +77,18 @@ export function registerInstallHookCommands(program: Command): void {
     .option("--settings-path <path>", "Override Claude Code settings path.")
     .option("--hooks-path <path>", "Override Codex hooks.json path.")
     .option("--config-path <path>", "Override Codex config.toml path.")
+    .option(
+      "--rewrite-guard <mode>",
+      "Opt in to prompt rewrite guard: off, block-and-copy, or context.",
+    )
+    .option(
+      "--rewrite-min-score <score>",
+      "Only rewrite prompts scoring below this 0-100 threshold.",
+    )
+    .option(
+      "--rewrite-language <language>",
+      "Improvement draft language for rewrite guard: en or ko.",
+    )
     .option("--dry-run", "Print intended settings change without writing.")
     .action((tool: string, options: HookInstallOptions) => {
       if (tool === "codex") {
@@ -168,7 +183,7 @@ export function installClaudeCodeHook(
 
   const settingsPath = options.settingsPath ?? defaultClaudeSettingsPath();
   const current = readSettings(settingsPath);
-  const next = ensureHook(current, buildHookCommand(options.dataDir));
+  const next = ensureHook(current, buildHookCommand(options.dataDir, options));
   const changed = JSON.stringify(current) !== JSON.stringify(next);
 
   if (options.dryRun) {
@@ -244,7 +259,7 @@ export function installCodexHook(
   const currentConfig = readText(configPath);
   const nextHooks = ensureCodexHook(
     currentHooks,
-    buildCodexHookCommand(options.dataDir),
+    buildCodexHookCommand(options.dataDir, options),
   );
   const nextConfig = ensureCodexHooksFeature(currentConfig);
   const hooksChanged =
@@ -505,18 +520,68 @@ function ensureCodexHooksFeature(config: string): string {
   return `${lines.join("\n")}\n`;
 }
 
-function buildHookCommand(dataDir?: string): string {
-  const dataDirArg = dataDir ? ` --data-dir ${JSON.stringify(dataDir)}` : "";
-  return `${markerAssignment(PROMPT_MEMORY_MARKER)} ${shellQuote(
-    process.execPath,
-  )} ${shellQuote(cliEntryPath())} hook claude-code${dataDirArg}`;
+function buildHookCommand(
+  dataDir?: string,
+  options: Pick<
+    HookInstallOptions,
+    "rewriteGuard" | "rewriteMinScore" | "rewriteLanguage"
+  > = {},
+): string {
+  return buildHookCommandWithOptions("claude-code", dataDir, options);
 }
 
-function buildCodexHookCommand(dataDir?: string): string {
+function buildCodexHookCommand(
+  dataDir?: string,
+  options: Pick<
+    HookInstallOptions,
+    "rewriteGuard" | "rewriteMinScore" | "rewriteLanguage"
+  > = {},
+): string {
+  return buildHookCommandWithOptions("codex", dataDir, options);
+}
+
+function buildHookCommandWithOptions(
+  tool: "claude-code" | "codex",
+  dataDir?: string,
+  options: Pick<
+    HookInstallOptions,
+    "rewriteGuard" | "rewriteMinScore" | "rewriteLanguage"
+  > = {},
+): string {
   const dataDirArg = dataDir ? ` --data-dir ${JSON.stringify(dataDir)}` : "";
-  return `${markerAssignment(CODEX_PROMPT_MEMORY_MARKER)} ${shellQuote(
+  const rewriteArgs = buildRewriteGuardArgs(options);
+  const marker =
+    tool === "claude-code" ? PROMPT_MEMORY_MARKER : CODEX_PROMPT_MEMORY_MARKER;
+  return `${markerAssignment(marker)} ${shellQuote(
     process.execPath,
-  )} ${shellQuote(cliEntryPath())} hook codex${dataDirArg}`;
+  )} ${shellQuote(cliEntryPath())} hook ${tool}${dataDirArg}${rewriteArgs}`;
+}
+
+function buildRewriteGuardArgs(
+  options: Pick<
+    HookInstallOptions,
+    "rewriteGuard" | "rewriteMinScore" | "rewriteLanguage"
+  >,
+): string {
+  const args: string[] = [];
+  const rewriteGuard = options.rewriteGuard;
+  if (isRewriteGuardMode(rewriteGuard)) {
+    args.push(` --rewrite-guard ${shellQuote(rewriteGuard)}`);
+  }
+  if (options.rewriteMinScore !== undefined) {
+    args.push(` --rewrite-min-score ${shellQuote(options.rewriteMinScore)}`);
+  }
+  if (options.rewriteLanguage === "en" || options.rewriteLanguage === "ko") {
+    args.push(` --rewrite-language ${shellQuote(options.rewriteLanguage)}`);
+  }
+
+  return args.join("");
+}
+
+function isRewriteGuardMode(
+  value: string | undefined,
+): value is "off" | "block-and-copy" | "context" {
+  return value === "off" || value === "block-and-copy" || value === "context";
 }
 
 function isClaudePromptMemoryHook(command: string): boolean {
