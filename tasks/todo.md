@@ -6,7 +6,7 @@
 - [x] `pm-claude` / `pm-codex` wrapper 설계와 TDD 구현
 - [x] package bin, README/PLUGINS 문서, release packaging 반영
 - [x] dry-run/실행 smoke와 전체 검증 실행
-- [ ] PR 생성, CI 확인, main merge, branch cleanup
+- [x] PR 생성, CI 확인, main merge, branch cleanup
 
 ### 판단 기준
 
