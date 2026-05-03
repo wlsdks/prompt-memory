@@ -28,5 +28,6 @@ prompt-memory doctor codex
 ```
 
 Report whether the local server is reachable, the hook is installed, and the
-last ingest status is healthy. Do not print raw prompt bodies or raw hook
-payloads.
+MCP command access is registered. `doctor` may use read-only `mcp list`
+fallbacks when config-file detection is inconclusive. Do not print raw prompt
+bodies or raw hook payloads.

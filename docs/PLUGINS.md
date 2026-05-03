@@ -262,6 +262,11 @@ Codex registration:
 codex mcp add prompt-memory -- prompt-memory mcp
 ```
 
+After registration, `prompt-memory doctor claude-code` and
+`prompt-memory doctor codex` report MCP command access. The doctor command first
+inspects known local config files, then uses read-only `claude mcp list` or
+`codex mcp list` as a fallback when config-file detection is inconclusive.
+
 Use `--data-dir` when the archive is not in the default location:
 
 ```sh

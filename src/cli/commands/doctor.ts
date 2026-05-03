@@ -1,3 +1,4 @@
+import { spawnSync } from "node:child_process";
 import { existsSync, readFileSync } from "node:fs";
 import { homedir } from "node:os";
 import { join } from "node:path";
@@ -15,12 +16,27 @@ import {
   type ClaudeSettings,
   type CodexHooksSettings,
 } from "./install-hook.js";
-import { mcpRegistrationCommand } from "../agent-access.js";
+import {
+  mcpListSpec,
+  mcpRegistrationCommand,
+  type AgentTool,
+} from "../agent-access.js";
+
+export type DoctorCommandRunner = (
+  command: string,
+  args: string[],
+) => {
+  status: number | null;
+  stdout?: string | Buffer;
+  stderr?: string | Buffer;
+  error?: Error;
+};
 
 export type DoctorClaudeCodeOptions = {
   dataDir?: string;
   settingsPath?: string;
   mcpConfigPath?: string;
+  commandRunner?: DoctorCommandRunner;
   checkServer?: () => Promise<boolean>;
   json?: boolean;
 };
@@ -32,6 +48,7 @@ export type DoctorCodexOptions = {
   projectHooksPath?: string;
   projectConfigPath?: string;
   mcpConfigPath?: string;
+  commandRunner?: DoctorCommandRunner;
   checkServer?: () => Promise<boolean>;
   json?: boolean;
 };
@@ -214,12 +231,16 @@ export async function doctorClaudeCode(
     token: { ok: inspectToken(options.dataDir) },
     settings,
     mcp: {
-      registered: inspectMcpRegistration(
-        claudeMcpConfigPaths(
+      registered: inspectMcpRegistration({
+        tool: "claude-code",
+        paths: claudeMcpConfigPaths(
           options.mcpConfigPath,
           options.settingsPath ?? defaultClaudeSettingsPath(),
         ),
-      ),
+        commandRunner: options.commandRunner,
+        allowCommandFallback:
+          !options.mcpConfigPath || Boolean(options.commandRunner),
+      }),
     },
     lastIngestStatus: readLastHookStatus(options.dataDir),
   };
@@ -235,9 +256,13 @@ export async function doctorCodex(
     token: { ok: inspectToken(options.dataDir) },
     settings,
     mcp: {
-      registered: inspectMcpRegistration(
-        codexMcpConfigPaths(options.mcpConfigPath, options.configPath),
-      ),
+      registered: inspectMcpRegistration({
+        tool: "codex",
+        paths: codexMcpConfigPaths(options.mcpConfigPath, options.configPath),
+        commandRunner: options.commandRunner,
+        allowCommandFallback:
+          !options.mcpConfigPath || Boolean(options.commandRunner),
+      }),
     },
     lastIngestStatus: readLastHookStatus(options.dataDir),
   };
@@ -335,8 +360,13 @@ function inspectCodexSettings(
   };
 }
 
-function inspectMcpRegistration(paths: string[]): boolean {
-  for (const path of paths) {
+function inspectMcpRegistration(options: {
+  tool: AgentTool;
+  paths: string[];
+  commandRunner?: DoctorCommandRunner;
+  allowCommandFallback: boolean;
+}): boolean {
+  for (const path of options.paths) {
     try {
       if (
         existsSync(path) &&
@@ -349,7 +379,9 @@ function inspectMcpRegistration(paths: string[]): boolean {
     }
   }
 
-  return false;
+  return options.allowCommandFallback
+    ? inspectMcpRegistrationFromCli(options.tool, options.commandRunner)
+    : false;
 }
 
 function looksLikePromptMemoryMcpConfig(text: string): boolean {
@@ -358,6 +390,35 @@ function looksLikePromptMemoryMcpConfig(text: string): boolean {
     normalized.includes("prompt-memory") &&
     /(^|[\s"'[\],=:.-])mcp($|[\s"'[\],=:.-])/.test(normalized)
   );
+}
+
+function inspectMcpRegistrationFromCli(
+  tool: AgentTool,
+  commandRunner: DoctorCommandRunner = defaultCommandRunner,
+): boolean {
+  try {
+    const spec = mcpListSpec(tool);
+    const result = commandRunner(spec.command, spec.args);
+    if (result.status !== 0 || !result.stdout) {
+      return false;
+    }
+
+    return String(result.stdout).toLowerCase().includes("prompt-memory");
+  } catch {
+    return false;
+  }
+}
+
+function defaultCommandRunner(
+  command: string,
+  args: string[],
+): {
+  status: number | null;
+  stdout?: string | Buffer;
+  stderr?: string | Buffer;
+  error?: Error;
+} {
+  return spawnSync(command, args, { encoding: "utf8" });
 }
 
 async function inspectServer(
