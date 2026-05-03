@@ -1,5 +1,22 @@
 # 작업 계획
 
+## 2026-05-03 Google API Key Redaction Privacy Fix
+
+- [x] Google/Gemini API key detector 회귀 테스트 추가
+- [x] Markdown/SQLite/snippet/FTS raw key 미노출 storage 회귀 테스트 추가
+- [x] detector 보강 및 targeted privacy 검증
+- [x] 기존 local archive remediation 경로 확인
+- [x] CLI/UI 사용성 재검증
+- [x] 오픈소스 유용성 평가 정리
+- [ ] PR 생성, CI 확인, main merge, branch cleanup
+
+### 판단 기준
+
+- Google/Gemini `AIza...` API key는 phone detector보다 먼저 전체가 `api_key`로 redaction되어야 한다.
+- Markdown, SQLite prompt row, redaction event, snippet, FTS 검색 경계 어디에도 raw key가 남으면 안 된다.
+- 이미 저장된 local archive를 복구할 수 있는 안전한 경로를 확인하거나, 사용자에게 명확한 remediation 명령을 제공한다.
+- 사용성 평가는 기능 나열이 아니라 첫 사용, 반복 사용, privacy trust, Claude Code/Codex 내부 사용 흐름 기준으로 판단한다.
+
 ## 2026-05-03 Doctor MCP List Detection
 
 - [x] `doctor`가 설정 파일 감지 실패 시 agent CLI `mcp list`를 read-only fallback으로 확인
