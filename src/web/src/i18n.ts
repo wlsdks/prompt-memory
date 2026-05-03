@@ -478,9 +478,16 @@ const UI_TRANSLATIONS: Record<string, string> = {
     "Claude Code 또는 Codex 안에서 prompt-memory 사용",
   "Keep the web UI for review, then run these commands directly in the coding agent loop.":
     "웹 UI는 회고용으로 두고, 실제 코딩 에이전트 루프에서는 이 명령을 바로 실행하세요.",
+  "Local-only shortcuts. This panel does not render prompt bodies, raw paths, or tokens.":
+    "로컬 전용 바로가기입니다. 이 패널은 프롬프트 본문, 원본 경로, 토큰을 표시하지 않습니다.",
+  "Next best move": "다음 최적 행동",
+  "Start with Coach in the agent session, then use the web dashboard only when you want to review history or trends.":
+    "에이전트 세션에서는 Coach부터 실행하고, 히스토리나 추세를 볼 때만 웹 대시보드를 사용하세요.",
   "Coach latest prompt": "최근 프롬프트 코칭",
   "Score last prompt": "최근 프롬프트 점수화",
   "Improve last prompt": "최근 프롬프트 개선",
+  "MCP coach workflow": "MCP 코치 워크플로우",
+  "MCP score latest": "MCP 최근 프롬프트 점수화",
   "Open side buddy": "사이드 buddy 열기",
   "Install HUD line": "HUD 줄 설치",
   "One-call score, habits, rewrite guidance, and next request brief.":
@@ -489,6 +496,10 @@ const UI_TRANSLATIONS: Record<string, string> = {
     "웹 UI를 열지 않고 방금 보낸 프롬프트를 점검합니다.",
   "Generate an approval-ready improvement draft for manual paste.":
     "사용자가 붙여넣기 전에 승인할 수 있는 개선안을 만듭니다.",
+  "Use the MCP tool from Claude Code or Codex for one-call score, habits, and next request guidance.":
+    "Claude Code 또는 Codex MCP에서 점수, 습관, 다음 요청 가이드를 한 번에 확인합니다.",
+  "Use the MCP tool when you only need the latest prompt score.":
+    "최근 프롬프트 점수만 필요할 때 MCP 도구로 호출합니다.",
   "Keep a compact always-on prompt score companion in a side pane.":
     "옆 pane에 항상 켜두는 작은 프롬프트 점수 companion을 둡니다.",
   "Add prompt-memory under the existing Claude HUD without replacing it.":

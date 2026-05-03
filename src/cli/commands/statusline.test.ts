@@ -68,11 +68,13 @@ describe("renderClaudeCodeStatusLine", () => {
       checkServer: async () => true,
     });
 
-    expect(line).toContain("PM on");
+    expect(line).toContain("PM capture on");
+    expect(line).toContain("\nPM score");
     expect(line).toContain("score");
     expect(line).toContain("needs_work");
     expect(line).toContain("server ok");
     expect(line).toContain("ingest ok");
+    expect(line).toContain("try /prompt-memory:improve-last");
     expect(line).not.toContain("sk-proj-1234567890abcdef");
     expect(line).not.toContain("/Users/example");
   });
@@ -86,7 +88,7 @@ describe("renderClaudeCodeStatusLine", () => {
       checkServer: async () => false,
     });
 
-    expect(line).toBe("PM setup | server down | hook missing");
+    expect(line).toBe("PM setup needed | server down | hook missing");
   });
 });
 
@@ -247,6 +249,23 @@ describe("renderChainedClaudeCodeStatusLine", () => {
 
     expect(line).toBe(
       "HUD model line\nHUD context line\nPM on | score 23 weak",
+    );
+  });
+
+  it("preserves multiline prompt-memory output after an existing status line", () => {
+    const line = renderChainedClaudeCodeStatusLine({
+      previousCommand: "previous",
+      promptMemoryCommand: "prompt-memory",
+      runCommand: (command) => ({
+        stdout:
+          command === "previous"
+            ? "HUD model line\nHUD context line\n"
+            : "PM capture on | server ok\nPM score 23/100 weak | gap Goal clarity\n",
+      }),
+    });
+
+    expect(line).toBe(
+      "HUD model line\nHUD context line\nPM capture on | server ok\nPM score 23/100 weak | gap Goal clarity",
     );
   });
 

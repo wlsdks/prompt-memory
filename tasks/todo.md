@@ -1,5 +1,20 @@
 # 작업 계획
 
+## 2026-05-04 Vertical StatusLine And Agent UX Polish
+
+- [x] statusLine chain이 `claude-hud`와 prompt-memory multiline 출력을 모두 보존하는지 재점검
+- [x] prompt-memory 상태줄을 score/action 중심의 세로 분리 출력으로 개선
+- [x] 웹 Dashboard의 agent command surface를 더 실사용 중심으로 다듬기
+- [x] 기능/코드 품질 회귀 테스트와 브라우저 검증 실행
+- [ ] PR 생성, CI 확인, main merge, branch cleanup
+
+### 판단 기준
+
+- 기존 HUD의 stdout, ANSI 색상, 줄바꿈을 변경하지 않는다.
+- prompt-memory 상태줄은 한 줄에 과도한 정보를 몰아넣지 않고 readiness와 coaching action을 분리한다.
+- 웹 UI는 command 실행 맥락, 복사 행동, 현재 개선 포인트를 즉시 이해할 수 있어야 한다.
+- 모든 출력은 local-first privacy를 유지하고 prompt body, raw path, token을 노출하지 않는다.
+
 ## 2026-05-04 StatusLine And Product Polish QA
 
 - [x] `claude-hud` chained statusLine 충돌/표현 회귀 범위 재점검

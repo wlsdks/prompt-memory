@@ -1,15 +1,23 @@
-import { Copy, Gauge, PanelTop, Plug, Terminal } from "lucide-react";
+import {
+  Copy,
+  Gauge,
+  PanelTop,
+  Plug,
+  ShieldCheck,
+  Terminal,
+} from "lucide-react";
 import { useState } from "react";
 
 import type { ArchiveScoreReport, QualityDashboard } from "./api.js";
 import { copyTextToClipboard } from "./clipboard.js";
+import "./agent-command-center.css";
 
 type AgentCommand = {
   id: string;
   command: string;
   detail: string;
   label: string;
-  surface: "Claude Code" | "Codex" | "CLI";
+  surface: "Claude Code" | "MCP" | "CLI";
 };
 
 export type AgentCommandSnapshot = {
@@ -74,6 +82,22 @@ export function createAgentCommandSnapshot({
         surface: "Claude Code",
       },
       {
+        id: "mcp-coach",
+        command:
+          "prompt-memory:coach_prompt include_latest_score=true include_archive=true",
+        detail:
+          "Use the MCP tool from Claude Code or Codex for one-call score, habits, and next request guidance.",
+        label: "MCP coach workflow",
+        surface: "MCP",
+      },
+      {
+        id: "mcp-score-latest",
+        command: "prompt-memory:score_prompt latest=true",
+        detail: "Use the MCP tool when you only need the latest prompt score.",
+        label: "MCP score latest",
+        surface: "MCP",
+      },
+      {
         id: "buddy",
         command: "prompt-memory buddy",
         detail:
@@ -126,6 +150,10 @@ export function AgentCommandCenter({
             Keep the web UI for review, then run these commands directly in the
             coding agent loop.
           </span>
+          <p className="agent-command-privacy">
+            <ShieldCheck size={14} /> Local-only shortcuts. This panel does not
+            render prompt bodies, raw paths, or tokens.
+          </p>
         </div>
         <div
           className="agent-command-snapshot"
@@ -144,32 +172,48 @@ export function AgentCommandCenter({
         </div>
       </div>
 
-      <div className="agent-command-list">
-        {snapshot.commands.map((command) => (
-          <article className="agent-command-card" key={command.id}>
-            <div className="agent-command-card-header">
-              <span>
-                <Terminal size={14} />
-                {command.surface}
-              </span>
-              <button
-                aria-label={`Copy ${command.label}`}
-                className="icon-button"
-                onClick={() => void copyCommand(command)}
-                type="button"
-              >
-                <Copy size={14} />
-              </button>
-            </div>
-            <strong>{command.label}</strong>
-            <code>{command.command}</code>
-            <p>
-              {copiedCommandId === command.id
-                ? "Copied command"
-                : command.detail}
-            </p>
-          </article>
-        ))}
+      <div className="agent-command-body">
+        <div className="agent-command-next">
+          <span>Next best move</span>
+          <strong>{snapshot.nextAction}</strong>
+          <p>
+            Start with Coach in the agent session, then use the web dashboard
+            only when you want to review history or trends.
+          </p>
+        </div>
+        <div className="agent-command-list" role="list">
+          {snapshot.commands.map((command) => (
+            <article
+              className="agent-command-card"
+              key={command.id}
+              role="listitem"
+            >
+              <div>
+                <span className="agent-command-surface">
+                  <Terminal size={14} />
+                  {command.surface}
+                </span>
+                <strong>{command.label}</strong>
+                <p>
+                  {copiedCommandId === command.id
+                    ? "Copied command"
+                    : command.detail}
+                </p>
+              </div>
+              <div className="agent-command-copyline">
+                <code>{command.command}</code>
+                <button
+                  aria-label={`Copy ${command.label}`}
+                  className="icon-button"
+                  onClick={() => void copyCommand(command)}
+                  type="button"
+                >
+                  <Copy size={14} />
+                </button>
+              </div>
+            </article>
+          ))}
+        </div>
       </div>
     </section>
   );

@@ -17,6 +17,12 @@ describe("createAgentCommandSnapshot", () => {
     expect(snapshot.scoredPrompts).toBe("8/10");
     expect(snapshot.nextAction).toBe("Review Goal clarity");
     expect(command(snapshot, "coach")).toBe("/prompt-memory:coach");
+    expect(command(snapshot, "mcp-coach")).toBe(
+      "prompt-memory:coach_prompt include_latest_score=true include_archive=true",
+    );
+    expect(command(snapshot, "mcp-score-latest")).toBe(
+      "prompt-memory:score_prompt latest=true",
+    );
     expect(command(snapshot, "buddy")).toBe("prompt-memory buddy");
     expect(JSON.stringify(snapshot)).not.toContain("/Users/example");
     expect(JSON.stringify(snapshot)).not.toContain("sk-proj");
