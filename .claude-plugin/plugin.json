@@ -9,6 +9,7 @@
   "commands": [
     "./commands/setup.md",
     "./commands/status.md",
+    "./commands/coach.md",
     "./commands/score.md",
     "./commands/score-last.md",
     "./commands/improve-last.md",

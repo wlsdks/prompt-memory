@@ -9,6 +9,7 @@ import { initializePromptMemory } from "../config/config.js";
 import { redactPrompt } from "../redaction/redact.js";
 import { createSqlitePromptStorage } from "../storage/sqlite.js";
 import {
+  coachPromptTool,
   getPromptMemoryStatusTool,
   improvePromptTool,
   reviewProjectInstructionsTool,
@@ -316,6 +317,102 @@ describe("getPromptMemoryStatusTool", () => {
 
     expect(result.status).toBe("setup_needed");
     expect(result.next_actions[0]).toContain("prompt-memory init");
+  });
+});
+
+describe("coachPromptTool", () => {
+  it("returns a one-call agent coach brief without prompt bodies, file bodies, or raw paths", async () => {
+    const dataDir = createTempDir();
+    const projectDir = join(createTempDir(), "coach-project");
+    mkdirSync(projectDir, { recursive: true });
+    writeFileSync(
+      join(projectDir, "AGENTS.md"),
+      [
+        "# Agent rules",
+        "PRIVATE_AGENT_RULE_BODY",
+        "Describe project context, workflow, verification with pnpm test, privacy safety, and final reporting.",
+      ].join("\n"),
+      "utf8",
+    );
+    const init = initializePromptMemory({ dataDir });
+    const storage = createSqlitePromptStorage({
+      dataDir,
+      hmacSecret: init.hookAuth.web_session_secret,
+      now: nextDate(["2026-05-03T15:00:00.000Z", "2026-05-03T15:01:00.000Z"]),
+    });
+    await storeClaudePrompt(
+      storage,
+      "Make this better with token sk-proj-1234567890abcdef",
+      "2026-05-03T14:59:00.000Z",
+      projectDir,
+    );
+    await storeClaudePrompt(
+      storage,
+      "Review src/mcp/score-tool.ts, keep scope to MCP, run pnpm vitest run src/mcp/score-tool.test.ts, and return risk notes.",
+      "2026-05-03T15:00:00.000Z",
+      projectDir,
+    );
+    storage.close();
+
+    const result = coachPromptTool(
+      { include_project_rules: true, max_prompts: 50 },
+      { dataDir },
+    );
+    const serialized = JSON.stringify(result);
+
+    expect(result.mode).toBe("agent_coach");
+    expect(result.status.status).toBe("ready");
+    expect(result.latest_score).toEqual(
+      expect.objectContaining({
+        source: "latest",
+        quality_score: expect.any(Object),
+      }),
+    );
+    expect(result.improvement).toEqual(
+      expect.objectContaining({
+        requires_user_approval: true,
+        mode: "copy",
+      }),
+    );
+    expect(result.archive).toEqual(
+      expect.objectContaining({
+        archive_score: expect.any(Object),
+        next_prompt_template: expect.stringContaining("Goal:"),
+      }),
+    );
+    expect(result.project_rules).toEqual(
+      expect.objectContaining({
+        review: expect.objectContaining({
+          files_found: 1,
+        }),
+      }),
+    );
+    expect(result.agent_brief.next_actions[0]).toContain("Review");
+    expect(result.privacy).toEqual({
+      local_only: true,
+      external_calls: false,
+      returns_prompt_bodies: false,
+      returns_raw_paths: false,
+      returns_instruction_file_bodies: false,
+      auto_submits: false,
+    });
+    expect(serialized).not.toContain("Make this better");
+    expect(serialized).not.toContain("sk-proj-1234567890abcdef");
+    expect(serialized).not.toContain("PRIVATE_AGENT_RULE_BODY");
+    expect(serialized).not.toContain(projectDir);
+    expect(serialized).not.toContain("/Users/example");
+  });
+
+  it("returns setup guidance instead of a hard error when storage is unavailable", () => {
+    const dataDir = join(tmpdir(), `prompt-memory-missing-${randomUUID()}`);
+    const result = coachPromptTool({}, { dataDir });
+    const serialized = JSON.stringify(result);
+
+    expect(result.mode).toBe("agent_coach");
+    expect(result.status.status).toBe("setup_needed");
+    expect(result.agent_brief.next_actions[0]).toContain("prompt-memory setup");
+    expect(serialized).not.toContain(dataDir);
+    expect(serialized).not.toContain("/tmp/");
   });
 });
 

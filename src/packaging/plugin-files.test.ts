@@ -27,6 +27,7 @@ describe("plugin packaging files", () => {
     expect(manifest.commands).toEqual([
       "./commands/setup.md",
       "./commands/status.md",
+      "./commands/coach.md",
       "./commands/score.md",
       "./commands/score-last.md",
       "./commands/improve-last.md",
@@ -48,6 +49,10 @@ describe("plugin packaging files", () => {
     );
     const score = readFileSync(
       join(process.cwd(), "commands/score.md"),
+      "utf8",
+    );
+    const coach = readFileSync(
+      join(process.cwd(), "commands/coach.md"),
       "utf8",
     );
     const scoreLast = readFileSync(
@@ -76,6 +81,8 @@ describe("plugin packaging files", () => {
     expect(setup).toContain("prompt-memory install-statusline claude-code");
     expect(status).toContain("prompt-memory doctor claude-code");
     expect(status).toContain("prompt-memory statusline claude-code");
+    expect(coach).toContain("prompt-memory:coach_prompt");
+    expect(coach).toContain("prompt-memory coach --json");
     expect(score).toContain("prompt-memory score --json");
     expect(score).toContain("prompt-memory:score_prompt_archive");
     expect(scoreLast).toContain("prompt-memory:score_prompt latest=true");
@@ -110,6 +117,7 @@ describe("plugin packaging files", () => {
       expect.arrayContaining([
         "Score my latest captured prompt",
         "Improve my latest captured prompt",
+        "Run my full prompt coach workflow",
         "Summarize my prompt habits",
       ]),
     );

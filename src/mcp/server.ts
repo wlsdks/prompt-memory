@@ -3,16 +3,19 @@ import type { Readable, Writable } from "node:stream";
 
 import { VERSION } from "../shared/version.js";
 import {
+  COACH_PROMPT_TOOL_DEFINITION,
   GET_PROMPT_MEMORY_STATUS_TOOL_DEFINITION,
   IMPROVE_PROMPT_TOOL_DEFINITION,
   SCORE_PROMPT_ARCHIVE_TOOL_DEFINITION,
   SCORE_PROMPT_TOOL_DEFINITION,
   REVIEW_PROJECT_INSTRUCTIONS_TOOL_DEFINITION,
+  coachPromptTool,
   getPromptMemoryStatusTool,
   improvePromptTool,
   reviewProjectInstructionsTool,
   scorePromptArchiveTool,
   scorePromptTool,
+  type CoachPromptToolArguments,
   type GetPromptMemoryStatusToolArguments,
   type ImprovePromptToolArguments,
   type ReviewProjectInstructionsToolArguments,
@@ -120,7 +123,7 @@ export function handleMcpMessage(
           version: VERSION,
         },
         instructions:
-          "Use get_prompt_memory_status first when you need readiness or capture status, score_prompt for one coding prompt, improve_prompt when the user wants an approval-ready rewritten request, score_prompt_archive for accumulated prompt habit review, and review_project_instructions for AGENTS.md/CLAUDE.md quality checks. This server is local-only and does not call external LLMs.",
+          "Use coach_prompt for the default one-call Claude Code/Codex coaching workflow: status, latest prompt score, approval-ready rewrite, habit review, project instruction review, and next request guidance. Use get_prompt_memory_status only for readiness checks, score_prompt for one prompt, improve_prompt for one rewrite, score_prompt_archive for habit-only review, and review_project_instructions for AGENTS.md/CLAUDE.md-only checks. This server is local-only and does not call external LLMs.",
       });
     case "ping":
       return jsonRpcResult(id, {});
@@ -128,6 +131,7 @@ export function handleMcpMessage(
       return jsonRpcResult(id, {
         tools: [
           GET_PROMPT_MEMORY_STATUS_TOOL_DEFINITION,
+          COACH_PROMPT_TOOL_DEFINITION,
           SCORE_PROMPT_TOOL_DEFINITION,
           IMPROVE_PROMPT_TOOL_DEFINITION,
           SCORE_PROMPT_ARCHIVE_TOOL_DEFINITION,
@@ -160,24 +164,29 @@ function handleToolCall(
           params.arguments as GetPromptMemoryStatusToolArguments,
           options,
         )
-      : params.name === SCORE_PROMPT_TOOL_DEFINITION.name
-        ? scorePromptTool(params.arguments as ScorePromptToolArguments, options)
-        : params.name === IMPROVE_PROMPT_TOOL_DEFINITION.name
-          ? improvePromptTool(
-              params.arguments as ImprovePromptToolArguments,
+      : params.name === COACH_PROMPT_TOOL_DEFINITION.name
+        ? coachPromptTool(params.arguments as CoachPromptToolArguments, options)
+        : params.name === SCORE_PROMPT_TOOL_DEFINITION.name
+          ? scorePromptTool(
+              params.arguments as ScorePromptToolArguments,
               options,
             )
-          : params.name === SCORE_PROMPT_ARCHIVE_TOOL_DEFINITION.name
-            ? scorePromptArchiveTool(
-                params.arguments as ScorePromptArchiveToolArguments,
+          : params.name === IMPROVE_PROMPT_TOOL_DEFINITION.name
+            ? improvePromptTool(
+                params.arguments as ImprovePromptToolArguments,
                 options,
               )
-            : params.name === REVIEW_PROJECT_INSTRUCTIONS_TOOL_DEFINITION.name
-              ? reviewProjectInstructionsTool(
-                  params.arguments as ReviewProjectInstructionsToolArguments,
+            : params.name === SCORE_PROMPT_ARCHIVE_TOOL_DEFINITION.name
+              ? scorePromptArchiveTool(
+                  params.arguments as ScorePromptArchiveToolArguments,
                   options,
                 )
-              : undefined;
+              : params.name === REVIEW_PROJECT_INSTRUCTIONS_TOOL_DEFINITION.name
+                ? reviewProjectInstructionsTool(
+                    params.arguments as ReviewProjectInstructionsToolArguments,
+                    options,
+                  )
+                : undefined;
 
   if (!result) {
     return jsonRpcError(id, -32602, `Unknown tool: ${params.name}`);

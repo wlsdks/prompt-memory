@@ -312,6 +312,7 @@ The Claude Code plugin provides slash commands:
 ```text
 /prompt-memory:setup
 /prompt-memory:status
+/prompt-memory:coach
 /prompt-memory:score
 /prompt-memory:score-last
 /prompt-memory:improve-last
@@ -423,6 +424,7 @@ project policy versions, redaction version, or preview counts change.
 Generate a copy-based Prompt Coach draft:
 
 ```sh
+pnpm prompt-memory coach --json
 pnpm prompt-memory improve --text "make this request clearer" --json
 pnpm prompt-memory improve --latest --json
 ```
@@ -461,10 +463,13 @@ Codex, or any MCP client through a stdio MCP server:
 prompt-memory mcp
 ```
 
-The MCP server exposes five tools:
+The MCP server exposes six tools:
 
 - `get_prompt_memory_status`: check whether the local archive is initialized,
   whether prompts have been captured, and which MCP tool to call next.
+- `coach_prompt`: run the default one-call agent workflow for Claude Code or
+  Codex: local readiness, latest prompt score, approval-required rewrite,
+  recent habit review, project instruction review, and next request guidance.
 - `score_prompt`: score either direct prompt text, a stored `prompt_id`, or the
   latest stored prompt.
 - `improve_prompt`: generate an approval-ready improved prompt draft for direct
@@ -484,6 +489,9 @@ secrets, or external LLM results.
 Practical agent prompts:
 
 ```text
+Use prompt-memory coach_prompt and give me the one-call coaching result for my
+latest request. Do not auto-submit the rewrite.
+
 Use prompt-memory get_prompt_memory_status and tell me whether prompt capture is
 working before you score anything.
 

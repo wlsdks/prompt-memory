@@ -62,6 +62,9 @@ prompt-memory mcp
 
 Use these workflows before sending the user to the web UI:
 
+- Full coach workflow: call `prompt-memory:coach_prompt`. If MCP is
+  unavailable, run `prompt-memory coach --json`. Use this as the default when
+  the user asks to coach, evaluate, improve, or prepare the next request.
 - Latest prompt score: call `prompt-memory:score_prompt` with `latest=true`.
   If MCP is unavailable, run `prompt-memory score --latest --json`.
 - Latest prompt rewrite: call `prompt-memory:improve_prompt` with
@@ -81,6 +84,8 @@ project policy controls, export, or a visual review of trends.
 The MCP tools are:
 
 - `get_prompt_memory_status` for local setup, capture readiness, and next calls
+- `coach_prompt` for the default one-call Claude Code/Codex prompt coach
+  workflow
 - `score_prompt` for one current, pasted, stored, or latest prompt
 - `improve_prompt` for an approval-ready draft the user can copy and resubmit
 - `score_prompt_archive` for accumulated prompt habit review across the local

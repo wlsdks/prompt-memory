@@ -35,6 +35,7 @@
     "defaultPrompt": [
       "Set up prompt-memory for this machine",
       "Check whether prompt-memory is capturing Codex prompts",
+      "Run my full prompt coach workflow",
       "Score my latest captured prompt",
       "Improve my latest captured prompt",
       "Summarize my prompt habits",

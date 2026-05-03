@@ -68,6 +68,8 @@ The plugin exposes:
 
 - `/prompt-memory:setup` to preview and run local setup
 - `/prompt-memory:status` to run doctor and statusLine checks
+- `/prompt-memory:coach` to run the one-call prompt coach workflow inside
+  Claude Code
 - `/prompt-memory:score` to score accumulated prompt habits
 - `/prompt-memory:score-last` to score the latest captured request
 - `/prompt-memory:improve-last` to generate an approval-ready rewrite for the
@@ -114,14 +116,18 @@ uses the exact CLI path from the current installation.
 prompt-memory mcp
 ```
 
-This server exposes five model-controlled tools:
+This server exposes six model-controlled tools:
 
 - `get_prompt_memory_status`
+- `coach_prompt`
 - `score_prompt`
 - `improve_prompt`
 - `score_prompt_archive`
 - `review_project_instructions`
 
+`coach_prompt` is the default agent-facing workflow. It combines local archive
+status, latest prompt score, approval-required rewrite, recent habit review,
+project instruction review, and next request guidance in one read-only call.
 `get_prompt_memory_status` checks local archive readiness and returns safe
 counts, latest prompt metadata, available tool names, and next actions.
 `score_prompt` scores direct prompt text, a stored prompt id, or the latest
@@ -173,9 +179,11 @@ prompt-memory:score_prompt latest=true
 prompt-memory:improve_prompt latest=true
 prompt-memory:score_prompt_archive max_prompts=200
 prompt-memory:review_project_instructions latest=true
+prompt-memory:coach_prompt
 ```
 
 ```sh
+prompt-memory coach --json
 prompt-memory score --latest --json
 prompt-memory improve --latest --json
 prompt-memory score --json --limit 200

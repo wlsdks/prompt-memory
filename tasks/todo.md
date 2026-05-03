@@ -1,5 +1,20 @@
 # 작업 계획
 
+## 2026-05-03 Unified Agent Coach
+
+- [x] `coach_prompt` MCP 통합 workflow를 TDD로 추가
+- [x] `prompt-memory coach --json` CLI fallback을 추가하고 top-level CLI에 연결
+- [x] Claude Code `/prompt-memory:coach` command와 Codex skill/default prompt를 갱신
+- [x] privacy-safe partial failure와 raw path/body 미노출 검증
+- [x] release gate, 커밋, 푸시, CI 확인
+
+### 판단 기준
+
+- Claude Code/Codex는 여러 tool을 순서대로 추론하지 않아도 한 번의 호출로 최신 요청 점수, 개선안, 반복 습관, 프로젝트 규칙, 다음 요청 템플릿을 받아야 한다.
+- `coach_prompt`와 CLI fallback은 setup-needed 상태도 실패가 아니라 다음 행동으로 돌려준다.
+- 반환값은 prompt body, raw absolute path, instruction file body, secret을 포함하지 않는다.
+- 웹 UI는 변경하지 않고 agent-facing MCP/CLI/plugin 표면만 강화한다.
+
 ## 2026-05-03 Agent-Native Prompt Coach Workflow
 
 - [x] Claude Code/Codex 안에서 바로 쓰는 핵심 workflow 범위 확정

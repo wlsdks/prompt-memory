@@ -22,6 +22,9 @@ describe("MCP stdio server", () => {
             name: "get_prompt_memory_status",
           }),
           expect.objectContaining({
+            name: "coach_prompt",
+          }),
+          expect.objectContaining({
             name: "score_prompt",
           }),
           expect.objectContaining({
@@ -47,7 +50,7 @@ describe("MCP stdio server", () => {
 
     const tools = (response?.result as { tools: Array<unknown> }).tools;
 
-    expect(tools).toHaveLength(5);
+    expect(tools).toHaveLength(6);
     for (const tool of tools) {
       expect(tool).toEqual(
         expect.objectContaining({
@@ -84,6 +87,19 @@ describe("MCP stdio server", () => {
 
     expect(tools).toEqual(
       expect.arrayContaining([
+        expect.objectContaining({
+          name: "coach_prompt",
+          outputSchema: expect.objectContaining({
+            properties: expect.objectContaining({
+              status: expect.any(Object),
+              latest_score: expect.any(Object),
+              improvement: expect.any(Object),
+              archive: expect.any(Object),
+              agent_brief: expect.any(Object),
+              privacy: expect.any(Object),
+            }),
+          }),
+        }),
         expect.objectContaining({
           name: "improve_prompt",
           outputSchema: expect.objectContaining({
@@ -291,6 +307,52 @@ describe("MCP stdio server", () => {
             text: expect.stringContaining('"setup_needed"'),
           },
         ],
+        isError: false,
+      },
+    });
+  });
+
+  it("returns structured MCP content for coach_prompt setup guidance", () => {
+    const response = handleMcpMessage(
+      {
+        jsonrpc: "2.0",
+        id: "coach-1",
+        method: "tools/call",
+        params: {
+          name: "coach_prompt",
+          arguments: {},
+        },
+      },
+      {
+        dataDir: join(tmpdir(), `prompt-memory-missing-${randomUUID()}`),
+      },
+    );
+
+    expect(response).toMatchObject({
+      jsonrpc: "2.0",
+      id: "coach-1",
+      result: {
+        content: [
+          {
+            type: "text",
+            text: expect.stringContaining('"agent_coach"'),
+          },
+        ],
+        structuredContent: expect.objectContaining({
+          mode: "agent_coach",
+          status: expect.objectContaining({
+            status: "setup_needed",
+          }),
+          agent_brief: expect.objectContaining({
+            next_actions: expect.arrayContaining([
+              expect.stringContaining("prompt-memory setup"),
+            ]),
+          }),
+          privacy: expect.objectContaining({
+            external_calls: false,
+            auto_submits: false,
+          }),
+        }),
         isError: false,
       },
     });

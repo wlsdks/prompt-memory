@@ -54,6 +54,16 @@ export type GetPromptMemoryStatusToolArguments = {
   include_latest?: boolean;
 };
 
+export type CoachPromptToolArguments = {
+  include_latest_score?: boolean;
+  include_improvement?: boolean;
+  include_archive?: boolean;
+  include_project_rules?: boolean;
+  max_prompts?: number;
+  low_score_limit?: number;
+  language?: "en" | "ko";
+};
+
 export type ScorePromptToolResult =
   | {
       source: "text" | "prompt_id" | "latest";
@@ -147,6 +157,30 @@ export type GetPromptMemoryStatusToolResult = {
     external_calls: false;
     returns_prompt_bodies: false;
     returns_raw_paths: false;
+  };
+};
+
+export type CoachPromptToolResult = {
+  mode: "agent_coach";
+  generated_at: string;
+  status: GetPromptMemoryStatusToolResult;
+  latest_score?: ScorePromptToolResult;
+  improvement?: ImprovePromptToolResult;
+  archive?: ScorePromptArchiveToolResult;
+  project_rules?: ReviewProjectInstructionsToolResult;
+  agent_brief: {
+    headline: string;
+    summary: string;
+    next_actions: string[];
+    suggested_user_response: string;
+  };
+  privacy: {
+    local_only: true;
+    external_calls: false;
+    returns_prompt_bodies: false;
+    returns_raw_paths: false;
+    returns_instruction_file_bodies: false;
+    auto_submits: false;
   };
 };
 
@@ -797,6 +831,169 @@ export const REVIEW_PROJECT_INSTRUCTIONS_TOOL_DEFINITION = {
   },
 } as const;
 
+export const COACH_PROMPT_TOOL_DEFINITION = {
+  name: "coach_prompt",
+  description:
+    "Run prompt-memory's one-call agent coaching workflow for Claude Code or Codex. Use this when the user asks to coach the latest request, check whether the prompt is good enough, improve it, summarize recurring habits, review project rules, or generate the next better request without opening the web UI. It combines local status, latest prompt score, approval-required rewrite, archive habit review, and optional AGENTS.md/CLAUDE.md rule review. It is read-only, local-only, never auto-submits drafts, and never returns prompt bodies, raw paths, instruction file bodies, secrets, or external LLM results.",
+  annotations: {
+    ...LOCAL_READ_ONLY_TOOL_ANNOTATIONS,
+    title: "One-call prompt coach",
+  },
+  inputSchema: {
+    type: "object",
+    properties: {
+      include_latest_score: {
+        type: "boolean",
+        description:
+          "Whether to score the latest captured prompt. Defaults to true.",
+      },
+      include_improvement: {
+        type: "boolean",
+        description:
+          "Whether to include an approval-ready rewrite for the latest captured prompt. Defaults to true.",
+      },
+      include_archive: {
+        type: "boolean",
+        description:
+          "Whether to include recent habit analysis, practice plan, and next prompt template. Defaults to true.",
+      },
+      include_project_rules: {
+        type: "boolean",
+        description:
+          "Whether to review AGENTS.md/CLAUDE.md for the latest captured project. Defaults to true.",
+      },
+      max_prompts: {
+        type: "integer",
+        minimum: 1,
+        maximum: 1000,
+        description:
+          "Maximum recent prompts for habit review. Defaults to 200.",
+      },
+      low_score_limit: {
+        type: "integer",
+        minimum: 1,
+        maximum: 50,
+        description: "Maximum low-score prompt ids to include. Defaults to 8.",
+      },
+      language: {
+        type: "string",
+        enum: ["en", "ko"],
+        description: "Language for improvement draft. Defaults to en.",
+      },
+    },
+    additionalProperties: false,
+  },
+  outputSchema: {
+    type: "object",
+    required: ["mode", "generated_at", "status", "agent_brief", "privacy"],
+    properties: {
+      mode: { const: "agent_coach" },
+      generated_at: { type: "string" },
+      status: GET_PROMPT_MEMORY_STATUS_TOOL_DEFINITION.outputSchema,
+      latest_score: SCORE_PROMPT_TOOL_DEFINITION.outputSchema,
+      improvement: IMPROVE_PROMPT_TOOL_DEFINITION.outputSchema,
+      archive: SCORE_PROMPT_ARCHIVE_TOOL_DEFINITION.outputSchema,
+      project_rules: REVIEW_PROJECT_INSTRUCTIONS_TOOL_DEFINITION.outputSchema,
+      agent_brief: {
+        type: "object",
+        required: [
+          "headline",
+          "summary",
+          "next_actions",
+          "suggested_user_response",
+        ],
+        properties: {
+          headline: { type: "string" },
+          summary: { type: "string" },
+          next_actions: { type: "array", items: { type: "string" } },
+          suggested_user_response: { type: "string" },
+        },
+      },
+      privacy: {
+        type: "object",
+        required: [
+          "local_only",
+          "external_calls",
+          "returns_prompt_bodies",
+          "returns_raw_paths",
+          "returns_instruction_file_bodies",
+          "auto_submits",
+        ],
+        properties: {
+          local_only: { const: true },
+          external_calls: { const: false },
+          returns_prompt_bodies: { const: false },
+          returns_raw_paths: { const: false },
+          returns_instruction_file_bodies: { const: false },
+          auto_submits: { const: false },
+        },
+      },
+    },
+  },
+} as const;
+
+export function coachPromptTool(
+  args: CoachPromptToolArguments,
+  options: ScorePromptToolOptions = {},
+): CoachPromptToolResult {
+  const generatedAt = (options.now ?? new Date()).toISOString();
+  const status = getPromptMemoryStatusTool({}, options);
+  const includeLatestScore = args.include_latest_score !== false;
+  const includeImprovement = args.include_improvement !== false;
+  const includeArchive = args.include_archive !== false;
+  const includeProjectRules = args.include_project_rules !== false;
+  const latestScore =
+    includeLatestScore && status.status === "ready"
+      ? scorePromptTool({ latest: true, include_suggestions: true }, options)
+      : undefined;
+  const improvement =
+    includeImprovement && status.status === "ready"
+      ? improvePromptTool({ latest: true, language: args.language }, options)
+      : undefined;
+  const archive =
+    includeArchive && status.status === "ready"
+      ? scorePromptArchiveTool(
+          {
+            max_prompts: args.max_prompts ?? 200,
+            low_score_limit: args.low_score_limit ?? 8,
+          },
+          options,
+        )
+      : undefined;
+  const projectRules =
+    includeProjectRules && status.status === "ready"
+      ? reviewProjectInstructionsTool(
+          { latest: true, analyze: true, include_suggestions: true },
+          options,
+        )
+      : undefined;
+
+  return {
+    mode: "agent_coach",
+    generated_at: generatedAt,
+    status,
+    ...(latestScore ? { latest_score: latestScore } : {}),
+    ...(improvement ? { improvement } : {}),
+    ...(archive ? { archive } : {}),
+    ...(projectRules ? { project_rules: projectRules } : {}),
+    agent_brief: createAgentCoachBrief({
+      status,
+      latestScore,
+      improvement,
+      archive,
+      projectRules,
+    }),
+    privacy: {
+      local_only: true,
+      external_calls: false,
+      returns_prompt_bodies: false,
+      returns_raw_paths: false,
+      returns_instruction_file_bodies: false,
+      auto_submits: false,
+    },
+  };
+}
+
 export function scorePromptTool(
   args: ScorePromptToolArguments,
   options: ScorePromptToolOptions = {},
@@ -1154,11 +1351,75 @@ function projectLabel(cwd: string): string {
 function availableMcpToolNames(): string[] {
   return [
     GET_PROMPT_MEMORY_STATUS_TOOL_DEFINITION.name,
+    COACH_PROMPT_TOOL_DEFINITION.name,
     SCORE_PROMPT_TOOL_DEFINITION.name,
     IMPROVE_PROMPT_TOOL_DEFINITION.name,
     SCORE_PROMPT_ARCHIVE_TOOL_DEFINITION.name,
     REVIEW_PROJECT_INSTRUCTIONS_TOOL_DEFINITION.name,
   ];
+}
+
+function createAgentCoachBrief(input: {
+  status: GetPromptMemoryStatusToolResult;
+  latestScore?: ScorePromptToolResult;
+  improvement?: ImprovePromptToolResult;
+  archive?: ScorePromptArchiveToolResult;
+  projectRules?: ReviewProjectInstructionsToolResult;
+}): CoachPromptToolResult["agent_brief"] {
+  if (input.status.status !== "ready") {
+    return {
+      headline: "Prompt-memory is not ready yet.",
+      summary:
+        "No captured prompt archive is available for coaching in this data directory.",
+      next_actions: [
+        "Run prompt-memory setup, then submit one Claude Code or Codex prompt.",
+        "Run prompt-memory doctor claude-code or prompt-memory doctor codex if capture still does not work.",
+      ],
+      suggested_user_response:
+        "I cannot coach the latest prompt yet because prompt-memory has no ready archive. Run prompt-memory setup and capture one request first.",
+    };
+  }
+
+  const nextActions = [
+    "Review the latest prompt score and fix the first missing or partial checklist item before resubmitting.",
+  ];
+  const score =
+    input.latestScore && !isToolError(input.latestScore)
+      ? `${input.latestScore.quality_score.value}/${input.latestScore.quality_score.max} (${input.latestScore.quality_score.band})`
+      : "not available";
+
+  if (input.improvement && !isToolError(input.improvement)) {
+    nextActions.push(
+      "Use the approval-ready rewrite only after the user explicitly accepts it.",
+    );
+  }
+
+  if (input.archive && !isToolError(input.archive)) {
+    const firstPractice = input.archive.practice_plan[0];
+    if (firstPractice) {
+      nextActions.push(`Practice rule: ${firstPractice.prompt_rule}`);
+    }
+    nextActions.push(
+      "Use the next_prompt_template for the next coding-agent request.",
+    );
+  }
+
+  if (input.projectRules && !isToolError(input.projectRules)) {
+    nextActions.push(input.projectRules.next_action);
+  }
+
+  return {
+    headline: `Latest prompt score: ${score}`,
+    summary:
+      "This local coach result combines latest prompt scoring, copy-based rewrite, recent habit review, and project instruction review for the agent session.",
+    next_actions: nextActions,
+    suggested_user_response:
+      "Here is the local prompt coach result. I will not auto-submit the rewrite; review the score, inspect the suggested changes, then approve or edit the improved request before using it.",
+  };
+}
+
+function isToolError(value: unknown): value is { is_error: true } {
+  return value !== null && typeof value === "object" && "is_error" in value;
 }
 
 function withStoredPromptImprovement(
