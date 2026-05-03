@@ -36,7 +36,7 @@ Unsupported for the public beta:
 
 - Electron shell
 - cloud sync
-- external LLM analysis
+- hidden external LLM analysis
 - hosted backend
 
 ## 3. Package Layout
@@ -143,9 +143,10 @@ Hard delete removes:
 1. User registers `prompt-memory mcp` with a local MCP client such as Claude Code
    or Codex.
 2. The client launches the command as a stdio subprocess.
-3. The MCP server exposes `get_prompt_memory_status`, `score_prompt`,
-   `improve_prompt`, `score_prompt_archive`, and
-   `review_project_instructions`.
+3. The MCP server exposes `get_prompt_memory_status`, `coach_prompt`,
+   `score_prompt`, `improve_prompt`, `score_prompt_archive`,
+   `review_project_instructions`, `prepare_agent_judge_batch`, and
+   `record_agent_judgments`.
 4. `get_prompt_memory_status` checks whether local storage is initialized,
    whether prompts have been captured, and which MCP tool to call next.
 5. `score_prompt` accepts exactly one of direct prompt text, a stored prompt id,
@@ -162,16 +163,28 @@ Hard delete removes:
 10. Project instruction review reads local project metadata from SQLite, can
     rescan `AGENTS.md` / `CLAUDE.md`, and returns checklist metadata without
     instruction file bodies or raw paths.
-11. Every MCP tool is declared as read-only, idempotent, and local-only through
-    tool annotations, declares an MCP `outputSchema`, and `tools/call` returns
-    both serialized JSON text and `structuredContent` for clients that can
-    consume structured tool results.
+11. `prepare_agent_judge_batch` returns a bounded set of locally redacted
+    prompt bodies plus a rubric for the active Claude Code, Codex, or Gemini CLI
+    session to judge. `prompt-memory` does not call a provider or route
+    credentials for this workflow.
+12. `record_agent_judgments` stores advisory scores, confidence, risks, and
+    suggestions from the active agent session without prompt bodies or raw
+    paths.
+13. Read MCP tools are declared as read-only, idempotent, and local-only through
+    tool annotations. `record_agent_judgments` is declared as a non-destructive
+    write tool. Every tool declares an MCP `outputSchema`, and `tools/call`
+    returns both serialized JSON text and `structuredContent` for clients that
+    can consume structured tool results.
 
 Important rules:
 
 - stdout is reserved for newline-delimited JSON-RPC MCP messages
-- no external LLM calls are made
-- MCP tool definitions include read-only/local-only risk hints
+- no hidden external LLM calls are made by `prompt-memory`
+- agent-judge mode is explicit: the active user-controlled agent session judges
+  redacted packets and then records metadata
+- MCP read tool definitions include read-only/local-only risk hints
+- MCP judgment recording is the only write tool and stores judgment metadata
+  only
 - MCP tool definitions include `outputSchema` for structured result fields
 - MCP tool responses include `structuredContent` plus a JSON text content block
 - direct MCP prompt input is not written to Markdown or SQLite
@@ -184,6 +197,8 @@ Important rules:
 - archive MCP results are metadata-only and bounded by `max_prompts`
 - project instruction MCP results are metadata-only and never include file
   bodies or raw absolute paths
+- agent-judge packet results may include redacted prompt bodies by explicit
+  request, but never raw prompt bodies, raw absolute paths, or secrets
 
 ## 6. Adapter Contract
 
@@ -428,11 +443,12 @@ The public beta can claim:
 - CLI import
 - anonymized export
 - local benchmark and release smoke
+- opt-in MCP agent-judge packet and judgment metadata storage
 
 The public beta must not claim:
 
 - full secret-proof redaction
-- external LLM analysis
+- provider-hosted or hidden external LLM analysis
 - automatic prompt resubmission
 - GitHub integration
 - stable cross-platform support beyond validated platforms

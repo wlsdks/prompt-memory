@@ -33,6 +33,7 @@ import type {
   CreateImportJobInput,
   CreateImportRecordInput,
   CreateExportJobInput,
+  AgentPromptJudgmentStoragePort,
   CreatePromptImprovementDraftInput,
   DeletePromptResult,
   DuplicatePromptGroup,
@@ -98,6 +99,11 @@ import type {
   RebuildPromptRow,
   UsefulPromptRow,
 } from "./sqlite-rows.js";
+import {
+  applyAgentPromptJudgmentMigration,
+  createAgentPromptJudgment,
+  listAgentPromptJudgments,
+} from "./agent-judgments.js";
 
 export type { PromptRow } from "./sqlite-rows.js";
 
@@ -117,7 +123,8 @@ export type SqlitePromptStorage = PromptStoragePort &
   ProjectPolicyStoragePort &
   ProjectInstructionStoragePort &
   ImportJobStoragePort &
-  ExportJobStoragePort & {
+  ExportJobStoragePort &
+  AgentPromptJudgmentStoragePort & {
     close(): void;
     getAppliedMigrations(): AppliedMigration[];
     listPromptRows(): PromptRow[];
@@ -195,6 +202,17 @@ export function createSqlitePromptStorage(
         input,
         options.now?.() ?? new Date(),
       );
+    },
+    createAgentPromptJudgment(promptId, input) {
+      return createAgentPromptJudgment(
+        db,
+        promptId,
+        input,
+        options.now?.() ?? new Date(),
+      );
+    },
+    listAgentPromptJudgments(promptId) {
+      return listAgentPromptJudgments(db, promptId);
     },
     listProjects() {
       return listProjectsForPolicy(db, options.hmacSecret);
@@ -301,6 +319,7 @@ function applyMigrations(db: Database.Database): void {
   applyExportJobMigration(db);
   applyDashboardQueryIndexMigration(db);
   applyProjectInstructionReviewMigration(db);
+  applyAgentPromptJudgmentMigration(db);
 }
 
 function applyAnalysisChecklistTagsMigration(db: Database.Database): void {
@@ -1017,6 +1036,9 @@ function deletePrompt(db: Database.Database, id: string): DeletePromptResult {
     db.prepare("DELETE FROM prompt_tags WHERE prompt_id = ?").run(id);
     db.prepare("DELETE FROM prompt_analyses WHERE prompt_id = ?").run(id);
     db.prepare("DELETE FROM prompt_improvement_drafts WHERE prompt_id = ?").run(
+      id,
+    );
+    db.prepare("DELETE FROM agent_prompt_judgments WHERE prompt_id = ?").run(
       id,
     );
     db.prepare("DELETE FROM redaction_events WHERE prompt_id = ?").run(id);
@@ -3250,6 +3272,21 @@ CREATE TABLE IF NOT EXISTS prompt_bookmarks (
   FOREIGN KEY(prompt_id) REFERENCES prompts(id) ON DELETE CASCADE
 );
 
+CREATE TABLE IF NOT EXISTS agent_prompt_judgments (
+  id TEXT PRIMARY KEY,
+  prompt_id TEXT NOT NULL,
+  provider TEXT NOT NULL,
+  judge_model TEXT,
+  score INTEGER NOT NULL,
+  confidence REAL NOT NULL,
+  summary TEXT NOT NULL,
+  strengths_json TEXT,
+  risks_json TEXT,
+  suggestions_json TEXT,
+  created_at TEXT NOT NULL,
+  FOREIGN KEY(prompt_id) REFERENCES prompts(id) ON DELETE CASCADE
+);
+
 CREATE TABLE IF NOT EXISTS settings (
   key TEXT PRIMARY KEY,
   value_json TEXT NOT NULL,
@@ -3298,4 +3335,8 @@ CREATE INDEX IF NOT EXISTS idx_prompt_usage_events_prompt_id
   ON prompt_usage_events(prompt_id);
 CREATE INDEX IF NOT EXISTS idx_prompt_usage_events_type_created_at
   ON prompt_usage_events(event_type, created_at DESC);
+CREATE INDEX IF NOT EXISTS idx_agent_prompt_judgments_prompt_id
+  ON agent_prompt_judgments(prompt_id, created_at DESC);
+CREATE INDEX IF NOT EXISTS idx_agent_prompt_judgments_provider_created
+  ON agent_prompt_judgments(provider, created_at DESC);
 `;

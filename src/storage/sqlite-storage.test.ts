@@ -68,6 +68,7 @@ describe("SQLite prompt storage", () => {
       { version: 8, name: "008_export_jobs" },
       { version: 9, name: "009_dashboard_query_indexes" },
       { version: 10, name: "010_project_instruction_reviews" },
+      { version: 11, name: "011_agent_prompt_judgments" },
     ]);
     const db = new Database(join(dataDir, "prompt-memory.sqlite"));
     try {
@@ -1276,6 +1277,63 @@ describe("SQLite prompt storage", () => {
     const dbAfterDelete = new Database(join(dataDir, "prompt-memory.sqlite"));
     const rowsAfterDelete = dbAfterDelete
       .prepare("SELECT * FROM prompt_improvement_drafts")
+      .all();
+    dbAfterDelete.close();
+    expect(rowsAfterDelete).toEqual([]);
+  });
+
+  it("stores agent prompt judgments without prompt bodies and deletes them with prompts", async () => {
+    const dataDir = createTempDir();
+    initializePromptMemory({ dataDir });
+    const storage = createSqlitePromptStorage({
+      dataDir,
+      hmacSecret: "test-secret",
+      now: nextDate(["2026-05-03T18:00:00.000Z", "2026-05-03T18:01:00.000Z"]),
+    });
+    const prompt = await storeClaudePrompt(storage, {
+      prompt: "Fix this with token sk-proj-1234567890abcdef",
+      receivedAt: "2026-05-03T17:59:00.000Z",
+    });
+
+    const stored = storage.createAgentPromptJudgment(prompt.id, {
+      provider: "codex",
+      judge_model: "gpt-5.5",
+      score: 48,
+      confidence: 0.8,
+      summary: "Goal is present, but scope and verification are missing.",
+      strengths: ["Short enough to improve quickly."],
+      risks: ["No files or verification command."],
+      suggestions: ["Name files, constraints, and test command."],
+    });
+
+    expect(stored).toEqual(
+      expect.objectContaining({
+        id: expect.stringMatching(/^judge_/),
+        prompt_id: prompt.id,
+        provider: "codex",
+        judge_model: "gpt-5.5",
+        score: 48,
+        confidence: 0.8,
+        created_at: "2026-05-03T18:01:00.000Z",
+      }),
+    );
+    expect(storage.listAgentPromptJudgments(prompt.id)).toEqual([stored]);
+
+    const db = new Database(join(dataDir, "prompt-memory.sqlite"));
+    const rowsBeforeDelete = db
+      .prepare("SELECT * FROM agent_prompt_judgments")
+      .all();
+    db.close();
+    expect(JSON.stringify(rowsBeforeDelete)).not.toContain(
+      "sk-proj-1234567890abcdef",
+    );
+    expect(JSON.stringify(rowsBeforeDelete)).not.toContain("Fix this");
+
+    expect(storage.deletePrompt(prompt.id)).toEqual({ deleted: true });
+
+    const dbAfterDelete = new Database(join(dataDir, "prompt-memory.sqlite"));
+    const rowsAfterDelete = dbAfterDelete
+      .prepare("SELECT * FROM agent_prompt_judgments")
       .all();
     dbAfterDelete.close();
     expect(rowsAfterDelete).toEqual([]);

@@ -136,6 +136,20 @@ export type PromptImprovementDraftRow = {
   accepted_at: string | null;
 };
 
+export type AgentPromptJudgmentRow = {
+  id: string;
+  prompt_id: string;
+  provider: string;
+  judge_model: string | null;
+  score: number;
+  confidence: number;
+  summary: string;
+  strengths_json: string | null;
+  risks_json: string | null;
+  suggestions_json: string | null;
+  created_at: string;
+};
+
 export type RebuildPromptRow = {
   id: string;
   markdown_path: string;

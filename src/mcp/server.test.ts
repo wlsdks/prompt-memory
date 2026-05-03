@@ -36,12 +36,18 @@ describe("MCP stdio server", () => {
           expect.objectContaining({
             name: "review_project_instructions",
           }),
+          expect.objectContaining({
+            name: "prepare_agent_judge_batch",
+          }),
+          expect.objectContaining({
+            name: "record_agent_judgments",
+          }),
         ],
       },
     });
   });
 
-  it("declares read-only local tool annotations for each tool", () => {
+  it("declares safe local tool annotations for each tool", () => {
     const response = handleMcpMessage({
       jsonrpc: "2.0",
       id: "tool-contract",
@@ -50,8 +56,11 @@ describe("MCP stdio server", () => {
 
     const tools = (response?.result as { tools: Array<unknown> }).tools;
 
-    expect(tools).toHaveLength(6);
-    for (const tool of tools) {
+    expect(tools).toHaveLength(8);
+    for (const tool of tools.filter(
+      (tool) =>
+        (tool as { name?: string }).name !== "record_agent_judgments",
+    )) {
       expect(tool).toEqual(
         expect.objectContaining({
           annotations: expect.objectContaining({
@@ -63,6 +72,19 @@ describe("MCP stdio server", () => {
         }),
       );
     }
+    expect(tools).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({
+          name: "record_agent_judgments",
+          annotations: expect.objectContaining({
+            destructiveHint: false,
+            idempotentHint: false,
+            openWorldHint: false,
+            readOnlyHint: false,
+          }),
+        }),
+      ]),
+    );
   });
 
   it("declares output schemas for structured MCP results", () => {
@@ -134,6 +156,28 @@ describe("MCP stdio server", () => {
               next_prompt_template: expect.any(Object),
               practice_plan: expect.any(Object),
               top_gaps: expect.any(Object),
+              privacy: expect.any(Object),
+            }),
+          }),
+        }),
+        expect.objectContaining({
+          name: "prepare_agent_judge_batch",
+          outputSchema: expect.objectContaining({
+            properties: expect.objectContaining({
+              mode: expect.any(Object),
+              rubric: expect.any(Object),
+              prompts: expect.any(Object),
+              agent_instructions: expect.any(Object),
+              privacy: expect.any(Object),
+            }),
+          }),
+        }),
+        expect.objectContaining({
+          name: "record_agent_judgments",
+          outputSchema: expect.objectContaining({
+            properties: expect.objectContaining({
+              recorded: expect.any(Object),
+              judgments: expect.any(Object),
               privacy: expect.any(Object),
             }),
           }),

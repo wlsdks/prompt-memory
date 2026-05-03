@@ -160,7 +160,7 @@ uses the exact CLI path from the current installation.
 prompt-memory mcp
 ```
 
-This server exposes six model-controlled tools:
+This server exposes eight model-controlled tools:
 
 - `get_prompt_memory_status`
 - `coach_prompt`
@@ -168,6 +168,8 @@ This server exposes six model-controlled tools:
 - `improve_prompt`
 - `score_prompt_archive`
 - `review_project_instructions`
+- `prepare_agent_judge_batch`
+- `record_agent_judgments`
 
 `coach_prompt` is the default agent-facing workflow. It combines local archive
 status, latest prompt score, approval-required rewrite, recent habit review,
@@ -183,15 +185,25 @@ stored prompts and returns aggregate score, recurring gaps, a practice plan, a
 next prompt template, and low-score prompt ids. `review_project_instructions`
 scores local `AGENTS.md` / `CLAUDE.md` rules for the latest or selected project
 and returns file metadata, checklist status, and improvement hints.
+`prepare_agent_judge_batch` is the opt-in LLM-as-judge handoff: it returns a
+bounded set of locally redacted prompt bodies, local score metadata, and a
+rubric so the current Claude Code, Codex, or Gemini CLI session can evaluate
+prompt quality itself. `record_agent_judgments` stores that active agent
+session's advisory scores, confidence, risks, and suggestions without storing
+prompt bodies or raw paths.
 
-These tools do not call external LLMs. Archive-backed score/rewrite flows do not
-return stored original prompt bodies. The archive and status tools avoid raw
-absolute paths, and the instruction review tool avoids file bodies and raw
-absolute paths. Tool definitions are marked read-only, idempotent, and
-local-only through MCP annotations. Each `tools/call` response includes
+These tools do not make hidden external LLM calls. Archive-backed score/rewrite
+flows do not return stored original prompt bodies. The archive and status tools
+avoid raw absolute paths, and the instruction review tool avoids file bodies and
+raw absolute paths. The agent-judge packet is explicit because it returns
+redacted prompt bodies to the active user-controlled agent session for
+evaluation; `prompt-memory` does not extract, proxy, or reuse provider
+credentials. Read tool definitions are marked read-only, idempotent, and
+local-only through MCP annotations. `record_agent_judgments` is marked as a
+non-destructive write tool. Each `tools/call` response includes
 `structuredContent` plus a JSON text block for clients that still expect text
 content, and each tool definition declares an MCP `outputSchema` for the
-structured result. If MCP is not configured, users can run the same archive
+structured result. If MCP is not configured, users can run the same local archive
 review through:
 
 ```sh
@@ -245,6 +257,8 @@ prompt-memory:improve_prompt latest=true
 prompt-memory:score_prompt_archive max_prompts=200
 prompt-memory:review_project_instructions latest=true
 prompt-memory:coach_prompt
+prompt-memory:prepare_agent_judge_batch selection=low_score max_prompts=5
+prompt-memory:record_agent_judgments provider=codex judgments=[...]
 ```
 
 ```sh

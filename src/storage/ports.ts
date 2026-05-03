@@ -406,6 +406,37 @@ export type CreatePromptImprovementDraftInput = {
   accepted?: boolean;
 };
 
+export type AgentJudgeProvider =
+  | "claude-code"
+  | "codex"
+  | "gemini-cli"
+  | "other";
+
+export type AgentPromptJudgment = {
+  id: string;
+  prompt_id: string;
+  provider: AgentJudgeProvider;
+  judge_model?: string;
+  score: number;
+  confidence: number;
+  summary: string;
+  strengths: string[];
+  risks: string[];
+  suggestions: string[];
+  created_at: string;
+};
+
+export type CreateAgentPromptJudgmentInput = {
+  provider: AgentJudgeProvider;
+  judge_model?: string;
+  score: number;
+  confidence: number;
+  summary: string;
+  strengths?: string[];
+  risks?: string[];
+  suggestions?: string[];
+};
+
 export type PromptStoragePort = {
   storePrompt(input: StorePromptInput): Promise<StorePromptResult>;
 };
@@ -425,6 +456,14 @@ export type PromptReadStoragePort = {
     promptId: string,
     input: CreatePromptImprovementDraftInput,
   ): PromptImprovementDraft | undefined;
+};
+
+export type AgentPromptJudgmentStoragePort = {
+  createAgentPromptJudgment(
+    promptId: string,
+    input: CreateAgentPromptJudgmentInput,
+  ): AgentPromptJudgment | undefined;
+  listAgentPromptJudgments(promptId: string): AgentPromptJudgment[];
 };
 
 export type ProjectPolicyStoragePort = {

@@ -6,7 +6,9 @@ import {
   COACH_PROMPT_TOOL_DEFINITION,
   GET_PROMPT_MEMORY_STATUS_TOOL_DEFINITION,
   IMPROVE_PROMPT_TOOL_DEFINITION,
+  PREPARE_AGENT_JUDGE_BATCH_TOOL_DEFINITION,
   PROMPT_MEMORY_MCP_TOOL_DEFINITIONS,
+  RECORD_AGENT_JUDGMENTS_TOOL_DEFINITION,
   REVIEW_PROJECT_INSTRUCTIONS_TOOL_DEFINITION,
   SCORE_PROMPT_ARCHIVE_TOOL_DEFINITION,
   SCORE_PROMPT_TOOL_DEFINITION,
@@ -15,10 +17,16 @@ import {
   coachPromptTool,
   getPromptMemoryStatusTool,
   improvePromptTool,
+  prepareAgentJudgeBatchTool,
+  recordAgentJudgmentsTool,
   reviewProjectInstructionsTool,
   scorePromptArchiveTool,
   scorePromptTool,
 } from "./score-tool.js";
+import type {
+  PrepareAgentJudgeBatchToolArguments,
+  RecordAgentJudgmentsToolArguments,
+} from "./agent-judge-tool-types.js";
 import type {
   CoachPromptToolArguments,
   GetPromptMemoryStatusToolArguments,
@@ -61,7 +69,9 @@ type PromptMemoryToolResult =
   | ReturnType<typeof scorePromptTool>
   | ReturnType<typeof improvePromptTool>
   | ReturnType<typeof scorePromptArchiveTool>
-  | ReturnType<typeof reviewProjectInstructionsTool>;
+  | ReturnType<typeof reviewProjectInstructionsTool>
+  | ReturnType<typeof prepareAgentJudgeBatchTool>
+  | ReturnType<typeof recordAgentJudgmentsTool>;
 
 type PromptMemoryToolHandler = (
   args: Record<string, unknown>,
@@ -86,6 +96,16 @@ const PROMPT_MEMORY_MCP_TOOL_HANDLERS: Record<string, PromptMemoryToolHandler> =
     [REVIEW_PROJECT_INSTRUCTIONS_TOOL_DEFINITION.name]: (args, options) =>
       reviewProjectInstructionsTool(
         args as ReviewProjectInstructionsToolArguments,
+        options,
+      ),
+    [PREPARE_AGENT_JUDGE_BATCH_TOOL_DEFINITION.name]: (args, options) =>
+      prepareAgentJudgeBatchTool(
+        args as PrepareAgentJudgeBatchToolArguments,
+        options,
+      ),
+    [RECORD_AGENT_JUDGMENTS_TOOL_DEFINITION.name]: (args, options) =>
+      recordAgentJudgmentsTool(
+        args as RecordAgentJudgmentsToolArguments,
         options,
       ),
   };

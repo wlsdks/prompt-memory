@@ -50,6 +50,7 @@ git diff --check
 - 보안 기본값: 프롬프트 원문, 토큰, 비밀정보를 로그나 에러에 노출하지 않는다.
 - Markdown archive는 사람이 읽을 수 있는 원본이며, `rebuild-index`는 이를 기준으로 DB/FTS를 복구한다.
 - Claude Code hook은 fail-open을 유지한다. 특히 `UserPromptSubmit`의 stdout은 Claude 컨텍스트가 될 수 있으므로 원문 프롬프트를 쓰지 않는다.
+- Agent judge 기능은 현재 사용자가 제어하는 Claude Code/Codex/Gemini CLI 세션이 MCP로 redacted packet을 받아 평가하는 opt-in 흐름만 허용한다. `prompt-memory`는 provider 인증정보를 추출, 저장, proxy하거나 숨은 외부 LLM 호출을 하지 않는다.
 
 ## Node/TypeScript 모듈화
 
