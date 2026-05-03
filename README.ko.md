@@ -166,6 +166,14 @@ dry-run으로 변경 사항만 preview:
 pnpm prompt-memory setup --profile coach --register-mcp --dry-run
 ```
 
+Serena처럼 agent를 시작할 때 웹 workspace도 같이 열고 싶으면 명시적으로 opt-in합니다.
+
+```sh
+pnpm prompt-memory setup --profile coach --register-mcp --open-web
+```
+
+이 옵션은 기본값이 아닙니다. `SessionStart` hook을 설치해 로컬 server를 확인/시작하고, 같은 agent session id에서는 브라우저를 한 번만 엽니다. hook은 fail-open이며 prompt 본문, raw path, token을 stdout/stderr에 출력하지 않습니다.
+
 프롬프트 coaching 없이 수동 capture만 원하면 기본 profile을 사용합니다.
 
 ```sh
@@ -209,6 +217,12 @@ pnpm prompt-memory install-hook claude-code
 
 ```sh
 pnpm prompt-memory install-hook claude-code --rewrite-guard block-and-copy --rewrite-min-score 80
+```
+
+선택 기능: 웹 자동 open
+
+```sh
+pnpm prompt-memory install-hook claude-code --open-web
 ```
 
 `block-and-copy`는 공식 `UserPromptSubmit` decision 흐름만 사용합니다.
@@ -256,6 +270,12 @@ pnpm prompt-memory install-hook codex
 
 ```sh
 pnpm prompt-memory install-hook codex --rewrite-guard block-and-copy --rewrite-min-score 80
+```
+
+선택 기능: 웹 자동 open
+
+```sh
+pnpm prompt-memory install-hook codex --open-web
 ```
 
 Codex도 같은 안전한 hook command 경로를 사용합니다. Codex plugin-local hook

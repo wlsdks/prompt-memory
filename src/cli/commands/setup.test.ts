@@ -146,6 +146,36 @@ describe("runSetup", () => {
     expect(codexHooks).toContain("context");
   });
 
+  it("setup can opt into opening the web UI on agent session start", () => {
+    const dir = createTempDir();
+    const dataDir = join(dir, "data");
+    const settingsPath = join(dir, ".claude", "settings.json");
+    const hooksPath = join(dir, ".codex", "hooks.json");
+    const configPath = join(dir, ".codex", "config.toml");
+
+    const result = runSetup({
+      profile: "coach",
+      dataDir,
+      settingsPath,
+      hooksPath,
+      configPath,
+      noService: true,
+      openWeb: true,
+      detectedTools: ["claude-code", "codex"],
+    });
+
+    expect(result.autoOpenWeb.enabled).toBe(true);
+    expect(formatSetupResult(result)).toContain(
+      "Auto web open: installed on SessionStart",
+    );
+    expect(readFileSync(settingsPath, "utf8")).toContain(
+      "prompt-memory hook session-start claude-code",
+    );
+    expect(readFileSync(hooksPath, "utf8")).toContain(
+      "prompt-memory hook session-start codex",
+    );
+  });
+
   it("previews MCP registration without running external agent commands", () => {
     const commands: string[] = [];
 

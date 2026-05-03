@@ -97,6 +97,27 @@ describe("Claude Code hook install/uninstall", () => {
     expect(command).toContain("ko");
   });
 
+  it("can install an opt-in Claude Code SessionStart web opener", () => {
+    const dir = createTempDir();
+    const dataDir = join(dir, "data");
+    const settingsPath = join(dir, "settings.json");
+    initializePromptMemory({ dataDir });
+
+    const result = installClaudeCodeHook({
+      dataDir,
+      settingsPath,
+      dryRun: true,
+      openWeb: true,
+    });
+
+    expect(result.nextSettings.hooks.UserPromptSubmit).toHaveLength(1);
+    expect(result.nextSettings.hooks.SessionStart).toHaveLength(1);
+    const command = result.nextSettings.hooks.SessionStart[0].hooks[0].command;
+    expect(command).toContain("prompt-memory hook session-start claude-code");
+    expect(command).toContain("--open-web");
+    expect(command).not.toContain(loadHookAuth(dataDir).ingest_token);
+  });
+
   it("uninstalls hook and revokes the previous ingest token", () => {
     const dir = createTempDir();
     const dataDir = join(dir, "data");
@@ -110,6 +131,7 @@ describe("Claude Code hook install/uninstall", () => {
 
     expect(result.changed).toBe(true);
     expect(settings.hooks.UserPromptSubmit).toEqual([]);
+    expect(settings.hooks.SessionStart).toEqual([]);
     expect(loadHookAuth(dataDir).ingest_token).not.toBe(oldToken);
   });
 });
@@ -207,6 +229,29 @@ describe("Codex hook install/uninstall", () => {
     expect(command).toContain("70");
   });
 
+  it("can install an opt-in Codex SessionStart web opener", () => {
+    const dir = createTempDir();
+    const dataDir = join(dir, "data");
+    const hooksPath = join(dir, ".codex", "hooks.json");
+    const configPath = join(dir, ".codex", "config.toml");
+    initializePromptMemory({ dataDir });
+
+    const result = installCodexHook({
+      dataDir,
+      hooksPath,
+      configPath,
+      dryRun: true,
+      openWeb: true,
+    });
+
+    expect(result.nextHooks.hooks.UserPromptSubmit).toHaveLength(1);
+    expect(result.nextHooks.hooks.SessionStart).toHaveLength(1);
+    const command = result.nextHooks.hooks.SessionStart[0].hooks[0].command;
+    expect(command).toContain("prompt-memory hook session-start codex");
+    expect(command).toContain("--open-web");
+    expect(command).not.toContain(loadHookAuth(dataDir).ingest_token);
+  });
+
   it("uninstalls hook and revokes the previous ingest token", () => {
     const dir = createTempDir();
     const dataDir = join(dir, "data");
@@ -222,6 +267,7 @@ describe("Codex hook install/uninstall", () => {
 
     expect(result.changed).toBe(true);
     expect(hooks.hooks.UserPromptSubmit).toEqual([]);
+    expect(hooks.hooks.SessionStart).toEqual([]);
     expect(config).toContain("codex_hooks = true");
     expect(loadHookAuth(dataDir).ingest_token).not.toBe(oldToken);
   });

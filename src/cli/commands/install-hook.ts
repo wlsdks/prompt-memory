@@ -34,6 +34,7 @@ export type ClaudeHookHandler = {
   type: "command";
   command: string;
   timeout?: number;
+  async?: boolean;
 };
 
 export type HookInstallOptions = {
@@ -45,6 +46,7 @@ export type HookInstallOptions = {
   rewriteGuard?: string;
   rewriteMinScore?: string;
   rewriteLanguage?: string;
+  openWeb?: boolean;
 };
 
 export type HookInstallResult = {
@@ -68,6 +70,10 @@ export type CodexHookInstallResult = {
 
 const PROMPT_MEMORY_MARKER = "prompt-memory hook claude-code";
 const CODEX_PROMPT_MEMORY_MARKER = "prompt-memory hook codex";
+const PROMPT_MEMORY_SESSION_MARKER =
+  "prompt-memory hook session-start claude-code";
+const CODEX_PROMPT_MEMORY_SESSION_MARKER =
+  "prompt-memory hook session-start codex";
 
 export function registerInstallHookCommands(program: Command): void {
   program
@@ -88,6 +94,10 @@ export function registerInstallHookCommands(program: Command): void {
     .option(
       "--rewrite-language <language>",
       "Improvement draft language for rewrite guard: en or ko.",
+    )
+    .option(
+      "--open-web",
+      "Opt in to opening the local web UI when Claude Code/Codex starts a session.",
     )
     .option("--dry-run", "Print intended settings change without writing.")
     .action((tool: string, options: HookInstallOptions) => {
@@ -183,7 +193,11 @@ export function installClaudeCodeHook(
 
   const settingsPath = options.settingsPath ?? defaultClaudeSettingsPath();
   const current = readSettings(settingsPath);
-  const next = ensureHook(current, buildHookCommand(options.dataDir, options));
+  const next = ensureHook(current, buildHookCommand(options.dataDir, options), {
+    sessionStartCommand: options.openWeb
+      ? buildSessionStartHookCommand("claude-code", options.dataDir)
+      : undefined,
+  });
   const changed = JSON.stringify(current) !== JSON.stringify(next);
 
   if (options.dryRun) {
@@ -260,6 +274,11 @@ export function installCodexHook(
   const nextHooks = ensureCodexHook(
     currentHooks,
     buildCodexHookCommand(options.dataDir, options),
+    {
+      sessionStartCommand: options.openWeb
+        ? buildSessionStartHookCommand("codex", options.dataDir)
+        : undefined,
+    },
   );
   const nextConfig = ensureCodexHooksFeature(currentConfig);
   const hooksChanged =
@@ -334,6 +353,18 @@ export function hasPromptMemoryHook(settings: ClaudeSettings): boolean {
   );
 }
 
+export function hasPromptMemorySessionStartHook(
+  settings: ClaudeSettings,
+): boolean {
+  return Boolean(
+    settings.hooks?.SessionStart?.some((group) =>
+      group.hooks?.some((hook) =>
+        hook.command.includes(PROMPT_MEMORY_SESSION_MARKER),
+      ),
+    ),
+  );
+}
+
 export function hasPromptMemoryCodexHook(
   settings: CodexHooksSettings,
 ): boolean {
@@ -341,6 +372,18 @@ export function hasPromptMemoryCodexHook(
     settings.hooks?.UserPromptSubmit?.some((group) =>
       group.hooks?.some((hook) =>
         hook.command.includes(CODEX_PROMPT_MEMORY_MARKER),
+      ),
+    ),
+  );
+}
+
+export function hasPromptMemoryCodexSessionStartHook(
+  settings: CodexHooksSettings,
+): boolean {
+  return Boolean(
+    settings.hooks?.SessionStart?.some((group) =>
+      group.hooks?.some((hook) =>
+        hook.command.includes(CODEX_PROMPT_MEMORY_SESSION_MARKER),
       ),
     ),
   );
@@ -368,6 +411,7 @@ export function isCodexHooksFeatureEnabled(config: string): boolean {
 function ensureHook(
   settings: ClaudeSettings,
   command: string,
+  options: { sessionStartCommand?: string } = {},
 ): ClaudeSettings & { hooks: Record<string, ClaudeHookGroup[]> } {
   const hooks = { ...(settings.hooks ?? {}) };
   let found = false;
@@ -396,6 +440,13 @@ function ensureHook(
   }
 
   hooks.UserPromptSubmit = userPromptSubmit;
+  if (options.sessionStartCommand) {
+    hooks.SessionStart = ensureSessionStartHook(
+      hooks.SessionStart ?? [],
+      options.sessionStartCommand,
+      PROMPT_MEMORY_SESSION_MARKER,
+    );
+  }
 
   return {
     ...settings,
@@ -417,6 +468,10 @@ function removeHook(
     .filter((group) => group.hooks.length > 0);
 
   hooks.UserPromptSubmit = userPromptSubmit;
+  hooks.SessionStart = removeSessionStartHook(
+    hooks.SessionStart ?? [],
+    PROMPT_MEMORY_SESSION_MARKER,
+  );
 
   return {
     ...settings,
@@ -427,6 +482,7 @@ function removeHook(
 function ensureCodexHook(
   settings: CodexHooksSettings,
   command: string,
+  options: { sessionStartCommand?: string } = {},
 ): CodexHooksSettings & { hooks: Record<string, ClaudeHookGroup[]> } {
   const hooks = { ...(settings.hooks ?? {}) };
   let found = false;
@@ -455,6 +511,13 @@ function ensureCodexHook(
   }
 
   hooks.UserPromptSubmit = userPromptSubmit;
+  if (options.sessionStartCommand) {
+    hooks.SessionStart = ensureSessionStartHook(
+      hooks.SessionStart ?? [],
+      options.sessionStartCommand,
+      CODEX_PROMPT_MEMORY_SESSION_MARKER,
+    );
+  }
 
   return {
     ...settings,
@@ -476,11 +539,60 @@ function removeCodexHook(
     .filter((group) => group.hooks.length > 0);
 
   hooks.UserPromptSubmit = userPromptSubmit;
+  hooks.SessionStart = removeSessionStartHook(
+    hooks.SessionStart ?? [],
+    CODEX_PROMPT_MEMORY_SESSION_MARKER,
+  );
 
   return {
     ...settings,
     hooks,
   };
+}
+
+function ensureSessionStartHook(
+  groups: ClaudeHookGroup[],
+  command: string,
+  marker: string,
+): ClaudeHookGroup[] {
+  let found = false;
+  const next = [...groups].map((group) => ({
+    ...group,
+    hooks: group.hooks.map((hook) => {
+      if (!hook.command.includes(marker)) {
+        return hook;
+      }
+
+      found = true;
+      return { ...hook, command, timeout: 5 };
+    }),
+  }));
+
+  if (!found) {
+    next.push({
+      hooks: [
+        {
+          type: "command",
+          command,
+          timeout: 5,
+        },
+      ],
+    });
+  }
+
+  return next;
+}
+
+function removeSessionStartHook(
+  groups: ClaudeHookGroup[],
+  marker: string,
+): ClaudeHookGroup[] {
+  return [...groups]
+    .map((group) => ({
+      ...group,
+      hooks: group.hooks.filter((hook) => !hook.command.includes(marker)),
+    }))
+    .filter((group) => group.hooks.length > 0);
 }
 
 function ensureCodexHooksFeature(config: string): string {
@@ -555,6 +667,20 @@ function buildHookCommandWithOptions(
   return `${markerAssignment(marker)} ${shellQuote(
     process.execPath,
   )} ${shellQuote(cliEntryPath())} hook ${tool}${dataDirArg}${rewriteArgs}`;
+}
+
+function buildSessionStartHookCommand(
+  tool: "claude-code" | "codex",
+  dataDir?: string,
+): string {
+  const dataDirArg = dataDir ? ` --data-dir ${JSON.stringify(dataDir)}` : "";
+  const marker =
+    tool === "claude-code"
+      ? PROMPT_MEMORY_SESSION_MARKER
+      : CODEX_PROMPT_MEMORY_SESSION_MARKER;
+  return `${markerAssignment(marker)} ${shellQuote(
+    process.execPath,
+  )} ${shellQuote(cliEntryPath())} hook session-start ${tool}${dataDirArg} --open-web`;
 }
 
 function buildRewriteGuardArgs(
