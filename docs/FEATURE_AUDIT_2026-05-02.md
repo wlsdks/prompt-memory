@@ -262,7 +262,7 @@ Available:
 - fail-open hook wrapper
 - privacy regression fixture
 - raw-free anonymized export
-- no external LLM analysis
+- no hidden external LLM analysis
 
 Known boundary:
 
@@ -300,7 +300,7 @@ Verdict:
 
 - automatic prompt interception, rewrite, and resubmission into Claude Code/Codex
 - always-allow auto-approval for rewritten prompts
-- external LLM/API based prompt scoring
+- hidden external LLM/API based prompt scoring
 - GitHub integration
 - web import upload UI
 - raw export

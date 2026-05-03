@@ -48,7 +48,10 @@ const AGENT_JUDGE_RUBRIC = {
         "The request makes the desired response format and handoff clear without unnecessary verbosity.",
     },
   ],
-} satisfies Extract<PrepareAgentJudgeBatchToolResult, { mode: string }>["rubric"];
+} satisfies Extract<
+  PrepareAgentJudgeBatchToolResult,
+  { mode: string }
+>["rubric"];
 
 export function prepareAgentJudgeBatchTool(
   args: PrepareAgentJudgeBatchToolArguments,
@@ -64,7 +67,10 @@ export function prepareAgentJudgeBatchTool(
 
   const selection = args.selection ?? "latest";
   if (selection !== "latest" && selection !== "low_score") {
-    return batchError("invalid_input", "`selection` must be latest or low_score.");
+    return batchError(
+      "invalid_input",
+      "`selection` must be latest or low_score.",
+    );
   }
 
   try {
@@ -183,7 +189,9 @@ export function recordAgentJudgmentsTool(
           suggestions: judgment.suggestions,
         });
 
-        stored ? judgments.push(stored) : failedPromptIds.push(judgment.prompt_id);
+        stored
+          ? judgments.push(stored)
+          : failedPromptIds.push(judgment.prompt_id);
       }
 
       return {
@@ -237,7 +245,9 @@ function selectPromptsForJudge(
 function validateAgentJudgmentInput(
   args: RecordAgentJudgmentsToolArguments,
 ): string | undefined {
-  if (!["claude-code", "codex", "gemini-cli", "other"].includes(args.provider)) {
+  if (
+    !["claude-code", "codex", "gemini-cli", "other"].includes(args.provider)
+  ) {
     return "`provider` must be claude-code, codex, gemini-cli, or other.";
   }
   if (!Array.isArray(args.judgments) || args.judgments.length === 0) {
@@ -304,4 +314,3 @@ function recordError(
 ): RecordAgentJudgmentsToolResult {
   return { is_error: true, error_code: errorCode, message };
 }
-

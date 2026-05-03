@@ -12,6 +12,7 @@
     "./commands/buddy.md",
     "./commands/coach.md",
     "./commands/score.md",
+    "./commands/judge.md",
     "./commands/score-last.md",
     "./commands/improve-last.md",
     "./commands/habits.md",

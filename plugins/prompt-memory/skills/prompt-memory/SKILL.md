@@ -140,4 +140,6 @@ human-in-the-loop flow, not automatic replacement or auto-submit.
 - Prefer `doctor`, `list`, `search`, and `show <id>` over reading SQLite or
   Markdown internals directly.
 - If a hook fails, keep the agent workflow unblocked and report the setup issue.
-- Do not add external LLM calls. The archive and rule-based analysis are local.
+- Do not add hidden external LLM calls. Archive-backed analysis is local by
+  default; agent-judge mode is allowed only through the explicit MCP packet and
+  the active user-controlled agent session.

@@ -1,5 +1,21 @@
 # 작업 계획
 
+## 2026-05-03 Feature QA And Hardening
+
+- [x] 현재 main 기능 표면과 공개 문서의 불일치 점검
+- [x] 전체 테스트/린트/빌드/smoke/browser/benchmark gate 실행
+- [x] 실패하거나 얇은 기능 경계에 회귀 테스트 추가
+- [x] 필요하면 privacy-safe, 문서 정확도, 사용성 관련 소규모 개선 적용
+- [x] 전체 release gate 재실행
+- [ ] PR 생성, CI 확인, main merge, branch cleanup
+
+### 판단 기준
+
+- 사용자에게 공개되는 기능 목록과 실제 구현 상태가 어긋나지 않아야 한다.
+- 새 agent-judge 기능은 hidden external call, token proxy, raw prompt/path 저장 없이 동작해야 한다.
+- 테스트는 단순 snapshot보다 실제 CLI/MCP/server/storage 경계를 검증해야 한다.
+- 기능 추가보다 불안정한 경계, 문서 불일치, privacy regression 방지를 우선한다.
+
 ## 2026-05-03 Agent Judge MCP
 
 - [x] Claude Code/Codex 공식 문서와 법적 경계 재확인 후 프로젝트 문서화

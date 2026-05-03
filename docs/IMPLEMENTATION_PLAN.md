@@ -31,7 +31,7 @@ The implementation goal is to help Claude Code and Codex users safely record pro
 - Prefer explicit setup and dry-run before writing tool configuration.
 - Add tests before feature implementation where behavior is risky.
 - Verify user-facing web changes in a real browser.
-- Do not add external LLM/network analysis to the core beta.
+- Do not add hidden external LLM/network analysis to the core beta.
 
 ## 3. Phase Overview
 
@@ -165,8 +165,9 @@ Before the first npm beta publish:
 
 Deferred from public beta:
 
-- external LLM analysis
-- Claude Code/Codex tool-assisted analysis
+- hidden external LLM analysis
+- Claude Code/Codex tool-assisted analysis that is not explicit, redacted, and
+  user-session mediated
 - automatic input replacement/resubmission inside Claude Code or Codex
 - GitHub integration
 - web import upload UI
@@ -182,4 +183,5 @@ Deferred from public beta:
 3. Collect beta feedback on Prompt Coach usefulness.
 4. Decide whether to add web import upload.
 5. Decide whether semantic search can remain local-first.
-6. Revisit external/tool-assisted analysis only with explicit opt-in, preview, and audit.
+6. Revisit external/tool-assisted analysis only with explicit opt-in, preview,
+   redaction, user-session mediation, and audit.

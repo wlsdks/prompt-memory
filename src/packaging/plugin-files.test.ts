@@ -30,6 +30,7 @@ describe("plugin packaging files", () => {
       "./commands/buddy.md",
       "./commands/coach.md",
       "./commands/score.md",
+      "./commands/judge.md",
       "./commands/score-last.md",
       "./commands/improve-last.md",
       "./commands/habits.md",
@@ -64,6 +65,10 @@ describe("plugin packaging files", () => {
       join(process.cwd(), "commands/score-last.md"),
       "utf8",
     );
+    const judge = readFileSync(
+      join(process.cwd(), "commands/judge.md"),
+      "utf8",
+    );
     const improveLast = readFileSync(
       join(process.cwd(), "commands/improve-last.md"),
       "utf8",
@@ -93,6 +98,11 @@ describe("plugin packaging files", () => {
     expect(coach).toContain("prompt-memory coach --json");
     expect(score).toContain("prompt-memory score --json");
     expect(score).toContain("prompt-memory:score_prompt_archive");
+    expect(judge).toContain("prompt-memory:prepare_agent_judge_batch");
+    expect(judge).toContain("prompt-memory:record_agent_judgments");
+    expect(judge).toContain(
+      "Do not call external providers through prompt-memory",
+    );
     expect(scoreLast).toContain("prompt-memory:score_prompt latest=true");
     expect(scoreLast).toContain("prompt-memory score --latest --json");
     expect(improveLast).toContain("prompt-memory:improve_prompt latest=true");
@@ -127,6 +137,7 @@ describe("plugin packaging files", () => {
         "Score my latest captured prompt",
         "Improve my latest captured prompt",
         "Run my full prompt coach workflow",
+        "Judge my low-scoring prompts with the active agent session",
         "Summarize my prompt habits",
       ]),
     );
@@ -179,6 +190,7 @@ describe("plugin packaging files", () => {
     expect(packageJson.files).toContain("integrations");
     expect(packageJson.files).toContain("docs/ARCHITECTURE.md");
     expect(packageJson.files).toContain("docs/PLUGINS.md");
+    expect(packageJson.files).toContain("docs/LEGAL_USAGE_GUIDE.md");
   });
 
   it("restores executable mode for the npm CLI bin after server builds", () => {

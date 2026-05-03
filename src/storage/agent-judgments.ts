@@ -8,9 +8,7 @@ import type {
 import { readStringArray } from "./sqlite-json.js";
 import type { AgentPromptJudgmentRow } from "./sqlite-rows.js";
 
-export function applyAgentPromptJudgmentMigration(
-  db: Database.Database,
-): void {
+export function applyAgentPromptJudgmentMigration(db: Database.Database): void {
   const applied = db
     .prepare("SELECT 1 FROM schema_migrations WHERE version = ?")
     .get(11);
@@ -136,4 +134,3 @@ function hasLivePrompt(db: Database.Database, id: string): boolean {
       .get(id),
   );
 }
-

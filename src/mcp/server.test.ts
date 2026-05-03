@@ -58,8 +58,7 @@ describe("MCP stdio server", () => {
 
     expect(tools).toHaveLength(8);
     for (const tool of tools.filter(
-      (tool) =>
-        (tool as { name?: string }).name !== "record_agent_judgments",
+      (tool) => (tool as { name?: string }).name !== "record_agent_judgments",
     )) {
       expect(tool).toEqual(
         expect.objectContaining({
