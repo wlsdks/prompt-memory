@@ -1,5 +1,20 @@
 # 작업 계획
 
+## 2026-05-04 Prompt Detail CSS Extraction
+
+- [x] 기능/코드/UI 관점에서 다음 고효과 개선 후보 재점검
+- [x] Prompt detail 전용 스타일을 독립 CSS 모듈로 분리
+- [x] `styles.css` line budget을 낮춰 UI 스타일 퇴행 방지
+- [x] 브라우저/릴리스 게이트로 detail 화면과 주요 웹 흐름 검증
+- [ ] PR 생성, CI 확인, main merge, branch cleanup
+
+### 판단 기준
+
+- 기능과 DOM 구조를 바꾸지 않고 스타일 소유권만 더 명확히 한다.
+- detail 화면의 분석 preview, 개선안, agent follow-up, queue action 스타일은 그대로 유지되어야 한다.
+- `styles.css`는 전역 shell/list/dashboard 중심으로 남기고 detail 전용 규칙은 component-owned CSS로 이동한다.
+- 웹 검증은 detail 화면 privacy-safe 렌더링과 주요 navigation 흐름을 포함해야 한다.
+
 ## 2026-05-04 Prompt Detail Module Extraction
 
 - [x] 기능/코드/UI 관점에서 다음 고효과 개선 후보 재점검

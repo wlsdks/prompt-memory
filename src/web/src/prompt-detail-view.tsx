@@ -20,6 +20,7 @@ import type { Language } from "./i18n.js";
 import { SafeMarkdown } from "./markdown.js";
 import { PromptAgentActionsPanel } from "./prompt-agent-actions.js";
 import { isQualityGapKey, qualityGapLabel } from "./quality-options.js";
+import "./prompt-detail-view.css";
 
 export function PromptDetailView({
   copied,
