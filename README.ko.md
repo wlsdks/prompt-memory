@@ -316,6 +316,7 @@ Claude Code plugin slash commands:
 /prompt-memory:buddy
 /prompt-memory:coach
 /prompt-memory:score
+/prompt-memory:judge
 /prompt-memory:score-last
 /prompt-memory:improve-last
 /prompt-memory:habits

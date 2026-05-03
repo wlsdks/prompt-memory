@@ -78,6 +78,8 @@ The plugin exposes:
 - `/prompt-memory:coach` to run the one-call prompt coach workflow inside
   Claude Code
 - `/prompt-memory:score` to score accumulated prompt habits
+- `/prompt-memory:judge` to ask the active Claude Code session to judge a
+  bounded batch of low-scoring redacted prompts through MCP
 - `/prompt-memory:score-last` to score the latest captured request
 - `/prompt-memory:improve-last` to generate an approval-ready rewrite for the
   latest captured request

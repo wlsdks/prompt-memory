@@ -12,7 +12,8 @@ Use this checklist before publishing a public beta or npm package.
 - [ ] README states that transcript import is CLI-centered and has no web upload UI.
 - [ ] README states that browser export is anonymized-only and raw export is not implemented.
 - [ ] README documents Benchmark v1 as a local regression baseline, not a real-user quality proof.
-- [ ] README states that external LLM analysis is not implemented and external prompt transmission is disabled by default.
+- [ ] README states that hidden external LLM/provider calls are disabled by
+  default, and optional MCP agent-judge packets require explicit user request.
 - [ ] README includes a non-affiliation notice for Anthropic and OpenAI.
 - [ ] Codex is clearly labeled beta.
 - [ ] Adapter guide is up to date.

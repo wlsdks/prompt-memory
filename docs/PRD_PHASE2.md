@@ -56,7 +56,9 @@ Phase 2 core is limited to:
 5. Anonymized Export
 6. Benchmark/browser/release regression coverage
 
-External LLM analysis and tool-assisted analysis are not Phase 2 core. They require a later gated beta.
+External LLM analysis and tool-assisted analysis are not Phase 2 core. Later
+agent-mediated judge workflows must stay explicit, opt-in, redacted, and outside
+the local deterministic score.
 
 ## 4. Product Principles
 
@@ -171,7 +173,7 @@ Acceptance criteria:
 Public beta boundary:
 
 - no automatic resubmission into Claude Code/Codex
-- no external LLM judge or rewrite provider
+- no hidden external LLM judge or rewrite provider
 
 ## 9. Anonymized Export
 
@@ -207,6 +209,12 @@ Public beta boundary:
 ## 10. External Or Tool-Assisted Analysis Appendix
 
 External LLM analysis is excluded from Phase 2 core.
+
+After Phase 2, `prompt-memory` may expose explicit MCP handoff tools that return
+bounded redacted packets to the active user-controlled Claude Code/Codex session
+for advisory judgment. That is not a hidden provider integration, and it must
+not extract provider tokens, proxy credentials, or replace local deterministic
+scores.
 
 This includes calling installed tools such as Claude Code or Codex as analysis executors. That may avoid storing a separate provider API key, but the payload can still leave the local machine through the user's tool account. It is not local-only.
 

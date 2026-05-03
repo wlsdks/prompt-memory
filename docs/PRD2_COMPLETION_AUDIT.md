@@ -26,7 +26,7 @@ The remaining work is not core PRD2 implementation. It is release operations, cr
 | Prompt Improvement Workspace | Complete | `improvePrompt`, `prompt-memory improve`, detail UI preview/copy/save, `prompt_improvement_drafts`, benchmark coach metric | Real-user quality evaluation after beta |
 | Import execution/resume hardening | Complete | idempotency keys, resume job, assistant/tool skip, malformed record tolerance, redaction reapplication | Directory/glob import remains intentionally excluded |
 | Anonymized export preset | Complete | CLI/UI preview, `export_jobs`, job execution, anonymization, small-set warning, invalidation | Raw export remains intentionally unsupported |
-| External/tool-assisted analysis | Excluded | no route, table, provider client, or network path in core | Revisit only as gated beta |
+| External/tool-assisted analysis | Excluded from PRD2 core | PRD2 shipped without provider clients or hidden network paths; later MCP agent-judge is explicit and user-session mediated | Keep hidden/provider-routed LLM calls out of core |
 
 ## Key Notes
 
@@ -104,7 +104,9 @@ Satisfied:
 - hook stdout/stderr do not contain prompt bodies
 - browser/export surfaces mask raw paths by default
 - privacy regression checks secrets and raw paths across Markdown, SQLite, FTS, browser APIs, import jobs, export jobs, and hook outputs
-- no external LLM analysis path exists in core
+- no hidden/provider-routed external LLM analysis path exists in core; the later
+  MCP agent-judge path is explicit, redacted, and evaluated by the active
+  user-controlled agent session
 
 Partial:
 

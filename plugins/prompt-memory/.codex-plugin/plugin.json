@@ -35,6 +35,7 @@
       "Run my full prompt coach workflow",
       "Score my latest captured prompt",
       "Improve my latest captured prompt",
+      "Judge my low-scoring prompts with the active agent session",
       "Summarize my prompt habits",
       "Review my current project AGENTS.md or CLAUDE.md rules",
       "Open my local prompt-memory archive"

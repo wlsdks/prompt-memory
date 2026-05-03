@@ -27,7 +27,7 @@ The next work should not simply add more analysis features. The strongest improv
 | Duplicate handling | exact duplicate groups from redacted content hash | Medium |
 | Project control | project policy UI/API for capture/export boundaries | Medium-high |
 | Historical data | CLI transcript import with dry-run/execute/resume | High for power users |
-| External analysis | intentionally not implemented | Deferred |
+| External analysis | no hidden/provider-routed calls; explicit MCP agent-judge handoff exists separately | Deferred for core |
 | Release validation | benchmark, browser E2E, release smoke, pack dry-run | High |
 
 ## User Workflow Efficiency
@@ -44,7 +44,9 @@ Risk areas:
 
 - `src/storage/sqlite.ts` is large and may need splitting when more reconciliation or job logic is added.
 - project policy, import jobs, and export jobs have different lifecycles from prompt rows and should remain clearly separated.
-- external LLM analysis would require security, consent, audit, cost, preview, and provider UI; it should not be treated as a small analyzer replacement.
+- hidden or provider-routed external LLM analysis would require security,
+  consent, audit, cost, preview, and provider UI; it should not be treated as a
+  small analyzer replacement.
 
 ## Priority Order
 
@@ -54,7 +56,7 @@ Risk areas:
 | 2 | Transcript Import | Very high | High | Gives value from historical prompts |
 | 3 | Prompt Improvement Workspace | High | Medium | Connects memory to better next prompts |
 | 4 | Anonymized Export | Medium | Medium | Useful for review/sharing with privacy constraints |
-| 5 | External LLM Analysis | High | High | Keep outside core until opt-in boundaries are mature |
+| 5 | External LLM Analysis | High | High | Keep hidden/provider-routed calls outside core; allow only explicit redacted handoff |
 | 6 | Semantic Duplicate/Cluster | Medium | High | Defer until local embedding or opt-in approach is clear |
 
 ## Development Rules For Future Work

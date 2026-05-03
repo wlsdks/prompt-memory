@@ -31,7 +31,7 @@ Non-goals for the public beta:
 - cloud sync
 - team collaboration backend
 - automatic prompt rewriting and resubmission into Claude Code/Codex
-- external LLM analysis
+- hidden/provider-routed external LLM analysis
 - raw export through the browser UI
 - semantic embedding search
 
@@ -61,7 +61,9 @@ The user should be able to answer:
 - Redaction is applied before persistent storage.
 - Browser APIs should not expose raw absolute paths by default.
 - Risky operations require preview or dry-run first.
-- External LLM/tool-assisted analysis is opt-in future work, not core beta behavior.
+- Hidden/provider-routed external LLM analysis is not core beta behavior. Any
+  tool-assisted judge flow must be explicit, opt-in, redacted, and mediated by
+  the user's active agent session.
 
 ## 5. Supported Tool Integrations
 
@@ -313,7 +315,8 @@ The README must clearly state:
 - how to delete prompts
 - how to uninstall hooks
 - that redaction is best effort
-- that external LLM analysis is not implemented
+- that hidden provider calls are not implemented and optional agent-mediated
+  judge flows require explicit user request
 - that the project is not affiliated with Anthropic or OpenAI
 
 ## 15. Benchmark And Release Requirements
