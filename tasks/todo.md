@@ -1,5 +1,19 @@
 # 작업 계획
 
+## 2026-05-03 Merge And Architecture Handoff
+
+- [ ] 현재 PR의 mergeability, CI, review gate를 재확인
+- [ ] 오픈소스 아키텍처 관점에서 지금 머지할 범위와 후속 리팩터링 PR 범위를 분리
+- [ ] 보호 규칙을 지키는 방식으로 PR을 main에 머지 시도
+- [ ] 머지 성공 시 원격/로컬 feature branch를 정리
+- [ ] 앞으로 작업 단위는 branch -> PR -> main merge -> branch cleanup으로 진행
+
+### 판단 기준
+
+- CI green, clean worktree, mergeable 상태라도 required review gate는 우회하지 않는다.
+- 대형 모듈 분리는 기능 PR에 섞지 않고 별도 리팩터링 PR로 진행한다.
+- 오픈소스 운영에서는 admin bypass보다 보호 규칙과 리뷰 흐름을 우선한다.
+
 ## 2026-05-03 Architecture QA And Agent Rules
 
 - [x] Always-on buddy/statusline 변경 코드 QA와 구조 리스크 점검
