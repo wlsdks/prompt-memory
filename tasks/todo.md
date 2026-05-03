@@ -1,5 +1,20 @@
 # 작업 계획
 
+## 2026-05-04 Practice Copy Fixed Draft UX
+
+- [x] 기능/코드/UI 관점에서 다음 고효과 개선 후보 재점검
+- [x] Practice one-click builder에서 보완된 초안을 바로 복사하는 흐름 추가
+- [x] 한국어/영어 UI 문구와 브라우저 e2e 검증 보강
+- [x] 전체 테스트, 브라우저, 릴리스, 패키징 게이트 검증
+- [ ] PR 생성, CI 확인, main merge, branch cleanup
+
+### 판단 기준
+
+- 사용자는 편집기에 먼저 적용하지 않아도 "보완된 초안"을 바로 Claude Code/Codex로 가져갈 수 있어야 한다.
+- 복사 기록은 기존과 동일하게 score와 missing label metadata만 저장하고 draft 원문은 저장하지 않는다.
+- 버튼/문구는 `DESIGN.md`의 dense developer workbench 기준을 유지하고, mobile wrap-safe 상태를 유지한다.
+- 새 기능은 자동 제출이 아니라 명시적 복사이므로 local-first, HITL 사용성 경계를 지킨다.
+
 ## 2026-05-04 Practice View Module Extraction
 
 - [x] 기능/코드/UI 관점에서 다음 고효과 개선 후보 재점검

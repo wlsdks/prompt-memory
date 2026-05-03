@@ -291,6 +291,19 @@ try {
     "Practice should show the projected score delta.",
   );
   await page
+    .getByRole("button", { name: /Copy fixed draft|보완 초안 복사/ })
+    .click();
+  await assertTextAny(
+    page,
+    ["Copied fixed draft", "보완 초안 복사됨"],
+    "Practice should copy the projected fixed draft directly.",
+  );
+  assertIncludes(
+    await page.evaluate(() => navigator.clipboard.readText()),
+    "Verification: name commands or acceptance checks.",
+    "Practice fixed draft copy should include projected quick-fix snippets.",
+  );
+  await page
     .getByRole("button", { name: /Add Verification|검증 추가/ })
     .click();
   assertIncludes(
@@ -322,7 +335,7 @@ try {
     .click();
   await assertTextAny(
     page,
-    ["1 copied drafts", "1 copied draft", "복사한 초안"],
+    ["2 copied drafts", "복사한 초안"],
     "Practice should record copied draft score metadata.",
   );
   await page.waitForTimeout(2600);
@@ -331,7 +344,7 @@ try {
     .click();
   await assertTextAny(
     page,
-    ["2 copied drafts", "복사한 초안"],
+    ["3 copied drafts", "복사한 초안"],
     "Practice should keep multiple copied draft score points.",
   );
   await assertChartVisible(page, "practice", 1);

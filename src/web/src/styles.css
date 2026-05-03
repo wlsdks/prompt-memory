@@ -1829,6 +1829,28 @@ dd {
   padding: 10px;
 }
 
+.practice-copy-fixed {
+  align-items: center;
+  background: var(--pm-accent);
+  border: 1px solid var(--pm-accent-strong);
+  border-radius: 6px;
+  color: #fff;
+  cursor: pointer;
+  display: inline-flex;
+  font-size: 12px;
+  font-weight: 750;
+  gap: 6px;
+  justify-content: center;
+  line-height: 16px;
+  min-height: 32px;
+  padding: 0 10px;
+  white-space: nowrap;
+}
+
+.practice-copy-fixed:hover {
+  background: var(--pm-accent-strong);
+}
+
 .practice-projection .score-value {
   font-size: 34px;
   line-height: 38px;
@@ -3176,7 +3198,8 @@ dd {
   }
 
   .practice-fix-header .panel-link-button,
-  .practice-fix-add {
+  .practice-fix-add,
+  .practice-copy-fixed {
     justify-content: center;
     width: 100%;
   }

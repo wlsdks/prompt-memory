@@ -751,6 +751,8 @@ const UI_TRANSLATIONS: Record<string, string> = {
   "Refresh plan": "계획 새로고침",
   "Copy practice draft": "연습 초안 복사",
   "Copied draft": "초안 복사됨",
+  "Copy fixed draft": "보완 초안 복사",
+  "Copied fixed draft": "보완 초안 복사됨",
   "Practice draft": "연습 초안",
   "Live local score": "실시간 로컬 점수",
   "Local growth signal": "로컬 성장 신호",
