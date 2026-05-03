@@ -73,6 +73,7 @@ pnpm prompt-memory server -- --data-dir <temp-data-dir>
 - 사용자가 만들었을 수 있는 변경은 되돌리지 않는다.
 - 커밋 메시지는 Conventional Commits를 따른다. 예: `feat: add prompt list UI`, `docs: add agent instructions`.
 - `main`은 보호 브랜치다. 변경은 새 브랜치에서 커밋하고 PR로 올린다.
-- PR은 CI `test (22)`, `test (24)` 통과, 승인 리뷰 1개, conversation resolution 없이는 머지하지 않는다.
+- solo-maintainer 단계에서는 PR이 CI `test (22)`, `test (24)`를 통과하고 unresolved conversation이 없으면 머지할 수 있다.
+- 외부 collaborator/reviewer가 참여하는 시점에는 승인 리뷰 1개를 다시 필수로 설정한다.
 - 커밋 후 `main`에 직접 push하지 말고 현재 작업 브랜치를 push한다.
 - 최종 보고에는 커밋 해시, 푸시 여부, 검증 명령 결과, 남은 리스크를 짧게 포함한다.
