@@ -7,7 +7,7 @@
 - [x] 웹 UI/UX와 기능 흐름을 실제 화면 기준으로 점검
 - [x] 고효과 개선 구현 및 회귀 테스트 추가
 - [x] Playwright/browser와 release gate 검증
-- [ ] PR 생성, CI 확인, main merge, branch cleanup
+- [x] PR 생성, CI 확인, main merge, branch cleanup
 
 ### 판단 기준
 
