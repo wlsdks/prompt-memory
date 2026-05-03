@@ -15,6 +15,7 @@ import { tmpdir } from "node:os";
 import { join, resolve } from "node:path";
 
 import { improvePrompt } from "../dist/analysis/improve.js";
+import { coachPromptTool } from "../dist/mcp/score-tool.js";
 
 const repoRoot = resolve(new URL("..", import.meta.url).pathname);
 const cliPath = join(repoRoot, "dist", "cli", "index.js");
@@ -37,6 +38,7 @@ const thresholds = {
   privacy_leak_count: 0,
   retrieval_top3: 0.8,
   coach_gap_fix_rate: 0.8,
+  coach_prompt_actionability: 0.8,
   prompt_quality_score_calibration: 0.8,
   analytics_score: 0.75,
   ingest_p95_ms: 500,
@@ -161,6 +163,7 @@ try {
   } = await runExportFlow(serverBaseUrl);
 
   const coachScore = scorePromptCoach();
+  const coachPromptActionability = scoreCoachPromptActionability();
   const scoreCalibration = scorePromptQualityCalibration({ list, details });
   const analyticsScore = scoreAnalytics(dashboard.data);
   const privacyLeakCount = countPrivacyLeaks({
@@ -175,6 +178,7 @@ try {
     privacy_leak_count: privacyLeakCount,
     retrieval_top3: roundScore(retrievalHits / fixtures.length),
     coach_gap_fix_rate: coachScore,
+    coach_prompt_actionability: coachPromptActionability,
     prompt_quality_score_calibration: scoreCalibration,
     analytics_score: analyticsScore,
     ingest_p95_ms: Math.round(p95(ingestDurations)),
@@ -237,6 +241,30 @@ function scorePromptCoach() {
     }
   }
   return roundScore(passed / coachCases.length);
+}
+
+function scoreCoachPromptActionability() {
+  const result = coachPromptTool(
+    { max_prompts: 100, low_score_limit: 3 },
+    { dataDir },
+  );
+  const serialized = JSON.stringify(result);
+  const checks = [
+    result.mode === "agent_coach",
+    result.status.status === "ready",
+    result.agent_brief.headline.includes("Latest prompt score"),
+    typeof result.agent_brief.first_fix?.instruction === "string" &&
+      result.agent_brief.first_fix.instruction.length > 20,
+    typeof result.agent_brief.review_target?.prompt_id === "string" &&
+      result.agent_brief.review_target.prompt_id.length > 0,
+    typeof result.agent_brief.next_request_template === "string" &&
+      result.agent_brief.next_request_template.includes("Goal:") &&
+      result.agent_brief.next_request_template.includes("Verification:"),
+    result.agent_brief.next_actions.length >= 3,
+    !serialized.includes(rawSecret) && !serialized.includes(rawPathPrefix),
+  ];
+
+  return roundScore(checks.filter(Boolean).length / checks.length);
 }
 
 function scoreAnalytics(dashboard) {
@@ -456,6 +484,8 @@ function passes(scores) {
     scores.privacy_leak_count === thresholds.privacy_leak_count &&
     scores.retrieval_top3 >= thresholds.retrieval_top3 &&
     scores.coach_gap_fix_rate >= thresholds.coach_gap_fix_rate &&
+    scores.coach_prompt_actionability >=
+      thresholds.coach_prompt_actionability &&
     scores.prompt_quality_score_calibration >=
       thresholds.prompt_quality_score_calibration &&
     scores.analytics_score >= thresholds.analytics_score &&

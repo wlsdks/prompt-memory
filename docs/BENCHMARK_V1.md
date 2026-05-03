@@ -78,7 +78,25 @@ Pass threshold:
 
 - `>= 0.8`
 
-### 4. Analytics Usefulness
+### 4. Agent Coach Actionability
+
+Checks:
+
+- `coach_prompt` returns a latest-score headline
+- the agent brief includes a concrete first fix
+- the agent brief includes a low-score review target
+- the agent brief includes a reusable next request template
+- the result stays privacy-safe
+
+Metric:
+
+- `coach_prompt_actionability`
+
+Pass threshold:
+
+- `>= 0.8`
+
+### 5. Analytics Usefulness
 
 Checks:
 
@@ -95,7 +113,7 @@ Pass threshold:
 
 - `>= 0.75`
 
-### 5. Prompt Quality Score Calibration
+### 6. Prompt Quality Score Calibration
 
 Checks:
 
@@ -112,7 +130,7 @@ Pass threshold:
 
 - `>= 0.8`
 
-### 6. Local Runtime Performance
+### 7. Local Runtime Performance
 
 Checks:
 
@@ -139,6 +157,7 @@ Pass thresholds:
     "privacy_leak_count": 0,
     "retrieval_top3": 1,
     "coach_gap_fix_rate": 1,
+    "coach_prompt_actionability": 1,
     "prompt_quality_score_calibration": 1,
     "analytics_score": 1,
     "ingest_p95_ms": 21,
@@ -150,6 +169,7 @@ Pass thresholds:
     "privacy_leak_count": 0,
     "retrieval_top3": 0.8,
     "coach_gap_fix_rate": 0.8,
+    "coach_prompt_actionability": 0.8,
     "prompt_quality_score_calibration": 0.8,
     "analytics_score": 0.75,
     "ingest_p95_ms": 500,

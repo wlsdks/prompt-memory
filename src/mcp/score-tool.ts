@@ -546,10 +546,50 @@ function createAgentCoachBrief(input: {
     nextActions.push(input.projectRules.next_action);
   }
 
+  const firstWeakChecklistItem =
+    input.latestScore && !isToolError(input.latestScore)
+      ? input.latestScore.checklist.find((item) => item.status !== "good")
+      : undefined;
+  const firstPractice =
+    input.archive && !isToolError(input.archive)
+      ? input.archive.practice_plan[0]
+      : undefined;
+  const lowScorePrompt =
+    input.archive && !isToolError(input.archive)
+      ? input.archive.low_score_prompts[0]
+      : undefined;
+  const firstFix = firstWeakChecklistItem
+    ? {
+        label: firstWeakChecklistItem.label,
+        instruction:
+          firstWeakChecklistItem.suggestion ??
+          "Clarify this checklist item before resubmitting the request.",
+        reason: firstWeakChecklistItem.reason,
+      }
+    : firstPractice
+      ? {
+          label: firstPractice.label,
+          instruction: firstPractice.prompt_rule,
+          reason: firstPractice.reason,
+        }
+      : undefined;
+
   return {
     headline: `Latest prompt score: ${score}`,
     summary:
       "This local coach result combines latest prompt scoring, copy-based rewrite, recent habit review, and project instruction review for the agent session.",
+    ...(firstFix ? { first_fix: firstFix } : {}),
+    ...(lowScorePrompt
+      ? {
+          review_target: {
+            prompt_id: lowScorePrompt.id,
+            reason: `${lowScorePrompt.quality_score}/100 ${lowScorePrompt.quality_score_band} prompt with gaps: ${lowScorePrompt.quality_gaps.join(", ") || "none"}.`,
+          },
+        }
+      : {}),
+    ...(input.archive && !isToolError(input.archive)
+      ? { next_request_template: input.archive.next_prompt_template }
+      : {}),
     next_actions: nextActions,
     suggested_user_response:
       "Here is the local prompt coach result. I will not auto-submit the rewrite; review the score, inspect the suggested changes, then approve or edit the improved request before using it.",

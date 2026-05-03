@@ -1,5 +1,21 @@
 # 작업 계획
 
+## 2026-05-03 Coach Release Readiness
+
+- [x] benchmark v1에 coach actionability 지표 추가
+- [x] `coach_prompt` agent brief를 첫 보완/다음 요청 template 중심으로 강화
+- [x] `prompt-memory start --open-web`로 첫 3분 setup 안내 압축
+- [x] README/README.ko 첫 3분 외부 사용자 흐름 재정리
+- [x] 테스트/벤치마크/릴리스 게이트 실행
+- [ ] PR 생성, CI 확인, main merge, branch cleanup
+
+### 판단 기준
+
+- 실제 1주일 dogfooding은 제외하고 자동화 가능한 품질 게이트만 강화한다.
+- benchmark는 prompt quality score와 coach output이 행동 가능한지 숫자로 확인해야 한다.
+- agent 내부 사용자는 웹을 열지 않아도 `coach_prompt` 하나로 다음 행동을 알아야 한다.
+- 첫 설치 문서는 CLI 설치, marketplace, setup, 첫 prompt, coach 순서를 3분 안에 이해시켜야 한다.
+
 ## 2026-05-03 Session Start Web Auto-Open
 
 - [x] Claude Code/Codex session-start hook 설계와 opt-in 범위 확정

@@ -8,6 +8,7 @@ import {
 
 export type StartOptions = {
   tool?: string;
+  openWeb?: boolean;
   json?: boolean;
 };
 
@@ -31,6 +32,10 @@ export function registerStartCommand(program: Command): void {
       "--tool <tool>",
       "Focus the guide on claude-code or codex. Defaults to both.",
     )
+    .option(
+      "--open-web",
+      "Include the opt-in SessionStart web opener in the setup command.",
+    )
     .option("--json", "Print machine-readable JSON.")
     .action((options: StartOptions) => {
       const guide = buildStartGuide(options);
@@ -44,14 +49,18 @@ export function buildStartGuide(options: StartOptions = {}): StartGuide {
   const tools = resolveTools(options.tool);
 
   return {
-    goal: "Capture one real coding prompt, score it, and get one improvement suggestion.",
+    goal: "Capture one real coding prompt, score it, and get one improvement suggestion in about three minutes.",
     tools,
     steps: [
       {
         title: "Run the coach setup",
         detail:
-          "Installs local storage, hooks, service startup, low-friction rewrite guidance, and agent MCP commands.",
-        commands: ["prompt-memory setup --profile coach --register-mcp"],
+          options.openWeb === true
+            ? "Installs local storage, hooks, service startup, low-friction rewrite guidance, agent MCP commands, and opens the web workspace automatically on new agent sessions."
+            : "Installs local storage, hooks, service startup, low-friction rewrite guidance, and agent MCP commands.",
+        commands: [
+          `prompt-memory setup --profile coach --register-mcp${options.openWeb === true ? " --open-web" : ""}`,
+        ],
       },
       {
         title: "Send one real coding prompt",

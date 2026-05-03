@@ -7,7 +7,7 @@ describe("start guide", () => {
     const guide = buildStartGuide();
     const output = formatStartGuide(guide);
 
-    expect(guide.goal).toContain("Capture one real coding prompt");
+    expect(guide.goal).toContain("about three minutes");
     expect(guide.tools).toEqual(["claude-code", "codex"]);
     expect(guide.steps.slice(0, 3).map((step) => step.title)).toEqual([
       "Run the coach setup",
@@ -36,5 +36,18 @@ describe("start guide", () => {
     expect(output).toContain("prompt-memory doctor codex");
     expect(output).toContain("prompt-memory coach");
     expect(output).not.toContain("claude mcp add");
+  });
+
+  it("can include the opt-in web opener in the first setup command", () => {
+    const guide = buildStartGuide({ openWeb: true });
+    const output = formatStartGuide(guide);
+
+    expect(guide.steps[0].commands).toEqual([
+      "prompt-memory setup --profile coach --register-mcp --open-web",
+    ]);
+    expect(output).toContain("opens the web workspace automatically");
+    expect(output.indexOf("--open-web")).toBeLessThan(
+      output.indexOf("Troubleshooting"),
+    );
   });
 });

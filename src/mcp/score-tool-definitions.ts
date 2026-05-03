@@ -769,6 +769,24 @@ export const COACH_PROMPT_TOOL_DEFINITION: PromptMemoryMcpToolDefinition = {
         properties: {
           headline: { type: "string" },
           summary: { type: "string" },
+          first_fix: {
+            type: "object",
+            required: ["label", "instruction", "reason"],
+            properties: {
+              label: { type: "string" },
+              instruction: { type: "string" },
+              reason: { type: "string" },
+            },
+          },
+          review_target: {
+            type: "object",
+            required: ["prompt_id", "reason"],
+            properties: {
+              prompt_id: { type: "string" },
+              reason: { type: "string" },
+            },
+          },
+          next_request_template: { type: "string" },
           next_actions: { type: "array", items: { type: "string" } },
           suggested_user_response: { type: "string" },
         },
