@@ -6,7 +6,7 @@
 - [x] prompt-memory 상태줄을 score/action 중심의 세로 분리 출력으로 개선
 - [x] 웹 Dashboard의 agent command surface를 더 실사용 중심으로 다듬기
 - [x] 기능/코드 품질 회귀 테스트와 브라우저 검증 실행
-- [ ] PR 생성, CI 확인, main merge, branch cleanup
+- [x] PR 생성, CI 확인, main merge, branch cleanup
 
 ### 판단 기준
 
