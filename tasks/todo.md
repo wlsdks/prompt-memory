@@ -1,5 +1,20 @@
 # 작업 계획
 
+## 2026-05-04 Habit Coach Panel Extraction
+
+- [x] 기능/코드/UI 관점에서 다음 고효과 개선 후보 재점검
+- [x] Habit Coach panel을 component-owned TSX/CSS로 분리
+- [x] `App.tsx`와 `styles.css` line budget을 낮춰 구조 퇴행 방지
+- [x] 브라우저/릴리스 게이트로 Coach, Dashboard, Practice 흐름 검증
+- [ ] PR 생성, CI 확인, main merge, branch cleanup
+
+### 판단 기준
+
+- Coach의 핵심 가치인 habit score, repeated weakness, next request brief, review queue는 그대로 유지한다.
+- panel UI와 copy brief 상태는 `HabitCoachPanel`이 소유하고 `App.tsx`는 routing/composition 중심으로 남긴다.
+- prompt body, raw path, token은 새 컴포넌트와 테스트 출력에 노출하지 않는다.
+- Dashboard와 Coach 양쪽에서 같은 panel이 정상 렌더링되어야 한다.
+
 ## 2026-05-04 Practice CSS Extraction
 
 - [x] 기능/코드/UI 관점에서 다음 고효과 개선 후보 재점검
