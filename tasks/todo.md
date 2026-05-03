@@ -7,7 +7,7 @@
 - [x] 명시 옵션이 있을 때만 Claude Code/Codex MCP 등록 명령 실행
 - [x] setup 출력/README/PLUGIN 문서를 one-command coach setup에 맞게 갱신
 - [x] targeted/full 검증 실행
-- [ ] PR 생성, CI 확인, main merge, branch cleanup
+- [x] PR 생성, CI 확인, main merge, branch cleanup
 
 ### 판단 기준
 
