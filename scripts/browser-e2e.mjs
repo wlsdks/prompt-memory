@@ -145,6 +145,16 @@ try {
     "Improve the next prompt",
     "Dashboard should route users to prompt coaching.",
   );
+  await assertTextAny(
+    page,
+    ["Agent cockpit", "에이전트 조종석"],
+    "Dashboard should show agent-native command shortcuts.",
+  );
+  await assertText(
+    page,
+    "/prompt-memory:coach",
+    "Dashboard should expose the one-call agent coach command.",
+  );
   await assertText(
     page,
     "Draft with live score",

@@ -989,6 +989,101 @@ dd {
   gap: 14px;
 }
 
+.agent-command-center {
+  display: grid;
+  overflow: hidden;
+  padding: 0;
+}
+
+.agent-command-header {
+  align-items: start;
+  background: var(--color-overlay-1);
+  border-bottom: 1px solid var(--color-border-soft);
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(360px, 0.84fr);
+  padding: 16px 18px;
+}
+
+.agent-command-header span,
+.agent-command-card p {
+  color: var(--pm-text-muted);
+  font-size: 13px;
+  line-height: 20px;
+}
+
+.agent-command-snapshot {
+  display: grid;
+  gap: 8px;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+
+.agent-command-snapshot > span {
+  align-content: center;
+  background: var(--color-canvas);
+  border: 1px solid var(--color-border-soft);
+  border-radius: 8px;
+  color: var(--pm-text-subtle);
+  display: grid;
+  gap: 4px;
+  min-width: 0;
+  padding: 10px;
+}
+
+.agent-command-snapshot strong {
+  color: var(--pm-text);
+  font-size: 13px;
+  font-weight: 720;
+  line-height: 18px;
+  overflow-wrap: anywhere;
+}
+
+.agent-command-list {
+  display: grid;
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+}
+
+.agent-command-card {
+  border-right: 1px solid var(--color-border-soft);
+  display: grid;
+  gap: 8px;
+  padding: 14px;
+}
+
+.agent-command-card-header {
+  align-items: center;
+  display: flex;
+  gap: 8px;
+  justify-content: space-between;
+}
+
+.agent-command-card-header > span {
+  align-items: center;
+  color: var(--color-indigo-hover);
+  display: inline-flex;
+  font-family:
+    "JetBrains Mono", SFMono-Regular, ui-monospace, Menlo, Consolas, monospace;
+  font-size: 10px;
+  font-weight: 750;
+  gap: 6px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.agent-command-card strong {
+  font-size: 13px;
+}
+
+.agent-command-card code {
+  background: var(--color-canvas);
+  border: 1px solid var(--color-border-soft);
+  border-radius: 7px;
+  display: block;
+  font-size: 11px;
+  line-height: 18px;
+  overflow-wrap: anywhere;
+  padding: 7px;
+}
+
 .overview-section-grid {
   display: grid;
   gap: 12px;
@@ -3482,6 +3577,9 @@ dd {
   .detail-layout,
   .settings-grid,
   .metric-strip,
+  .agent-command-header,
+  .agent-command-list,
+  .agent-command-snapshot,
   .overview-section-grid,
   .habit-command-grid,
   .habit-command-main,
@@ -3498,6 +3596,15 @@ dd {
   .dashboard-grid,
   .checklist-grid {
     display: block;
+  }
+
+  .agent-command-card {
+    border-right: 0;
+    border-top: 1px solid var(--color-border-soft);
+  }
+
+  .agent-command-card:first-child {
+    border-top: 0;
   }
 
   .practice-workspace,

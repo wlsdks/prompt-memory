@@ -108,6 +108,7 @@ import {
   type PracticeHistoryItem,
 } from "./practice-history.js";
 import { copyTextToClipboard } from "./clipboard.js";
+import { AgentCommandCenter } from "./agent-command-center.js";
 import {
   daysAgoDateInput,
   formatDate,
@@ -1574,6 +1575,7 @@ function DashboardView({
         onOpenFilteredList={onOpenFilteredList}
         onOpenScores={() => onNavigateSection("scores")}
       />
+      <AgentCommandCenter archiveScore={archiveScore} dashboard={dashboard} />
       <DashboardMetricStrip
         dashboard={dashboard}
         onOpenFilteredList={onOpenFilteredList}

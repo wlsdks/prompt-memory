@@ -325,6 +325,8 @@ const UI_TRANSLATIONS: Record<string, string> = {
   "Agent-native coach tools": "에이전트 네이티브 코치 도구",
   "Prompt habit analysis": "프롬프트 습관 분석",
   "Prompt quality benchmark": "프롬프트 품질 벤치마크",
+  "Agent command center": "에이전트 명령 센터",
+  "Current coaching snapshot": "현재 코칭 스냅샷",
   "Prompt archive": "프롬프트 아카이브",
   "Prompt detail": "프롬프트 상세",
   "Quality dashboard": "품질 대시보드",
@@ -471,6 +473,34 @@ const UI_TRANSLATIONS: Record<string, string> = {
   "Needs work": "보강 필요",
   "Needs practice": "연습 필요",
   "No data yet": "아직 데이터 없음",
+  "Agent cockpit": "에이전트 조종석",
+  "Use prompt-memory inside Claude Code or Codex":
+    "Claude Code 또는 Codex 안에서 prompt-memory 사용",
+  "Keep the web UI for review, then run these commands directly in the coding agent loop.":
+    "웹 UI는 회고용으로 두고, 실제 코딩 에이전트 루프에서는 이 명령을 바로 실행하세요.",
+  "Coach latest prompt": "최근 프롬프트 코칭",
+  "Score last prompt": "최근 프롬프트 점수화",
+  "Improve last prompt": "최근 프롬프트 개선",
+  "Open side buddy": "사이드 buddy 열기",
+  "Install HUD line": "HUD 줄 설치",
+  "One-call score, habits, rewrite guidance, and next request brief.":
+    "점수, 습관, 개선 가이드, 다음 요청 브리프를 한 번에 확인합니다.",
+  "Check the prompt you just sent without opening the web UI.":
+    "웹 UI를 열지 않고 방금 보낸 프롬프트를 점검합니다.",
+  "Generate an approval-ready improvement draft for manual paste.":
+    "사용자가 붙여넣기 전에 승인할 수 있는 개선안을 만듭니다.",
+  "Keep a compact always-on prompt score companion in a side pane.":
+    "옆 pane에 항상 켜두는 작은 프롬프트 점수 companion을 둡니다.",
+  "Add prompt-memory under the existing Claude HUD without replacing it.":
+    "기존 Claude HUD를 대체하지 않고 그 아래에 prompt-memory를 추가합니다.",
+  "Copied command": "명령 복사됨",
+  next: "다음",
+  "Review Goal clarity": "목표 명확성 리뷰",
+  "Review Background context": "배경 맥락 리뷰",
+  "Review Scope limits": "범위 제한 리뷰",
+  "Review Output format": "출력 형식 리뷰",
+  "Review Verification criteria": "검증 기준 리뷰",
+  "Capture one real prompt": "실제 프롬프트 하나 수집",
   "Your Prompt Habit Score": "나의 프롬프트 습관 점수",
   "Progress trend": "개선 추세",
   Flat: "정체",
