@@ -7,7 +7,7 @@
 - [x] 로컬 서버 ensure + 웹 open hook 구현
 - [x] README/플러그인 setup 문서 갱신
 - [x] 테스트/릴리스 게이트 실행
-- [ ] PR 생성, CI 확인, main merge, branch cleanup
+- [x] PR 생성, CI 확인, main merge, branch cleanup
 
 ### 판단 기준
 
