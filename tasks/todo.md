@@ -1,5 +1,21 @@
 # 작업 계획
 
+## 2026-05-04 StatusLine And Product Polish QA
+
+- [x] `claude-hud` chained statusLine 충돌/표현 회귀 범위 재점검
+- [x] 코드베이스 품질/성능/모듈화 개선 후보 수집
+- [x] 웹 UI/UX와 기능 흐름을 실제 화면 기준으로 점검
+- [x] 고효과 개선 구현 및 회귀 테스트 추가
+- [x] Playwright/browser와 release gate 검증
+- [ ] PR 생성, CI 확인, main merge, branch cleanup
+
+### 판단 기준
+
+- 기존 Claude HUD의 multiline/ANSI 출력은 유지하고 prompt-memory는 가로 폭을 과도하게 늘리지 않는다.
+- 기능 추가는 prompt-memory 정체성인 local-first prompt coach/memory에 직접 도움이 되는 것만 한다.
+- UI 개선은 `DESIGN.md`의 warm developer workbench 기준을 따른다.
+- prompt body, raw path, token은 stdout/stderr, browser diagnostics, test output에 노출하지 않는다.
+
 ## 2026-05-03 Claude StatusLine Multiline Layout
 
 - [x] 현재 chained statusLine 출력이 기존 HUD 줄바꿈을 깨는 원인 확인
