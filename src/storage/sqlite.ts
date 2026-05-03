@@ -25,8 +25,6 @@ import { createPromptId } from "../shared/ids.js";
 import { createStoredContentHash } from "../shared/hashing.js";
 import type {
   PromptAnalysisPreview,
-  PromptQualityChecklistItem,
-  PromptQualityCriterion,
   PromptTag,
   RedactionPolicy,
 } from "../shared/schema.js";
@@ -73,155 +71,40 @@ import {
   readPromptMarkdown,
   writePromptMarkdown,
 } from "./markdown.js";
+import {
+  isExportPreviewCounts,
+  parseJson,
+  parseJsonValue,
+  readChecklist,
+  readNumberRecord,
+  readPromptTags,
+  readQualityCriteria,
+  readStringArray,
+} from "./sqlite-json.js";
+import type {
+  ExportJobRow,
+  ImportJobRow,
+  ImportRecordRow,
+  ProjectInstructionReviewRow,
+  ProjectPolicyRow,
+  ProjectPromptRow,
+  PromptAnalysisRow,
+  PromptImprovementDraftRow,
+  PromptQualityRow,
+  PromptRow,
+  PromptSignalRow,
+  PromptUsefulnessRow,
+  PromptWithSignalRow,
+  RebuildPromptRow,
+  UsefulPromptRow,
+} from "./sqlite-rows.js";
+
+export type { PromptRow } from "./sqlite-rows.js";
 
 export type SqlitePromptStorageOptions = {
   dataDir: string;
   hmacSecret: string;
   now?: () => Date;
-};
-
-export type PromptRow = {
-  id: string;
-  idempotency_key: string;
-  stored_content_hash: string;
-  tool: string;
-  source_event: string;
-  session_id: string;
-  cwd: string;
-  created_at: string;
-  received_at: string;
-  markdown_path: string;
-  markdown_schema_version: number;
-  prompt_length: number;
-  is_sensitive: number;
-  excluded_from_analysis: number;
-  redaction_policy: string;
-  adapter_version: string;
-  index_status: string;
-};
-
-type PromptAnalysisRow = {
-  summary: string | null;
-  warnings_json: string | null;
-  suggestions_json: string | null;
-  checklist_json: string | null;
-  tags_json: string | null;
-  analyzer: string;
-  created_at: string;
-};
-
-type PromptQualityRow = {
-  prompt_id: string;
-  received_at: string;
-  is_sensitive: number;
-  cwd: string;
-  project_root: string | null;
-  checklist_json: string | null;
-  tags_json: string | null;
-};
-
-type PromptUsefulnessRow = {
-  copied_count: number;
-  last_copied_at: string | null;
-  bookmarked_at: string | null;
-};
-
-type UsefulPromptRow = PromptRow & PromptUsefulnessRow;
-
-type PromptSignalRow = {
-  checklist_json: string | null;
-  tags_json: string | null;
-};
-
-type PromptWithSignalRow = PromptRow & PromptSignalRow;
-
-type ProjectPolicyRow = {
-  project_key: string;
-  display_alias: string | null;
-  capture_disabled: number;
-  analysis_disabled: number;
-  retention_candidate_days: number | null;
-  external_analysis_opt_in: number;
-  export_disabled: number;
-  version: number;
-  updated_at: string;
-};
-
-type ProjectPromptRow = {
-  id: string;
-  cwd: string;
-  project_root: string | null;
-  received_at: string;
-  is_sensitive: number;
-  checklist_json: string | null;
-  copied_count: number;
-  bookmarked_count: number;
-};
-
-type ProjectInstructionReviewRow = {
-  project_key: string;
-  generated_at: string;
-  analyzer: string;
-  score: number;
-  score_band: string;
-  files_found: number;
-  files_json: string;
-  checklist_json: string;
-  suggestions_json: string;
-  privacy_json: string;
-};
-
-type ImportJobRow = {
-  id: string;
-  source_type: string;
-  source_path_hash: string;
-  dry_run: number;
-  status: string;
-  started_at: string;
-  completed_at: string | null;
-  project_policy_version: number | null;
-  summary_json: string;
-};
-
-type ImportRecordRow = {
-  job_id: string;
-  record_key: string;
-  record_offset: number | null;
-  status: string;
-  prompt_id: string | null;
-  error_code: string | null;
-};
-
-type ExportJobRow = {
-  id: string;
-  preset: string;
-  status: string;
-  prompt_id_hashes_json: string;
-  project_policy_versions_json: string;
-  redaction_version: string;
-  counts_json: string;
-  expires_at: string;
-  created_at: string;
-};
-
-type PromptImprovementDraftRow = {
-  id: string;
-  prompt_id: string;
-  draft_text: string;
-  analyzer: string;
-  changed_sections_json: string | null;
-  safety_notes_json: string | null;
-  is_sensitive: number;
-  redaction_policy: string;
-  created_at: string;
-  copied_at: string | null;
-  accepted_at: string | null;
-};
-
-type RebuildPromptRow = {
-  id: string;
-  markdown_path: string;
-  received_at: string;
 };
 
 export type AppliedMigration = {
@@ -1625,52 +1508,6 @@ function toExportJob(row: ExportJobRow): ExportJob {
   };
 }
 
-function parseJsonValue(value: string): unknown {
-  try {
-    return JSON.parse(value) as unknown;
-  } catch {
-    return {};
-  }
-}
-
-function parseJson<T>(value: string, fallback: T): T {
-  try {
-    return JSON.parse(value) as T;
-  } catch {
-    return fallback;
-  }
-}
-
-function readNumberRecord(value: string): Record<string, number> {
-  const parsed = parseJsonValue(value);
-
-  if (!parsed || typeof parsed !== "object" || Array.isArray(parsed)) {
-    return {};
-  }
-
-  return Object.fromEntries(
-    Object.entries(parsed).filter(
-      (entry): entry is [string, number] => typeof entry[1] === "number",
-    ),
-  );
-}
-
-function isExportPreviewCounts(value: unknown): value is ExportJob["counts"] {
-  return (
-    Boolean(value) &&
-    typeof value === "object" &&
-    !Array.isArray(value) &&
-    typeof (value as ExportJob["counts"]).prompt_count === "number" &&
-    typeof (value as ExportJob["counts"]).sensitive_count === "number" &&
-    Array.isArray((value as ExportJob["counts"]).included_fields) &&
-    Array.isArray((value as ExportJob["counts"]).excluded_fields) &&
-    Boolean((value as ExportJob["counts"]).residual_identifier_counts) &&
-    typeof (value as ExportJob["counts"]).residual_identifier_counts ===
-      "object" &&
-    typeof (value as ExportJob["counts"]).small_set_warning === "boolean"
-  );
-}
-
 function isTerminalImportJobStatus(status: ImportJob["status"]): boolean {
   return ["dry_run_completed", "completed", "failed", "canceled"].includes(
     status,
@@ -2112,75 +1949,6 @@ function readPromptAnalysis(
     analyzer: row.analyzer,
     created_at: row.created_at,
   };
-}
-
-function readChecklist(value: string | null): PromptQualityChecklistItem[] {
-  if (!value) {
-    return [];
-  }
-
-  try {
-    const parsed = JSON.parse(value) as unknown;
-    if (!Array.isArray(parsed)) {
-      return [];
-    }
-
-    return parsed.filter(
-      (item): item is PromptQualityChecklistItem =>
-        typeof item === "object" &&
-        item !== null &&
-        typeof (item as PromptQualityChecklistItem).key === "string" &&
-        typeof (item as PromptQualityChecklistItem).label === "string" &&
-        typeof (item as PromptQualityChecklistItem).status === "string" &&
-        typeof (item as PromptQualityChecklistItem).reason === "string",
-    );
-  } catch {
-    return [];
-  }
-}
-
-function readPromptTags(value: string | null): PromptTag[] {
-  return readStringArray(value).filter((tag): tag is PromptTag =>
-    [
-      "bugfix",
-      "refactor",
-      "docs",
-      "test",
-      "ui",
-      "backend",
-      "security",
-      "db",
-      "release",
-      "ops",
-    ].includes(tag),
-  );
-}
-
-function readQualityCriteria(value: string | null): PromptQualityCriterion[] {
-  return readStringArray(value).filter((item): item is PromptQualityCriterion =>
-    [
-      "goal_clarity",
-      "background_context",
-      "scope_limits",
-      "output_format",
-      "verification_criteria",
-    ].includes(item),
-  );
-}
-
-function readStringArray(value: string | null): string[] {
-  if (!value) {
-    return [];
-  }
-
-  try {
-    const parsed = JSON.parse(value) as unknown;
-    return Array.isArray(parsed)
-      ? parsed.filter((item): item is string => typeof item === "string")
-      : [];
-  } catch {
-    return [];
-  }
 }
 
 function getQualityDashboard(

@@ -1,5 +1,19 @@
 # 작업 계획
 
+## 2026-05-03 Storage Boundary Refactor
+
+- [x] `sqlite.ts`의 현재 책임과 테스트 커버리지 확인
+- [x] 동작 변경 없이 SQLite row mapping/serialization 같은 고효과 경계 분리
+- [x] architecture docs/quality gate를 새 storage 경계에 맞춰 갱신
+- [x] storage targeted tests와 전체 release gate 실행
+- [x] PR 생성, CI 확인, main merge, branch cleanup
+
+### 판단 기준
+
+- DB schema, SQL query behavior, archive source-of-truth 규칙은 바꾸지 않는다.
+- route/CLI/MCP가 의존하는 `PromptStorage` public contract는 유지한다.
+- raw prompt body, token, raw path가 새 로그나 에러 경로로 새지 않아야 한다.
+
 ## 2026-05-03 MCP Tool Contract Refactor
 
 - [x] 현재 main 품질 지표와 큰 파일 압박점 재확인

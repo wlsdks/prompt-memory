@@ -44,7 +44,7 @@ src/
   redaction/   secret detection and redacted prompt representations
   server/      Fastify routes, auth, browser/API boundary
   shared/      shared schemas, ids, hashing, version helpers
-  storage/     SQLite/Markdown persistence and storage ports
+  storage/     SQLite/Markdown persistence, row contracts, JSON decoders, and storage ports
   web/         React app, browser-only models, styles, charts
 ```
 
@@ -101,8 +101,13 @@ Current known large modules:
 
 - `src/web/src/App.tsx`: UI composition hub. New browser models should live in
   separate files and be imported into the app.
-- `src/storage/sqlite.ts`: SQLite implementation boundary. Prefer local helper
-  extraction before adding new unrelated feature blocks.
+- `src/storage/sqlite.ts`: SQLite implementation boundary for migrations,
+  queries, transactions, and storage-port assembly. Keep row contracts and JSON
+  decoding out of this file.
+- `src/storage/sqlite-rows.ts`: SQLite result-row contracts only. Do not add
+  queries or mappers here.
+- `src/storage/sqlite-json.ts`: defensive JSON decoding for SQLite JSON
+  columns. Keep malformed data fail-safe and covered by unit tests.
 - `src/mcp/score-tool-definitions.ts`: agent-facing MCP names, descriptions,
   input schemas, output schemas, and read-only annotations.
 - `src/mcp/score-tool-types.ts`: argument/result TypeScript contracts for MCP
