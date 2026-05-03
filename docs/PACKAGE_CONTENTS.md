@@ -13,7 +13,8 @@ npm pack --dry-run --json
 
 The npm package intentionally includes:
 
-- `dist/cli`: the compiled `prompt-memory` CLI entrypoint
+- `dist/cli`: the compiled `prompt-memory` CLI entrypoint plus experimental
+  `pm-claude` and `pm-codex` wrapper entrypoints
 - `dist/server`: the compiled local Fastify server and web API
 - `dist/web`: the compiled React web UI assets
 - `dist/storage`, `dist/analysis`, `dist/hooks`, `dist/importer`,

@@ -163,8 +163,16 @@ describe("plugin packaging files", () => {
   });
 
   it("includes plugin artifacts in npm package files", () => {
-    const packageJson = readJson<{ files: string[] }>("package.json");
+    const packageJson = readJson<{
+      bin: Record<string, string>;
+      files: string[];
+    }>("package.json");
 
+    expect(packageJson.bin).toMatchObject({
+      "prompt-memory": "./dist/cli/index.js",
+      "pm-claude": "./dist/cli/pm-claude.js",
+      "pm-codex": "./dist/cli/pm-codex.js",
+    });
     expect(packageJson.files).toContain(".claude-plugin");
     expect(packageJson.files).toContain("commands");
     expect(packageJson.files).toContain("plugins");
@@ -184,6 +192,12 @@ describe("plugin packaging files", () => {
     expect(
       readFileSync(join(process.cwd(), "scripts/fix-bin-mode.mjs"), "utf8"),
     ).toContain("chmodSync");
+    expect(
+      readFileSync(join(process.cwd(), "scripts/fix-bin-mode.mjs"), "utf8"),
+    ).toContain("pm-claude.js");
+    expect(
+      readFileSync(join(process.cwd(), "scripts/fix-bin-mode.mjs"), "utf8"),
+    ).toContain("pm-codex.js");
   });
 
   it("registers the repo-local plugin in the local marketplace file", () => {

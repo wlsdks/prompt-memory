@@ -1,5 +1,20 @@
 # 작업 계획
 
+## 2026-05-03 Agent Wrapper Experiment
+
+- [x] 로컬 Claude/Codex CLI의 초기 prompt 입력 표면 확인
+- [x] `pm-claude` / `pm-codex` wrapper 설계와 TDD 구현
+- [x] package bin, README/PLUGINS 문서, release packaging 반영
+- [x] dry-run/실행 smoke와 전체 검증 실행
+- [x] PR 생성, CI 확인, main merge, branch cleanup
+
+### 판단 기준
+
+- wrapper는 초기 prompt 인자만 rewrite/approval 대상으로 삼고, interactive 입력창 내부를 계속 가로채는 것처럼 과장하지 않는다.
+- 기본값은 approval 모드이며, 진짜 딸깍 자동 rewrite는 `--pm-mode auto`로 명시한다.
+- `--pm-dry-run`은 실제 Claude/Codex를 실행하지 않고 어떤 prompt가 선택될지 privacy-safe JSON으로 검증 가능해야 한다.
+- subcommand, auth, mcp, plugin 같은 관리 명령은 rewrite하지 않고 원 CLI로 pass-through 해야 한다.
+
 ## 2026-05-03 Coach Setup Profile
 
 - [x] coach profile UX 기준과 안전한 기본값 확정

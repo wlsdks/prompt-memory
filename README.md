@@ -317,6 +317,33 @@ codex_hooks = true
 
 Uninstall removes the prompt-memory hook entry but leaves the Codex feature flag in place.
 
+## Agent Wrappers Experimental
+
+`pm-claude` and `pm-codex` are experimental front-door wrappers for the initial
+prompt argument. They score the prompt locally, generate a redacted improvement
+when it is weak, and then launch the real `claude` or `codex` binary with the
+selected prompt.
+
+```sh
+pm-claude --pm-mode auto -- "fix this"
+pm-codex --pm-mode auto -- "fix this"
+pm-codex --pm-mode auto -- exec "fix this"
+```
+
+Use dry-run first to verify what would be sent without launching the agent:
+
+```sh
+pm-claude --pm-mode auto --pm-dry-run -- "fix this"
+pm-codex --pm-mode auto --pm-dry-run -- "fix this"
+```
+
+Wrapper options are prefixed with `--pm-*` so normal Claude/Codex options can
+still be forwarded. The default mode is `ask`; `--pm-mode auto` is the one-click
+mode that replaces a low-score initial prompt without asking. Management
+subcommands such as `auth`, `mcp`, `plugin`, and `login` pass through without
+rewriting. These wrappers do not intercept every later message typed inside an
+interactive session.
+
 ## Plugin Packaging
 
 This repository also ships plugin packaging artifacts:

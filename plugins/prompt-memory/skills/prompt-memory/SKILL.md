@@ -88,6 +88,11 @@ Use these workflows before sending the user to the web UI:
   `next_prompt_template` plus `practice_plan` into one approval-ready template.
 - One-command setup: prefer `prompt-memory setup --profile coach` over asking
   the user to install hooks, rewrite guidance, and status line separately.
+- Initial prompt wrapper: when the user wants one-click rewrite before launching
+  a new agent session, suggest `pm-claude --pm-mode auto -- "..."` or
+  `pm-codex --pm-mode auto -- "..."`. Use `--pm-dry-run` first when verifying.
+  Be clear that wrappers rewrite only the initial prompt argument, not every
+  later interactive message.
 
 Open the web UI only when the user wants the dashboard, archive browsing,
 project policy controls, export, or a visual review of trends.

@@ -13,7 +13,9 @@
     "node": ">=22 <25"
   },
   "bin": {
-    "prompt-memory": "./dist/cli/index.js"
+    "prompt-memory": "./dist/cli/index.js",
+    "pm-claude": "./dist/cli/pm-claude.js",
+    "pm-codex": "./dist/cli/pm-codex.js"
   },
   "files": [
     "dist",

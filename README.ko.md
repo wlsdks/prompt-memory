@@ -262,6 +262,32 @@ codex_hooks = true
 
 uninstall은 prompt-memory hook entry를 제거하지만 Codex feature flag는 그대로 둡니다.
 
+## Agent Wrappers Experimental
+
+`pm-claude`와 `pm-codex`는 초기 prompt 인자를 먼저 다루는 실험적 front-door
+wrapper입니다. prompt를 로컬에서 점수화하고, 약하면 redaction된 개선안을 만든 뒤,
+선택된 prompt를 실제 `claude` 또는 `codex` binary에 넘깁니다.
+
+```sh
+pm-claude --pm-mode auto -- "fix this"
+pm-codex --pm-mode auto -- "fix this"
+pm-codex --pm-mode auto -- exec "fix this"
+```
+
+실제 agent를 실행하지 않고 먼저 검증하려면 dry-run을 사용합니다.
+
+```sh
+pm-claude --pm-mode auto --pm-dry-run -- "fix this"
+pm-codex --pm-mode auto --pm-dry-run -- "fix this"
+```
+
+wrapper 전용 옵션은 `--pm-*` prefix를 사용하므로 일반 Claude/Codex 옵션을
+그대로 전달할 수 있습니다. 기본 mode는 `ask`이고, `--pm-mode auto`가 낮은
+점수의 초기 prompt를 묻지 않고 교체하는 딸깍 모드입니다. `auth`, `mcp`,
+`plugin`, `login` 같은 관리 subcommand는 rewrite하지 않고 그대로 통과시킵니다.
+이 wrapper는 interactive session 안에서 이후에 입력하는 모든 메시지를 계속
+가로채지는 않습니다.
+
 ## Plugin Packaging
 
 이 저장소는 plugin packaging artifact도 함께 제공합니다.
