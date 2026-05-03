@@ -583,10 +583,12 @@ function withStoredPromptImprovement(
         source: args.latest === true ? "latest" : "prompt_id",
         promptId: id,
         improvement: improvePrompt({
-          prompt: prompt.analysis.summary,
+          prompt: prompt.markdown,
           createdAt: (options.now ?? new Date()).toISOString(),
           language: args.language,
+          source: "stored",
         }),
+        rewriteSource: "redacted_stored_prompt",
       });
     } finally {
       storage.close();
@@ -612,11 +614,13 @@ function toImprovementToolResult(input: {
   source: "text" | "prompt_id" | "latest";
   promptId?: string;
   improvement: PromptImprovement;
+  rewriteSource?: "direct_prompt" | "redacted_stored_prompt";
 }): ImprovePromptToolResult {
   return {
     ...input.improvement,
     source: input.source,
     ...(input.promptId ? { prompt_id: input.promptId } : {}),
+    rewrite_source: input.rewriteSource ?? "direct_prompt",
     improved_prompt: removeOriginalPromptSection(
       input.improvement.improved_prompt,
     ),

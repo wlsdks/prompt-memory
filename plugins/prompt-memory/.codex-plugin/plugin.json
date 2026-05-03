@@ -1,6 +1,6 @@
 {
   "name": "prompt-memory",
-  "version": "0.0.0",
+  "version": "0.1.0-beta.0",
   "description": "Local-first prompt archive for AI coding tools.",
   "author": {
     "name": "prompt-memory contributors",

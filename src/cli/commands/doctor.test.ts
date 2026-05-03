@@ -7,7 +7,7 @@ import { afterEach, describe, expect, it } from "vitest";
 import { initializePromptMemory } from "../../config/config.js";
 import { writeLastHookStatus } from "../../hooks/hook-status.js";
 import { installClaudeCodeHook, installCodexHook } from "./install-hook.js";
-import { doctorClaudeCode, doctorCodex } from "./doctor.js";
+import { doctorClaudeCode, doctorCodex, formatDoctorResult } from "./doctor.js";
 
 const tempDirs: string[] = [];
 
@@ -79,6 +79,24 @@ describe("doctorClaudeCode", () => {
       status: 503,
       checked_at: "2026-05-01T00:00:00.000Z",
     });
+  });
+
+  it("formats Claude Code doctor output with next actions", async () => {
+    const dir = createTempDir();
+
+    const result = await doctorClaudeCode({
+      dataDir: join(dir, "missing-data"),
+      settingsPath: join(dir, "settings.json"),
+      checkServer: async () => false,
+    });
+
+    const output = formatDoctorResult("claude-code", result);
+
+    expect(output).toContain("prompt-memory doctor: claude-code");
+    expect(output).toContain("Status: needs attention");
+    expect(output).toContain("Local server: not reachable");
+    expect(output).toContain("prompt-memory setup --profile coach");
+    expect(output).toContain("Use --json for automation.");
   });
 });
 
@@ -152,6 +170,26 @@ describe("doctorCodex", () => {
     expect(result.settings.codexHooksEnabled).toBe(true);
     expect(result.settings.duplicateHooks).toBe(true);
     expect(result.settings.ok).toBe(false);
+  });
+
+  it("formats Codex doctor output with hook and feature flag status", async () => {
+    const dir = createTempDir();
+    const dataDir = join(dir, "data");
+    initializePromptMemory({ dataDir });
+
+    const result = await doctorCodex({
+      dataDir,
+      hooksPath: join(dir, ".codex", "hooks.json"),
+      configPath: join(dir, ".codex", "config.toml"),
+      checkServer: async () => true,
+    });
+
+    const output = formatDoctorResult("codex", result);
+
+    expect(output).toContain("prompt-memory doctor: codex");
+    expect(output).toContain("Codex hook: missing");
+    expect(output).toContain("codex_hooks disabled");
+    expect(output).toContain("Run prompt-memory install-hook codex");
   });
 });
 

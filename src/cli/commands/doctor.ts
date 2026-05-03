@@ -20,6 +20,7 @@ export type DoctorClaudeCodeOptions = {
   dataDir?: string;
   settingsPath?: string;
   checkServer?: () => Promise<boolean>;
+  json?: boolean;
 };
 
 export type DoctorCodexOptions = {
@@ -29,6 +30,7 @@ export type DoctorCodexOptions = {
   projectHooksPath?: string;
   projectConfigPath?: string;
   checkServer?: () => Promise<boolean>;
+  json?: boolean;
 };
 
 export type DoctorClaudeCodeResult = {
@@ -64,6 +66,7 @@ export function registerDoctorCommand(program: Command): void {
     .option("--settings-path <path>", "Override Claude Code settings path.")
     .option("--hooks-path <path>", "Override Codex hooks.json path.")
     .option("--config-path <path>", "Override Codex config.toml path.")
+    .option("--json", "Print machine-readable JSON.")
     .option("--project-hooks-path <path>", "Override project Codex hooks path.")
     .option(
       "--project-config-path <path>",
@@ -76,7 +79,11 @@ export function registerDoctorCommand(program: Command): void {
       ) => {
         if (tool === "codex") {
           const result = await doctorCodex(options);
-          console.log(JSON.stringify(result, null, 2));
+          console.log(
+            options.json
+              ? JSON.stringify(result, null, 2)
+              : formatDoctorResult("codex", result),
+          );
 
           if (!result.server.ok || !result.token.ok || !result.settings.ok) {
             process.exitCode = 1;
@@ -89,13 +96,100 @@ export function registerDoctorCommand(program: Command): void {
         }
 
         const result = await doctorClaudeCode(options);
-        console.log(JSON.stringify(result, null, 2));
+        console.log(
+          options.json
+            ? JSON.stringify(result, null, 2)
+            : formatDoctorResult("claude-code", result),
+        );
 
         if (!result.server.ok || !result.token.ok || !result.settings.ok) {
           process.exitCode = 1;
         }
       },
     );
+}
+
+export function formatDoctorResult(
+  tool: "claude-code" | "codex",
+  result: DoctorClaudeCodeResult | DoctorCodexResult,
+): string {
+  const settings =
+    tool === "codex"
+      ? formatCodexSettings(result as DoctorCodexResult)
+      : formatClaudeSettings(result as DoctorClaudeCodeResult);
+  const ok = result.server.ok && result.token.ok && result.settings.ok;
+  const lines = [
+    `prompt-memory doctor: ${tool}`,
+    `Status: ${ok ? "ready" : "needs attention"}`,
+    "",
+    "Checks:",
+    `- Local server: ${result.server.ok ? "ok" : "not reachable"}`,
+    `- Local ingest token: ${result.token.ok ? "ok" : "missing"}`,
+    settings,
+  ];
+
+  if (result.lastIngestStatus) {
+    lines.push(
+      `- Last ingest: ${result.lastIngestStatus.ok ? "ok" : `failed (${result.lastIngestStatus.status ?? "unknown"})`}`,
+    );
+  }
+
+  const next = doctorNextSteps(tool, result);
+  if (next.length > 0) {
+    lines.push("", "Next:");
+    for (const step of next) {
+      lines.push(`- ${step}`);
+    }
+  }
+
+  lines.push("", "Use --json for automation.");
+  return lines.join("\n");
+}
+
+function formatClaudeSettings(result: DoctorClaudeCodeResult): string {
+  if (result.settings.invalid) return "- Claude Code settings: invalid JSON";
+  return `- Claude Code hook: ${result.settings.hookInstalled ? "installed" : "missing"}`;
+}
+
+function formatCodexSettings(result: DoctorCodexResult): string {
+  if (result.settings.invalid) return "- Codex settings: invalid JSON";
+  const source =
+    result.settings.hookSources.length > 0
+      ? ` (${result.settings.hookSources.join(", ")})`
+      : "";
+  const duplicate = result.settings.duplicateHooks
+    ? "; duplicate hooks found"
+    : "";
+  return `- Codex hook: ${result.settings.hookInstalled ? `installed${source}` : "missing"}; codex_hooks ${result.settings.codexHooksEnabled ? "enabled" : "disabled"}${duplicate}`;
+}
+
+function doctorNextSteps(
+  tool: "claude-code" | "codex",
+  result: DoctorClaudeCodeResult | DoctorCodexResult,
+): string[] {
+  const steps: string[] = [];
+  if (!result.server.ok) {
+    steps.push(
+      "Run prompt-memory server or prompt-memory setup --profile coach.",
+    );
+  }
+  if (!result.token.ok) {
+    steps.push(
+      "Run prompt-memory init or prompt-memory setup --profile coach.",
+    );
+  }
+  if (!result.settings.ok) {
+    steps.push(`Run prompt-memory install-hook ${tool}.`);
+  }
+  if (
+    tool === "codex" &&
+    (result as DoctorCodexResult).settings.duplicateHooks
+  ) {
+    steps.push(
+      "Remove the duplicate Codex hook from either user or project config.",
+    );
+  }
+  return steps;
 }
 
 export async function doctorClaudeCode(

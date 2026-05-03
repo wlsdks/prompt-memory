@@ -1,7 +1,7 @@
 {
   "name": "prompt-memory",
   "description": "Local-first prompt archive for Claude Code and Codex prompts.",
-  "version": "0.0.0",
+  "version": "0.1.0-beta.0",
   "author": {
     "name": "prompt-memory contributors",
     "url": "https://github.com/wlsdks/prompt-memory"

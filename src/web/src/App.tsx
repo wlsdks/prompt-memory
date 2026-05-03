@@ -1091,10 +1091,16 @@ function PromptList({
   }
 
   if (prompts.length === 0) {
+    const commands = emptyPromptCommands(focus, qualityGap);
     return (
       <div className="panel empty">
         <h2>{emptyPromptTitle(focus, qualityGap)}</h2>
-        <code>{emptyPromptHint(focus, qualityGap)}</code>
+        <p>{emptyPromptHint(focus, qualityGap)}</p>
+        <div className="empty-command-list" aria-label="First run commands">
+          {commands.map((command) => (
+            <code key={command}>{command}</code>
+          ))}
+        </div>
       </div>
     );
   }
@@ -3852,5 +3858,21 @@ function emptyPromptHint(
     return "Repeated stored prompt bodies will appear here.";
   if (focus === "quality-gap")
     return "Try adding verification criteria, output format, and scope.";
-  return "prompt-memory install-hook claude-code";
+  return "Connect a coding agent, confirm capture, then use Coach or Scores to improve your next request.";
+}
+
+function emptyPromptCommands(
+  focus?: PromptFilters["focus"],
+  qualityGap?: PromptQualityGap,
+): string[] {
+  if (focus || qualityGap) {
+    return ["Clear filters to return to the full archive."];
+  }
+
+  return [
+    "prompt-memory setup --profile coach --dry-run",
+    "prompt-memory setup --profile coach",
+    "prompt-memory doctor claude-code",
+    "prompt-memory doctor codex",
+  ];
 }

@@ -410,8 +410,8 @@ try {
   );
   await assertText(
     page,
-    "Recommended call order",
-    "MCP page should show recommended tool call order.",
+    "Core call order",
+    "MCP page should show the core tool call order.",
   );
   await assertText(
     page,

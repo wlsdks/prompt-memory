@@ -1,5 +1,21 @@
 # 작업 계획
 
+## 2026-05-03 Critical Usability Flow
+
+- [x] `improve_prompt latest/prompt_id`가 저장 prompt summary가 아니라 redacted archive body를 기반으로 개선하도록 TDD 수정
+- [x] CLI 첫 사용 명령 출력이 사람이 읽기 쉬운지 점검하고 필요한 경우 `--json` 경계를 정리
+- [x] 웹 빈 archive/onboarding과 MCP tool catalog 불일치 점검 및 개선
+- [x] README/README.ko의 first-run 흐름을 global install 사용자 기준으로 정리
+- [x] targeted/full 검증 실행
+- [ ] PR 생성, CI 확인, main merge, branch cleanup
+
+### 판단 기준
+
+- 저장된 prompt 개선은 원문 전체를 그대로 반환하지 않으면서도 실제 요청의 대상/맥락을 반영해야 한다.
+- 첫 사용자는 `setup --profile coach`, `doctor`, `coach/score latest`, `open` 순서를 혼동하지 않아야 한다.
+- 기본 CLI 출력은 사람이 읽기 쉽고, JSON은 `--json` 또는 agent automation용으로 유지한다.
+- 웹 UI는 빈 상태에서도 Claude Code/Codex 양쪽 setup과 다음 행동을 바로 보여줘야 한다.
+
 ## 2026-05-03 Feature QA And Hardening
 
 - [x] 현재 main 기능 표면과 공개 문서의 불일치 점검

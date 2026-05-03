@@ -2,11 +2,11 @@
   "name": "prompt-memory",
   "owner": {
     "name": "prompt-memory contributors",
-    "email": "support@example.com"
+    "email": "wlsdks@users.noreply.github.com"
   },
   "metadata": {
     "description": "Local-first prompt archive for Claude Code and Codex prompts.",
-    "version": "0.0.0"
+    "version": "0.1.0-beta.0"
   },
   "plugins": [
     {
