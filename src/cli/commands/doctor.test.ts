@@ -196,7 +196,9 @@ describe("doctorCodex", () => {
       dataDir,
       hooksPath: join(dir, ".codex", "hooks.json"),
       configPath: join(dir, ".codex", "config.toml"),
+      mcpConfigPath: join(dir, "missing-codex-mcp.toml"),
       checkServer: async () => true,
+      commandRunner: () => ({ status: 1, stderr: "no mcp server registered" }),
     });
 
     expect(result.server.ok).toBe(true);
@@ -273,7 +275,9 @@ describe("doctorCodex", () => {
       dataDir,
       hooksPath: join(dir, ".codex", "hooks.json"),
       configPath: join(dir, ".codex", "config.toml"),
+      mcpConfigPath: join(dir, "missing-codex-mcp.toml"),
       checkServer: async () => true,
+      commandRunner: () => ({ status: 1, stderr: "no mcp server registered" }),
     });
 
     const output = formatDoctorResult("codex", result);

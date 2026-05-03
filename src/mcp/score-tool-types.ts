@@ -163,6 +163,16 @@ export type CoachPromptToolResult = {
   agent_brief: {
     headline: string;
     summary: string;
+    first_fix?: {
+      label: string;
+      instruction: string;
+      reason: string;
+    };
+    review_target?: {
+      prompt_id: string;
+      reason: string;
+    };
+    next_request_template?: string;
     next_actions: string[];
     suggested_user_response: string;
   };

@@ -10,7 +10,7 @@ It collects supported tool prompts locally, redacts sensitive values before stor
 
 This project is not affiliated with, endorsed by, or sponsored by Anthropic, OpenAI, or any other AI tool provider. Product names such as Claude Code and Codex are used only to describe compatibility.
 
-## First 5-Minute Coach Loop
+## First 3-Minute Coach Loop
 
 The first success is not the web dashboard. It is seeing a score and one useful
 fix for a real Claude Code or Codex prompt you just sent.
@@ -18,11 +18,14 @@ fix for a real Claude Code or Codex prompt you just sent.
 For most users, the happy path is:
 
 ```sh
-prompt-memory start
-prompt-memory setup --profile coach --register-mcp
+prompt-memory start --open-web
+prompt-memory setup --profile coach --register-mcp --open-web
 # send one real Claude Code or Codex coding prompt
 prompt-memory coach
 ```
+
+Skip `--open-web` if you do not want the web workspace to open automatically on
+new agent sessions.
 
 Only troubleshoot after that path fails:
 
@@ -133,6 +136,7 @@ prompt-memory doctor claude-code
 prompt-memory doctor codex
 prompt-memory statusline claude-code
 prompt-memory buddy --once
+prompt-memory coach
 ```
 
 Open the local archive:
@@ -715,8 +719,8 @@ prompt-memory mcp --data-dir /path/to/prompt-memory-data
 ## Benchmark
 
 Benchmark v1 measures local regression signals for privacy, retrieval,
-rule-based prompt improvement, prompt quality score calibration, analytics, and
-latency:
+rule-based prompt improvement, `coach_prompt` actionability, prompt quality
+score calibration, analytics, and latency:
 
 ```sh
 pnpm benchmark

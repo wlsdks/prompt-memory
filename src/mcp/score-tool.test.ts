@@ -681,6 +681,20 @@ describe("coachPromptTool", () => {
       }),
     );
     expect(result.agent_brief.next_actions[0]).toContain("Review");
+    expect(result.agent_brief.first_fix).toEqual(
+      expect.objectContaining({
+        label: expect.any(String),
+        instruction: expect.any(String),
+      }),
+    );
+    expect(result.agent_brief.next_request_template).toContain("Goal:");
+    expect(result.agent_brief.next_request_template).toContain("Verification:");
+    expect(result.agent_brief.review_target).toEqual(
+      expect.objectContaining({
+        prompt_id: expect.any(String),
+        reason: expect.any(String),
+      }),
+    );
     expect(result.privacy).toEqual({
       local_only: true,
       external_calls: false,
