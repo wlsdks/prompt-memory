@@ -703,7 +703,13 @@ describe("coachPromptTool", () => {
 
     expect(result.mode).toBe("agent_coach");
     expect(result.status.status).toBe("setup_needed");
-    expect(result.agent_brief.next_actions[0]).toContain("prompt-memory setup");
+    expect(result.agent_brief.next_actions).toEqual(
+      expect.arrayContaining([
+        "Run prompt-memory start to see the shortest setup -> real prompt -> coach path.",
+        "Run prompt-memory setup --profile coach --register-mcp, then submit one real Claude Code or Codex prompt.",
+        "Run prompt-memory server if connected tools cannot reach the local service.",
+      ]),
+    );
     expect(serialized).not.toContain(dataDir);
     expect(serialized).not.toContain("/tmp/");
   });

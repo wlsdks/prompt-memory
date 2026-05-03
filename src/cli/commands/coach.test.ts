@@ -84,6 +84,19 @@ describe("coach CLI", () => {
     expect(text).not.toContain("sk-proj-1234567890abcdef");
     expect(text).not.toContain("/Users/example");
   });
+
+  it("keeps empty archive guidance aligned with the coach-first activation path", () => {
+    const dataDir = join(tmpdir(), `prompt-memory-empty-coach-${randomUUID()}`);
+    tempDirs.push(dataDir);
+
+    const text = coachPromptForCli({ dataDir });
+
+    expect(text).toContain("Prompt-memory is not ready yet.");
+    expect(text).toContain("prompt-memory start");
+    expect(text).toContain("prompt-memory setup --profile coach --register-mcp");
+    expect(text).toContain("prompt-memory server");
+    expect(text).not.toContain(dataDir);
+  });
 });
 
 function createTempDir(): string {

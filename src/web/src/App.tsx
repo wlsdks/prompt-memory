@@ -325,6 +325,21 @@ export function App() {
     if (view.name === "dashboard") return "Quality dashboard";
     return "Prompt archive";
   }, [view]);
+  const visibleEyebrow = useMemo(() => {
+    if (view.name === "coach" || view.name === "practice") {
+      return "Prompt improvement workspace";
+    }
+    if (view.name === "mcp") {
+      return "Agent-native coach tools";
+    }
+    if (view.name === "scores" || view.name === "insights") {
+      return "Prompt habit analysis";
+    }
+    if (view.name === "benchmark") {
+      return "Prompt quality benchmark";
+    }
+    return "Local prompt archive";
+  }, [view]);
   const queueNavigation = useMemo(() => {
     if (view.name !== "detail") {
       return { current: undefined, next: undefined, previous: undefined };
@@ -749,7 +764,7 @@ export function App() {
       <section className="workspace" id="workspace">
         <header className="topbar">
           <div>
-            <p className="eyebrow">Local prompt archive</p>
+            <p className="eyebrow">{visibleEyebrow}</p>
             <h1>{visibleTitle}</h1>
           </div>
           {view.name === "list" && (

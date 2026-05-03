@@ -1,6 +1,10 @@
 import { describe, expect, it } from "vitest";
 
-import { createMcpReadiness, MCP_TOOL_CATALOG } from "./mcp-catalog.js";
+import {
+  createMcpReadiness,
+  MCP_FLOW_STEPS,
+  MCP_TOOL_CATALOG,
+} from "./mcp-catalog.js";
 import type { QualityDashboard, SettingsResponse } from "./api.js";
 
 function dashboardFixture(
@@ -31,9 +35,10 @@ function dashboardFixture(
 
 describe("mcp catalog", () => {
   it("keeps tool catalog privacy-safe", () => {
-    expect(MCP_TOOL_CATALOG).toHaveLength(9);
+    expect(MCP_TOOL_CATALOG).toHaveLength(10);
     expect(MCP_TOOL_CATALOG.map((tool) => tool.name)).toEqual([
       "get_prompt_memory_status",
+      "coach_prompt",
       "score_prompt",
       "improve_prompt",
       "prepare_agent_rewrite",
@@ -48,6 +53,17 @@ describe("mcp catalog", () => {
     );
   });
 
+  it("keeps the recommended flow coach-first after readiness", () => {
+    expect(MCP_FLOW_STEPS.map((step) => step.tool)).toEqual([
+      "get_prompt_memory_status",
+      "coach_prompt",
+      "score_prompt",
+      "improve_prompt",
+      "score_prompt_archive",
+      "review_project_instructions",
+    ]);
+  });
+
   it("starts with status when no archive data is loaded", () => {
     const readiness = createMcpReadiness({});
 
@@ -55,7 +71,7 @@ describe("mcp catalog", () => {
     expect(readiness.firstCall).toBe("get_prompt_memory_status");
   });
 
-  it("promotes archive scoring after prompts are captured", () => {
+  it("promotes one-call coaching after prompts are captured", () => {
     const settings: SettingsResponse = {
       data_dir: "/tmp/prompt-memory",
       excluded_project_roots: [],
@@ -78,6 +94,6 @@ describe("mcp catalog", () => {
 
     expect(readiness.status).toBe("Ready for archive review");
     expect(readiness.tone).toBe("ready");
-    expect(readiness.firstCall).toBe("score_prompt_archive");
+    expect(readiness.firstCall).toBe("coach_prompt");
   });
 });
