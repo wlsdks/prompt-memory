@@ -7,7 +7,7 @@
 - [x] MCP server/tool catalog/agent command 문서에 새 workflow 연결
 - [x] privacy-safe redaction, prompt body/raw path 미노출 회귀 테스트 추가
 - [x] targeted/full 검증 실행
-- [ ] PR 생성, CI 확인, main merge, branch cleanup
+- [x] PR 생성, CI 확인, main merge, branch cleanup
 
 ### 판단 기준
 
