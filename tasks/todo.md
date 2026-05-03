@@ -7,7 +7,7 @@
 - [x] 웹 빈 archive/onboarding과 MCP tool catalog 불일치 점검 및 개선
 - [x] README/README.ko의 first-run 흐름을 global install 사용자 기준으로 정리
 - [x] targeted/full 검증 실행
-- [ ] PR 생성, CI 확인, main merge, branch cleanup
+- [x] PR 생성, CI 확인, main merge, branch cleanup
 
 ### 판단 기준
 
