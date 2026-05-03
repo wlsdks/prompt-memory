@@ -15,10 +15,12 @@ import {
   type ClaudeSettings,
   type CodexHooksSettings,
 } from "./install-hook.js";
+import { mcpRegistrationCommand } from "../agent-access.js";
 
 export type DoctorClaudeCodeOptions = {
   dataDir?: string;
   settingsPath?: string;
+  mcpConfigPath?: string;
   checkServer?: () => Promise<boolean>;
   json?: boolean;
 };
@@ -29,6 +31,7 @@ export type DoctorCodexOptions = {
   configPath?: string;
   projectHooksPath?: string;
   projectConfigPath?: string;
+  mcpConfigPath?: string;
   checkServer?: () => Promise<boolean>;
   json?: boolean;
 };
@@ -41,6 +44,7 @@ export type DoctorClaudeCodeResult = {
     invalid: boolean;
     hookInstalled: boolean;
   };
+  mcp: { registered: boolean };
   lastIngestStatus?: LastHookStatus;
 };
 
@@ -55,6 +59,7 @@ export type DoctorCodexResult = {
     duplicateHooks: boolean;
     hookSources: string[];
   };
+  mcp: { registered: boolean };
   lastIngestStatus?: LastHookStatus;
 };
 
@@ -66,6 +71,7 @@ export function registerDoctorCommand(program: Command): void {
     .option("--settings-path <path>", "Override Claude Code settings path.")
     .option("--hooks-path <path>", "Override Codex hooks.json path.")
     .option("--config-path <path>", "Override Codex config.toml path.")
+    .option("--mcp-config-path <path>", "Override MCP config path.")
     .option("--json", "Print machine-readable JSON.")
     .option("--project-hooks-path <path>", "Override project Codex hooks path.")
     .option(
@@ -126,6 +132,7 @@ export function formatDoctorResult(
     `- Local server: ${result.server.ok ? "ok" : "not reachable"}`,
     `- Local ingest token: ${result.token.ok ? "ok" : "missing"}`,
     settings,
+    `- MCP command access: ${result.mcp.registered ? "registered" : "not detected"}`,
   ];
 
   if (result.lastIngestStatus) {
@@ -181,6 +188,9 @@ function doctorNextSteps(
   if (!result.settings.ok) {
     steps.push(`Run prompt-memory install-hook ${tool}.`);
   }
+  if (!result.mcp.registered) {
+    steps.push(`Register MCP: ${mcpRegistrationCommand(tool)}.`);
+  }
   if (
     tool === "codex" &&
     (result as DoctorCodexResult).settings.duplicateHooks
@@ -203,6 +213,14 @@ export async function doctorClaudeCode(
     server: { ok: await inspectServer(options) },
     token: { ok: inspectToken(options.dataDir) },
     settings,
+    mcp: {
+      registered: inspectMcpRegistration(
+        claudeMcpConfigPaths(
+          options.mcpConfigPath,
+          options.settingsPath ?? defaultClaudeSettingsPath(),
+        ),
+      ),
+    },
     lastIngestStatus: readLastHookStatus(options.dataDir),
   };
 }
@@ -216,6 +234,11 @@ export async function doctorCodex(
     server: { ok: await inspectServer(options) },
     token: { ok: inspectToken(options.dataDir) },
     settings,
+    mcp: {
+      registered: inspectMcpRegistration(
+        codexMcpConfigPaths(options.mcpConfigPath, options.configPath),
+      ),
+    },
     lastIngestStatus: readLastHookStatus(options.dataDir),
   };
 }
@@ -312,6 +335,31 @@ function inspectCodexSettings(
   };
 }
 
+function inspectMcpRegistration(paths: string[]): boolean {
+  for (const path of paths) {
+    try {
+      if (
+        existsSync(path) &&
+        looksLikePromptMemoryMcpConfig(readFileSync(path, "utf8"))
+      ) {
+        return true;
+      }
+    } catch {
+      // A malformed MCP config should not block capture diagnostics.
+    }
+  }
+
+  return false;
+}
+
+function looksLikePromptMemoryMcpConfig(text: string): boolean {
+  const normalized = text.toLowerCase();
+  return (
+    normalized.includes("prompt-memory") &&
+    /(^|[\s"'[\],=:.-])mcp($|[\s"'[\],=:.-])/.test(normalized)
+  );
+}
+
 async function inspectServer(
   options: DoctorClaudeCodeOptions | DoctorCodexOptions,
 ): Promise<boolean> {
@@ -342,10 +390,32 @@ function defaultClaudeSettingsPath(): string {
   return join(homedir(), ".claude", "settings.json");
 }
 
+function claudeMcpConfigPaths(
+  explicitPath: string | undefined,
+  settingsPath: string,
+): string[] {
+  if (explicitPath) {
+    return [explicitPath];
+  }
+
+  return [
+    join(homedir(), ".claude.json"),
+    join(homedir(), ".claude", "mcp.json"),
+    settingsPath,
+  ];
+}
+
 function defaultCodexHooksPath(): string {
   return join(homedir(), ".codex", "hooks.json");
 }
 
 function defaultCodexConfigPath(): string {
   return join(homedir(), ".codex", "config.toml");
+}
+
+function codexMcpConfigPaths(
+  explicitPath: string | undefined,
+  configPath: string | undefined,
+): string[] {
+  return [explicitPath ?? configPath ?? defaultCodexConfigPath()];
 }

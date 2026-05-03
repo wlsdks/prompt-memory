@@ -1,4 +1,4 @@
-import { mkdirSync, rmSync, writeFileSync } from "node:fs";
+import { mkdirSync, readFileSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { randomUUID } from "node:crypto";
@@ -27,6 +27,7 @@ describe("doctorClaudeCode", () => {
     const result = await doctorClaudeCode({
       dataDir: join(dir, "missing-data"),
       settingsPath: join(dir, "settings.json"),
+      mcpConfigPath: join(dir, "claude.json"),
       checkServer: async () => false,
     });
 
@@ -45,6 +46,7 @@ describe("doctorClaudeCode", () => {
     const result = await doctorClaudeCode({
       dataDir,
       settingsPath,
+      mcpConfigPath: join(dir, "claude.json"),
       checkServer: async () => true,
     });
 
@@ -67,6 +69,7 @@ describe("doctorClaudeCode", () => {
     const result = await doctorClaudeCode({
       dataDir,
       settingsPath,
+      mcpConfigPath: join(dir, "claude.json"),
       checkServer: async () => true,
     });
 
@@ -74,6 +77,7 @@ describe("doctorClaudeCode", () => {
     expect(result.token.ok).toBe(true);
     expect(result.settings.ok).toBe(true);
     expect(result.settings.hookInstalled).toBe(true);
+    expect(result.mcp.registered).toBe(false);
     expect(result.lastIngestStatus).toEqual({
       ok: false,
       status: 503,
@@ -87,6 +91,7 @@ describe("doctorClaudeCode", () => {
     const result = await doctorClaudeCode({
       dataDir: join(dir, "missing-data"),
       settingsPath: join(dir, "settings.json"),
+      mcpConfigPath: join(dir, "claude.json"),
       checkServer: async () => false,
     });
 
@@ -95,8 +100,42 @@ describe("doctorClaudeCode", () => {
     expect(output).toContain("prompt-memory doctor: claude-code");
     expect(output).toContain("Status: needs attention");
     expect(output).toContain("Local server: not reachable");
+    expect(output).toContain("MCP command access: not detected");
+    expect(output).toContain("Register MCP: claude mcp add");
     expect(output).toContain("prompt-memory setup --profile coach");
     expect(output).toContain("Use --json for automation.");
+  });
+
+  it("detects Claude Code MCP registration when config includes prompt-memory mcp", async () => {
+    const dir = createTempDir();
+    const dataDir = join(dir, "data");
+    const settingsPath = join(dir, "settings.json");
+    const mcpConfigPath = join(dir, "claude.json");
+    initializePromptMemory({ dataDir });
+    installClaudeCodeHook({ dataDir, settingsPath });
+    writeFileSync(
+      mcpConfigPath,
+      JSON.stringify({
+        mcpServers: {
+          "prompt-memory": {
+            command: "prompt-memory",
+            args: ["mcp"],
+          },
+        },
+      }),
+    );
+
+    const result = await doctorClaudeCode({
+      dataDir,
+      settingsPath,
+      mcpConfigPath,
+      checkServer: async () => true,
+    });
+
+    expect(result.mcp.registered).toBe(true);
+    expect(formatDoctorResult("claude-code", result)).toContain(
+      "MCP command access: registered",
+    );
   });
 });
 
@@ -119,6 +158,7 @@ describe("doctorCodex", () => {
     expect(result.settings.codexHooksEnabled).toBe(false);
     expect(result.settings.duplicateHooks).toBe(false);
     expect(result.settings.ok).toBe(false);
+    expect(result.mcp.registered).toBe(false);
   });
 
   it("detects installed Codex hook and enabled feature flag", async () => {
@@ -128,6 +168,10 @@ describe("doctorCodex", () => {
     const configPath = join(dir, ".codex", "config.toml");
     initializePromptMemory({ dataDir });
     installCodexHook({ dataDir, hooksPath, configPath });
+    writeFileSync(
+      configPath,
+      `${readFileSync(configPath, "utf8")}\n[mcp_servers.prompt-memory]\ncommand = "prompt-memory"\nargs = ["mcp"]\n`,
+    );
 
     const result = await doctorCodex({
       dataDir,
@@ -139,6 +183,7 @@ describe("doctorCodex", () => {
     expect(result.settings.ok).toBe(true);
     expect(result.settings.hookInstalled).toBe(true);
     expect(result.settings.codexHooksEnabled).toBe(true);
+    expect(result.mcp.registered).toBe(true);
     expect(result.settings.duplicateHooks).toBe(false);
   });
 
@@ -189,6 +234,8 @@ describe("doctorCodex", () => {
     expect(output).toContain("prompt-memory doctor: codex");
     expect(output).toContain("Codex hook: missing");
     expect(output).toContain("codex_hooks disabled");
+    expect(output).toContain("MCP command access: not detected");
+    expect(output).toContain("Register MCP: codex mcp add prompt-memory");
     expect(output).toContain("Run prompt-memory install-hook codex");
   });
 });

@@ -42,6 +42,13 @@ If the user approves, run:
 prompt-memory setup --profile coach
 ```
 
+Then register MCP so this agent can call prompt-memory tools inside the active
+session:
+
+```bash
+claude mcp add --transport stdio prompt-memory -- prompt-memory mcp
+```
+
 Use the default capture-only profile only when the user wants passive recording
 without prompt coaching:
 

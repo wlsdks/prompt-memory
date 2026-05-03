@@ -25,7 +25,11 @@ Do not include real API keys, OAuth tokens, session tokens, private prompts, or 
 - Ingest binds to the configured local server, defaulting to `127.0.0.1:17373`.
 - Hook ingest requires a local bearer token.
 - The web UI uses a same-origin session cookie and CSRF token.
-- External LLM analysis is not implemented.
+- `prompt-memory` does not make hidden external LLM calls. Agent rewrite/judge
+  MCP tools may return redacted prompt packets to the active user-controlled
+  Claude Code, Codex, or Gemini CLI session when explicitly called, and that
+  agent may send the packet through its provider session according to the
+  user's tool setup.
 - Prompt text is redacted before Markdown, SQLite, and FTS storage in `mask` mode.
 
 `prompt-memory` must not extract, store, proxy, sell, or reuse upstream account credentials such as Claude.ai OAuth tokens, Claude Code internal auth tokens, OpenAI/Codex session tokens, or ChatGPT account tokens.

@@ -115,6 +115,13 @@ describe("runSetup", () => {
       mode: "context",
       minScore: 80,
     });
+    expect(result.nextSteps).toEqual(
+      expect.arrayContaining([
+        "Register MCP for agent commands: claude mcp add --transport stdio prompt-memory -- prompt-memory mcp.",
+        "Register MCP for agent commands: codex mcp add prompt-memory -- prompt-memory mcp.",
+        "Send one real coding prompt in Claude Code or Codex, then run prompt-memory coach.",
+      ]),
+    );
     expect(result.statusLine.claudeCode?.installed).toBe(true);
 
     const claudeSettings = readFileSync(settingsPath, "utf8");
@@ -174,6 +181,8 @@ describe("runSetup", () => {
     expect(output).toContain("Claude Code hook: installed");
     expect(output).toContain("Codex hook: installed");
     expect(output).toContain("Next:");
+    expect(output).toContain("Register MCP for agent commands");
+    expect(output).toContain("prompt-memory coach");
     expect(output).toContain("Use --json for automation.");
   });
 });

@@ -33,12 +33,13 @@ describe("CLI entrypoint detection", () => {
 });
 
 describe("CLI command surface", () => {
-  it("registers the MCP stdio server command", () => {
+  it("registers the agent-facing commands", () => {
     const commands = createProgram()
       .commands.map((command) => command.name())
       .sort();
 
     expect(commands).toContain("mcp");
+    expect(commands).toContain("start");
   });
 });
 

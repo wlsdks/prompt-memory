@@ -15,16 +15,21 @@ This project is not affiliated with, endorsed by, or sponsored by Anthropic, Ope
 After install and `prompt-memory setup --profile coach`, the core loop is:
 
 1. capture Claude Code or Codex prompts locally
-2. run `prompt-memory doctor <tool>` to confirm capture
-3. ask the agent to score or improve the latest request
-4. open the local archive only when you want dashboard/search/history review
+2. register MCP so the agent can call coach/rewrite/judge tools inside the session
+3. send one real coding request
+4. run `prompt-memory doctor <tool>` and `prompt-memory coach` to see the first score and improvement suggestion
+5. open the local archive only when you want dashboard/search/history review
 
 For most users, start with:
 
 ```sh
+prompt-memory start
 prompt-memory setup --profile coach
+claude mcp add --transport stdio prompt-memory -- prompt-memory mcp
+# or: codex mcp add prompt-memory -- prompt-memory mcp
+# send one real Claude Code or Codex prompt
 prompt-memory doctor claude-code
-prompt-memory coach --json
+prompt-memory coach
 ```
 
 ## Status
@@ -43,9 +48,9 @@ This repository is pre-release software.
 - Anonymized export: web UI and CLI preview/job flow
 - Benchmark v1: implemented as a local regression baseline
 - English/Korean web UI: implemented
-- External LLM analysis: no hidden provider calls; optional MCP agent-judge
-  packet is implemented for the active user-controlled Claude Code/Codex
-  session
+- External LLM analysis: no hidden provider calls from `prompt-memory`;
+  optional MCP agent rewrite/judge packets can enter the active
+  user-controlled Claude Code/Codex/Gemini CLI provider session when requested
 - Default data handling: local only
 
 ## Requirements
@@ -528,6 +533,7 @@ project policy versions, redaction version, or preview counts change.
 Generate a copy-based Prompt Coach draft:
 
 ```sh
+pnpm prompt-memory coach
 pnpm prompt-memory coach --json
 pnpm prompt-memory improve --text "make this request clearer" --json
 pnpm prompt-memory improve --latest --json
@@ -724,9 +730,11 @@ Default behavior:
 - Hook ingest uses a local bearer token stored in `hook-auth.json`.
 - The browser UI uses a same-origin session cookie and CSRF token.
 - Sensitive values are redacted before Markdown, SQLite, and FTS indexing in `mask` mode.
-- External LLM analysis is never triggered as a hidden background call. The
-  optional MCP agent-judge workflow returns redacted prompt packets to the
-  active user-controlled agent session only when requested.
+- External LLM analysis is never triggered as a hidden background call by
+  `prompt-memory`. Optional MCP agent rewrite/judge workflows can return
+  redacted prompt packets to the active user-controlled Claude Code, Codex, or
+  Gemini CLI session when requested, and that agent may send the packet through
+  its provider session according to the user's tool setup.
 - Prompt Coach is copy-based. It does not automatically type into, replace, or resubmit prompts into Claude Code or Codex.
 - Prompt Rewrite Guard is opt-in. In `block-and-copy` mode it blocks weak prompts and offers a copied local rewrite for manual paste/enter. In `context` mode it adds model-visible rewrite guidance but does not replace the original prompt.
 - Settings and local diagnostics may show local filesystem paths to the local user. Browser prompt/archive/export surfaces mask prompt-body paths and avoid raw prompt identifiers.

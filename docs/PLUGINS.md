@@ -17,13 +17,17 @@ The plugin package is therefore discovery and convenience, not hidden
 installation. Users who want active prompt coaching should still run:
 
 ```sh
+prompt-memory start
 prompt-memory setup --profile coach
+claude mcp add --transport stdio prompt-memory -- prompt-memory mcp
+# or: codex mcp add prompt-memory -- prompt-memory mcp
 ```
 
 The coach profile installs capture hooks, low-friction rewrite guidance through
 hook context, local server startup where supported, and the Claude Code status
-line when Claude Code is detected. Plain `prompt-memory setup` remains available
-for passive capture only.
+line when Claude Code is detected. MCP registration is still explicit because
+it gives the active agent session access to coach/rewrite/judge tools. Plain
+`prompt-memory setup` remains available for passive capture only.
 
 Use a preview first when reviewing changes:
 
@@ -207,9 +211,11 @@ flows do not return stored original prompt bodies. The archive and status tools
 avoid raw absolute paths, and the instruction review tool avoids file bodies and
 raw absolute paths. The agent rewrite/judge packets are explicit because they
 return redacted prompt bodies to the active user-controlled agent session for
-rewrite or evaluation; `prompt-memory` does not extract, proxy, or reuse
-provider credentials. Read tool definitions are marked read-only, idempotent,
-and local-only through MCP annotations. `record_agent_rewrite` and
+rewrite or evaluation; that agent may send the packet through its provider
+session according to the user's tool setup. `prompt-memory` does not extract,
+proxy, or reuse provider credentials. Read tool definitions are marked
+read-only, idempotent, and local-only through MCP annotations.
+`record_agent_rewrite` and
 `record_agent_judgments` are marked as non-destructive write tools. Each
 `tools/call` response includes
 `structuredContent` plus a JSON text block for clients that still expect text
@@ -275,6 +281,7 @@ prompt-memory:record_agent_judgments provider=codex judgments=[...]
 ```
 
 ```sh
+prompt-memory coach
 prompt-memory coach --json
 prompt-memory score --latest --json
 prompt-memory improve --latest --json

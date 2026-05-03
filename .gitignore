@@ -36,6 +36,7 @@ yarn-error.log*
 pnpm-debug.log*
 
 # Browser verification artifacts
+.playwright-cli/
 .playwright-mcp/
 output/playwright/
 playwright-report/
