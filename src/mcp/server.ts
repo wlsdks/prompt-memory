@@ -6,23 +6,28 @@ import {
   COACH_PROMPT_TOOL_DEFINITION,
   GET_PROMPT_MEMORY_STATUS_TOOL_DEFINITION,
   IMPROVE_PROMPT_TOOL_DEFINITION,
+  PROMPT_MEMORY_MCP_TOOL_DEFINITIONS,
+  REVIEW_PROJECT_INSTRUCTIONS_TOOL_DEFINITION,
   SCORE_PROMPT_ARCHIVE_TOOL_DEFINITION,
   SCORE_PROMPT_TOOL_DEFINITION,
-  REVIEW_PROJECT_INSTRUCTIONS_TOOL_DEFINITION,
+} from "./score-tool-definitions.js";
+import {
   coachPromptTool,
   getPromptMemoryStatusTool,
   improvePromptTool,
   reviewProjectInstructionsTool,
   scorePromptArchiveTool,
   scorePromptTool,
-  type CoachPromptToolArguments,
-  type GetPromptMemoryStatusToolArguments,
-  type ImprovePromptToolArguments,
-  type ReviewProjectInstructionsToolArguments,
-  type ScorePromptArchiveToolArguments,
-  type ScorePromptToolArguments,
-  type ScorePromptToolOptions,
 } from "./score-tool.js";
+import type {
+  CoachPromptToolArguments,
+  GetPromptMemoryStatusToolArguments,
+  ImprovePromptToolArguments,
+  ReviewProjectInstructionsToolArguments,
+  ScorePromptArchiveToolArguments,
+  ScorePromptToolArguments,
+  ScorePromptToolOptions,
+} from "./score-tool-types.js";
 
 type JsonRpcId = string | number | null;
 
@@ -49,6 +54,41 @@ type JsonRpcResponse =
     };
 
 export type PromptMemoryMcpServerOptions = ScorePromptToolOptions;
+
+type PromptMemoryToolResult =
+  | ReturnType<typeof getPromptMemoryStatusTool>
+  | ReturnType<typeof coachPromptTool>
+  | ReturnType<typeof scorePromptTool>
+  | ReturnType<typeof improvePromptTool>
+  | ReturnType<typeof scorePromptArchiveTool>
+  | ReturnType<typeof reviewProjectInstructionsTool>;
+
+type PromptMemoryToolHandler = (
+  args: Record<string, unknown>,
+  options: PromptMemoryMcpServerOptions,
+) => PromptMemoryToolResult;
+
+const PROMPT_MEMORY_MCP_TOOL_HANDLERS: Record<string, PromptMemoryToolHandler> =
+  {
+    [GET_PROMPT_MEMORY_STATUS_TOOL_DEFINITION.name]: (args, options) =>
+      getPromptMemoryStatusTool(
+        args as GetPromptMemoryStatusToolArguments,
+        options,
+      ),
+    [COACH_PROMPT_TOOL_DEFINITION.name]: (args, options) =>
+      coachPromptTool(args as CoachPromptToolArguments, options),
+    [SCORE_PROMPT_TOOL_DEFINITION.name]: (args, options) =>
+      scorePromptTool(args as ScorePromptToolArguments, options),
+    [IMPROVE_PROMPT_TOOL_DEFINITION.name]: (args, options) =>
+      improvePromptTool(args as ImprovePromptToolArguments, options),
+    [SCORE_PROMPT_ARCHIVE_TOOL_DEFINITION.name]: (args, options) =>
+      scorePromptArchiveTool(args as ScorePromptArchiveToolArguments, options),
+    [REVIEW_PROJECT_INSTRUCTIONS_TOOL_DEFINITION.name]: (args, options) =>
+      reviewProjectInstructionsTool(
+        args as ReviewProjectInstructionsToolArguments,
+        options,
+      ),
+  };
 
 export async function runPromptMemoryMcpServer(
   options: PromptMemoryMcpServerOptions = {},
@@ -129,14 +169,7 @@ export function handleMcpMessage(
       return jsonRpcResult(id, {});
     case "tools/list":
       return jsonRpcResult(id, {
-        tools: [
-          GET_PROMPT_MEMORY_STATUS_TOOL_DEFINITION,
-          COACH_PROMPT_TOOL_DEFINITION,
-          SCORE_PROMPT_TOOL_DEFINITION,
-          IMPROVE_PROMPT_TOOL_DEFINITION,
-          SCORE_PROMPT_ARCHIVE_TOOL_DEFINITION,
-          REVIEW_PROJECT_INSTRUCTIONS_TOOL_DEFINITION,
-        ],
+        tools: PROMPT_MEMORY_MCP_TOOL_DEFINITIONS,
       });
     case "tools/call":
       return handleToolCall(id, message.params, options);
@@ -158,35 +191,8 @@ function handleToolCall(
     );
   }
 
-  const result =
-    params.name === GET_PROMPT_MEMORY_STATUS_TOOL_DEFINITION.name
-      ? getPromptMemoryStatusTool(
-          params.arguments as GetPromptMemoryStatusToolArguments,
-          options,
-        )
-      : params.name === COACH_PROMPT_TOOL_DEFINITION.name
-        ? coachPromptTool(params.arguments as CoachPromptToolArguments, options)
-        : params.name === SCORE_PROMPT_TOOL_DEFINITION.name
-          ? scorePromptTool(
-              params.arguments as ScorePromptToolArguments,
-              options,
-            )
-          : params.name === IMPROVE_PROMPT_TOOL_DEFINITION.name
-            ? improvePromptTool(
-                params.arguments as ImprovePromptToolArguments,
-                options,
-              )
-            : params.name === SCORE_PROMPT_ARCHIVE_TOOL_DEFINITION.name
-              ? scorePromptArchiveTool(
-                  params.arguments as ScorePromptArchiveToolArguments,
-                  options,
-                )
-              : params.name === REVIEW_PROJECT_INSTRUCTIONS_TOOL_DEFINITION.name
-                ? reviewProjectInstructionsTool(
-                    params.arguments as ReviewProjectInstructionsToolArguments,
-                    options,
-                  )
-                : undefined;
+  const handler = PROMPT_MEMORY_MCP_TOOL_HANDLERS[params.name];
+  const result = handler?.(params.arguments, options);
 
   if (!result) {
     return jsonRpcError(id, -32602, `Unknown tool: ${params.name}`);

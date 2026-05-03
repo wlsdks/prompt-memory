@@ -59,6 +59,7 @@ pnpm prompt-memory server -- --data-dir <temp-data-dir>
 - CLI command 파일은 Commander 등록, orchestration, terminal formatting을 담당한다. 점수 계산, redaction, archive 분석 같은 도메인 규칙을 새로 만들지 않는다.
 - Fastify route는 HTTP/auth/validation/response shaping에 집중한다. 저장소 접근은 storage port나 명확한 storage 함수로 제한한다.
 - `src/web/src/App.tsx`, `src/storage/sqlite.ts`, `src/mcp/score-tool.ts`는 이미 큰 경계 모듈이다. 새 기능은 가능한 한 작은 모델/formatter/helper 파일로 분리하고, 이 파일들을 더 키우는 변경은 이유를 설명한다.
+- MCP 변경은 `score-tool-definitions.ts`의 tool/schema, `score-tool-types.ts`의 argument/result contract, `score-tool.ts`의 handler/result shaping, `server.ts`의 JSON-RPC routing 경계를 유지한다.
 - 새 public runtime entrypoint를 만들면 `package.json` `files`, packaging tests, README/PLUGINS 문서까지 같이 갱신한다.
 
 ## UI와 디자인

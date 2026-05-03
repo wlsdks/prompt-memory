@@ -1,5 +1,19 @@
 # 작업 계획
 
+## 2026-05-03 MCP Tool Contract Refactor
+
+- [x] 현재 main 품질 지표와 큰 파일 압박점 재확인
+- [x] MCP tool contract/schema를 handler 구현에서 분리
+- [x] architecture docs와 quality gate를 새 경계에 맞춰 갱신
+- [x] targeted MCP tests와 전체 release gate 실행
+- [ ] PR 생성, CI 확인, main merge, branch cleanup
+
+### 판단 기준
+
+- MCP tool 정의, output schema, handler 구현, storage access가 한 파일에서 계속 커지지 않아야 한다.
+- tool 설명은 Claude Code/Codex가 직접 선택할 수 있을 만큼 구체적이어야 하고 privacy-safe 반환 규칙을 반복해야 한다.
+- handler behavior는 바꾸지 않고 contract-only extraction으로 regression surface를 최소화한다.
+
 ## 2026-05-03 Codebase Quality Pass
 
 - [x] 새 작업 브랜치에서 시작하고 현재 보호/PR 운영 규칙 확인
