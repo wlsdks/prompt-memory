@@ -10,7 +10,7 @@ describe("start guide", () => {
     expect(guide.tools).toEqual(["claude-code", "codex"]);
     expect(guide.steps.flatMap((step) => step.commands)).toEqual(
       expect.arrayContaining([
-        "prompt-memory setup --profile coach",
+        "prompt-memory setup --profile coach --register-mcp",
         "claude mcp add --transport stdio prompt-memory -- prompt-memory mcp",
         "codex mcp add prompt-memory -- prompt-memory mcp",
         "prompt-memory doctor claude-code",

@@ -28,22 +28,24 @@ pnpm build
 For the lowest-friction setup, preview the coach profile first:
 
 ```bash
-prompt-memory setup --profile coach --dry-run
+prompt-memory setup --profile coach --register-mcp --dry-run
 ```
 
 Explain the planned changes to the user. The setup may initialize
 `~/.prompt-memory`, add Claude Code or Codex hooks, and install a local server
 service where supported. The coach profile also installs low-friction rewrite
-guidance and the Claude Code status line when Claude Code is detected.
+guidance and the Claude Code status line when Claude Code is detected. With
+`--register-mcp`, it also runs the detected `claude mcp add` or `codex mcp add`
+command so this active agent can use prompt-memory tools.
 
 If the user approves, run:
 
 ```bash
-prompt-memory setup --profile coach
+prompt-memory setup --profile coach --register-mcp
 ```
 
-Then register MCP so this agent can call prompt-memory tools inside the active
-session:
+If MCP registration fails or the user chooses not to use `--register-mcp`,
+provide the manual command:
 
 ```bash
 claude mcp add --transport stdio prompt-memory -- prompt-memory mcp

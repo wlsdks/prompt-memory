@@ -14,7 +14,11 @@ import {
   type StatusLineInstallResult,
 } from "./statusline.js";
 import type { PromptRewriteGuardMode } from "../../hooks/rewrite-guard.js";
-import { doctorCommand, mcpRegistrationCommand } from "../agent-access.js";
+import {
+  doctorCommand,
+  mcpRegistrationCommand,
+  mcpRegistrationSpec,
+} from "../agent-access.js";
 
 export type SetupTool = "claude-code" | "codex";
 export type SetupProfile = "capture" | "coach";
@@ -38,6 +42,15 @@ export type SetupOptions = {
   platform?: NodeJS.Platform;
   detectedTools?: SetupTool[];
   commandExists?: (command: string) => boolean;
+  commandRunner?: (
+    command: string,
+    args: string[],
+  ) => {
+    status: number | null;
+    stderr?: string | Buffer;
+    error?: Error;
+  };
+  registerMcp?: boolean;
   json?: boolean;
 };
 
@@ -87,7 +100,19 @@ export type SetupResult = {
     started: boolean;
     startError?: string;
   };
+  mcp: {
+    registerRequested: boolean;
+    claudeCode?: McpRegistrationResult;
+    codex?: McpRegistrationResult;
+  };
   nextSteps: string[];
+};
+
+export type McpRegistrationResult = {
+  command: string;
+  dryRun: boolean;
+  ok: boolean;
+  error?: string;
 };
 
 export function registerSetupCommand(program: Command): void {
@@ -120,6 +145,10 @@ export function registerSetupCommand(program: Command): void {
     )
     .option("--dry-run", "Preview setup without writing files.")
     .option("--json", "Print machine-readable JSON.")
+    .option(
+      "--register-mcp",
+      "Also register the local MCP server with detected Claude Code/Codex CLIs.",
+    )
     .option("--no-service", "Do not install a background server service.")
     .option("--no-start-service", "Install service but do not start it now.")
     .option("--skip-statusline", "Do not install the Claude Code status line.")
@@ -136,10 +165,22 @@ export function registerSetupCommand(program: Command): void {
           ? JSON.stringify(result, null, 2)
           : formatSetupResult(result),
       );
-      if (!result.service.supported && !noService) {
+      if (setupNeedsAttention(result, noService)) {
         process.exitCode = 1;
       }
     });
+}
+
+export function setupNeedsAttention(
+  result: SetupResult,
+  noService: boolean,
+): boolean {
+  return (
+    (!result.service.supported && !noService) ||
+    [result.mcp.claudeCode, result.mcp.codex].some(
+      (mcpResult) => mcpResult && !mcpResult.dryRun && !mcpResult.ok,
+    )
+  );
 }
 
 export function formatSetupResult(result: SetupResult): string {
@@ -163,6 +204,12 @@ export function formatSetupResult(result: SetupResult): string {
       `- Coach profile: on (${result.coach.rewriteGuard?.mode ?? "default"})`,
     );
   }
+  if (result.mcp.registerRequested) {
+    lines.push(
+      `- Claude Code MCP: ${formatMcpRegistration(result.mcp.claudeCode)}`,
+    );
+    lines.push(`- Codex MCP: ${formatMcpRegistration(result.mcp.codex)}`);
+  }
 
   lines.push("", "Next:");
   for (const step of result.nextSteps) {
@@ -181,6 +228,14 @@ function formatServiceStatus(service: SetupResult["service"]): string {
   if (!service.supported) return "manual start required";
   if (!service.installed) return "not installed";
   return service.started ? "installed and running" : "installed";
+}
+
+function formatMcpRegistration(
+  result: McpRegistrationResult | undefined,
+): string {
+  if (!result) return "not detected";
+  if (result.dryRun) return "preview";
+  return result.ok ? "registered" : `failed (${result.error ?? "unknown"})`;
 }
 
 export function runSetup(options: SetupOptions = {}): SetupResult {
@@ -229,6 +284,7 @@ export function runSetup(options: SetupOptions = {}): SetupResult {
         dryRun: options.dryRun,
         start: options.startService ?? true,
       });
+  const mcpResult = registerMcpForTools(detectedTools, options);
 
   return {
     dryRun: Boolean(options.dryRun),
@@ -249,12 +305,14 @@ export function runSetup(options: SetupOptions = {}): SetupResult {
         : undefined,
     },
     service: formatService(serviceResult),
+    mcp: mcpResult,
     nextSteps: buildNextSteps({
       profile,
       detectedTools,
       serviceResult,
       noService: options.noService,
       statusLineResult,
+      mcpResult,
     }),
   };
 }
@@ -398,6 +456,7 @@ function buildNextSteps(options: {
   serviceResult?: ServiceInstallResult;
   noService?: boolean;
   statusLineResult?: StatusLineInstallResult;
+  mcpResult: SetupResult["mcp"];
 }): string[] {
   const steps: string[] = [];
 
@@ -419,10 +478,24 @@ function buildNextSteps(options: {
     steps.push(
       "Coach profile enabled: prompt-memory will add low-friction rewrite guidance inside supported hooks.",
     );
-    for (const tool of options.detectedTools) {
-      steps.push(
-        `Register MCP for agent commands: ${mcpRegistrationCommand(tool)}.`,
-      );
+    if (!options.mcpResult.registerRequested) {
+      for (const tool of options.detectedTools) {
+        steps.push(
+          `Register MCP for agent commands: ${mcpRegistrationCommand(tool)}.`,
+        );
+      }
+    } else {
+      for (const tool of options.detectedTools) {
+        const result =
+          tool === "claude-code"
+            ? options.mcpResult.claudeCode
+            : options.mcpResult.codex;
+        if (result && !result.dryRun && !result.ok) {
+          steps.push(
+            `Retry MCP registration: ${mcpRegistrationCommand(tool)}.`,
+          );
+        }
+      }
     }
     if (options.statusLineResult) {
       steps.push(
@@ -446,6 +519,74 @@ function buildDoctorNextStep(tools: SetupTool[]): string {
   }
 
   return "Run prompt-memory doctor claude-code or prompt-memory doctor codex if capture does not appear.";
+}
+
+function registerMcpForTools(
+  tools: SetupTool[],
+  options: SetupOptions,
+): SetupResult["mcp"] {
+  if (!options.registerMcp) {
+    return { registerRequested: false };
+  }
+
+  return {
+    registerRequested: true,
+    claudeCode: tools.includes("claude-code")
+      ? registerMcpForTool("claude-code", options)
+      : undefined,
+    codex: tools.includes("codex")
+      ? registerMcpForTool("codex", options)
+      : undefined,
+  };
+}
+
+function registerMcpForTool(
+  tool: SetupTool,
+  options: SetupOptions,
+): McpRegistrationResult {
+  const spec = mcpRegistrationSpec(tool);
+  const command = mcpRegistrationCommand(tool);
+  if (options.dryRun) {
+    return { command, dryRun: true, ok: true };
+  }
+
+  const runner = options.commandRunner ?? defaultCommandRunner;
+  const result = runner(spec.command, spec.args);
+  const ok = result.status === 0;
+  return {
+    command,
+    dryRun: false,
+    ok,
+    ...(ok ? {} : { error: formatCommandError(result) }),
+  };
+}
+
+function defaultCommandRunner(
+  command: string,
+  args: string[],
+): {
+  status: number | null;
+  stderr?: string | Buffer;
+  error?: Error;
+} {
+  return spawnSync(command, args, { encoding: "utf8" });
+}
+
+function formatCommandError(result: {
+  status: number | null;
+  stderr?: string | Buffer;
+  error?: Error;
+}): string {
+  if (result.error?.message) {
+    return result.error.message;
+  }
+  if (result.stderr) {
+    const stderr = String(result.stderr).trim();
+    if (stderr.length > 0) {
+      return stderr;
+    }
+  }
+  return result.status === null ? "command failed" : `exit ${result.status}`;
 }
 
 function defaultCommandExists(command: string): boolean {

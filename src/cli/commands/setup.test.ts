@@ -4,7 +4,7 @@ import { join } from "node:path";
 import { randomUUID } from "node:crypto";
 import { afterEach, describe, expect, it } from "vitest";
 
-import { formatSetupResult, runSetup } from "./setup.js";
+import { formatSetupResult, runSetup, setupNeedsAttention } from "./setup.js";
 
 const tempDirs: string[] = [];
 
@@ -135,6 +135,88 @@ describe("runSetup", () => {
     expect(codexHooks).toContain("prompt-memory hook codex");
     expect(codexHooks).toContain("--rewrite-guard");
     expect(codexHooks).toContain("context");
+  });
+
+  it("previews MCP registration without running external agent commands", () => {
+    const commands: string[] = [];
+
+    const result = runSetup({
+      profile: "coach",
+      dryRun: true,
+      noService: true,
+      registerMcp: true,
+      detectedTools: ["claude-code", "codex"],
+      commandRunner: (command, args) => {
+        commands.push([command, ...args].join(" "));
+        return { status: 0 };
+      },
+    });
+
+    expect(commands).toEqual([]);
+    expect(result.mcp.registerRequested).toBe(true);
+    expect(result.mcp.claudeCode).toMatchObject({
+      dryRun: true,
+      ok: true,
+    });
+    expect(result.mcp.codex).toMatchObject({
+      dryRun: true,
+      ok: true,
+    });
+    expect(formatSetupResult(result)).toContain("Claude Code MCP: preview");
+    expect(formatSetupResult(result)).toContain("Codex MCP: preview");
+  });
+
+  it("registers MCP only when explicitly requested", () => {
+    const commands: string[] = [];
+
+    const result = runSetup({
+      profile: "coach",
+      noService: true,
+      registerMcp: true,
+      detectedTools: ["claude-code", "codex"],
+      commandRunner: (command, args) => {
+        commands.push([command, ...args].join(" "));
+        return { status: command === "claude" ? 0 : 1, stderr: "denied" };
+      },
+    });
+
+    expect(commands).toEqual([
+      "claude mcp add --transport stdio prompt-memory -- prompt-memory mcp",
+      "codex mcp add prompt-memory -- prompt-memory mcp",
+    ]);
+    expect(result.mcp.claudeCode).toMatchObject({ ok: true, dryRun: false });
+    expect(result.mcp.codex).toMatchObject({
+      ok: false,
+      dryRun: false,
+      error: "denied",
+    });
+    expect(formatSetupResult(result)).toContain("Claude Code MCP: registered");
+    expect(formatSetupResult(result)).toContain("Codex MCP: failed");
+    expect(result.nextSteps).toContain(
+      "Retry MCP registration: codex mcp add prompt-memory -- prompt-memory mcp.",
+    );
+    expect(setupNeedsAttention(result, true)).toBe(true);
+  });
+
+  it("does not register MCP during default coach setup", () => {
+    const commands: string[] = [];
+
+    const result = runSetup({
+      profile: "coach",
+      noService: true,
+      detectedTools: ["claude-code"],
+      commandRunner: (command, args) => {
+        commands.push([command, ...args].join(" "));
+        return { status: 0 };
+      },
+    });
+
+    expect(commands).toEqual([]);
+    expect(result.mcp.registerRequested).toBe(false);
+    expect(result.mcp.claudeCode).toBeUndefined();
+    expect(result.nextSteps).toContain(
+      "Register MCP for agent commands: claude mcp add --transport stdio prompt-memory -- prompt-memory mcp.",
+    );
   });
 
   it("coach profile can opt into stricter block-and-copy guard", () => {
