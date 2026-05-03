@@ -8,7 +8,7 @@
 - [x] agent rewrite/judge privacy 문구를 agent-mediated egress risk 기준으로 강화
 - [x] 웹 빈 상태를 첫 prompt capture + score 확인 중심으로 단순화
 - [x] targeted/full 검증 실행
-- [ ] PR 생성, CI 확인, main merge, branch cleanup
+- [x] PR 생성, CI 확인, main merge, branch cleanup
 
 ### 판단 기준
 
