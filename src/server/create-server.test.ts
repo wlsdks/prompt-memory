@@ -6,6 +6,7 @@ import { describe, expect, it } from "vitest";
 import { createServer } from "./create-server.js";
 import type {
   ExportJob,
+  ProjectInstructionReview,
   PromptDetail,
   PromptStoragePort,
 } from "../storage/ports.js";
@@ -241,6 +242,55 @@ describe("createServer P2 ingest boundary", () => {
     expect(updated.body).not.toContain("/Users/example/private-project");
   });
 
+  it("analyzes project instruction files behind csrf without exposing raw bodies or paths", async () => {
+    const storage = createMemoryStorage();
+    const server = createTestServer({ storage });
+    const session = await server.inject({
+      method: "GET",
+      url: "/api/v1/session",
+      headers: { host: "127.0.0.1:17373" },
+    });
+    const cookie = String(session.headers["set-cookie"]);
+    const csrfToken = session.json<{ data: { csrf_token: string } }>().data
+      .csrf_token;
+
+    const noCsrf = await server.inject({
+      method: "POST",
+      url: "/api/v1/projects/proj_memory/instructions/analyze",
+      headers: {
+        host: "127.0.0.1:17373",
+        cookie,
+      },
+    });
+    expect(noCsrf.statusCode).toBe(403);
+
+    const analyzed = await server.inject({
+      method: "POST",
+      url: "/api/v1/projects/proj_memory/instructions/analyze",
+      headers: {
+        host: "127.0.0.1:17373",
+        cookie,
+        "x-csrf-token": csrfToken,
+      },
+    });
+
+    expect(analyzed.statusCode).toBe(200);
+    expect(analyzed.json()).toMatchObject({
+      data: {
+        analyzer: "local-project-instructions-v1",
+        files_found: 1,
+        score: { value: 80, max: 100, band: "good" },
+        privacy: {
+          local_only: true,
+          returns_file_bodies: false,
+          returns_raw_paths: false,
+        },
+      },
+    });
+    expect(analyzed.body).not.toContain("/Users/example/private-project");
+    expect(analyzed.body).not.toContain("Do not leak this file body");
+  });
+
   it("requires csrf for anonymized export preview and executes by job id", async () => {
     const storage = createMemoryStorage();
     storage.promptDetails = [
@@ -370,21 +420,26 @@ describe("createServer P2 ingest boundary", () => {
     expect(fallback.statusCode).toBe(200);
     expect(fallback.body).toContain('<div id="root"></div>');
 
-    const dashboard = await server.inject({
-      method: "GET",
-      url: "/dashboard",
-      headers: { host: "127.0.0.1:17373" },
-    });
-    expect(dashboard.statusCode).toBe(200);
-    expect(dashboard.body).toContain('<div id="root"></div>');
-
-    const projects = await server.inject({
-      method: "GET",
-      url: "/projects",
-      headers: { host: "127.0.0.1:17373" },
-    });
-    expect(projects.statusCode).toBe(200);
-    expect(projects.body).toContain('<div id="root"></div>');
+    for (const path of [
+      "/dashboard",
+      "/coach",
+      "/practice",
+      "/scores",
+      "/benchmark",
+      "/insights",
+      "/projects",
+      "/mcp",
+      "/exports",
+      "/settings",
+    ]) {
+      const route = await server.inject({
+        method: "GET",
+        url: path,
+        headers: { host: "127.0.0.1:17373" },
+      });
+      expect(route.statusCode).toBe(200);
+      expect(route.body).toContain('<div id="root"></div>');
+    }
 
     const asset = await server.inject({
       method: "GET",
@@ -821,12 +876,14 @@ function createMemoryStorage() {
     actor: "cli" | "web" | "system";
   }> = [];
   const exportJobs = new Map<string, ExportJob>();
+  const instructionReviews = new Map<string, ProjectInstructionReview>();
 
   return {
     events,
     policyUpdates,
     promptDetails: [] as PromptDetail[],
     exportJobs,
+    instructionReviews,
     policyForIngest: undefined as
       | {
           capture_disabled: boolean;
@@ -900,6 +957,37 @@ function createMemoryStorage() {
         throw new Error("lookup failed");
       }
       return this.policyForIngest;
+    },
+    getProjectInstructionReview(projectId: string) {
+      return instructionReviews.get(projectId);
+    },
+    analyzeProjectInstructions(projectId: string) {
+      const review: ProjectInstructionReview = {
+        generated_at: "2026-05-03T00:00:00.000Z",
+        analyzer: "local-project-instructions-v1",
+        score: { value: 80, max: 100, band: "good" },
+        files_found: 1,
+        files: [
+          {
+            file_name: "AGENTS.md",
+            bytes: 100,
+            modified_at: "2026-05-03T00:00:00.000Z",
+            content_hash: "abcdef1234567890",
+            truncated: false,
+          },
+        ],
+        checklist: [],
+        suggestions: ["Add exact verification commands."],
+        privacy: {
+          local_only: true,
+          external_calls: false,
+          stores_file_bodies: false,
+          returns_file_bodies: false,
+          returns_raw_paths: false,
+        },
+      };
+      instructionReviews.set(projectId, review);
+      return review;
     },
     listPrompts() {
       return {
@@ -989,6 +1077,7 @@ function createMemoryStorage() {
     }>;
     promptDetails: PromptDetail[];
     exportJobs: Map<string, ExportJob>;
+    instructionReviews: Map<string, ProjectInstructionReview>;
     policyForIngest:
       | {
           capture_disabled: boolean;

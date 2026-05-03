@@ -3,13 +3,23 @@ import { createHmac, randomUUID } from "node:crypto";
 import {
   existsSync,
   mkdirSync,
+  readFileSync,
   readdirSync,
   statSync,
   unlinkSync,
 } from "node:fs";
-import { join } from "node:path";
+import { basename, dirname, join } from "node:path";
 
-import { analyzePrompt } from "../analysis/analyze.js";
+import {
+  analyzePrompt,
+  calculatePromptQualityScore,
+  qualityScoreBand,
+} from "../analysis/analyze.js";
+import {
+  analyzeProjectInstructionFiles,
+  PROJECT_INSTRUCTION_FILENAMES,
+  type ProjectInstructionSourceFile,
+} from "../analysis/project-instructions.js";
 import { redactPrompt } from "../redaction/redact.js";
 import { createPromptId } from "../shared/ids.js";
 import { createStoredContentHash } from "../shared/hashing.js";
@@ -38,6 +48,8 @@ import type {
   ListPromptsOptions,
   PromptDetail,
   ProjectListResult,
+  ProjectInstructionReview,
+  ProjectInstructionStoragePort,
   ProjectPolicy,
   ProjectPolicyActor,
   ProjectPolicyPatch,
@@ -116,6 +128,13 @@ type PromptUsefulnessRow = {
 
 type UsefulPromptRow = PromptRow & PromptUsefulnessRow;
 
+type PromptSignalRow = {
+  checklist_json: string | null;
+  tags_json: string | null;
+};
+
+type PromptWithSignalRow = PromptRow & PromptSignalRow;
+
 type ProjectPolicyRow = {
   project_key: string;
   display_alias: string | null;
@@ -137,6 +156,19 @@ type ProjectPromptRow = {
   checklist_json: string | null;
   copied_count: number;
   bookmarked_count: number;
+};
+
+type ProjectInstructionReviewRow = {
+  project_key: string;
+  generated_at: string;
+  analyzer: string;
+  score: number;
+  score_band: string;
+  files_found: number;
+  files_json: string;
+  checklist_json: string;
+  suggestions_json: string;
+  privacy_json: string;
 };
 
 type ImportJobRow = {
@@ -200,6 +232,7 @@ export type AppliedMigration = {
 export type SqlitePromptStorage = PromptStoragePort &
   PromptReadStoragePort &
   ProjectPolicyStoragePort &
+  ProjectInstructionStoragePort &
   ImportJobStoragePort &
   ExportJobStoragePort & {
     close(): void;
@@ -282,6 +315,17 @@ export function createSqlitePromptStorage(
     },
     listProjects() {
       return listProjectsForPolicy(db, options.hmacSecret);
+    },
+    getProjectInstructionReview(projectId) {
+      return readProjectInstructionReview(db, projectId);
+    },
+    analyzeProjectInstructions(projectId) {
+      return analyzeProjectInstructions(
+        db,
+        options.hmacSecret,
+        projectId,
+        options.now?.() ?? new Date(),
+      );
     },
     updateProjectPolicy(projectId, patch, actor) {
       return updateProjectPolicy(
@@ -372,6 +416,8 @@ function applyMigrations(db: Database.Database): void {
   applyImportJobMigration(db);
   applyPromptImprovementDraftMigration(db);
   applyExportJobMigration(db);
+  applyDashboardQueryIndexMigration(db);
+  applyProjectInstructionReviewMigration(db);
 }
 
 function applyAnalysisChecklistTagsMigration(db: Database.Database): void {
@@ -595,6 +641,63 @@ function applyExportJobMigration(db: Database.Database): void {
     db.prepare(
       "INSERT INTO schema_migrations(version, name, applied_at) VALUES (?, ?, ?)",
     ).run(8, "008_export_jobs", new Date().toISOString());
+  }
+}
+
+function applyDashboardQueryIndexMigration(db: Database.Database): void {
+  const applied = db
+    .prepare("SELECT 1 FROM schema_migrations WHERE version = ?")
+    .get(9);
+
+  db.exec(`
+    CREATE INDEX IF NOT EXISTS idx_prompts_deleted_received
+      ON prompts(deleted_at, received_at DESC, id DESC);
+    CREATE INDEX IF NOT EXISTS idx_prompts_deleted_tool_received
+      ON prompts(deleted_at, tool, received_at DESC, id DESC);
+    CREATE INDEX IF NOT EXISTS idx_prompts_deleted_sensitive
+      ON prompts(deleted_at, is_sensitive);
+    CREATE INDEX IF NOT EXISTS idx_prompts_deleted_hash_received
+      ON prompts(deleted_at, stored_content_hash, received_at DESC, id DESC);
+    CREATE INDEX IF NOT EXISTS idx_prompts_deleted_cwd_received
+      ON prompts(deleted_at, cwd, received_at DESC, id DESC);
+    CREATE INDEX IF NOT EXISTS idx_prompts_deleted_project_root_received
+      ON prompts(deleted_at, project_root, received_at DESC, id DESC);
+  `);
+
+  if (!applied) {
+    db.prepare(
+      "INSERT INTO schema_migrations(version, name, applied_at) VALUES (?, ?, ?)",
+    ).run(9, "009_dashboard_query_indexes", new Date().toISOString());
+  }
+}
+
+function applyProjectInstructionReviewMigration(db: Database.Database): void {
+  const applied = db
+    .prepare("SELECT 1 FROM schema_migrations WHERE version = ?")
+    .get(10);
+
+  db.exec(`
+    CREATE TABLE IF NOT EXISTS project_instruction_reviews (
+      project_key TEXT PRIMARY KEY,
+      generated_at TEXT NOT NULL,
+      analyzer TEXT NOT NULL,
+      score INTEGER NOT NULL,
+      score_band TEXT NOT NULL,
+      files_found INTEGER NOT NULL,
+      files_json TEXT NOT NULL,
+      checklist_json TEXT NOT NULL,
+      suggestions_json TEXT NOT NULL,
+      privacy_json TEXT NOT NULL
+    );
+
+    CREATE INDEX IF NOT EXISTS idx_project_instruction_reviews_generated_at
+      ON project_instruction_reviews(generated_at DESC);
+  `);
+
+  if (!applied) {
+    db.prepare(
+      "INSERT INTO schema_migrations(version, name, applied_at) VALUES (?, ?, ?)",
+    ).run(10, "010_project_instruction_reviews", new Date().toISOString());
   }
 }
 
@@ -1095,6 +1198,8 @@ function toPromptSummary(db: Database.Database, row: PromptRow): PromptSummary {
       analysis?.checklist
         .filter((item) => item.status !== "good")
         .map((item) => item.label) ?? [],
+    quality_score: analysis?.quality_score.value ?? 0,
+    quality_score_band: analysis?.quality_score.band ?? "weak",
     usefulness: readPromptUsefulness(db, row.id),
     duplicate_count: readPromptDuplicateCount(db, row.stored_content_hash),
   };
@@ -1528,6 +1633,14 @@ function parseJsonValue(value: string): unknown {
   }
 }
 
+function parseJson<T>(value: string, fallback: T): T {
+  try {
+    return JSON.parse(value) as T;
+  } catch {
+    return fallback;
+  }
+}
+
 function readNumberRecord(value: string): Record<string, number> {
   const parsed = parseJsonValue(value);
 
@@ -1592,7 +1705,7 @@ function readPromptUsefulness(
     .prepare(
       `
       SELECT
-        COUNT(pue.id) AS copied_count,
+        COUNT(DISTINCT pue.id) AS copied_count,
         MAX(pue.created_at) AS last_copied_at,
         pb.created_at AS bookmarked_at
       FROM prompts p
@@ -1987,12 +2100,15 @@ function readPromptAnalysis(
     return undefined;
   }
 
+  const checklist = readChecklist(row.checklist_json);
+
   return {
     summary: row.summary ?? "",
     warnings: readStringArray(row.warnings_json),
     suggestions: readStringArray(row.suggestions_json),
-    checklist: readChecklist(row.checklist_json),
+    checklist,
     tags: readPromptTags(row.tags_json),
+    quality_score: calculatePromptQualityScore(checklist),
     analyzer: row.analyzer,
     created_at: row.created_at,
   };
@@ -2110,6 +2226,7 @@ function getQualityDashboard(
     sensitive_prompts: sensitivePrompts,
     sensitive_ratio: ratio(sensitivePrompts, totalPrompts),
     recent,
+    quality_score: buildDashboardQualityScore(qualityRows),
     trend: {
       daily: buildDailyTrend(qualityRows, now),
     },
@@ -2144,6 +2261,8 @@ function buildDailyTrend(
       date: string;
       prompt_count: number;
       quality_gap_count: number;
+      quality_score_sum: number;
+      scored_prompts: number;
       sensitive_count: number;
     }
   >(
@@ -2153,6 +2272,8 @@ function buildDailyTrend(
         date,
         prompt_count: 0,
         quality_gap_count: 0,
+        quality_score_sum: 0,
+        scored_prompts: 0,
         sensitive_count: 0,
       },
     ]),
@@ -2177,6 +2298,11 @@ function buildDailyTrend(
     if (hasQualityGap(row.checklist_json)) {
       bucket.quality_gap_count += 1;
     }
+    const score = scoreChecklistJson(row.checklist_json);
+    if (score !== undefined) {
+      bucket.quality_score_sum += score;
+      bucket.scored_prompts += 1;
+    }
   }
 
   return dates.map((date) => {
@@ -2184,14 +2310,55 @@ function buildDailyTrend(
       date,
       prompt_count: 0,
       quality_gap_count: 0,
+      quality_score_sum: 0,
+      scored_prompts: 0,
       sensitive_count: 0,
     };
 
     return {
-      ...bucket,
+      date: bucket.date,
+      prompt_count: bucket.prompt_count,
+      quality_gap_count: bucket.quality_gap_count,
       quality_gap_rate: ratio(bucket.quality_gap_count, bucket.prompt_count),
+      average_quality_score: averageScore(
+        bucket.quality_score_sum,
+        bucket.scored_prompts,
+      ),
+      sensitive_count: bucket.sensitive_count,
     };
   });
+}
+
+function buildDashboardQualityScore(
+  rows: PromptQualityRow[],
+): PromptQualityDashboard["quality_score"] {
+  const scores = rows
+    .map((row) => scoreChecklistJson(row.checklist_json))
+    .filter((value): value is number => value !== undefined);
+  const average = averageScore(
+    scores.reduce((total, score) => total + score, 0),
+    scores.length,
+  );
+
+  return {
+    average,
+    max: 100,
+    band: qualityScoreBand(average),
+    scored_prompts: scores.length,
+  };
+}
+
+function scoreChecklistJson(checklistJson: string | null): number | undefined {
+  const checklist = readChecklist(checklistJson);
+  if (checklist.length === 0) {
+    return undefined;
+  }
+
+  return calculatePromptQualityScore(checklist).value;
+}
+
+function averageScore(total: number, count: number): number {
+  return count > 0 ? Math.round(total / count) : 0;
 }
 
 function hasQualityGap(checklistJson: string | null): boolean {
@@ -2211,7 +2378,10 @@ function readDuplicatePromptGroups(
         COUNT(*) AS count,
         MAX(received_at) AS latest_received_at
       FROM prompts
-      WHERE deleted_at IS NULL
+      WHERE
+        deleted_at IS NULL
+        AND stored_content_hash IS NOT NULL
+        AND stored_content_hash <> ''
       GROUP BY stored_content_hash
       HAVING count > 1
       ORDER BY count DESC, latest_received_at DESC
@@ -2228,14 +2398,18 @@ function readDuplicatePromptGroups(
     const rows = db
       .prepare(
         `
-        SELECT *
-        FROM prompts
-        WHERE deleted_at IS NULL AND stored_content_hash = ?
-        ORDER BY received_at DESC, id DESC
+        SELECT
+          p.*,
+          pa.checklist_json,
+          pa.tags_json
+        FROM prompts p
+        LEFT JOIN prompt_analyses pa ON pa.prompt_id = p.id
+        WHERE p.deleted_at IS NULL AND p.stored_content_hash = ?
+        ORDER BY p.received_at DESC, p.id DESC
         LIMIT 6
         `,
       )
-      .all(group.stored_content_hash) as PromptRow[];
+      .all(group.stored_content_hash) as PromptWithSignalRow[];
     const projects = [
       ...new Set(rows.map((row) => row.cwd).sort((a, b) => a.localeCompare(b))),
     ];
@@ -2246,14 +2420,14 @@ function readDuplicatePromptGroups(
       latest_received_at: group.latest_received_at,
       projects,
       prompts: rows.map((row) => {
-        const summary = toPromptSummary(db, row);
+        const signals = readPromptSignalsFromRow(row);
         return {
           id: row.id,
           tool: row.tool,
           cwd: row.cwd,
           received_at: row.received_at,
-          tags: summary.tags,
-          quality_gaps: summary.quality_gaps,
+          tags: signals.tags,
+          quality_gaps: signals.quality_gaps,
         };
       }),
     };
@@ -2266,10 +2440,13 @@ function readUsefulPrompts(db: Database.Database): UsefulPrompt[] {
       `
       SELECT
         p.*,
-        COUNT(pue.id) AS copied_count,
+        pa.checklist_json,
+        pa.tags_json,
+        COUNT(DISTINCT pue.id) AS copied_count,
         MAX(pue.created_at) AS last_copied_at,
         pb.created_at AS bookmarked_at
       FROM prompts p
+      LEFT JOIN prompt_analyses pa ON pa.prompt_id = p.id
       LEFT JOIN prompt_usage_events pue
         ON pue.prompt_id = p.id AND pue.event_type = 'prompt_copied'
       LEFT JOIN prompt_bookmarks pb ON pb.prompt_id = p.id
@@ -2284,10 +2461,10 @@ function readUsefulPrompts(db: Database.Database): UsefulPrompt[] {
       LIMIT 8
       `,
     )
-    .all() as UsefulPromptRow[];
+    .all() as Array<UsefulPromptRow & PromptSignalRow>;
 
   return rows.map((row) => {
-    const summary = toPromptSummary(db, row);
+    const signals = readPromptSignalsFromRow(row);
     return {
       id: row.id,
       tool: row.tool,
@@ -2297,10 +2474,24 @@ function readUsefulPrompts(db: Database.Database): UsefulPrompt[] {
       last_copied_at: row.last_copied_at ?? undefined,
       bookmarked: row.bookmarked_at !== null,
       bookmarked_at: row.bookmarked_at ?? undefined,
-      tags: summary.tags,
-      quality_gaps: summary.quality_gaps,
+      tags: signals.tags,
+      quality_gaps: signals.quality_gaps,
     };
   });
+}
+
+function readPromptSignalsFromRow(row: PromptSignalRow): {
+  tags: PromptTag[];
+  quality_gaps: string[];
+} {
+  const checklist = readChecklist(row?.checklist_json ?? null);
+
+  return {
+    tags: readPromptTags(row?.tags_json ?? null),
+    quality_gaps: checklist
+      .filter((item) => item.status !== "good")
+      .map((item) => item.label),
+  };
 }
 
 function readCount(
@@ -2374,6 +2565,8 @@ function readProjectQualityProfiles(
       label: string;
       prompt_count: number;
       quality_gap_count: number;
+      quality_score_sum: number;
+      scored_prompts: number;
       sensitive_count: number;
       latest_received_at: string;
       gapCounts: Map<string, { key: string; label: string; count: number }>;
@@ -2389,6 +2582,8 @@ function readProjectQualityProfiles(
         label: projectLabel(key),
         prompt_count: 0,
         quality_gap_count: 0,
+        quality_score_sum: 0,
+        scored_prompts: 0,
         sensitive_count: 0,
         latest_received_at: row.received_at,
         gapCounts: new Map(),
@@ -2397,6 +2592,8 @@ function readProjectQualityProfiles(
         label: string;
         prompt_count: number;
         quality_gap_count: number;
+        quality_score_sum: number;
+        scored_prompts: number;
         sensitive_count: number;
         latest_received_at: string;
         gapCounts: Map<string, { key: string; label: string; count: number }>;
@@ -2416,6 +2613,10 @@ function readProjectQualityProfiles(
       )
     ) {
       current.quality_gap_count += 1;
+    }
+    if (checklist.length > 0) {
+      current.quality_score_sum += calculatePromptQualityScore(checklist).value;
+      current.scored_prompts += 1;
     }
 
     for (const item of checklist) {
@@ -2457,6 +2658,10 @@ function readProjectQualityProfiles(
           project.quality_gap_count,
           project.prompt_count,
         ),
+        average_quality_score: averageScore(
+          project.quality_score_sum,
+          project.scored_prompts,
+        ),
         sensitive_count: project.sensitive_count,
         copied_count: projectUsefulness.copied_count,
         bookmarked_count: projectUsefulness.bookmarked_count,
@@ -2489,8 +2694,8 @@ function readProjectUsefulness(
       `
       SELECT
         COALESCE(NULLIF(p.project_root, ''), p.cwd) AS project,
-        COUNT(pue.id) AS copied_count,
-        COUNT(pb.prompt_id) AS bookmarked_count
+        COUNT(DISTINCT pue.id) AS copied_count,
+        COUNT(DISTINCT pb.prompt_id) AS bookmarked_count
       FROM prompts p
       LEFT JOIN prompt_usage_events pue
         ON pue.prompt_id = p.id AND pue.event_type = 'prompt_copied'
@@ -2716,7 +2921,7 @@ function listProjectsForPolicy(
         p.received_at,
         p.is_sensitive,
         pa.checklist_json,
-        COUNT(pue.id) AS copied_count,
+        COUNT(DISTINCT pue.id) AS copied_count,
         CASE WHEN pb.prompt_id IS NULL THEN 0 ELSE 1 END AS bookmarked_count
       FROM prompts p
       LEFT JOIN prompt_analyses pa ON pa.prompt_id = p.id
@@ -2787,6 +2992,10 @@ function listProjectsForPolicy(
           copied_count: project.copiedCount,
           bookmarked_count: project.bookmarkedCount,
           policy: policy.policy,
+          instruction_review: readProjectInstructionReview(
+            db,
+            project.projectId,
+          ),
         };
       })
       .sort((a, b) =>
@@ -2904,6 +3113,177 @@ function getProjectPolicyForEvent(
   );
 
   return readProjectPolicy(db, descriptor.projectId).policy;
+}
+
+function analyzeProjectInstructions(
+  db: Database.Database,
+  hmacSecret: string,
+  projectId: string,
+  now: Date,
+): ProjectInstructionReview | undefined {
+  const sourcePath = findProjectSourcePath(db, hmacSecret, projectId);
+  if (!sourcePath) {
+    return undefined;
+  }
+
+  const review = analyzeProjectInstructionFiles(
+    readProjectInstructionFiles(sourcePath),
+    now.toISOString(),
+  );
+
+  db.prepare(
+    `
+    INSERT INTO project_instruction_reviews(
+      project_key, generated_at, analyzer, score, score_band, files_found,
+      files_json, checklist_json, suggestions_json, privacy_json
+    )
+    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+    ON CONFLICT(project_key) DO UPDATE SET
+      generated_at = excluded.generated_at,
+      analyzer = excluded.analyzer,
+      score = excluded.score,
+      score_band = excluded.score_band,
+      files_found = excluded.files_found,
+      files_json = excluded.files_json,
+      checklist_json = excluded.checklist_json,
+      suggestions_json = excluded.suggestions_json,
+      privacy_json = excluded.privacy_json
+    `,
+  ).run(
+    projectId,
+    review.generated_at,
+    review.analyzer,
+    review.score.value,
+    review.score.band,
+    review.files_found,
+    JSON.stringify(review.files),
+    JSON.stringify(review.checklist),
+    JSON.stringify(review.suggestions),
+    JSON.stringify(review.privacy),
+  );
+
+  return review;
+}
+
+function readProjectInstructionReview(
+  db: Database.Database,
+  projectId: string,
+): ProjectInstructionReview | undefined {
+  const row = db
+    .prepare("SELECT * FROM project_instruction_reviews WHERE project_key = ?")
+    .get(projectId) as ProjectInstructionReviewRow | undefined;
+
+  if (!row) {
+    return undefined;
+  }
+
+  return {
+    generated_at: row.generated_at,
+    analyzer: row.analyzer,
+    score: {
+      value: row.score,
+      max: 100,
+      band: row.score_band as ProjectInstructionReview["score"]["band"],
+    },
+    files: parseJson(row.files_json, []),
+    files_found: row.files_found,
+    checklist: parseJson(row.checklist_json, []),
+    suggestions: parseJson(row.suggestions_json, []),
+    privacy: parseJson(row.privacy_json, {
+      local_only: true,
+      external_calls: false,
+      stores_file_bodies: false,
+      returns_file_bodies: false,
+      returns_raw_paths: false,
+    }),
+  };
+}
+
+function findProjectSourcePath(
+  db: Database.Database,
+  hmacSecret: string,
+  projectId: string,
+): string | undefined {
+  const rows = db
+    .prepare(
+      `
+      SELECT cwd, project_root
+      FROM prompts
+      WHERE deleted_at IS NULL
+      ORDER BY received_at DESC, id DESC
+      `,
+    )
+    .all() as Array<{ cwd: string; project_root: string | null }>;
+
+  for (const row of rows) {
+    const descriptor = projectDescriptor(row, hmacSecret);
+    if (descriptor.projectId === projectId) {
+      return descriptor.sourcePath;
+    }
+  }
+
+  return undefined;
+}
+
+function readProjectInstructionFiles(
+  sourcePath: string,
+): ProjectInstructionSourceFile[] {
+  const files: ProjectInstructionSourceFile[] = [];
+  const seen = new Set<string>();
+  const maxBytes = 128 * 1024;
+
+  for (const dir of candidateInstructionDirs(sourcePath)) {
+    for (const fileName of PROJECT_INSTRUCTION_FILENAMES) {
+      const path = join(dir, fileName);
+      const seenKey = path.toLowerCase();
+      if (seen.has(seenKey) || !existsSync(path)) {
+        continue;
+      }
+      const stats = statSync(path);
+      if (!stats.isFile()) {
+        continue;
+      }
+      const buffer = readFileSync(path);
+      const truncated = buffer.byteLength > maxBytes;
+      const content = buffer.subarray(0, maxBytes).toString("utf8");
+      seen.add(seenKey);
+      files.push({
+        file_name: basename(path),
+        content,
+        bytes: stats.size,
+        modified_at: stats.mtime.toISOString(),
+        truncated,
+      });
+    }
+
+    if (files.length > 0) {
+      return files;
+    }
+  }
+
+  return files;
+}
+
+function candidateInstructionDirs(sourcePath: string): string[] {
+  const dirs: string[] = [];
+  let current =
+    existsSync(sourcePath) && statSync(sourcePath).isFile()
+      ? dirname(sourcePath)
+      : sourcePath;
+
+  for (let depth = 0; depth < 8; depth += 1) {
+    if (!current || dirs.includes(current)) {
+      break;
+    }
+    dirs.push(current);
+    const next = dirname(current);
+    if (next === current) {
+      break;
+    }
+    current = next;
+  }
+
+  return dirs;
 }
 
 function projectDescriptor(
@@ -3134,6 +3514,18 @@ CREATE INDEX IF NOT EXISTS idx_prompts_session_id ON prompts(session_id);
 CREATE INDEX IF NOT EXISTS idx_prompts_index_status ON prompts(index_status);
 CREATE INDEX IF NOT EXISTS idx_prompts_stored_content_hash
   ON prompts(stored_content_hash);
+CREATE INDEX IF NOT EXISTS idx_prompts_deleted_received
+  ON prompts(deleted_at, received_at DESC, id DESC);
+CREATE INDEX IF NOT EXISTS idx_prompts_deleted_tool_received
+  ON prompts(deleted_at, tool, received_at DESC, id DESC);
+CREATE INDEX IF NOT EXISTS idx_prompts_deleted_sensitive
+  ON prompts(deleted_at, is_sensitive);
+CREATE INDEX IF NOT EXISTS idx_prompts_deleted_hash_received
+  ON prompts(deleted_at, stored_content_hash, received_at DESC, id DESC);
+CREATE INDEX IF NOT EXISTS idx_prompts_deleted_cwd_received
+  ON prompts(deleted_at, cwd, received_at DESC, id DESC);
+CREATE INDEX IF NOT EXISTS idx_prompts_deleted_project_root_received
+  ON prompts(deleted_at, project_root, received_at DESC, id DESC);
 CREATE INDEX IF NOT EXISTS idx_prompt_usage_events_prompt_id
   ON prompt_usage_events(prompt_id);
 CREATE INDEX IF NOT EXISTS idx_prompt_usage_events_type_created_at

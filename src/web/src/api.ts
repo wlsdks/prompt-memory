@@ -15,6 +15,8 @@ export type PromptSummary = {
   index_status: string;
   tags: string[];
   quality_gaps: string[];
+  quality_score: number;
+  quality_score_band: PromptQualityScoreBand;
   usefulness: PromptUsefulness;
   duplicate_count: number;
 };
@@ -33,6 +35,7 @@ export type PromptDetail = PromptSummary & {
       suggestion?: string;
     }>;
     tags: string[];
+    quality_score: PromptQualityScore;
     analyzer: string;
     created_at: string;
   };
@@ -85,6 +88,25 @@ export type PromptQualityGap =
   | "output_format"
   | "verification_criteria";
 
+export type PromptQualityScoreBand =
+  | "excellent"
+  | "good"
+  | "needs_work"
+  | "weak";
+
+export type PromptQualityScore = {
+  value: number;
+  max: 100;
+  band: PromptQualityScoreBand;
+  breakdown: Array<{
+    key: PromptQualityGap;
+    label: string;
+    status: "good" | "weak" | "missing";
+    weight: number;
+    earned: number;
+  }>;
+};
+
 export type QualityDashboard = {
   total_prompts: number;
   sensitive_prompts: number;
@@ -99,8 +121,15 @@ export type QualityDashboard = {
       prompt_count: number;
       quality_gap_count: number;
       quality_gap_rate: number;
+      average_quality_score: number;
       sensitive_count: number;
     }>;
+  };
+  quality_score: {
+    average: number;
+    max: 100;
+    band: PromptQualityScoreBand;
+    scored_prompts: number;
   };
   distribution: {
     by_tool: DistributionBucket[];
@@ -160,6 +189,7 @@ export type QualityDashboard = {
     prompt_count: number;
     quality_gap_count: number;
     quality_gap_rate: number;
+    average_quality_score: number;
     sensitive_count: number;
     copied_count: number;
     bookmarked_count: number;
@@ -177,6 +207,59 @@ export type DistributionBucket = {
   label: string;
   count: number;
   ratio: number;
+};
+
+export type ArchivePromptScoreSummary = {
+  id: string;
+  tool: string;
+  project: string;
+  received_at: string;
+  quality_score: number;
+  quality_score_band: PromptQualityScoreBand;
+  quality_gaps: string[];
+  tags: string[];
+  is_sensitive: boolean;
+};
+
+export type ArchiveScoreReport = {
+  generated_at: string;
+  archive_score: {
+    average: number;
+    max: 100;
+    band: PromptQualityScoreBand;
+    scored_prompts: number;
+    total_prompts: number;
+  };
+  distribution: Record<PromptQualityScoreBand, number>;
+  top_gaps: Array<{
+    label: string;
+    count: number;
+    rate: number;
+  }>;
+  practice_plan: Array<{
+    priority: number;
+    label: string;
+    prompt_rule: string;
+    reason: string;
+    count: number;
+    rate: number;
+  }>;
+  next_prompt_template: string;
+  low_score_prompts: ArchivePromptScoreSummary[];
+  filters: {
+    tool?: string;
+    project?: string;
+    received_from?: string;
+    received_to?: string;
+    max_prompts: number;
+  };
+  has_more: boolean;
+  privacy: {
+    local_only: true;
+    external_calls: false;
+    returns_prompt_bodies: false;
+    returns_raw_paths: false;
+  };
 };
 
 export type SettingsResponse = {
@@ -204,6 +287,45 @@ export type ProjectPolicy = {
   updated_at?: string;
 };
 
+export type ProjectInstructionReview = {
+  generated_at: string;
+  analyzer: string;
+  score: {
+    value: number;
+    max: 100;
+    band: PromptQualityScoreBand;
+  };
+  files_found: number;
+  files: Array<{
+    file_name: string;
+    bytes: number;
+    modified_at: string;
+    content_hash: string;
+    truncated: boolean;
+  }>;
+  checklist: Array<{
+    key:
+      | "project_context"
+      | "agent_workflow"
+      | "verification"
+      | "privacy_safety"
+      | "collaboration_output";
+    label: string;
+    status: "good" | "weak" | "missing";
+    weight: number;
+    earned: number;
+    suggestion?: string;
+  }>;
+  suggestions: string[];
+  privacy: {
+    local_only: true;
+    external_calls: false;
+    stores_file_bodies: false;
+    returns_file_bodies: false;
+    returns_raw_paths: false;
+  };
+};
+
 export type ProjectSummary = {
   project_id: string;
   label: string;
@@ -216,6 +338,7 @@ export type ProjectSummary = {
   copied_count: number;
   bookmarked_count: number;
   policy: ProjectPolicy;
+  instruction_review?: ProjectInstructionReview;
 };
 
 export type ProjectPolicyPatch = {
@@ -269,17 +392,25 @@ export type AnonymizedExportPayload = {
 };
 
 let csrfToken: string | undefined;
+let sessionPromise: Promise<void> | undefined;
 
 export async function ensureSession(): Promise<void> {
   if (csrfToken) {
     return;
   }
 
-  const response = await fetch("/api/v1/session", {
+  sessionPromise ??= fetch("/api/v1/session", {
     credentials: "same-origin",
-  });
-  const body = (await response.json()) as { data: { csrf_token: string } };
-  csrfToken = body.data.csrf_token;
+  })
+    .then(async (response) => {
+      const body = (await response.json()) as { data: { csrf_token: string } };
+      csrfToken = body.data.csrf_token;
+    })
+    .finally(() => {
+      sessionPromise = undefined;
+    });
+
+  await sessionPromise;
 }
 
 export async function listPrompts(
@@ -338,6 +469,15 @@ export async function getQualityDashboard(): Promise<QualityDashboard> {
   return body.data;
 }
 
+export async function getArchiveScoreReport(): Promise<ArchiveScoreReport> {
+  await ensureSession();
+  const response = await fetch("/api/v1/score?limit=200&low_score_limit=8", {
+    credentials: "same-origin",
+  });
+  const body = (await response.json()) as { data: ArchiveScoreReport };
+  return body.data;
+}
+
 export async function getSettings(): Promise<SettingsResponse> {
   await ensureSession();
   const response = await fetch("/api/v1/settings", {
@@ -381,6 +521,29 @@ export async function updateProjectPolicy(
   }
 
   const body = (await response.json()) as { data: ProjectSummary };
+  return body.data;
+}
+
+export async function analyzeProjectInstructions(
+  projectId: string,
+): Promise<ProjectInstructionReview> {
+  await ensureSession();
+  const response = await fetch(
+    `/api/v1/projects/${encodeURIComponent(projectId)}/instructions/analyze`,
+    {
+      method: "POST",
+      credentials: "same-origin",
+      headers: {
+        "x-csrf-token": csrfToken ?? "",
+      },
+    },
+  );
+
+  if (!response.ok) {
+    throw new Error("Project instruction analysis failed");
+  }
+
+  const body = (await response.json()) as { data: ProjectInstructionReview };
   return body.data;
 }
 

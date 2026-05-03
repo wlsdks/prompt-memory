@@ -5,6 +5,7 @@ import { ZodError } from "zod";
 import type { RedactionPolicy } from "../shared/schema.js";
 import type {
   ExportJobStoragePort,
+  ProjectInstructionStoragePort,
   ProjectPolicyStoragePort,
   PromptReadStoragePort,
   PromptStoragePort,
@@ -25,6 +26,7 @@ export type CreateServerOptions = {
   auth: ServerAuthConfig;
   storage: PromptStoragePort &
     Partial<ProjectPolicyStoragePort> &
+    Partial<ProjectInstructionStoragePort> &
     Partial<PromptReadStoragePort> &
     Partial<ExportJobStoragePort>;
   redactionMode: RedactionPolicy;

@@ -1,5 +1,442 @@
 # 작업 계획
 
+## 2026-05-03 Merge And Architecture Handoff
+
+- [x] 현재 PR의 mergeability, CI, review gate를 재확인
+- [x] 오픈소스 아키텍처 관점에서 지금 머지할 범위와 후속 리팩터링 PR 범위를 분리
+- [x] 보호 규칙을 지키는 방식으로 PR을 main에 머지 시도
+- [ ] 머지 성공 시 원격/로컬 feature branch를 정리
+- [x] 앞으로 작업 단위는 branch -> PR -> main merge -> branch cleanup으로 진행
+
+### 현재 상태
+
+- 2026-05-03 기준 PR #1은 mergeable이고 CI는 Node 22/24 모두 통과했다.
+- 정상 `gh pr merge --squash --delete-branch`는 base branch required review 정책 때문에 차단되었다.
+- `--auto` merge도 저장소에서 auto-merge가 비활성화되어 차단되었다.
+- 오픈소스 보호 흐름을 지키기 위해 `--admin` bypass는 사용하지 않았다.
+
+### 판단 기준
+
+- CI green, clean worktree, mergeable 상태라도 required review gate는 우회하지 않는다.
+- 대형 모듈 분리는 기능 PR에 섞지 않고 별도 리팩터링 PR로 진행한다.
+- 오픈소스 운영에서는 admin bypass보다 보호 규칙과 리뷰 흐름을 우선한다.
+
+## 2026-05-03 Architecture QA And Agent Rules
+
+- [x] Always-on buddy/statusline 변경 코드 QA와 구조 리스크 점검
+- [x] `statusline` CLI registration을 작은 함수로 분리
+- [x] Node/TypeScript 모듈화 기준을 `docs/ARCHITECTURE.md`, `CLAUDE.md`, `AGENTS.md`, `.claude/rules`에 반영
+- [x] 문서 패키징/검증 게이트 재실행
+- [x] 커밋, 푸시, CI 확인
+
+### 판단 기준
+
+- CLI command 파일은 명령 등록, orchestration, formatting을 과도하게 한 함수에 몰아넣지 않는다.
+- Node runtime 코드는 `module: NodeNext`, ESM, explicit runtime boundary, type-only import를 기준으로 한다.
+- Spring식 계층을 그대로 복제하지 않고 port/adapter, local domain service, CLI/server/MCP entrypoint 경계로 설명한다.
+- 문서와 agent rules는 privacy, local-first, hook fail-open, prompt body/raw path 미노출 규칙을 반복해서 고정한다.
+
+## 2026-05-03 Always-On Prompt Buddy
+
+- [x] Claude Code status line에 최신 prompt score HUD를 TDD로 추가
+- [x] Claude Code/Codex 옆 split pane에서 띄우는 `prompt-memory buddy` CLI를 TDD로 추가
+- [x] `/prompt-memory:coach` / MCP 문서와 plugin 안내를 always-on buddy 흐름과 연결
+- [x] privacy-safe 출력, CLI 실제 실행, release gate 검증
+- [x] 커밋, 푸시, CI 확인
+
+### 판단 기준
+
+- Claude Code/Codex 내부 UI를 해킹하지 않고 공식/안정적인 표면(statusLine, CLI, MCP/slash command)만 사용한다.
+- 최신 점수, 가장 큰 약점, 추세, capture 상태를 prompt body, raw absolute path, secret 없이 보여준다.
+- Codex에는 공식 statusLine이 없으므로 `buddy` split pane을 공통 always-on 경험으로 제공한다.
+- buddy는 기본적으로 TTY에서 반복 갱신하고, `--once`/`--json`으로 테스트와 자동화가 쉬워야 한다.
+
+## 2026-05-03 Unified Agent Coach
+
+- [x] `coach_prompt` MCP 통합 workflow를 TDD로 추가
+- [x] `prompt-memory coach --json` CLI fallback을 추가하고 top-level CLI에 연결
+- [x] Claude Code `/prompt-memory:coach` command와 Codex skill/default prompt를 갱신
+- [x] privacy-safe partial failure와 raw path/body 미노출 검증
+- [x] release gate, 커밋, 푸시, CI 확인
+
+### 판단 기준
+
+- Claude Code/Codex는 여러 tool을 순서대로 추론하지 않아도 한 번의 호출로 최신 요청 점수, 개선안, 반복 습관, 프로젝트 규칙, 다음 요청 템플릿을 받아야 한다.
+- `coach_prompt`와 CLI fallback은 setup-needed 상태도 실패가 아니라 다음 행동으로 돌려준다.
+- 반환값은 prompt body, raw absolute path, instruction file body, secret을 포함하지 않는다.
+- 웹 UI는 변경하지 않고 agent-facing MCP/CLI/plugin 표면만 강화한다.
+
+## 2026-05-03 Agent-Native Prompt Coach Workflow
+
+- [x] Claude Code/Codex 안에서 바로 쓰는 핵심 workflow 범위 확정
+- [x] `score --latest`, `improve --latest` CLI fallback을 TDD로 추가
+- [x] Claude Code slash command 5종 추가 및 plugin manifest 반영
+- [x] Codex plugin skill/default prompt와 README/PLUGINS 문서 갱신
+- [x] targeted tests, release gate, 커밋/푸시 확인
+
+### 판단 기준
+
+- 사용자는 웹을 열지 않아도 Claude Code/Codex 안에서 방금 요청 점수화, 개선, 습관 요약, 프로젝트 규칙 평가, 다음 요청 템플릿 생성을 실행할 수 있어야 한다.
+- MCP가 있으면 MCP tool을 우선하고, MCP가 없으면 raw prompt body를 출력하지 않는 CLI fallback을 제공한다.
+- 새 기능은 prompt body, raw absolute path, secret을 stdout/stderr나 plugin 문서 예시에 노출하지 않는다.
+- tool 수를 불필요하게 늘리기보다 기존 MCP tool과 CLI fallback을 agent-facing command로 묶는다.
+
+## 2026-05-03 Practice Projected Score Preview
+
+- [x] quick fix 전체 적용 draft preview 모델을 TDD로 추가
+- [x] Practice UI에서 fixes 적용 후 예상 점수와 delta를 표시
+- [x] browser E2E와 desktop/mobile screenshot으로 흐름 확인
+- [x] release gate 검증, 커밋, 푸시, CI 확인
+
+### 판단 기준
+
+- 사용자는 quick fix를 적용하기 전에 예상 점수 개선 폭을 볼 수 있어야 한다.
+- projected preview는 브라우저 메모리에서만 계산하고 prompt draft text, raw path, secret을 저장하지 않는다.
+- 새 화면, 새 DB, 새 MCP tool 없이 Practice builder의 확신과 행동성을 강화한다.
+
+## 2026-05-03 Practice Quick Fix Builder
+
+- [x] Practice quick-fix builder 모델을 TDD로 추가
+- [x] Practice UI에서 빠진 항목을 one-click section snippet으로 보완
+- [x] 브라우저 E2E와 스크린샷으로 desktop/mobile 확인
+- [x] release gate 검증, 커밋, 푸시, CI 확인
+
+### 판단 기준
+
+- 사용자는 점수를 읽고 직접 고민하지 않아도 부족한 프롬프트 섹션을 바로 추가할 수 있어야 한다.
+- quick fix는 브라우저 draft textarea 안에서만 작동하고 prompt draft text, raw path, secret을 저장하지 않는다.
+- 새 탭, 새 DB, 새 MCP tool을 늘리지 않고 Practice 화면의 핵심 행동만 강화한다.
+
+## 2026-05-03 Coach Brief Preview
+
+- [x] raw-free brief preview 모델을 TDD로 추가
+- [x] Coach command center에서 생성된 brief 내용을 확인하고 복사할 수 있게 UI 개선
+- [x] 브라우저 E2E와 스크린샷으로 desktop/mobile 확인
+- [x] release gate 검증, 커밋, 푸시, CI 확인
+
+### 판단 기준
+
+- 사용자는 복사 전에 다음 요청 브리프 내용을 눈으로 확인할 수 있어야 한다.
+- preview와 copied text 모두 prompt body, raw absolute path, secret을 포함하지 않는다.
+- 새 탭이나 새 저장소 데이터를 늘리지 않고 Coach 화면 안에서 신뢰도와 사용성을 높인다.
+
+## 2026-05-03 Coach Next Request Brief
+
+- [x] Prompt habit coach가 raw-free next request brief를 만들도록 TDD로 추가
+- [x] Coach command center에 copy next request brief 액션과 상태 표시
+- [x] 브라우저 E2E와 스크린샷으로 실제 사용성/디자인 확인
+- [x] release gate 검증, 커밋, 푸시, CI 확인
+
+### 판단 기준
+
+- 사용자는 분석 결과를 읽고 다시 생각하지 않아도 다음 Claude Code/Codex 요청 초안을 바로 복사할 수 있어야 한다.
+- brief는 반복 약점, 고칠 습관, 검증 요구만 포함하고 prompt body, raw absolute path, secret을 포함하지 않는다.
+- 새 탭이나 새 저장소 데이터를 늘리지 않고 Dashboard/Coach의 핵심 행동만 강화한다.
+
+## 2026-05-03 Practice Outcome Feedback
+
+- [x] Practice copied draft outcome 모델을 TDD로 추가
+- [x] Practice UI에 Worked / Needs context / Blocked feedback controls와 outcome summary 표시
+- [x] browser E2E, release gate 검증
+- [x] 커밋, 푸시, CI 확인
+
+### 판단 기준
+
+- 사용자는 복사한 개선 초안이 실제 작업에 도움이 됐는지 빠르게 표시할 수 있어야 한다.
+- outcome은 score, label, outcome metadata만 저장하고 prompt draft text는 저장하지 않는다.
+- 기능은 Practice 화면 안에서 작고 명확해야 하며 새 탭이나 새 MCP tool을 늘리지 않는다.
+
+## 2026-05-03 Practice Score History Loop
+
+- [x] Practice copy 이후 원문 없는 score history 모델을 TDD로 추가
+- [x] Practice UI에 최근 점수 추이 그래프와 반복 보완 항목을 표시
+- [x] MCP archive tool 설명과 웹 카탈로그에 practice plan/next template 반환을 더 명확히 반영
+- [x] browser E2E, MCP stdio, release gate 검증
+- [x] 커밋, 푸시, CI 확인
+
+### 판단 기준
+
+- 사용자는 다음 요청 초안을 복사할 때마다 자신의 작성 품질이 오르는지 볼 수 있어야 한다.
+- practice history는 prompt draft 원문, raw path, secret을 저장하지 않는다.
+- 새 MCP tool을 늘리지 않고 기존 tool 선택 부담을 유지한다.
+
+## 2026-05-03 Prompt Practice Workspace
+
+- [x] 점수/연습 계획 다음에 실제 작성 작업면이 필요한지 재평가
+- [x] Practice 탭에서 archive template을 불러오고 로컬 점수 preview를 즉시 보여주기
+- [x] copy draft, checklist, missing habit 표시를 desktop web 기준으로 정리
+- [x] browser E2E, MCP stdio, release gate 검증
+- [x] 커밋, 푸시, CI 확인
+
+### 판단 기준
+
+- 사용자는 prompt-memory 안에서 다음 Claude Code/Codex 요청을 작성하고 바로 점수를 확인할 수 있어야 한다.
+- 초안 작성/점수 preview는 로컬 deterministic rule만 사용하고 prompt를 저장하지 않는다.
+- Practice 화면은 raw prompt archive를 새로 노출하지 않고 사용자가 직접 작성 중인 draft만 다룬다.
+
+## 2026-05-03 Archive Practice Plan UX
+
+- [x] `score_prompt_archive`가 점수뿐 아니라 다음 연습 행동을 줄 수 있는지 재평가
+- [x] privacy-safe practice plan과 next prompt template을 TDD로 추가
+- [x] Scores UI에서 practice plan, copy template, 그래프 주변 정보 구조 보강
+- [x] MCP schema/docs/browser E2E/release gate 검증
+- [x] 커밋, 푸시, CI 확인
+
+### 판단 기준
+
+- 사용자는 점수와 그래프를 본 뒤 바로 다음 prompt에 넣을 문장을 얻어야 한다.
+- practice plan은 prompt body, raw absolute path, secret을 포함하지 않는다.
+- 새 MCP tool을 추가하지 않고 기존 `score_prompt_archive`를 더 actionable하게 만들어 tool 선택 부담을 늘리지 않는다.
+
+## 2026-05-03 MCP Output Schema Contract Polish
+
+- [x] MCP `structuredContent`와 tool definition 사이의 남은 contract gap 확인
+- [x] 모든 MCP tool에 `outputSchema`를 추가하고 TDD로 고정
+- [x] Web MCP catalog와 문서에 output schema 보장 문구 반영
+- [x] MCP stdio, browser E2E, release gate 검증
+- [x] 커밋, 푸시, CI 확인
+
+### 판단 기준
+
+- `structuredContent`를 반환하는 tool은 에이전트가 예상 가능한 `outputSchema`를 함께 제공해야 한다.
+- schema는 prompt body, raw absolute path, secret 반환을 허용하지 않는 privacy contract와 맞아야 한다.
+- UI에는 “기능이 많다”보다 “Claude Code/Codex가 안전하게 호출할 수 있다”는 판단 근거가 보여야 한다.
+
+## 2026-05-03 MCP Improve Prompt Tool
+
+- [x] MCP 기능 gap 재평가: score 이후 승인 가능한 개선안 생성 흐름 필요성 판단
+- [x] `improve_prompt` MCP tool을 TDD로 추가하고 local-only/privacy contract 검증
+- [x] MCP 서버, 웹 MCP 카탈로그, README/docs/plugin skill에 새 tool 설명 반영
+- [x] browser E2E, MCP stdio 실제 호출, release gate 검증
+- [x] 커밋, 푸시, CI 확인
+
+### 판단 기준
+
+- `improve_prompt`는 직접 prompt, 저장된 `prompt_id`, 최신 prompt 중 하나만 입력받는다.
+- 직접 입력은 저장하지 않고, 저장 prompt도 원문 body/raw path/secret을 반환하지 않는다.
+- 개선안은 자동 제출하지 않으며 `requires_user_approval: true`와 safety notes를 반환한다.
+- tool 수가 늘어도 각 tool의 사용 시점이 겹치지 않아야 한다.
+
+## 2026-05-03 MCP Structured Tool Contract Polish
+
+- [x] MCP tool contract가 에이전트가 안정적으로 쓰기에 충분한지 재평가
+- [x] MCP `tools/call` 응답에 `structuredContent`를 추가하고 테스트로 고정
+- [x] MCP tool definition에 read-only/local-only risk hints를 추가하고 웹 카탈로그에 표시
+- [x] 한국어/영어 UI 문구, browser E2E, release gate 검증
+- [x] 커밋, 푸시, CI 확인
+
+### 판단 기준
+
+- MCP tool은 raw prompt body, raw absolute path, secret을 반환하지 않는다.
+- 에이전트가 tool 선택 시 read-only/local-only/structured JSON 여부를 바로 알 수 있어야 한다.
+- 웹 MCP 화면은 설명용 문서가 아니라 실제 Claude Code/Codex 호출 전 참고하는 작업 화면이어야 한다.
+
+## 2026-05-03 MCP Live Readiness UI
+
+- [x] MCP 화면이 실제 사용 준비 상태를 판단하는 데 충분한지 재평가
+- [x] MCP 화면에 prompt count, scored count, redaction, next call을 보여주는 live readiness 패널 추가
+- [x] 한국어/영어 UI 문구와 browser E2E 검증 보강
+- [x] 전체 검증, 커밋, 푸시, CI 확인
+
+### 판단 기준
+
+- MCP 화면은 도구 목록만 보여주는 설명 페이지가 아니라 Claude Code/Codex 사용 전에 확인하는 운영 화면이어야 한다.
+- 표시 데이터는 dashboard/settings/health의 안전한 aggregate만 사용하고 prompt body, raw path, secret은 노출하지 않는다.
+- next call은 캡처된 데이터가 없으면 setup/status, 데이터가 있으면 archive score로 자연스럽게 이어져야 한다.
+
+## 2026-05-03 MCP Tool Catalog UI Polish
+
+- [x] 추가 탭/화면이 실제로 필요한지 IA 기준으로 판단
+- [x] MCP tool catalog 화면을 추가해 tool 선택 기준과 예시 prompt를 웹에서 확인 가능하게 만들기
+- [x] 한국어/영어 UI 문구와 browser E2E 검증 보강
+- [x] 전체 검증, 커밋, 푸시, CI 확인
+
+### 판단 기준
+
+- MCP 화면은 마케팅 설명이 아니라 Claude Code/Codex 사용자가 바로 호출할 tool을 고르는 작업 화면이어야 한다.
+- tool 설명은 what/when/returns/privacy가 분리되어 있어야 한다.
+- prompt body, raw path, secret을 화면에 새로 노출하지 않는다.
+
+## 2026-05-03 MCP Status Preflight And Final Polish
+
+- [x] UI/UX 추가 탭 필요성 재평가
+- [x] MCP에서 prompt-memory 준비 상태를 확인하는 preflight tool 추가
+- [x] README/Plugin/Tech spec에 새 MCP tool 사용 맥락 반영
+- [x] MCP 테스트와 release/browser 검증 재실행
+- [x] 커밋, 푸시, CI 확인
+
+### 판단 기준
+
+- 탭은 정보를 숨기기보다 탐색을 더 쉽게 만들 때만 추가한다.
+- MCP status tool은 score tool과 겹치지 않고, 에이전트가 캡처/저장/측정 준비 상태를 판단하는 데만 쓴다.
+- status tool도 prompt body, raw path, secret을 반환하지 않는다.
+
+## 2026-05-03 Product Polish: Charts, MCP Tools, UX Review
+
+- [x] 현재 기능 표면이 실제 사용 가치와 맞는지 재점검
+- [x] 오픈소스 React chart library를 검토하고 Dashboard/Scores/Insights에 적용
+- [x] MCP tool 목록과 설명을 Claude Code/Codex 사용 맥락에 맞게 보강
+- [x] Project instruction review를 MCP에서도 호출 가능한지 검토하고 필요한 경우 추가
+- [x] UI/UX를 desktop web 기준으로 더 보기 좋고 분석 도구답게 개선
+- [x] 테스트, build, browser E2E, pack dry-run 검증 후 커밋/푸시
+
+### 판단 기준
+
+- 그래프는 장식이 아니라 품질 추세, 점수 분포, 반복 약점처럼 사용자가 다음 행동을 결정하는 데이터에만 쓴다.
+- 외부 라이브러리는 유명하고 유지보수되는 오픈소스이며 현재 React/Vite 구조와 충돌하지 않아야 한다.
+- MCP tool 설명은 에이전트가 언제 어떤 도구를 써야 하는지, 어떤 개인정보를 반환하지 않는지 분명해야 한다.
+- Project instruction 분석은 파일 원문, raw absolute path, secret을 반환하지 않는다.
+
+## 2026-05-03 Project Instruction Analysis And Sidebar Polish
+
+- [x] `AGENTS.md` / `CLAUDE.md` 분석 기준과 저장 범위 확정
+- [x] 로컬 파일 원문/경로를 노출하지 않는 project instruction snapshot 저장소 구현
+- [x] Projects API와 Web UI에서 분석 실행/결과 표시 추가
+- [x] 좌측 navigation rail 크기, 타이포그래피, 터치 영역 개선
+- [x] 테스트, browser E2E, 빌드 검증 후 커밋/푸시
+
+### 판단 기준
+
+- 프로젝트 규칙 파일 원문과 raw absolute path는 API/UI에 반환하지 않는다.
+- 점수는 deterministic local rubric으로 계산하고 외부 LLM을 호출하지 않는다.
+- 사용자는 Projects 화면에서 프로젝트별 규칙 파일 상태, 점수, 부족 항목, 다음 수정 힌트를 바로 볼 수 있어야 한다.
+- Sidebar는 desktop web 기준으로 현재보다 넓고 큰 글자/아이콘/클릭 영역을 제공해야 한다.
+
+## 2026-05-02 Agent Measurement Verification And Live Refresh
+
+- [x] MCP `score_prompt` / `score_prompt_archive`가 Claude Code/Codex에서 쓸 수 있는지 실제 호출로 점검
+- [x] 현재 입력 prompt가 hook capture 후 archive score와 web measurement에 반영되는지 검증
+- [x] 웹 Benchmark/Dashboard에서 새 prompt 측정이 자동 또는 명확한 refresh로 보강
+- [x] Claude Code/Codex 사용 문서와 E2E/테스트 보강
+- [x] 전체 검증, 커밋, 푸시, PR 상태 확인
+
+### 판단 기준
+
+- Agent는 raw prompt body 없이 현재 prompt 또는 archive를 점수화할 수 있어야 한다.
+- Hook으로 들어온 Claude Code/Codex prompt가 score archive와 web measurement에 반영되어야 한다.
+- 사용자가 화면을 보고 있을 때 새 prompt capture가 감지되면 측정 재실행 행동이 분명해야 한다.
+- 외부 LLM 호출이나 자동 재입력은 이번 범위에 포함하지 않는다.
+
+## 2026-05-02 Live Archive Measurement UX
+
+- [x] 현재 benchmark/score 기능이 웹에서 바로 보이는지 점검
+- [x] 실사용 archive measurement 모델과 우선 표시 데이터 확정
+- [x] Dashboard/Scores 또는 별도 화면에 `Measure now` 흐름 구현
+- [x] 한국어/영어 문구, 테스트, browser E2E 보강
+- [x] 에이전트 병렬 점검 결과 반영 후 검증, 커밋 및 푸시
+
+### 판단 기준
+
+- Benchmark v1은 개발 회귀 측정이고, 사용자의 실제 archive 측정과 혼동되지 않아야 한다.
+- 사용자는 버튼 하나로 현재 프롬프트 습관 점수, review backlog, biggest gap, privacy 상태, next action을 볼 수 있어야 한다.
+- 측정 결과는 raw prompt body, raw path, secret을 표시하지 않는다.
+- 측정 화면은 정보를 늘리기보다 다음 행동을 분명하게 해야 한다.
+
+## 2026-05-02 Display Data Usefulness And Query Audit
+
+- [x] Dashboard/Coach/Scores/Insights에 표시되는 데이터 목록과 필요성 평가
+- [x] API/SQLite 집계 경로가 실제 표시 데이터와 일치하는지 검증
+- [x] 불필요하거나 오해를 부르는 표시 항목 제거/조정
+- [x] 반복 호출 쿼리와 dashboard 집계 쿼리 최적화 필요 여부 확인
+- [x] 테스트, 브라우저 웹 점검, 커밋 및 푸시
+
+### 판단 기준
+
+- 사용자가 다음 행동을 결정하는 데 직접 도움이 되는 데이터만 우선 표시한다.
+- privacy-safe project label, masked path, redaction 상태를 유지한다.
+- 단순히 “있어서 보여주는” 데이터는 숨기거나 더 적절한 화면으로 이동한다.
+- 쿼리 최적화는 실제 WHERE/ORDER/GROUP BY 경로를 보고 판단한다.
+
+## 2026-05-02 Dashboard Information Architecture Split
+
+- [x] Dashboard를 overview 전용 화면으로 축소
+- [x] Prompt Coach, Scores, Insights를 좌측 메뉴의 독립 화면으로 분리
+- [x] 기존 Dashboard 섹션을 새 화면에 재배치하고 중복/과밀 표시 제거
+- [x] English/Korean UI 문구와 라우팅/E2E 기대값 갱신
+- [x] 웹 기준 Playwright 점검, 자동 검증, 커밋 및 푸시
+
+### 분리 기준
+
+- Dashboard는 첫 판단에 필요한 요약과 다음 이동만 보여준다.
+- Coach는 사용자가 다음 프롬프트를 더 잘 쓰도록 돕는 화면이다.
+- Scores는 누적 프롬프트 점수, 점수 분포, 낮은 점수 목록을 검토하는 화면이다.
+- Insights는 프로젝트/도구/재사용/중복/반복 패턴을 운영 분석처럼 보는 화면이다.
+- 모바일은 이번 우선순위에서 제외하고, desktop web 가독성과 정보 밀도를 먼저 다듬는다.
+
+## 2026-05-02 Dashboard Design Rebuild And Functionality Recheck
+
+- [x] `/Users/jinan/ai/awesome-design-md` 참고 기준을 프로젝트 디자인 문서와 작업 규칙에 반영
+- [x] `/Users/jinan/side-project/oh-my-ontology` 디자인 시스템을 확인하고 prompt-memory 기준으로 이식
+- [x] warm teal/dashboard command center 스타일을 oh-my-ontology 단일 인디고 다크 시스템으로 재구축
+- [x] 낮은 점수 review queue가 실제 개선 대상만 보여주는지 실패 테스트 작성
+- [x] Prompt Habit Coach dashboard를 command center 형태로 재구축
+- [x] 한국어/영어 UI 문구와 responsive layout 보강
+- [x] 자동 테스트, 전체 게이트, pack dry-run 재실행
+- [x] DevTools MCP로 desktop/mobile 렌더링, 콘솔/네트워크, 핵심 클릭 흐름 확인
+- [x] 커밋, 푸시, PR 상태 확인
+
+### 디자인 기준
+
+- awesome-design-md는 그대로 복제하지 않고 `prompt-memory`의 로컬 우선 developer tool 정체성에 맞게 적용한다.
+- 사용자가 명시한 기준은 `/Users/jinan/side-project/oh-my-ontology`의 Linear-base dark indigo design system이다.
+- Dashboard 첫 영역은 score, biggest weakness, next fix, low-score review queue가 한눈에 들어오는 작업 화면이어야 한다.
+- 낮은 점수 큐는 높은 점수 prompt를 섞어 보여주면 안 된다.
+- Dashboard는 raw prompt body, raw path, secret을 표시하지 않는다.
+
+## 2026-05-02 Prompt Habit Coach Dashboard v1
+
+- [x] Dashboard를 단순 지표판에서 습관 코치 화면으로 재구성
+- [x] 최근 점수 추세, 가장 큰 약점, 다음 개선 규칙, 낮은 점수 review queue 도출 로직 추가
+- [x] 낮은 점수 프롬프트에서 바로 상세/개선 흐름으로 이동 가능한 UI 추가
+- [x] English/Korean UI 문구와 responsive 스타일 보강
+- [x] 자동 테스트와 browser E2E 업데이트
+- [x] DevTools MCP로 실제 Dashboard 렌더링, 콘솔/네트워크, mobile overflow 점검
+- [x] 전체 검증, 커밋, 브랜치 푸시, PR CI 확인
+
+### 디자인 기준
+
+- 대시보드 첫 영역은 "내 프롬프트 습관이 지금 어떤 상태인지"를 바로 말해줘야 한다.
+- 점수만 나열하지 않고, 가장 자주 빠뜨리는 항목과 다음 요청에서 넣을 문장을 제안한다.
+- 낮은 점수 prompt는 review queue로 보여주고, 클릭하면 기존 상세 화면의 Prompt Coach로 이어진다.
+- 원문 prompt body, raw path, secret은 Dashboard에 표시하지 않는다.
+
+## 2026-05-02 Archive Score Review / MCP Batch Scoring
+
+- [x] 누적 프롬프트 archive score 공통 엔진과 privacy-safe report 구현
+- [x] CLI `prompt-memory score` 추가 및 JSON/text 출력 검증
+- [x] MCP `score_prompt_archive` 도구 추가 및 Claude/Codex 호출 문서화
+- [x] Web API와 Dashboard에서 archive score review 제공
+- [x] Claude Code slash command와 Codex plugin skill에 archive score 흐름 추가
+- [x] README/기술 문서/플러그인 문서 갱신
+- [x] 자동 테스트, browser E2E, release smoke, pack dry-run 검증
+- [x] 커밋 및 브랜치 푸시
+
+### 첫 구현 범위
+
+- 원문 프롬프트 전체를 MCP 응답으로 반환하지 않는다.
+- 기본 점수는 로컬 deterministic Prompt Quality Score를 사용한다.
+- Claude Code/Codex는 `/prompt-memory:score` 또는 MCP 요청 시 report를 해석하고 개선 방향을 제안한다.
+- CLI와 Web도 같은 archive score report를 사용한다.
+- 외부 LLM judge나 자동 원문 재입력은 이번 단위에서 제외한다.
+
+## 2026-05-02 Full Open Source Readiness And Agent Rules Audit
+
+- [x] 저장소 공개 문서/라이선스/커뮤니티 파일 완비 여부 점검
+- [x] npm package allowlist와 개인정보/로컬 데이터 제외 여부 점검
+- [x] GitHub Issues/Discussions/PR 보호/CI 상태 점검
+- [x] GitHub secret scanning, push protection, Dependabot security update 상태 점검
+- [x] Claude Code/Codex용 규칙 파일과 plugin/skill 지침 점검
+- [x] 누락된 agent 규칙 보강
+- [x] 검증, 커밋, PR 업데이트
+
+## 2026-05-02 Open Source Bilingual Readme Review
+
+- [x] 오픈소스 준비 상태 재검토
+- [x] README 영어/한국어 선택 링크 추가
+- [x] 한국어 README 추가 및 package 포함
+- [x] 배포 문서와 npm dry-run 범위 갱신
+- [x] 검증, 커밋, PR 생성
+
 ## 2026-05-02 Pre-Publish Open Source Governance And I18n
 
 - [x] npm tarball에 포함될 파일과 코드 범위 확인
@@ -366,7 +803,7 @@
 
 - 실제 CLI 존재: `claude --version`은 `2.1.126 (Claude Code)`, `codex --version`은 `codex-cli 0.128.0`.
 - 최초 상태: 기본 data dir 기준 `doctor claude-code`, `doctor codex` 모두 server/token/hook 미설정이었다.
-- 실제 설치: `prompt-memory init`으로 `/Users/jinan/.prompt-memory`를 초기화했고, `install-hook claude-code`, `install-hook codex`를 실행했다. Claude 설정은 `~/.claude/settings.json`, Codex 설정은 `~/.codex/hooks.json`, `~/.codex/config.toml`에 설치됐다.
+- 실제 설치: `prompt-memory init`으로 기본 prompt-memory data dir을 초기화했고, `install-hook claude-code`, `install-hook codex`를 실행했다. Claude 설정은 `~/.claude/settings.json`, Codex 설정은 `~/.codex/hooks.json`, `~/.codex/config.toml`에 설치됐다.
 - 발견/수정: 설치된 hook command가 `prompt-memory hook ...` 전역 명령을 가정해 실제 셸에서 `command not found`가 났다. installer를 수정해 `PROMPT_MEMORY_HOOK="..." "<node>" "<repo>/dist/cli/index.js" hook ...` 형태의 절대 실행 명령을 기록하고 기존 hook도 갱신하게 했다.
 - 실제 저장 검증: 설치된 설정 파일의 command 문자열을 그대로 읽어 `sh -c`로 실행했고, Claude Code payload와 Codex payload가 각각 `claude-code-v1`, `codex-v1`로 저장됐다.
 - 보안 확인: 실제 저장된 두 prompt 모두 `password/access_token` 계열은 `[REDACTED:secret_assignment]`, API key 계열은 `[REDACTED:api_key]`로 마스킹됐다.
@@ -650,7 +1087,7 @@
   - [x] `pnpm build`
   - [x] `pnpm pack:dry-run`
   - [x] `git diff --check`
-- [x] `/Users/jinan/ai/awesome-design-md` 구조와 관련 예시 확인
+- [x] 로컬 디자인 가이드 구조와 관련 예시 확인
 - [x] `prompt-memory` 전용 `DESIGN.md` 재작성
   - [x] Visual Theme & Atmosphere
   - [x] Color Palette & Roles
@@ -1317,3 +1754,45 @@
 - 구현 리뷰에서 지적한 project identity, Projects API와 Settings API 경계, `ProjectPolicyStoragePort`, policy audit, rebuild/delete lifecycle, 첫 구현 slice 축소와 필수 테스트 목록을 반영했다.
 - 효율성 평가 문서도 external LLM을 Phase 2 core가 아닌 gated beta로 낮추고, import dry-run + imported-only queue를 앞당기는 순서로 갱신했다.
 - 검증 명령: `pnpm format`, `pnpm test`, `pnpm lint`, `pnpm build`, `pnpm pack:dry-run`, `git diff --check` 통과. Node 20.20.0에서 실행되어 `engines.node >=22 <25` 경고는 계속 발생한다.
+
+## 2026-05-02 Full Runtime Feature Check
+
+- [x] CLI command surface 확인
+- [x] 임시 data dir에서 init/server/ingest/list/search/show/delete/rebuild 동작 확인
+- [x] Prompt Coach improve, import, anonymized export 동작 확인
+- [x] Benchmark, release smoke, browser E2E 실행
+- [x] 실제 기능 목록과 한계 정리
+
+## 2026-05-02 Prompt Quality Score v1
+
+- [x] 점수 기준 설계: 기존 5개 checklist를 0-100 rubric으로 변환
+- [x] 분석 단위 테스트: strong/vague/partial prompt 점수와 breakdown 검증
+- [x] storage/API/dashboard에 quality score와 평균/추세 노출
+- [x] 웹 UI에 per-prompt score, dashboard 평균, 프로젝트 평균 표시
+- [x] benchmark에 score calibration 지표 추가
+- [x] 문서/검증/커밋/PR 브랜치 푸시
+
+### 설계 메모
+
+- Prompt Quality Score v1은 외부 LLM judge가 아니라 기존 로컬 checklist의 deterministic 점수다.
+- 가중치: goal clarity 25, background context 20, scope limits 20, output format 15, verification criteria 20.
+- 상태 점수: good은 full weight, weak은 half weight, missing은 0점이다.
+- band는 excellent >= 85, good >= 60, needs_work >= 40, weak < 40으로 계산한다.
+- benchmark는 `prompt_quality_score_calibration`으로 list/detail score 일치, vague prompt 저점, fixture 간 점수 spread를 확인한다.
+
+## 2026-05-02 MCP Prompt Scoring
+
+- [x] MCP tool 계약 설계: 사용자 요청에 따라 current prompt text 또는 저장 prompt id를 점수화
+- [x] MCP tool handler 단위 테스트 추가
+- [x] `prompt-memory mcp` stdio JSON-RPC 서버 구현
+- [x] Claude Code/Codex 연결 문서화
+- [x] 직접 JSON-RPC smoke, test/lint/build/pack 검증
+- [x] 커밋 및 PR 브랜치 푸시
+
+### 설계 메모
+
+- MCP 서버는 `prompt-memory mcp`로 실행되는 stdio JSON-RPC 서버다.
+- 노출 tool은 `score_prompt` 하나만 둔다. 입력은 `prompt`, `prompt_id`, `latest: true` 중 정확히 하나다.
+- 직접 전달된 prompt text는 저장하지 않고, 결과에도 prompt body를 반환하지 않는다.
+- 저장 prompt scoring은 기존 SQLite analysis를 읽고 score/checklist metadata만 반환한다.
+- Claude Code는 `claude mcp add --transport stdio prompt-memory -- prompt-memory mcp`, Codex는 `codex mcp add prompt-memory -- prompt-memory mcp`로 연결하도록 문서화했다.

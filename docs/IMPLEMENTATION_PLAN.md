@@ -51,7 +51,7 @@ The implementation goal is to help Claude Code and Codex users safely record pro
 | P11 | Prompt Improvement Workspace | Complete |
 | P12 | Anonymized export | Complete |
 | P13 | Benchmark and browser E2E | Complete |
-| P14 | English docs and npm beta readiness | In progress |
+| P14 | English/Korean docs and npm beta readiness | In progress |
 
 ## 4. Public Beta Completion Criteria
 
@@ -71,7 +71,7 @@ The beta is implementation-complete when:
 - anonymized export preview/job flow works in CLI and web
 - `rebuild-index` can recover prompt index state from Markdown
 - benchmark and release smoke pass
-- npm package includes built files and English public docs
+- npm package includes built files and English/Korean public README docs
 
 ## 5. Verification Gates
 

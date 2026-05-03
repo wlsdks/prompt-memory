@@ -112,12 +112,35 @@ export const PromptQualityChecklistItemSchema = z.object({
   suggestion: z.string().min(1).optional(),
 });
 
+export const PromptQualityScoreBandSchema = z.enum([
+  "excellent",
+  "good",
+  "needs_work",
+  "weak",
+]);
+
+export const PromptQualityScoreSchema = z.object({
+  value: z.number().int().min(0).max(100),
+  max: z.literal(100),
+  band: PromptQualityScoreBandSchema,
+  breakdown: z.array(
+    z.object({
+      key: PromptQualityCriterionSchema,
+      label: z.string().min(1),
+      status: PromptQualityStatusSchema,
+      weight: z.number().int().positive(),
+      earned: z.number().int().min(0),
+    }),
+  ),
+});
+
 export const PromptAnalysisPreviewSchema = z.object({
   summary: z.string(),
   warnings: z.array(z.string()),
   suggestions: z.array(z.string()),
   checklist: z.array(PromptQualityChecklistItemSchema),
   tags: z.array(PromptTagSchema),
+  quality_score: PromptQualityScoreSchema,
   analyzer: z.string().min(1),
   created_at: z.string().min(1),
 });
@@ -154,4 +177,8 @@ export type PromptTag = z.infer<typeof PromptTagSchema>;
 export type PromptQualityChecklistItem = z.infer<
   typeof PromptQualityChecklistItemSchema
 >;
+export type PromptQualityScoreBand = z.infer<
+  typeof PromptQualityScoreBandSchema
+>;
+export type PromptQualityScore = z.infer<typeof PromptQualityScoreSchema>;
 export type PromptAnalysisPreview = z.infer<typeof PromptAnalysisPreviewSchema>;

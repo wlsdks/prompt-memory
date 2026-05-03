@@ -18,6 +18,10 @@ Node.js `>=22 <25` is required.
 
 ## Pull Requests
 
+`main` is protected. Work on a branch and open a pull request. A pull request
+must have passing CI for Node 22 and Node 24, one approving review, and all
+review conversations resolved before merge.
+
 Before opening a pull request, run:
 
 ```sh
@@ -60,3 +64,6 @@ prompt improvement. Avoid marketing-style landing pages in the app shell.
 
 Changes that affect packaging, storage, hooks, export, deletion, or redaction
 should update the relevant docs in `docs/`.
+
+User-facing documentation or UI text changes should keep the English and Korean
+surfaces aligned.

@@ -39,6 +39,7 @@ Confirm `pnpm pack:dry-run` includes:
 - [ ] `README.md`
 - [ ] `SECURITY.md`
 - [ ] `docs/PRD.md`
+- [ ] `docs/ARCHITECTURE.md`
 - [ ] `docs/TECH_SPEC.md`
 - [ ] `docs/IMPLEMENTATION_PLAN.md`
 - [ ] `docs/ADAPTERS.md`

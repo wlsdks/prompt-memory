@@ -66,7 +66,28 @@ describe("SQLite prompt storage", () => {
       { version: 6, name: "006_import_jobs" },
       { version: 7, name: "007_prompt_improvement_drafts" },
       { version: 8, name: "008_export_jobs" },
+      { version: 9, name: "009_dashboard_query_indexes" },
+      { version: 10, name: "010_project_instruction_reviews" },
     ]);
+    const db = new Database(join(dataDir, "prompt-memory.sqlite"));
+    try {
+      const indexes = db
+        .prepare("PRAGMA index_list(prompts)")
+        .all()
+        .map((row) => (row as { name: string }).name);
+      expect(indexes).toEqual(
+        expect.arrayContaining([
+          "idx_prompts_deleted_received",
+          "idx_prompts_deleted_tool_received",
+          "idx_prompts_deleted_sensitive",
+          "idx_prompts_deleted_hash_received",
+          "idx_prompts_deleted_cwd_received",
+          "idx_prompts_deleted_project_root_received",
+        ]),
+      );
+    } finally {
+      db.close();
+    }
 
     const prompts = storage.listPromptRows();
     expect(prompts).toHaveLength(1);
@@ -159,6 +180,18 @@ describe("SQLite prompt storage", () => {
 
     expect(detail?.analysis).toMatchObject({
       analyzer: "local-rules-v1",
+      quality_score: {
+        value: 90,
+        max: 100,
+        band: "excellent",
+        breakdown: expect.arrayContaining([
+          expect.objectContaining({
+            key: "goal_clarity",
+            weight: 25,
+            earned: 25,
+          }),
+        ]),
+      },
       summary: expect.stringContaining("relatively clear"),
       warnings: [],
       suggestions: [],
@@ -247,12 +280,19 @@ describe("SQLite prompt storage", () => {
       cwd: "/Users/example/project-b",
     });
     storage.recordPromptUsage(docs.id, "prompt_copied");
+    storage.recordPromptUsage(docs.id, "prompt_copied");
     storage.setPromptBookmark(docs.id, true);
 
     const dashboard = storage.getQualityDashboard();
     const serialized = JSON.stringify(dashboard);
 
     expect(dashboard.total_prompts).toBe(3);
+    expect(dashboard.quality_score).toMatchObject({
+      average: 45,
+      band: "needs_work",
+      scored_prompts: 3,
+      max: 100,
+    });
     expect(dashboard.recent.last_7_days).toBe(3);
     expect(dashboard.trend.daily).toEqual([
       {
@@ -260,6 +300,7 @@ describe("SQLite prompt storage", () => {
         prompt_count: 0,
         quality_gap_count: 0,
         quality_gap_rate: 0,
+        average_quality_score: 0,
         sensitive_count: 0,
       },
       {
@@ -267,6 +308,7 @@ describe("SQLite prompt storage", () => {
         prompt_count: 0,
         quality_gap_count: 0,
         quality_gap_rate: 0,
+        average_quality_score: 0,
         sensitive_count: 0,
       },
       {
@@ -274,6 +316,7 @@ describe("SQLite prompt storage", () => {
         prompt_count: 0,
         quality_gap_count: 0,
         quality_gap_rate: 0,
+        average_quality_score: 0,
         sensitive_count: 0,
       },
       {
@@ -281,6 +324,7 @@ describe("SQLite prompt storage", () => {
         prompt_count: 0,
         quality_gap_count: 0,
         quality_gap_rate: 0,
+        average_quality_score: 0,
         sensitive_count: 0,
       },
       {
@@ -288,6 +332,7 @@ describe("SQLite prompt storage", () => {
         prompt_count: 1,
         quality_gap_count: 1,
         quality_gap_rate: 1,
+        average_quality_score: 0,
         sensitive_count: 0,
       },
       {
@@ -295,6 +340,7 @@ describe("SQLite prompt storage", () => {
         prompt_count: 1,
         quality_gap_count: 1,
         quality_gap_rate: 1,
+        average_quality_score: 35,
         sensitive_count: 1,
       },
       {
@@ -302,6 +348,7 @@ describe("SQLite prompt storage", () => {
         prompt_count: 1,
         quality_gap_count: 0,
         quality_gap_rate: 0,
+        average_quality_score: 100,
         sensitive_count: 0,
       },
     ]);
@@ -331,6 +378,7 @@ describe("SQLite prompt storage", () => {
         prompt_count: 2,
         quality_gap_count: 2,
         quality_gap_rate: 1,
+        average_quality_score: 18,
         sensitive_count: 1,
         copied_count: 0,
         bookmarked_count: 0,
@@ -345,8 +393,9 @@ describe("SQLite prompt storage", () => {
         prompt_count: 1,
         quality_gap_count: 0,
         quality_gap_rate: 0,
+        average_quality_score: 100,
         sensitive_count: 0,
-        copied_count: 1,
+        copied_count: 2,
         bookmarked_count: 1,
         top_gap: undefined,
       }),
@@ -1000,6 +1049,59 @@ describe("SQLite prompt storage", () => {
       "/Users/example/private-project",
     );
     expect(JSON.stringify(auditRows)).not.toContain("sk-proj-1234567890abcdef");
+  });
+
+  it("analyzes and stores project instruction files without returning bodies or raw paths", async () => {
+    const dataDir = createTempDir();
+    const projectDir = createTempDir();
+    writeFileSync(
+      join(projectDir, "AGENTS.md"),
+      [
+        "# Project",
+        "prompt-memory is a local-first developer tool built with TypeScript and SQLite.",
+        "Agents must plan in tasks/todo.md, avoid reverting user changes, commit, and push.",
+        "Run pnpm test, pnpm lint, pnpm build, and Playwright E2E after UI changes.",
+        "Never log secrets, prompt bodies, raw paths, tokens, stdout, or stderr leaks.",
+        "Respond in Korean and report verification evidence in the final summary.",
+      ].join("\n"),
+    );
+    initializePromptMemory({ dataDir });
+    const storage = createSqlitePromptStorage({
+      dataDir,
+      hmacSecret: "test-secret",
+      now: nextDate(["2026-05-03T00:10:00.000Z", "2026-05-03T00:11:00.000Z"]),
+    });
+    await storeClaudePrompt(storage, {
+      prompt: "Update project instructions and run pnpm test.",
+      receivedAt: "2026-05-03T00:10:00.000Z",
+      cwd: projectDir,
+    });
+
+    const project = storage.listProjects().items[0]!;
+    const review = storage.analyzeProjectInstructions(project.project_id);
+    const updatedProject = storage.listProjects().items[0]!;
+
+    expect(review).toMatchObject({
+      generated_at: "2026-05-03T00:11:00.000Z",
+      analyzer: "local-project-instructions-v1",
+      files_found: 1,
+      score: { value: 100, max: 100, band: "excellent" },
+      files: [expect.objectContaining({ file_name: "AGENTS.md" })],
+      privacy: {
+        local_only: true,
+        external_calls: false,
+        stores_file_bodies: false,
+        returns_file_bodies: false,
+        returns_raw_paths: false,
+      },
+    });
+    expect(updatedProject.instruction_review).toMatchObject({
+      score: { value: 100, band: "excellent" },
+      files_found: 1,
+    });
+    expect(JSON.stringify(review)).not.toContain(projectDir);
+    expect(JSON.stringify(review)).not.toContain("local-first developer tool");
+    expect(JSON.stringify(updatedProject)).not.toContain(projectDir);
   });
 
   it("stores import dry-run jobs without prompt bodies or raw source paths", async () => {

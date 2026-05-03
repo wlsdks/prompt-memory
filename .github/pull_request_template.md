@@ -24,3 +24,4 @@
 
 - [ ] Not applicable
 - [ ] Browser flow checked with `pnpm e2e:browser`
+- [ ] English and Korean user-facing text were both checked

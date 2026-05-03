@@ -18,19 +18,19 @@ The implementation records prompts from supported AI coding tools, redacts sensi
 
 ## 2. Stack
 
-| Area | Choice | Reason |
-| --- | --- | --- |
-| Language | TypeScript | shared types across CLI, server, adapters, and web |
-| Runtime | Node.js 22/24 | npm distribution and native dependency support |
-| Package manager | pnpm | deterministic lockfile and scripts |
-| CLI | Commander | simple command surface |
-| HTTP server | Fastify | local API, validation, low overhead |
-| Database | SQLite | local-first single-file storage |
-| SQLite driver | better-sqlite3 | simple local transactions |
-| Query layer | direct SQL + repository boundary | transparent migrations and FTS |
-| Web UI | Vite + React | small local web app |
-| Validation | Zod | runtime schema validation |
-| Testing | Vitest | TypeScript unit/integration tests |
+| Area            | Choice                           | Reason                                             |
+| --------------- | -------------------------------- | -------------------------------------------------- |
+| Language        | TypeScript                       | shared types across CLI, server, adapters, and web |
+| Runtime         | Node.js 22/24                    | npm distribution and native dependency support     |
+| Package manager | pnpm                             | deterministic lockfile and scripts                 |
+| CLI             | Commander                        | simple command surface                             |
+| HTTP server     | Fastify                          | local API, validation, low overhead                |
+| Database        | SQLite                           | local-first single-file storage                    |
+| SQLite driver   | better-sqlite3                   | simple local transactions                          |
+| Query layer     | direct SQL + repository boundary | transparent migrations and FTS                     |
+| Web UI          | Vite + React                     | small local web app                                |
+| Validation      | Zod                              | runtime schema validation                          |
+| Testing         | Vitest                           | TypeScript unit/integration tests                  |
 
 Unsupported for the public beta:
 
@@ -50,6 +50,7 @@ src/
   exporter/
   hooks/
   importer/
+  mcp/
   redaction/
   server/
   shared/
@@ -61,6 +62,11 @@ commands/
 plugins/
 integrations/
 ```
+
+Architecture rules and module ownership are documented in
+[ARCHITECTURE.md](./ARCHITECTURE.md). In short, `cli`, `server`, `hooks`, `mcp`,
+and `web` are runtime entrypoints; reusable local rules belong in `analysis`,
+`redaction`, `storage`, or `shared`.
 
 `dist/` contains built CLI/server modules and web assets. The npm package ships built files and does not require Vite at runtime.
 
@@ -126,6 +132,53 @@ Hard delete removes:
 
 `rebuild-index` treats Markdown as the source of truth and rebuilds prompt index/FTS state. User-owned policy/job tables are preserved.
 
+### MCP Prompt Scoring Flow
+
+1. User registers `prompt-memory mcp` with a local MCP client such as Claude Code
+   or Codex.
+2. The client launches the command as a stdio subprocess.
+3. The MCP server exposes `get_prompt_memory_status`, `score_prompt`,
+   `improve_prompt`, `score_prompt_archive`, and
+   `review_project_instructions`.
+4. `get_prompt_memory_status` checks whether local storage is initialized,
+   whether prompts have been captured, and which MCP tool to call next.
+5. `score_prompt` accepts exactly one of direct prompt text, a stored prompt id,
+   or `latest: true`.
+6. Direct prompt text is analyzed locally and is not stored.
+7. Stored prompt scoring reads existing local analysis from SQLite and does not
+   return prompt bodies.
+8. `improve_prompt` accepts exactly one of direct prompt text, a stored prompt
+   id, or `latest: true`, then returns a copy-based draft that requires user
+   approval before resubmission.
+9. Archive scoring reads recent prompt summaries from SQLite and returns an
+   aggregate score, distribution, recurring quality gaps, practice plan, next
+   prompt template, and low-score prompt ids without prompt bodies or raw paths.
+10. Project instruction review reads local project metadata from SQLite, can
+    rescan `AGENTS.md` / `CLAUDE.md`, and returns checklist metadata without
+    instruction file bodies or raw paths.
+11. Every MCP tool is declared as read-only, idempotent, and local-only through
+    tool annotations, declares an MCP `outputSchema`, and `tools/call` returns
+    both serialized JSON text and `structuredContent` for clients that can
+    consume structured tool results.
+
+Important rules:
+
+- stdout is reserved for newline-delimited JSON-RPC MCP messages
+- no external LLM calls are made
+- MCP tool definitions include read-only/local-only risk hints
+- MCP tool definitions include `outputSchema` for structured result fields
+- MCP tool responses include `structuredContent` plus a JSON text content block
+- direct MCP prompt input is not written to Markdown or SQLite
+- improvement MCP results are copy-based drafts, are never auto-submitted, and
+  archive-backed rewrites do not return the stored original prompt body
+- MCP tool results return score metadata and checklist explanations, not prompt
+  bodies
+- status MCP results are readiness metadata only and never include prompt bodies
+  or raw absolute paths
+- archive MCP results are metadata-only and bounded by `max_prompts`
+- project instruction MCP results are metadata-only and never include file
+  bodies or raw absolute paths
+
 ## 6. Adapter Contract
 
 Adapters produce a normalized prompt event.
@@ -167,16 +220,17 @@ Rules:
 
 ### Route Groups
 
-| Route group | Purpose |
-| --- | --- |
-| `/api/v1/health` | server health |
-| `/api/v1/session` | local browser session and CSRF |
-| `/api/v1/ingest/claude-code` | Claude Code ingest |
-| `/api/v1/ingest/codex` | Codex ingest |
-| `/api/v1/prompts` | list/search/detail/events/improvements/delete |
-| `/api/v1/projects` | project list and policy mutation |
-| `/api/v1/exports` | anonymized export preview and execution |
-| `/api/v1/settings` | local diagnostics/config view |
+| Route group                  | Purpose                                       |
+| ---------------------------- | --------------------------------------------- |
+| `/api/v1/health`             | server health                                 |
+| `/api/v1/session`            | local browser session and CSRF                |
+| `/api/v1/ingest/claude-code` | Claude Code ingest                            |
+| `/api/v1/ingest/codex`       | Codex ingest                                  |
+| `/api/v1/prompts`            | list/search/detail/events/improvements/delete |
+| `/api/v1/score`              | archive prompt score review                   |
+| `/api/v1/projects`           | project list and policy mutation              |
+| `/api/v1/exports`            | anonymized export preview and execution       |
+| `/api/v1/settings`           | local diagnostics/config view                 |
 
 ## 8. Storage Design
 
@@ -236,6 +290,13 @@ It detects prompt quality gaps:
 - scope missing
 - verification missing
 - output format missing
+
+It also derives a local Prompt Quality Score:
+
+- range: `0-100`
+- weights: goal clarity `25`, background context `20`, scope limits `20`, output format `15`, verification criteria `20`
+- status scoring: `good` earns full weight, `weak` earns half weight, `missing` earns zero
+- bands: `excellent >= 85`, `good >= 60`, `needs_work >= 40`, `weak < 40`
 
 Prompt Coach creates a copy-based improvement draft. Drafts:
 

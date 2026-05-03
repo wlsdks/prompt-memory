@@ -11,6 +11,10 @@ import { fileURLToPath } from "node:url";
 import type { Command } from "commander";
 
 import type { LastHookStatus } from "../../hooks/hook-status.js";
+import {
+  scorePromptTool,
+  type ScorePromptToolResult,
+} from "../../mcp/score-tool.js";
 import { doctorClaudeCode } from "./doctor.js";
 import type { ClaudeSettings } from "./install-hook.js";
 
@@ -44,6 +48,12 @@ export type StatusLineInstallResult = {
 const STATUSLINE_MARKER = "prompt-memory statusline claude-code";
 
 export function registerStatusLineCommand(program: Command): void {
+  registerRenderStatusLineCommand(program);
+  registerInstallStatusLineCommand(program);
+  registerUninstallStatusLineCommand(program);
+}
+
+function registerRenderStatusLineCommand(program: Command): void {
   program
     .command("statusline")
     .argument("<tool>", "Tool to render a status line for.")
@@ -56,7 +66,9 @@ export function registerStatusLineCommand(program: Command): void {
 
       console.log(await renderClaudeCodeStatusLine(options));
     });
+}
 
+function registerInstallStatusLineCommand(program: Command): void {
   program
     .command("install-statusline")
     .argument("<tool>", "Tool to install status line for.")
@@ -82,7 +94,9 @@ export function registerStatusLineCommand(program: Command): void {
         ),
       );
     });
+}
 
+function registerUninstallStatusLineCommand(program: Command): void {
   program
     .command("uninstall-statusline")
     .argument("<tool>", "Tool to uninstall status line for.")
@@ -123,6 +137,18 @@ export async function renderClaudeCodeStatusLine(
 
   parts.push(result.server.ok ? "server ok" : "server down");
 
+  if (ready) {
+    const latestScore = formatLatestScoreForStatusLine(
+      scorePromptTool(
+        { latest: true, include_suggestions: false },
+        { dataDir: options.dataDir },
+      ),
+    );
+    if (latestScore) {
+      parts.push(latestScore);
+    }
+  }
+
   if (!result.settings.hookInstalled) {
     parts.push("hook missing");
   } else if (!result.token.ok) {
@@ -135,6 +161,21 @@ export async function renderClaudeCodeStatusLine(
   }
 
   return parts.join(" | ");
+}
+
+function formatLatestScoreForStatusLine(
+  result: ScorePromptToolResult,
+): string | undefined {
+  if ("is_error" in result) {
+    return undefined;
+  }
+
+  const gap = result.checklist.find(
+    (item) => item.status === "missing" || item.status === "weak",
+  );
+  const score = `score ${result.quality_score.value}/${result.quality_score.max} ${result.quality_score.band}`;
+
+  return gap ? `${score} | gap ${gap.label}` : score;
 }
 
 export function installClaudeCodeStatusLine(

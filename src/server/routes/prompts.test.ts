@@ -327,6 +327,44 @@ describe("prompt read/delete API", () => {
     ]);
   });
 
+  it("returns a privacy-safe archive score report", async () => {
+    const { server, ids } = await createPromptApiFixture();
+
+    const response = await server.inject({
+      method: "GET",
+      url: "/api/v1/score?limit=100&low_score_limit=2",
+      headers: {
+        host: "127.0.0.1:17373",
+        authorization: "Bearer app-token",
+      },
+    });
+
+    expect(response.statusCode).toBe(200);
+    const body = response.json<{
+      data: {
+        archive_score: { scored_prompts: number; average: number };
+        low_score_prompts: Array<{ id: string; project: string }>;
+        privacy: {
+          returns_prompt_bodies: boolean;
+          returns_raw_paths: boolean;
+        };
+      };
+    }>().data;
+
+    expect(body.archive_score.scored_prompts).toBe(3);
+    expect(body.archive_score.average).toBeGreaterThanOrEqual(0);
+    expect(body.low_score_prompts.map((prompt) => prompt.id)).toContain(
+      ids.alpha,
+    );
+    expect(body.low_score_prompts[0]?.project).toBe("project");
+    expect(body.privacy).toMatchObject({
+      returns_prompt_bodies: false,
+      returns_raw_paths: false,
+    });
+    expect(response.body).not.toContain("alpha prompt");
+    expect(response.body).not.toContain("/Users/example");
+  });
+
   it("filters prompt lists by import job id without returning other prompts", async () => {
     const { server, ids, storage } = await createPromptApiFixture();
     const job = storage.createImportJob({

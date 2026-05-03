@@ -4,29 +4,43 @@ import {
   BarChart3,
   ChevronLeft,
   ChevronRight,
+  CheckCircle2,
+  ClipboardCheck,
+  CircleAlert,
+  CircleX,
   Copy,
   Database,
   Download,
   FileText,
   FolderCog,
+  Gauge,
   GitCompare,
+  ListChecks,
+  Plug,
+  Plus,
+  RefreshCw,
   Search,
   Settings,
   ShieldCheck,
   Star,
   Tags,
+  Target,
+  TrendingUp,
   Trash2,
 } from "lucide-react";
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useState, type ReactNode } from "react";
 
+import { analyzePrompt } from "../../analysis/analyze.js";
 import {
   improvePrompt,
   type PromptImprovement,
 } from "../../analysis/improve.js";
 import {
+  analyzeProjectInstructions,
   createExportPreview,
   deletePrompt,
   executeExportJob,
+  getArchiveScoreReport,
   getHealth,
   getPrompt,
   getQualityDashboard,
@@ -38,6 +52,7 @@ import {
   setPromptBookmark,
   updateProjectPolicy,
   type AnonymizedExportPayload,
+  type ArchiveScoreReport,
   type ExportJob,
   type ExportPreset,
   type ProjectSummary,
@@ -45,6 +60,7 @@ import {
   type PromptFilters,
   type PromptDetail,
   type PromptQualityGap,
+  type PromptQualityScoreBand,
   type PromptSummary,
   type SettingsResponse,
 } from "./api.js";
@@ -54,15 +70,65 @@ import {
   persistLanguage,
   type Language,
 } from "./i18n.js";
+import {
+  createHabitNextRequestBrief,
+  createHabitNextRequestBriefPreview,
+  createPromptHabitCoach,
+  type PromptHabitCoach,
+} from "./habit-coach.js";
 import { SafeMarkdown } from "./markdown.js";
+import {
+  createArchiveMeasurement,
+  type ArchiveMeasurement,
+} from "./measurement.js";
+import {
+  appendPracticeQuickFix,
+  applyPracticeQuickFixes,
+  createPracticeQuickFixes,
+  type PracticeQuickFix,
+} from "./practice-builder.js";
+import {
+  DistributionBarChart,
+  GapRateChart,
+  PracticeHistoryChart,
+  QualityTrendChart,
+  ScoreDistributionChart,
+} from "./charts.js";
+import {
+  appendPracticeHistory,
+  createPracticeHistoryItem,
+  markPracticeOutcome,
+  readPracticeHistory,
+  summarizePracticeHistory,
+  writePracticeHistory,
+  type PracticeOutcome,
+  type PracticeHistoryItem,
+} from "./practice-history.js";
 
 type View =
   | { name: "list" }
   | { name: "detail"; id: string }
   | { name: "dashboard" }
+  | { name: "coach" }
+  | { name: "practice" }
+  | { name: "scores" }
+  | { name: "benchmark" }
+  | { name: "insights" }
   | { name: "projects" }
+  | { name: "mcp" }
   | { name: "exports" }
   | { name: "settings" };
+
+type WorkspaceSection = "coach" | "practice" | "scores" | "insights";
+
+const LIVE_MEASUREMENT_REFRESH_MS = 12_000;
+const DEFAULT_PRACTICE_DRAFT = [
+  "Goal:",
+  "Context:",
+  "Scope:",
+  "Verification:",
+  "Output:",
+].join("\n");
 
 export function App() {
   const [language, setLanguage] = useState<Language>(() =>
@@ -80,7 +146,17 @@ export function App() {
   >();
   const [settings, setSettings] = useState<SettingsResponse | undefined>();
   const [dashboard, setDashboard] = useState<QualityDashboard | undefined>();
+  const [archiveScore, setArchiveScore] = useState<
+    ArchiveScoreReport | undefined
+  >();
+  const [measurementCheckedAt, setMeasurementCheckedAt] = useState<
+    string | undefined
+  >();
+  const [measurementBusy, setMeasurementBusy] = useState(false);
   const [projects, setProjects] = useState<ProjectSummary[]>([]);
+  const [projectInstructionBusy, setProjectInstructionBusy] = useState<
+    Record<string, boolean>
+  >({});
   const [exportPreset, setExportPreset] =
     useState<ExportPreset>("anonymized_review");
   const [exportPreview, setExportPreview] = useState<ExportJob | undefined>();
@@ -150,13 +226,63 @@ export function App() {
     void getSettings()
       .then(setSettings)
       .catch(() => undefined);
+  }, []);
+
+  useEffect(() => {
+    if (!needsDashboardData(view.name) || dashboard) {
+      return;
+    }
+
     void getQualityDashboard()
       .then(setDashboard)
       .catch(() => undefined);
+  }, [dashboard, view.name]);
+
+  useEffect(() => {
+    if (!needsArchiveScoreData(view.name) || archiveScore) {
+      return;
+    }
+
+    void getArchiveScoreReport()
+      .then(setArchiveScore)
+      .catch(() => undefined);
+  }, [archiveScore, view.name]);
+
+  useEffect(() => {
+    if (view.name !== "projects" || projects.length > 0) {
+      return;
+    }
+
     void listProjects()
       .then(setProjects)
       .catch(() => undefined);
-  }, []);
+  }, [projects.length, view.name]);
+
+  useEffect(() => {
+    if (view.name !== "benchmark") {
+      return;
+    }
+
+    let cancelled = false;
+    const timer = window.setInterval(() => {
+      void Promise.all([getQualityDashboard(), getArchiveScoreReport()])
+        .then(([nextDashboard, nextArchiveScore]) => {
+          if (cancelled) {
+            return;
+          }
+
+          setDashboard(nextDashboard);
+          setArchiveScore(nextArchiveScore);
+          setMeasurementCheckedAt(new Date().toISOString());
+        })
+        .catch(() => undefined);
+    }, LIVE_MEASUREMENT_REFRESH_MS);
+
+    return () => {
+      cancelled = true;
+      window.clearInterval(timer);
+    };
+  }, [view.name]);
 
   useEffect(() => {
     if (view.name !== "detail") {
@@ -172,7 +298,13 @@ export function App() {
   const visibleTitle = useMemo(() => {
     if (view.name === "settings") return "Settings";
     if (view.name === "exports") return "Anonymized export";
+    if (view.name === "mcp") return "MCP tools";
     if (view.name === "projects") return "Projects";
+    if (view.name === "insights") return "Prompt insights";
+    if (view.name === "benchmark") return "Prompt benchmark";
+    if (view.name === "scores") return "Prompt scores";
+    if (view.name === "practice") return "Prompt practice";
+    if (view.name === "coach") return "Prompt coach";
     if (view.name === "detail") return "Prompt detail";
     if (view.name === "dashboard") return "Quality dashboard";
     return "Prompt archive";
@@ -227,6 +359,9 @@ export function App() {
     await refreshList(filters, { replace: true });
     void getQualityDashboard()
       .then(setDashboard)
+      .catch(() => undefined);
+    void getArchiveScoreReport()
+      .then(setArchiveScore)
       .catch(() => undefined);
   }
 
@@ -334,6 +469,58 @@ export function App() {
     }
   }
 
+  async function analyzeProjectRules(project: ProjectSummary): Promise<void> {
+    setProjectInstructionBusy((current) => ({
+      ...current,
+      [project.project_id]: true,
+    }));
+    try {
+      const review = await analyzeProjectInstructions(project.project_id);
+      setProjects((current) =>
+        current.map((item) =>
+          item.project_id === project.project_id
+            ? { ...item, instruction_review: review }
+            : item,
+        ),
+      );
+    } catch {
+      setError("Could not analyze project instruction files.");
+    } finally {
+      setProjectInstructionBusy((current) => ({
+        ...current,
+        [project.project_id]: false,
+      }));
+    }
+  }
+
+  async function refreshArchiveScore(): Promise<void> {
+    try {
+      const report = await getArchiveScoreReport();
+      setArchiveScore(report);
+      setMeasurementCheckedAt(new Date().toISOString());
+    } catch {
+      setError("Could not evaluate the prompt archive.");
+    }
+  }
+
+  async function measureArchive(): Promise<void> {
+    setMeasurementBusy(true);
+    setError(undefined);
+    try {
+      const [nextDashboard, nextArchiveScore] = await Promise.all([
+        getQualityDashboard(),
+        getArchiveScoreReport(),
+      ]);
+      setDashboard(nextDashboard);
+      setArchiveScore(nextArchiveScore);
+      setMeasurementCheckedAt(new Date().toISOString());
+    } catch {
+      setError("Could not measure the prompt archive.");
+    } finally {
+      setMeasurementBusy(false);
+    }
+  }
+
   async function previewExport(): Promise<void> {
     setExportBusy(true);
     setError(undefined);
@@ -420,13 +607,25 @@ export function App() {
         ? `/prompts/${next.id}`
         : next.name === "dashboard"
           ? "/dashboard"
-          : next.name === "projects"
-            ? "/projects"
-            : next.name === "exports"
-              ? "/exports"
-              : next.name === "settings"
-                ? "/settings"
-                : "/";
+          : next.name === "coach"
+            ? "/coach"
+            : next.name === "practice"
+              ? "/practice"
+              : next.name === "scores"
+                ? "/scores"
+                : next.name === "benchmark"
+                  ? "/benchmark"
+                  : next.name === "insights"
+                    ? "/insights"
+                    : next.name === "projects"
+                      ? "/projects"
+                      : next.name === "mcp"
+                        ? "/mcp"
+                        : next.name === "exports"
+                          ? "/exports"
+                          : next.name === "settings"
+                            ? "/settings"
+                            : "/";
     window.history.pushState({}, "", path);
     setView(next);
   }
@@ -454,10 +653,46 @@ export function App() {
           <BarChart3 size={16} /> Dashboard
         </button>
         <button
+          className={`nav-button ${view.name === "coach" ? "active" : ""}`}
+          onClick={() => navigate({ name: "coach" })}
+        >
+          <Target size={16} /> Coach
+        </button>
+        <button
+          className={`nav-button ${view.name === "practice" ? "active" : ""}`}
+          onClick={() => navigate({ name: "practice" })}
+        >
+          <ClipboardCheck size={16} /> Practice
+        </button>
+        <button
+          className={`nav-button ${view.name === "scores" ? "active" : ""}`}
+          onClick={() => navigate({ name: "scores" })}
+        >
+          <ListChecks size={16} /> Scores
+        </button>
+        <button
+          className={`nav-button ${view.name === "benchmark" ? "active" : ""}`}
+          onClick={() => navigate({ name: "benchmark" })}
+        >
+          <Gauge size={16} /> Benchmark
+        </button>
+        <button
+          className={`nav-button ${view.name === "insights" ? "active" : ""}`}
+          onClick={() => navigate({ name: "insights" })}
+        >
+          <GitCompare size={16} /> Insights
+        </button>
+        <button
           className={`nav-button ${view.name === "projects" ? "active" : ""}`}
           onClick={() => navigate({ name: "projects" })}
         >
           <FolderCog size={16} /> Projects
+        </button>
+        <button
+          className={`nav-button ${view.name === "mcp" ? "active" : ""}`}
+          onClick={() => navigate({ name: "mcp" })}
+        >
+          <Plug size={16} /> MCP
         </button>
         <button
           className={`nav-button ${view.name === "exports" ? "active" : ""}`}
@@ -680,6 +915,67 @@ export function App() {
         )}
         {view.name === "dashboard" && (
           <DashboardView
+            archiveScore={archiveScore}
+            dashboard={dashboard}
+            loading={!dashboard}
+            measurementBusy={measurementBusy}
+            measurementCheckedAt={measurementCheckedAt}
+            onOpenFilteredList={(nextFilters) => {
+              setFilters({ isSensitive: "all", ...nextFilters });
+              navigate({ name: "list" });
+            }}
+            onMeasure={() => void measureArchive()}
+            onNavigateSection={(section) => navigate({ name: section })}
+          />
+        )}
+        {view.name === "coach" && (
+          <CoachView
+            archiveScore={archiveScore}
+            dashboard={dashboard}
+            loading={!dashboard}
+            onOpenFilteredList={(nextFilters) => {
+              setFilters({ isSensitive: "all", ...nextFilters });
+              navigate({ name: "list" });
+            }}
+            onSelect={(id) => navigate({ name: "detail", id })}
+          />
+        )}
+        {view.name === "practice" && (
+          <PracticeView
+            archiveScore={archiveScore}
+            onMeasure={() => void refreshArchiveScore()}
+          />
+        )}
+        {view.name === "scores" && (
+          <ScoresView
+            archiveScore={archiveScore}
+            dashboard={dashboard}
+            loading={!dashboard}
+            onOpenFilteredList={(nextFilters) => {
+              setFilters({ isSensitive: "all", ...nextFilters });
+              navigate({ name: "list" });
+            }}
+            onRefreshArchiveScore={() => void refreshArchiveScore()}
+            onSelect={(id) => navigate({ name: "detail", id })}
+          />
+        )}
+        {view.name === "benchmark" && (
+          <BenchmarkView
+            archiveScore={archiveScore}
+            dashboard={dashboard}
+            loading={!dashboard}
+            measurementBusy={measurementBusy}
+            measurementCheckedAt={measurementCheckedAt}
+            onMeasure={() => void measureArchive()}
+            onNavigateScores={() => navigate({ name: "scores" })}
+            onOpenFilteredList={(nextFilters) => {
+              setFilters({ isSensitive: "all", ...nextFilters });
+              navigate({ name: "list" });
+            }}
+          />
+        )}
+        {view.name === "insights" && (
+          <InsightsView
             dashboard={dashboard}
             loading={!dashboard}
             onOpenFilteredList={(nextFilters) => {
@@ -691,8 +987,19 @@ export function App() {
         )}
         {view.name === "projects" && (
           <ProjectsView
+            instructionBusy={projectInstructionBusy}
+            onAnalyzeInstructions={(project) =>
+              void analyzeProjectRules(project)
+            }
             onToggleCapture={(project) => void toggleProjectCapture(project)}
             projects={projects}
+          />
+        )}
+        {view.name === "mcp" && (
+          <McpToolsView
+            dashboard={dashboard}
+            health={health}
+            settings={settings}
           />
         )}
         {view.name === "exports" && (
@@ -811,6 +1118,11 @@ function PromptList({
                   {gap}
                 </span>
               ))}
+              <span
+                className={`badge score-badge ${prompt.quality_score_band}`}
+              >
+                {prompt.quality_score}
+              </span>
               {prompt.usefulness.bookmarked && (
                 <span className="badge saved-badge">saved</span>
               )}
@@ -1109,7 +1421,13 @@ function AnalysisPreview({
           <p className="eyebrow">Local analysis</p>
           <h2>Analysis preview</h2>
         </div>
-        <span className="badge">{analysis.analyzer}</span>
+        <div className="analysis-score-box">
+          <span className={`score-value ${analysis.quality_score.band}`}>
+            {analysis.quality_score.value}
+          </span>
+          <small>Prompt score</small>
+          <span className="badge">{analysis.analyzer}</span>
+        </div>
       </div>
       <p className="analysis-summary">{analysis.summary}</p>
       {analysis.checklist.length > 0 && (
@@ -1175,6 +1493,688 @@ function AnalysisPreview({
 }
 
 function DashboardView({
+  archiveScore,
+  dashboard,
+  loading,
+  measurementBusy,
+  measurementCheckedAt,
+  onOpenFilteredList,
+  onMeasure,
+  onNavigateSection,
+}: {
+  archiveScore?: ArchiveScoreReport;
+  dashboard?: QualityDashboard;
+  loading: boolean;
+  measurementBusy: boolean;
+  measurementCheckedAt?: string;
+  onOpenFilteredList(filters: PromptFilters): void;
+  onMeasure(): void;
+  onNavigateSection(section: WorkspaceSection): void;
+}) {
+  if (loading || !dashboard) {
+    return <div className="panel empty">Loading dashboard.</div>;
+  }
+
+  const habitCoach = createPromptHabitCoach(dashboard, archiveScore);
+  const reviewCount =
+    archiveScore?.low_score_prompts.filter(isReviewableScorePrompt).length ?? 0;
+  const insightSignalCount =
+    dashboard.patterns.length +
+    dashboard.duplicate_prompt_groups.length +
+    dashboard.useful_prompts.length;
+
+  return (
+    <div className="dashboard-layout dashboard-overview">
+      <ArchiveMeasurementPanel
+        compact
+        measurement={createArchiveMeasurement({
+          archiveScore,
+          dashboard,
+          measuredAt: measurementCheckedAt,
+        })}
+        measurementBusy={measurementBusy}
+        onMeasure={onMeasure}
+        onOpenFilteredList={onOpenFilteredList}
+        onOpenScores={() => onNavigateSection("scores")}
+      />
+      <DashboardMetricStrip
+        dashboard={dashboard}
+        onOpenFilteredList={onOpenFilteredList}
+      />
+      <section className="overview-section-grid" aria-label="Workspace areas">
+        <OverviewSectionCard
+          detail={
+            habitCoach.biggestWeakness
+              ? `${habitCoach.biggestWeakness.label} · ${habitCoach.reviewQueue.length} review`
+              : "No repeated weakness yet"
+          }
+          icon={<Target size={18} />}
+          label="Coach"
+          metric={habitCoach.score.value}
+          metricLabel="habit score"
+          onSelect={() => onNavigateSection("coach")}
+          title="Improve the next prompt"
+        />
+        <OverviewSectionCard
+          detail={
+            archiveScore
+              ? "Practice habits ready"
+              : "Score archive to personalize"
+          }
+          icon={<ClipboardCheck size={18} />}
+          label="Practice"
+          metric={archiveScore?.practice_plan.length ?? "-"}
+          metricLabel="habits"
+          onSelect={() => onNavigateSection("practice")}
+          title="Draft with live score"
+        />
+        <OverviewSectionCard
+          detail={`${reviewCount} prompts need review`}
+          icon={<ListChecks size={18} />}
+          label="Scores"
+          metric={archiveScore?.archive_score.average ?? "-"}
+          metricLabel="archive score"
+          onSelect={() => onNavigateSection("scores")}
+          title="Review archive quality"
+        />
+        <OverviewSectionCard
+          detail={`${dashboard.project_profiles.length} projects · ${dashboard.duplicate_prompt_groups.length} duplicate groups`}
+          icon={<GitCompare size={18} />}
+          label="Insights"
+          metric={insightSignalCount}
+          metricLabel="signals"
+          onSelect={() => onNavigateSection("insights")}
+          title="Find reuse and project patterns"
+        />
+      </section>
+      <TrendPanel
+        daily={dashboard.trend.daily}
+        onSelectDay={(date) =>
+          onOpenFilteredList({
+            receivedFrom: date,
+            receivedTo: date,
+          })
+        }
+      />
+    </div>
+  );
+}
+
+function BenchmarkView({
+  archiveScore,
+  dashboard,
+  loading,
+  measurementBusy,
+  measurementCheckedAt,
+  onMeasure,
+  onNavigateScores,
+  onOpenFilteredList,
+}: {
+  archiveScore?: ArchiveScoreReport;
+  dashboard?: QualityDashboard;
+  loading: boolean;
+  measurementBusy: boolean;
+  measurementCheckedAt?: string;
+  onMeasure(): void;
+  onNavigateScores(): void;
+  onOpenFilteredList(filters: PromptFilters): void;
+}) {
+  if (loading || !dashboard) {
+    return <div className="panel empty">Loading dashboard.</div>;
+  }
+
+  const measurement = createArchiveMeasurement({
+    archiveScore,
+    dashboard,
+    measuredAt: measurementCheckedAt,
+  });
+
+  return (
+    <div className="dashboard-layout benchmark-layout">
+      <ArchiveMeasurementPanel
+        autoRefresh
+        measurement={measurement}
+        measurementBusy={measurementBusy}
+        onMeasure={onMeasure}
+        onOpenFilteredList={onOpenFilteredList}
+        onOpenScores={onNavigateScores}
+      />
+      <section className="panel measurement-explainer">
+        <div>
+          <h2>What this measures</h2>
+          <p>
+            This is your live archive measurement: it scores recent Claude Code
+            and Codex prompts stored locally, finds repeated gaps, and points to
+            the next review action.
+          </p>
+        </div>
+        <div>
+          <h2>Benchmark v1</h2>
+          <p>
+            <span>The development benchmark still lives in the CLI as</span>
+            <code>pnpm benchmark -- --json</code>
+            <span>
+              It is a regression gate, not a replacement for measuring your real
+              prompt archive here.
+            </span>
+          </p>
+        </div>
+      </section>
+    </div>
+  );
+}
+
+function CoachView({
+  archiveScore,
+  dashboard,
+  loading,
+  onOpenFilteredList,
+  onSelect,
+}: {
+  archiveScore?: ArchiveScoreReport;
+  dashboard?: QualityDashboard;
+  loading: boolean;
+  onOpenFilteredList(filters: PromptFilters): void;
+  onSelect(id: string): void;
+}) {
+  if (loading || !dashboard) {
+    return <div className="panel empty">Loading dashboard.</div>;
+  }
+
+  const habitCoach = createPromptHabitCoach(dashboard, archiveScore);
+
+  return (
+    <div className="dashboard-layout">
+      <HabitCoachPanel
+        coach={habitCoach}
+        onOpenFilteredList={onOpenFilteredList}
+        onSelect={onSelect}
+      />
+      <section className="dashboard-grid wide">
+        <QualityGapsPanel
+          dashboard={dashboard}
+          onOpenFilteredList={onOpenFilteredList}
+        />
+        <RepeatedPatternsPanel dashboard={dashboard} />
+      </section>
+      <InstructionSuggestionsPanel dashboard={dashboard} />
+    </div>
+  );
+}
+
+function PracticeView({
+  archiveScore,
+  onMeasure,
+}: {
+  archiveScore?: ArchiveScoreReport;
+  onMeasure(): void;
+}) {
+  const archiveTemplate =
+    archiveScore?.next_prompt_template ?? DEFAULT_PRACTICE_DRAFT;
+  const [draft, setDraft] = useState(archiveTemplate);
+  const [draftCopied, setDraftCopied] = useState(false);
+  const [practiceHistory, setPracticeHistory] = useState<PracticeHistoryItem[]>(
+    () => readBrowserPracticeHistory(),
+  );
+
+  useEffect(() => {
+    if (!draft.trim() || draft === DEFAULT_PRACTICE_DRAFT) {
+      setDraft(archiveTemplate);
+    }
+  }, [archiveTemplate, draft]);
+
+  const analysis = useMemo(
+    () =>
+      analyzePrompt({
+        prompt: draft,
+        createdAt: new Date().toISOString(),
+      }),
+    [draft],
+  );
+  const score = analysis.quality_score;
+  const missingItems = analysis.checklist.filter(
+    (item) => item.status !== "good",
+  );
+  const quickFixes = useMemo(
+    () => createPracticeQuickFixes(analysis),
+    [analysis],
+  );
+  const projectedDraft = useMemo(
+    () => applyPracticeQuickFixes(draft, quickFixes),
+    [draft, quickFixes],
+  );
+  const projectedAnalysis = useMemo(
+    () =>
+      analyzePrompt({
+        prompt: projectedDraft,
+        createdAt: new Date().toISOString(),
+      }),
+    [projectedDraft],
+  );
+  const projectedScore = projectedAnalysis.quality_score;
+  const projectedDelta = projectedScore.value - score.value;
+  const practiceSummary = useMemo(
+    () => summarizePracticeHistory(practiceHistory),
+    [practiceHistory],
+  );
+
+  async function copyDraft(): Promise<void> {
+    const copied = await copyTextToClipboard(draft);
+    if (!copied) {
+      return;
+    }
+
+    const nextHistory = appendPracticeHistory(
+      practiceHistory,
+      createPracticeHistoryItem({ analysis }),
+    );
+    setPracticeHistory(nextHistory);
+    writeBrowserPracticeHistory(nextHistory);
+    setDraftCopied(true);
+    window.setTimeout(() => setDraftCopied(false), 2500);
+  }
+
+  function markLatestOutcome(outcome: PracticeOutcome): void {
+    const latestId = practiceHistory[0]?.id;
+    const nextHistory = markPracticeOutcome(practiceHistory, latestId, outcome);
+    setPracticeHistory(nextHistory);
+    writeBrowserPracticeHistory(nextHistory);
+  }
+
+  function applyQuickFix(fix: PracticeQuickFix): void {
+    setDraft((currentDraft) => appendPracticeQuickFix(currentDraft, fix));
+  }
+
+  function applyAllQuickFixes(): void {
+    setDraft((currentDraft) =>
+      applyPracticeQuickFixes(currentDraft, quickFixes),
+    );
+  }
+
+  return (
+    <div className="practice-layout">
+      <section className="practice-workspace panel">
+        <div className="panel-heading-row">
+          <div>
+            <p className="eyebrow">Prompt practice workspace</p>
+            <h2>Draft the next request</h2>
+            <span>
+              This draft is scored locally and is not saved until you send it to
+              Claude Code or Codex.
+            </span>
+          </div>
+          <div className="practice-actions">
+            <button
+              className="panel-link-button"
+              onClick={onMeasure}
+              type="button"
+            >
+              <RefreshCw size={14} /> Refresh plan
+            </button>
+            <button
+              className="primary-button"
+              onClick={() => void copyDraft()}
+              type="button"
+            >
+              <Copy size={15} />{" "}
+              {draftCopied ? "Copied draft" : "Copy practice draft"}
+            </button>
+          </div>
+        </div>
+
+        <label className="practice-editor">
+          <span>Practice draft</span>
+          <textarea
+            aria-label="Practice draft"
+            onChange={(event) => setDraft(event.target.value)}
+            spellCheck={false}
+            value={draft}
+          />
+        </label>
+      </section>
+
+      <aside
+        className="practice-score-panel panel"
+        aria-label="Live local score"
+      >
+        <div className="practice-score-hero">
+          <span className={`score-value ${score.band}`}>{score.value}</span>
+          <div>
+            <p className="eyebrow">Live local score</p>
+            <h2>{qualityBandLabel(score.band)}</h2>
+            <small>{score.max} max · local-rules-v1</small>
+          </div>
+        </div>
+        <div className="archive-score-meter" aria-hidden="true">
+          <span style={{ width: `${Math.min(score.value, 100)}%` }} />
+        </div>
+
+        <div className="practice-checklist">
+          {analysis.checklist.map((item) => (
+            <div className="practice-check-row" key={item.key}>
+              <span className={`quality-dot ${item.status}`} />
+              <div>
+                <strong>{item.label}</strong>
+                <small>{item.reason}</small>
+              </div>
+            </div>
+          ))}
+        </div>
+      </aside>
+
+      <section className="practice-fix-panel panel">
+        <div className="practice-fix-header">
+          <div>
+            <p className="eyebrow">One-click builder</p>
+            <h2>Fix before sending</h2>
+          </div>
+          <button
+            className="panel-link-button"
+            disabled={quickFixes.length === 0}
+            onClick={applyAllQuickFixes}
+            type="button"
+          >
+            <Plus size={14} />{" "}
+            {quickFixes.length === 0
+              ? "All habits covered"
+              : "Add all missing sections"}
+          </button>
+        </div>
+        {quickFixes.length === 0 ? (
+          <p className="muted">This draft covers the core prompt habits.</p>
+        ) : (
+          <>
+            <div className="practice-projection">
+              <span className={`score-value ${projectedScore.band}`}>
+                {projectedScore.value}
+              </span>
+              <div>
+                <strong>Projected after fixes</strong>
+                <small>
+                  {projectedDelta > 0
+                    ? `+${projectedDelta} points if all sections are added`
+                    : "No score change from available fixes"}
+                </small>
+              </div>
+            </div>
+            <div className="practice-fix-list">
+              {quickFixes.map((fix) => {
+                const item = missingItems.find(
+                  (checkItem) => checkItem.key === fix.key,
+                );
+
+                return (
+                  <div className="practice-fix-row" key={fix.key}>
+                    <div>
+                      <strong>{fix.label}</strong>
+                      <p>{item?.suggestion ?? item?.reason ?? fix.snippet}</p>
+                    </div>
+                    <button
+                      className="practice-fix-add"
+                      onClick={() => applyQuickFix(fix)}
+                      type="button"
+                    >
+                      <Plus size={13} /> {fix.actionLabel}
+                    </button>
+                  </div>
+                );
+              })}
+            </div>
+          </>
+        )}
+      </section>
+
+      <section className="practice-history-panel panel">
+        <div className="panel-heading-row">
+          <div>
+            <p className="eyebrow">Local growth signal</p>
+            <h2>Practice history</h2>
+          </div>
+          <span>
+            {practiceSummary.count > 0
+              ? formatPracticeCopyCount(practiceSummary.count)
+              : "No copied drafts yet"}
+          </span>
+        </div>
+        <PracticeHistoryChart history={practiceHistory} />
+        <div className="practice-history-stats">
+          <MeasurementSignal
+            detail="last copied practice draft"
+            label="Latest"
+            value={
+              practiceSummary.latestScore === undefined
+                ? "-"
+                : `${practiceSummary.latestScore}`
+            }
+          />
+          <MeasurementSignal
+            detail="copied draft average"
+            label="Average"
+            value={
+              practiceSummary.count === 0
+                ? "-"
+                : `${practiceSummary.averageScore}`
+            }
+          />
+          <MeasurementSignal
+            detail="vs previous copied draft"
+            label="Delta"
+            value={formatPracticeDelta(practiceSummary.delta)}
+          />
+        </div>
+        <p className="muted">
+          Practice history stores scores and missing labels only, not draft
+          text.
+        </p>
+        <div
+          className="practice-outcome-panel"
+          aria-label="Practice outcome feedback"
+        >
+          <div>
+            <p className="eyebrow">Outcome feedback</p>
+            <h3>Did the copied draft work?</h3>
+          </div>
+          <div className="practice-outcome-actions">
+            <PracticeOutcomeButton
+              active={practiceHistory[0]?.outcome === "worked"}
+              disabled={practiceHistory.length === 0}
+              icon={<CheckCircle2 size={14} />}
+              label="Worked"
+              onClick={() => markLatestOutcome("worked")}
+            />
+            <PracticeOutcomeButton
+              active={practiceHistory[0]?.outcome === "needs_context"}
+              disabled={practiceHistory.length === 0}
+              icon={<CircleAlert size={14} />}
+              label="Needs context"
+              onClick={() => markLatestOutcome("needs_context")}
+            />
+            <PracticeOutcomeButton
+              active={practiceHistory[0]?.outcome === "blocked"}
+              disabled={practiceHistory.length === 0}
+              icon={<CircleX size={14} />}
+              label="Blocked"
+              onClick={() => markLatestOutcome("blocked")}
+            />
+          </div>
+          {practiceHistory.length === 0 ? (
+            <p className="muted">Copy a draft before marking outcome.</p>
+          ) : (
+            <div className="practice-outcome-summary">
+              <span>
+                <strong>{practiceSummary.workedCount}</strong>
+                {"Worked"}
+              </span>
+              <span>
+                <strong>{practiceSummary.needsContextCount}</strong>
+                {"Needs context"}
+              </span>
+              <span>
+                <strong>{practiceSummary.blockedCount}</strong>
+                {"Blocked"}
+              </span>
+              <span>
+                {"Latest outcome:"}
+                <strong>
+                  {practiceSummary.latestOutcome
+                    ? formatPracticeOutcome(practiceSummary.latestOutcome)
+                    : "No outcome yet"}
+                </strong>
+              </span>
+            </div>
+          )}
+        </div>
+        {practiceSummary.repeatedGap && (
+          <p className="practice-history-gap">
+            Repeated practice gap:{" "}
+            <strong>{practiceSummary.repeatedGap}</strong>
+          </p>
+        )}
+      </section>
+
+      <section className="practice-plan-panel panel">
+        <div className="panel-heading-row">
+          <h2>Practice plan</h2>
+          <span>
+            {archiveScore
+              ? `${archiveScore.practice_plan.length} habits from archive`
+              : "No archive score yet"}
+          </span>
+        </div>
+        {archiveScore?.practice_plan.length ? (
+          <div className="archive-practice-list">
+            {archiveScore.practice_plan.map((item) => (
+              <div className="archive-practice-row" key={item.priority}>
+                <span>{item.priority}</span>
+                <div>
+                  <strong>{item.label}</strong>
+                  <p>{item.prompt_rule}</p>
+                  <small>{item.reason}</small>
+                </div>
+              </div>
+            ))}
+          </div>
+        ) : (
+          <p className="muted">
+            Evaluate the archive to load personalized practice habits.
+          </p>
+        )}
+      </section>
+    </div>
+  );
+}
+
+function PracticeOutcomeButton({
+  active,
+  disabled,
+  icon,
+  label,
+  onClick,
+}: {
+  active: boolean;
+  disabled: boolean;
+  icon: ReactNode;
+  label: string;
+  onClick(): void;
+}) {
+  return (
+    <button
+      aria-pressed={active}
+      className="practice-outcome-button"
+      disabled={disabled}
+      onClick={onClick}
+      type="button"
+    >
+      {icon}
+      {label}
+    </button>
+  );
+}
+
+function readBrowserPracticeHistory(): PracticeHistoryItem[] {
+  try {
+    return readPracticeHistory(window.localStorage);
+  } catch {
+    return [];
+  }
+}
+
+function writeBrowserPracticeHistory(history: PracticeHistoryItem[]): void {
+  try {
+    writePracticeHistory(window.localStorage, history);
+  } catch {
+    // Ignore private-mode or unavailable storage; the copied draft still works.
+  }
+}
+
+function formatPracticeDelta(delta?: number): string {
+  if (delta === undefined) {
+    return "-";
+  }
+
+  if (delta > 0) {
+    return `+${delta}`;
+  }
+
+  return `${delta}`;
+}
+
+function formatPracticeCopyCount(count: number): string {
+  return count === 1 ? "1 copied draft" : `${count} copied drafts`;
+}
+
+function formatPracticeOutcome(outcome: PracticeOutcome): string {
+  if (outcome === "worked") {
+    return "Worked";
+  }
+
+  if (outcome === "needs_context") {
+    return "Needs context";
+  }
+
+  return "Blocked";
+}
+
+function ScoresView({
+  archiveScore,
+  dashboard,
+  loading,
+  onOpenFilteredList,
+  onRefreshArchiveScore,
+  onSelect,
+}: {
+  archiveScore?: ArchiveScoreReport;
+  dashboard?: QualityDashboard;
+  loading: boolean;
+  onOpenFilteredList(filters: PromptFilters): void;
+  onRefreshArchiveScore(): void;
+  onSelect(id: string): void;
+}) {
+  if (loading || !dashboard) {
+    return <div className="panel empty">Loading dashboard.</div>;
+  }
+
+  return (
+    <div className="dashboard-layout">
+      <ArchiveScoreReviewPanel
+        report={archiveScore}
+        onRefresh={onRefreshArchiveScore}
+        onSelect={onSelect}
+      />
+      <TrendPanel
+        daily={dashboard.trend.daily}
+        onSelectDay={(date) =>
+          onOpenFilteredList({
+            receivedFrom: date,
+            receivedTo: date,
+          })
+        }
+      />
+    </div>
+  );
+}
+
+function InsightsView({
   dashboard,
   loading,
   onOpenFilteredList,
@@ -1191,51 +2191,6 @@ function DashboardView({
 
   return (
     <div className="dashboard-layout">
-      <section className="metric-strip" aria-label="Prompt quality metrics">
-        <Metric
-          label="Total prompts"
-          onSelect={() => onOpenFilteredList({})}
-          value={dashboard.total_prompts}
-        />
-        <Metric
-          label="Contains sensitive data"
-          onSelect={() =>
-            onOpenFilteredList({
-              isSensitive: "true",
-            })
-          }
-          value={`${Math.round(dashboard.sensitive_ratio * 100)}%`}
-        />
-        <Metric
-          label="Last 7 days"
-          onSelect={() =>
-            onOpenFilteredList({
-              receivedFrom: daysAgoDateInput(7),
-            })
-          }
-          value={dashboard.recent.last_7_days}
-        />
-        <Metric
-          label="Last 30 days"
-          onSelect={() =>
-            onOpenFilteredList({
-              receivedFrom: daysAgoDateInput(30),
-            })
-          }
-          value={dashboard.recent.last_30_days}
-        />
-      </section>
-
-      <TrendPanel
-        daily={dashboard.trend.daily}
-        onSelectDay={(date) =>
-          onOpenFilteredList({
-            receivedFrom: date,
-            receivedTo: date,
-          })
-        }
-      />
-
       <section className="dashboard-grid">
         <DistributionPanel
           buckets={dashboard.distribution.by_tool}
@@ -1263,149 +2218,827 @@ function DashboardView({
       />
 
       <section className="dashboard-grid wide">
-        <div className="panel">
-          <div className="panel-heading-row">
-            <h2>Reuse candidates</h2>
-            {dashboard.useful_prompts.length > 0 && (
-              <button
-                className="panel-link-button"
-                onClick={() => onOpenFilteredList({ focus: "reused" })}
-                type="button"
-              >
-                View list
-              </button>
-            )}
-          </div>
-          <div className="useful-list">
-            {dashboard.useful_prompts.length === 0 && (
-              <p className="muted">
-                Prompts you copied or saved will appear here.
-              </p>
-            )}
-            {dashboard.useful_prompts.map((prompt) => (
-              <button
-                className="useful-row"
-                key={prompt.id}
-                onClick={() => onSelect(prompt.id)}
-              >
-                <span>
-                  <strong>{projectLabel(prompt.cwd)}</strong>
-                  <small>{formatDate(prompt.received_at)}</small>
-                </span>
-                <span className="status-cell">
-                  {prompt.bookmarked && (
-                    <span className="badge saved-badge">saved</span>
-                  )}
-                  <span className="badge reuse-badge">
-                    copy {prompt.copied_count}
-                  </span>
-                </span>
-              </button>
-            ))}
-          </div>
-        </div>
+        <ReuseCandidatesPanel
+          dashboard={dashboard}
+          onOpenFilteredList={onOpenFilteredList}
+          onSelect={onSelect}
+        />
+        <DuplicateCandidatesPanel dashboard={dashboard} onSelect={onSelect} />
+      </section>
+    </div>
+  );
+}
 
-        <div className="panel">
-          <h2>Duplicate candidates</h2>
-          <div className="duplicate-list">
-            {dashboard.duplicate_prompt_groups.length === 0 && (
-              <p className="muted">No prompts share the same stored body.</p>
-            )}
-            {dashboard.duplicate_prompt_groups.map((group) => (
-              <div className="duplicate-group" key={group.group_id}>
-                <div className="duplicate-group-header">
-                  <strong>{group.count} prompts</strong>
-                  <span>{formatDate(group.latest_received_at)}</span>
-                </div>
-                <div className="duplicate-projects">
-                  {group.projects.slice(0, 2).map((project) => (
-                    <span key={project}>{projectLabel(project)}</span>
-                  ))}
-                </div>
-                <div className="duplicate-prompts">
-                  {group.prompts.slice(0, 3).map((prompt) => (
-                    <button key={prompt.id} onClick={() => onSelect(prompt.id)}>
-                      <span>{projectLabel(prompt.cwd)}</span>
-                      <small>{formatDate(prompt.received_at)}</small>
-                    </button>
-                  ))}
-                </div>
-              </div>
-            ))}
-          </div>
+function ArchiveMeasurementPanel({
+  autoRefresh = false,
+  compact = false,
+  measurement,
+  measurementBusy,
+  onMeasure,
+  onOpenFilteredList,
+  onOpenScores,
+}: {
+  autoRefresh?: boolean;
+  compact?: boolean;
+  measurement: ArchiveMeasurement;
+  measurementBusy: boolean;
+  onMeasure(): void;
+  onOpenFilteredList(filters: PromptFilters): void;
+  onOpenScores(): void;
+}) {
+  return (
+    <section
+      aria-label="Live archive measurement"
+      className={`archive-measurement ${compact ? "compact" : ""}`}
+    >
+      <div className="measurement-primary">
+        <div className="measurement-heading">
+          <span className={`measurement-status ${measurement.status.tone}`}>
+            {measurement.status.label}
+          </span>
+          <p className="eyebrow">Live prompt benchmark</p>
+          <h2>Measure your prompt habits</h2>
+          <p>{measurement.status.detail}</p>
         </div>
+        <div className="measurement-score-block">
+          <span className={`score-value ${measurement.score.band}`}>
+            {measurement.score.value}
+          </span>
+          <small>{`archive score / ${measurement.score.max}`}</small>
+        </div>
+      </div>
 
-        <div className="panel">
-          <h2>Frequent quality gaps</h2>
-          <div className="gap-list">
-            {dashboard.missing_items.length === 0 && (
-              <p className="muted">No repeated gaps yet.</p>
-            )}
-            {dashboard.missing_items.map((item) => (
+      <div className="measurement-grid">
+        <MeasurementSignal
+          label="Review backlog"
+          value={measurement.reviewBacklog.label}
+          detail={`${Math.round(measurement.reviewBacklog.rate * 100)}% of measured prompts`}
+        />
+        <MeasurementSignal
+          label="Biggest gap"
+          value={measurement.biggestGap?.label ?? "No repeated gap"}
+          detail={
+            measurement.biggestGap
+              ? `${measurement.biggestGap.count} prompts / ${Math.round(
+                  measurement.biggestGap.rate * 100,
+                )}%`
+              : "Keep capturing more samples"
+          }
+        />
+        <MeasurementSignal
+          label="Coverage"
+          value={measurement.coverage.label}
+          detail={measurement.coverage.detail}
+        />
+        <MeasurementSignal
+          label="Privacy"
+          value={measurement.privacy.label}
+          detail={measurement.privacy.detail}
+        />
+      </div>
+
+      <div className="measurement-action-bar">
+        <div>
+          <strong>{measurement.nextAction.label}</strong>
+          <span>{measurement.nextAction.detail}</span>
+          <small>
+            {measurement.measuredAt
+              ? `Measured ${formatDate(measurement.measuredAt)}`
+              : "Not measured in this session yet"}
+          </small>
+          {autoRefresh && (
+            <small>{`Auto-updates every ${Math.round(
+              LIVE_MEASUREMENT_REFRESH_MS / 1000,
+            )}s while open`}</small>
+          )}
+        </div>
+        <div className="measurement-buttons">
+          <button
+            className="primary-action"
+            disabled={measurementBusy}
+            onClick={onMeasure}
+            type="button"
+          >
+            <RefreshCw size={14} />{" "}
+            {measurementBusy ? "Measuring..." : "Measure now"}
+          </button>
+          {measurement.nextAction.target === "review" && (
+            <button onClick={onOpenScores} type="button">
+              Open review queue
+            </button>
+          )}
+          {measurement.nextAction.target === "gap" &&
+            measurement.biggestGap && (
               <button
-                className="gap-row gap-action"
-                key={item.key}
                 onClick={() =>
                   onOpenFilteredList({
                     focus: "quality-gap",
-                    qualityGap: item.key as PromptQualityGap,
+                    qualityGap: qualityGapKeyFromLabel(
+                      measurement.biggestGap?.label,
+                    ),
                   })
                 }
+                type="button"
               >
-                <div>
-                  <strong>{item.label}</strong>
-                  <p>
-                    missing {item.missing} / weak {item.weak}
-                  </p>
-                </div>
-                <span>{Math.round(item.rate * 100)}%</span>
+                View gap prompts
               </button>
-            ))}
-          </div>
-        </div>
-
-        <div className="panel">
-          <h2>Repeated patterns</h2>
-          <div className="pattern-list">
-            {dashboard.patterns.length === 0 && (
-              <p className="muted">
-                Project patterns will appear after more samples are captured.
-              </p>
             )}
-            {dashboard.patterns.map((pattern) => (
-              <p key={`${pattern.project}:${pattern.item_key}`}>
-                {pattern.message}
-              </p>
-            ))}
+        </div>
+      </div>
+    </section>
+  );
+}
+
+function MeasurementSignal({
+  detail,
+  label,
+  value,
+}: {
+  detail: string;
+  label: string;
+  value: string;
+}) {
+  return (
+    <div className="measurement-signal">
+      <span>{label}</span>
+      <strong>{value}</strong>
+      <small>{detail}</small>
+    </div>
+  );
+}
+
+function DashboardMetricStrip({
+  dashboard,
+  onOpenFilteredList,
+}: {
+  dashboard: QualityDashboard;
+  onOpenFilteredList(filters: PromptFilters): void;
+}) {
+  return (
+    <section className="metric-strip" aria-label="Prompt quality metrics">
+      <Metric
+        label="Total prompts"
+        onSelect={() => onOpenFilteredList({})}
+        value={dashboard.total_prompts}
+      />
+      <Metric
+        label="Average prompt score"
+        onSelect={() =>
+          onOpenFilteredList({
+            focus: "quality-gap",
+          })
+        }
+        value={dashboard.quality_score.average}
+      />
+      <Metric
+        label="Contains sensitive data"
+        onSelect={() =>
+          onOpenFilteredList({
+            isSensitive: "true",
+          })
+        }
+        value={`${Math.round(dashboard.sensitive_ratio * 100)}%`}
+      />
+      <Metric
+        label="Last 7 days"
+        onSelect={() =>
+          onOpenFilteredList({
+            receivedFrom: daysAgoDateInput(7),
+          })
+        }
+        value={dashboard.recent.last_7_days}
+      />
+      <Metric
+        label="Last 30 days"
+        onSelect={() =>
+          onOpenFilteredList({
+            receivedFrom: daysAgoDateInput(30),
+          })
+        }
+        value={dashboard.recent.last_30_days}
+      />
+    </section>
+  );
+}
+
+function OverviewSectionCard({
+  detail,
+  icon,
+  label,
+  metric,
+  metricLabel,
+  onSelect,
+  title,
+}: {
+  detail: string;
+  icon: ReactNode;
+  label: string;
+  metric: number | string;
+  metricLabel: string;
+  onSelect(): void;
+  title: string;
+}) {
+  return (
+    <button className="overview-section-card" onClick={onSelect} type="button">
+      <span className="overview-section-label">
+        {icon}
+        {label}
+      </span>
+      <strong>{title}</strong>
+      <span>{detail}</span>
+      <em>
+        <strong>{metric}</strong>
+        <span>{metricLabel}</span>
+      </em>
+    </button>
+  );
+}
+
+function ReuseCandidatesPanel({
+  dashboard,
+  onOpenFilteredList,
+  onSelect,
+}: {
+  dashboard: QualityDashboard;
+  onOpenFilteredList(filters: PromptFilters): void;
+  onSelect(id: string): void;
+}) {
+  return (
+    <div className="panel">
+      <div className="panel-heading-row">
+        <h2>Reuse candidates</h2>
+        {dashboard.useful_prompts.length > 0 && (
+          <button
+            className="panel-link-button"
+            onClick={() => onOpenFilteredList({ focus: "reused" })}
+            type="button"
+          >
+            View list
+          </button>
+        )}
+      </div>
+      <div className="useful-list">
+        {dashboard.useful_prompts.length === 0 && (
+          <p className="muted">Prompts you copied or saved will appear here.</p>
+        )}
+        {dashboard.useful_prompts.map((prompt) => (
+          <button
+            className="useful-row"
+            key={prompt.id}
+            onClick={() => onSelect(prompt.id)}
+          >
+            <span>
+              <strong>{projectLabel(prompt.cwd)}</strong>
+              <small>{formatDate(prompt.received_at)}</small>
+            </span>
+            <span className="status-cell">
+              {prompt.bookmarked && (
+                <span className="badge saved-badge">saved</span>
+              )}
+              <span className="badge reuse-badge">
+                copy {prompt.copied_count}
+              </span>
+            </span>
+          </button>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+function DuplicateCandidatesPanel({
+  dashboard,
+  onSelect,
+}: {
+  dashboard: QualityDashboard;
+  onSelect(id: string): void;
+}) {
+  return (
+    <div className="panel">
+      <h2>Duplicate candidates</h2>
+      <div className="duplicate-list">
+        {dashboard.duplicate_prompt_groups.length === 0 && (
+          <p className="muted">No prompts share the same stored body.</p>
+        )}
+        {dashboard.duplicate_prompt_groups.map((group) => (
+          <div className="duplicate-group" key={group.group_id}>
+            <div className="duplicate-group-header">
+              <strong>{group.count} prompts</strong>
+              <span>{formatDate(group.latest_received_at)}</span>
+            </div>
+            <div className="duplicate-projects">
+              {group.projects.slice(0, 2).map((project) => (
+                <span key={project}>{projectLabel(project)}</span>
+              ))}
+            </div>
+            <div className="duplicate-prompts">
+              {group.prompts.slice(0, 3).map((prompt) => (
+                <button key={prompt.id} onClick={() => onSelect(prompt.id)}>
+                  <span>{projectLabel(prompt.cwd)}</span>
+                  <small>{formatDate(prompt.received_at)}</small>
+                </button>
+              ))}
+            </div>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+function QualityGapsPanel({
+  dashboard,
+  onOpenFilteredList,
+}: {
+  dashboard: QualityDashboard;
+  onOpenFilteredList(filters: PromptFilters): void;
+}) {
+  return (
+    <div className="panel">
+      <h2>Frequent quality gaps</h2>
+      <div className="gap-list">
+        {dashboard.missing_items.length === 0 && (
+          <p className="muted">No repeated gaps yet.</p>
+        )}
+        {dashboard.missing_items.map((item) => (
+          <button
+            className="gap-row gap-action"
+            key={item.key}
+            onClick={() =>
+              onOpenFilteredList({
+                focus: "quality-gap",
+                qualityGap: item.key as PromptQualityGap,
+              })
+            }
+          >
+            <div>
+              <strong>{item.label}</strong>
+              <p>{`missing ${item.missing} / weak ${item.weak}`}</p>
+            </div>
+            <span>{Math.round(item.rate * 100)}%</span>
+          </button>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+function RepeatedPatternsPanel({ dashboard }: { dashboard: QualityDashboard }) {
+  return (
+    <div className="panel">
+      <h2>Repeated patterns</h2>
+      <div className="pattern-list">
+        {dashboard.patterns.length === 0 && (
+          <p className="muted">
+            Project patterns will appear after more samples are captured.
+          </p>
+        )}
+        {dashboard.patterns.map((pattern) => (
+          <p key={`${pattern.project}:${pattern.item_key}`}>
+            {pattern.message}
+          </p>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+function InstructionSuggestionsPanel({
+  dashboard,
+}: {
+  dashboard: QualityDashboard;
+}) {
+  return (
+    <section className="panel">
+      <h2>AGENTS.md / CLAUDE.md candidates</h2>
+      <div className="suggestion-grid">
+        {dashboard.instruction_suggestions.length === 0 && (
+          <p className="muted">No recurring improvement suggestions yet.</p>
+        )}
+        {dashboard.instruction_suggestions.map((suggestion) => (
+          <div className="suggestion-box" key={suggestion.reason}>
+            <p className="muted">{suggestion.reason}</p>
+            <code>{suggestion.text}</code>
+            <button
+              aria-label="Copy suggestion"
+              className="icon-button"
+              onClick={() =>
+                void navigator.clipboard.writeText(suggestion.text)
+              }
+              title="Copy suggestion"
+            >
+              <Copy size={15} />
+            </button>
+          </div>
+        ))}
+      </div>
+    </section>
+  );
+}
+
+function HabitCoachPanel({
+  coach,
+  onOpenFilteredList,
+  onSelect,
+}: {
+  coach: PromptHabitCoach;
+  onOpenFilteredList(filters: PromptFilters): void;
+  onSelect(id: string): void;
+}) {
+  const [briefCopied, setBriefCopied] = useState(false);
+  const weaknessRate = coach.biggestWeakness
+    ? Math.round(coach.biggestWeakness.rate * 100)
+    : 0;
+  const nextRequestBrief = useMemo(
+    () => createHabitNextRequestBrief(coach),
+    [coach],
+  );
+  const nextRequestPreview = useMemo(
+    () => createHabitNextRequestBriefPreview(coach),
+    [coach],
+  );
+
+  async function copyNextRequestBrief(): Promise<void> {
+    const copied = await copyTextToClipboard(nextRequestBrief);
+    if (!copied) {
+      return;
+    }
+
+    setBriefCopied(true);
+    window.setTimeout(() => setBriefCopied(false), 2500);
+  }
+
+  return (
+    <section className="habit-command-center" aria-label="Prompt habit coach">
+      <div className="habit-command-header">
+        <div className="habit-command-title">
+          <p className="eyebrow">Prompt habit coach</p>
+          <h2>Prompt habit command center</h2>
+        </div>
+        <span className={`habit-status ${coach.status.tone}`}>
+          {coach.status.label}
+        </span>
+      </div>
+
+      <div className="habit-command-grid">
+        <div className="habit-score-module">
+          <span className={`habit-score-number ${coach.score.band}`}>
+            {coach.score.value}
+          </span>
+          <div className="habit-score-copy">
+            <strong>Your Prompt Habit Score</strong>
+            <span>{`${coach.score.scoredPrompts} prompts scored / ${coach.score.max}`}</span>
+            <div className="habit-score-meter" aria-hidden="true">
+              <span style={{ width: `${Math.min(coach.score.value, 100)}%` }} />
+            </div>
           </div>
         </div>
-      </section>
 
-      <section className="panel">
-        <h2>AGENTS.md / CLAUDE.md candidates</h2>
-        <div className="suggestion-grid">
-          {dashboard.instruction_suggestions.length === 0 && (
-            <p className="muted">No recurring improvement suggestions yet.</p>
-          )}
-          {dashboard.instruction_suggestions.map((suggestion) => (
-            <div className="suggestion-box" key={suggestion.reason}>
-              <p className="muted">{suggestion.reason}</p>
-              <code>{suggestion.text}</code>
+        <div className="habit-command-cell">
+          <div className="habit-cell-title">
+            <TrendingUp size={15} />
+            <strong>Progress trend</strong>
+          </div>
+          <p className="habit-signal">
+            {coach.trend.label}
+            {coach.trend.label !== "Not enough data" && (
+              <span> {formatSignedNumber(coach.trend.delta)} points</span>
+            )}
+          </p>
+          <small>{`recent ${coach.trend.currentAverage} / previous ${coach.trend.previousAverage}`}</small>
+        </div>
+
+        <div className="habit-command-cell weakness">
+          <div className="habit-cell-title">
+            <Target size={15} />
+            <strong>Your biggest weakness</strong>
+          </div>
+          {coach.biggestWeakness ? (
+            <>
+              <p className="habit-signal">{coach.biggestWeakness.label}</p>
+              <small>{`${coach.biggestWeakness.count} prompts / ${weaknessRate}%`}</small>
+              <div className="habit-weakness-meter" aria-hidden="true">
+                <span style={{ width: `${weaknessRate}%` }} />
+              </div>
               <button
-                aria-label="Copy suggestion"
-                className="icon-button"
+                className="habit-inline-action"
                 onClick={() =>
-                  void navigator.clipboard.writeText(suggestion.text)
+                  onOpenFilteredList({
+                    focus: "quality-gap",
+                    qualityGap: coach.biggestWeakness?.key,
+                  })
                 }
-                title="Copy suggestion"
+                type="button"
+              >
+                View matching prompts
+              </button>
+            </>
+          ) : (
+            <p className="habit-signal">No repeated weakness yet.</p>
+          )}
+        </div>
+      </div>
+
+      <div className="habit-brief-bar" aria-label="Next request brief">
+        <div className="habit-brief-heading">
+          <div>
+            <p className="eyebrow">Next request brief</p>
+            <strong>Preview and copy an approval-ready coaching prompt</strong>
+            <span>
+              Uses score, repeated weakness, next fixes, and review target
+              without prompt bodies or raw paths.
+            </span>
+          </div>
+          <button
+            className="primary-button"
+            onClick={() => void copyNextRequestBrief()}
+            type="button"
+          >
+            <Copy size={15} /> {briefCopied ? "Copied brief" : "Copy brief"}
+          </button>
+        </div>
+        <div className="habit-brief-preview">
+          <BriefPreviewItem label="Goal" value={nextRequestPreview.goal} />
+          <BriefPreviewItem
+            label="Weakness"
+            value={nextRequestPreview.weakness}
+          />
+          <BriefPreviewItem
+            label="First fix"
+            value={nextRequestPreview.firstFix}
+          />
+          <BriefPreviewItem
+            label="Review target"
+            value={nextRequestPreview.reviewTarget}
+          />
+          <div className="habit-brief-preview-item sections">
+            <span>Sections</span>
+            <p>{nextRequestPreview.sections.join(" / ")}</p>
+          </div>
+        </div>
+      </div>
+
+      <div className="habit-command-main">
+        <div className="habit-next-fixes">
+          <div className="habit-cell-title">
+            <ListChecks size={15} />
+            <strong>Fix these next</strong>
+          </div>
+          {coach.nextFixes.length === 0 && (
+            <p className="muted">No repeated habit fix is ready yet.</p>
+          )}
+          {coach.nextFixes.map((fix) => (
+            <button
+              className="habit-fix-row"
+              key={fix.label}
+              onClick={() =>
+                onOpenFilteredList({
+                  focus: "quality-gap",
+                  qualityGap: fix.key,
+                })
+              }
+              type="button"
+            >
+              <span>
+                <strong>{fix.command}</strong>
+                <small>{fix.reason}</small>
+              </span>
+              <em>{Math.round(fix.rate * 100)}%</em>
+            </button>
+          ))}
+        </div>
+
+        <div className="habit-review-queue">
+          <div className="habit-cell-title">
+            <FileText size={15} />
+            <strong>Bad prompt review queue</strong>
+          </div>
+          {coach.reviewQueue.length === 0 && (
+            <p className="muted">No low score prompts need review yet.</p>
+          )}
+          {coach.reviewQueue.map((prompt) => (
+            <button
+              className="habit-review-row"
+              key={prompt.id}
+              onClick={() => onSelect(prompt.id)}
+              type="button"
+            >
+              <span
+                className={`badge score-badge ${prompt.quality_score_band}`}
+              >
+                {prompt.quality_score}
+              </span>
+              <span>
+                <strong>{prompt.project}</strong>
+                <small>
+                  {prompt.tool} / {formatDate(prompt.received_at)}
+                </small>
+                <em>
+                  {prompt.reasons.length > 0
+                    ? prompt.reasons.join(", ")
+                    : "Open and improve"}
+                </em>
+              </span>
+            </button>
+          ))}
+        </div>
+      </div>
+
+      <div className="habit-pattern-note">
+        <strong>{coach.patternSummary.title}</strong>
+        <span>{coach.patternSummary.detail}</span>
+      </div>
+    </section>
+  );
+}
+
+function BriefPreviewItem({ label, value }: { label: string; value: string }) {
+  return (
+    <div className="habit-brief-preview-item">
+      <span>{label}</span>
+      <p>{value}</p>
+    </div>
+  );
+}
+
+function ArchiveScoreReviewPanel({
+  report,
+  onRefresh,
+  onSelect,
+}: {
+  report?: ArchiveScoreReport;
+  onRefresh(): void;
+  onSelect(id: string): void;
+}) {
+  const [practiceCopied, setPracticeCopied] = useState(false);
+  const reviewPrompts =
+    report?.low_score_prompts.filter(isReviewableScorePrompt).slice(0, 6) ?? [];
+  const weakOrNeedsWorkCount = report
+    ? report.distribution.weak + report.distribution.needs_work
+    : 0;
+  const practiceCopy = report
+    ? [
+        "Next prompt template",
+        report.next_prompt_template,
+        "",
+        "Practice plan",
+        ...report.practice_plan.map(
+          (item) =>
+            `${item.priority}. ${item.label}: ${item.prompt_rule} (${item.reason})`,
+        ),
+      ].join("\n")
+    : "";
+
+  async function copyPracticePlan(): Promise<void> {
+    if (!practiceCopy) {
+      return;
+    }
+
+    const copied = await copyTextToClipboard(practiceCopy);
+    if (!copied) {
+      return;
+    }
+
+    setPracticeCopied(true);
+    window.setTimeout(() => setPracticeCopied(false), 2500);
+  }
+
+  return (
+    <section
+      className="panel archive-score-panel"
+      aria-label="Archive score review"
+    >
+      <div className="panel-heading-row">
+        <div>
+          <h2>Archive score review</h2>
+          {report && (
+            <span>
+              {report.archive_score.scored_prompts} scored
+              {report.has_more ? " / more available" : ""}
+            </span>
+          )}
+        </div>
+        <button className="panel-link-button" onClick={onRefresh} type="button">
+          <RefreshCw size={14} /> Evaluate archive
+        </button>
+      </div>
+      {!report && <p className="muted">No archive score report yet.</p>}
+      {report && (
+        <div className="archive-score-grid">
+          <div className="archive-score-summary">
+            <div className="archive-score-hero">
+              <span className={`score-value ${report.archive_score.band}`}>
+                {report.archive_score.average}
+              </span>
+              <div>
+                <strong>Average archive score</strong>
+                <small>
+                  {report.archive_score.band} / {report.archive_score.max}
+                </small>
+              </div>
+            </div>
+            <div className="archive-score-meter" aria-hidden="true">
+              <span
+                style={{
+                  width: `${Math.min(report.archive_score.average, 100)}%`,
+                }}
+              />
+            </div>
+            <div className="archive-summary-details">
+              <span>
+                <strong>{report.archive_score.scored_prompts}</strong>
+                scored prompts
+              </span>
+              <span>
+                <strong>{weakOrNeedsWorkCount}</strong>
+                weak / needs work
+              </span>
+              <span>
+                <strong>{reviewPrompts.length}</strong>
+                in review queue
+              </span>
+              <span>
+                <strong>{formatDate(report.generated_at)}</strong>
+                generated
+              </span>
+            </div>
+          </div>
+          <div className="archive-distribution" aria-label="Score distribution">
+            <h3>Score distribution</h3>
+            <ScoreDistributionChart distribution={report.distribution} />
+          </div>
+          <div className="archive-gaps">
+            <h3>Top quality gaps</h3>
+            <GapRateChart gaps={report.top_gaps.slice(0, 5)} />
+          </div>
+          <div className="archive-practice-plan">
+            <div className="archive-practice-heading">
+              <div>
+                <h3>Practice plan</h3>
+                <p>Copy this into your next Claude Code or Codex request.</p>
+              </div>
+              <button
+                aria-label="Copy practice template"
+                className="icon-button"
+                onClick={() => void copyPracticePlan()}
+                title="Copy practice template"
+                type="button"
               >
                 <Copy size={15} />
               </button>
             </div>
-          ))}
+            <pre>{report.next_prompt_template}</pre>
+            <div className="archive-practice-list">
+              {report.practice_plan.length === 0 && (
+                <p className="muted">No repeated practice item yet.</p>
+              )}
+              {report.practice_plan.map((item) => (
+                <div className="archive-practice-row" key={item.priority}>
+                  <span>{item.priority}</span>
+                  <div>
+                    <strong>{item.label}</strong>
+                    <p>{item.prompt_rule}</p>
+                    <small>{item.reason}</small>
+                  </div>
+                </div>
+              ))}
+            </div>
+            {practiceCopied && <small>Copied template</small>}
+          </div>
+          <div className="archive-low-scores">
+            <h3>Prompts to review</h3>
+            {reviewPrompts.length === 0 && (
+              <p className="muted">No prompts need score review.</p>
+            )}
+            {reviewPrompts.map((prompt) => (
+              <button
+                className="archive-low-score-row"
+                key={prompt.id}
+                onClick={() => onSelect(prompt.id)}
+                type="button"
+              >
+                <span>
+                  <strong>{prompt.project}</strong>
+                  <small>{formatDate(prompt.received_at)}</small>
+                </span>
+                <span className="status-cell">
+                  <span
+                    className={`badge score-badge ${prompt.quality_score_band}`}
+                  >
+                    {prompt.quality_score}
+                  </span>
+                  {prompt.quality_gaps.slice(0, 2).map((gap) => (
+                    <span className="badge gap-badge" key={gap}>
+                      {gap}
+                    </span>
+                  ))}
+                </span>
+              </button>
+            ))}
+          </div>
         </div>
-      </section>
-    </div>
+      )}
+    </section>
   );
 }
 
@@ -1431,7 +3064,7 @@ function ProjectProfilesPanel({
             <div className="project-profile-main">
               <div>
                 <strong>{profile.label}</strong>
-                <small>{profile.key}</small>
+                {profile.key !== profile.label && <small>{profile.key}</small>}
               </div>
               <span>{formatDate(profile.latest_received_at)}</span>
             </div>
@@ -1439,6 +3072,10 @@ function ProjectProfilesPanel({
               <span>
                 <strong>{profile.prompt_count}</strong>
                 prompts
+              </span>
+              <span>
+                <strong>{profile.average_quality_score}</strong>
+                score
               </span>
               <span>
                 <strong>{Math.round(profile.quality_gap_rate * 100)}%</strong>
@@ -1532,14 +3169,13 @@ function TrendPanel({
   daily: QualityDashboard["trend"]["daily"];
   onSelectDay(date: string): void;
 }) {
-  const maxPromptCount = Math.max(1, ...daily.map((item) => item.prompt_count));
-
   return (
     <section className="panel trend-panel" aria-label="Recent quality trend">
       <div className="panel-heading-row">
         <h2>Recent quality trend</h2>
         <span>7 days</span>
       </div>
+      <QualityTrendChart daily={daily} />
       <div className="trend-list">
         {daily.length === 0 && <p className="muted">No trend data yet.</p>}
         {daily.map((day) => (
@@ -1551,23 +3187,10 @@ function TrendPanel({
             type="button"
           >
             <span>{formatTrendDate(day.date)}</span>
-            <div className="trend-bars" aria-hidden="true">
-              <span
-                className="trend-bar prompts"
-                style={{
-                  width: `${Math.max((day.prompt_count / maxPromptCount) * 100, day.prompt_count > 0 ? 8 : 0)}%`,
-                }}
-              />
-              <span
-                className="trend-bar gaps"
-                style={{
-                  width: `${Math.max(day.quality_gap_rate * 100, day.quality_gap_count > 0 ? 8 : 0)}%`,
-                }}
-              />
-            </div>
             <span className="trend-meta">
               <strong>{day.prompt_count}</strong>
               <small>{Math.round(day.quality_gap_rate * 100)}% gap</small>
+              <small>{day.average_quality_score} score</small>
               {day.sensitive_count > 0 && (
                 <small>{day.sensitive_count} redacted</small>
               )}
@@ -1613,8 +3236,9 @@ function DistributionPanel({
   title: string;
 }) {
   return (
-    <div className="panel">
+    <div className="panel distribution-panel">
       <h2>{title}</h2>
+      <DistributionBarChart buckets={buckets} />
       <div className="distribution-list">
         {buckets.length === 0 && <p className="muted">No data.</p>}
         {buckets.map((bucket) => (
@@ -1628,9 +3252,7 @@ function DistributionPanel({
               <strong>{bucket.label}</strong>
               <span>{bucket.count}</span>
             </div>
-            <div className="bar-track">
-              <span style={{ width: `${Math.max(bucket.ratio * 100, 4)}%` }} />
-            </div>
+            <small>{Math.round(bucket.ratio * 100)}%</small>
           </button>
         ))}
       </div>
@@ -1674,7 +3296,7 @@ function SettingsView({
           <dt>Version</dt>
           <dd>{health?.version ?? "-"}</dd>
           <dt>Data directory</dt>
-          <dd>{settings?.data_dir ?? health?.data_dir ?? "-"}</dd>
+          <dd>{displayLocalPath(settings?.data_dir ?? health?.data_dir)}</dd>
           <dt>Address</dt>
           <dd>
             {settings ? `${settings.server.host}:${settings.server.port}` : "-"}
@@ -1691,7 +3313,7 @@ function SettingsView({
             {settings?.excluded_project_roots.length ? (
               <ul className="path-list">
                 {settings.excluded_project_roots.map((path) => (
-                  <li key={path}>{path}</li>
+                  <li key={path}>{displayLocalPath(path)}</li>
                 ))}
               </ul>
             ) : (
@@ -1717,9 +3339,13 @@ function SettingsView({
 }
 
 function ProjectsView({
+  instructionBusy,
+  onAnalyzeInstructions,
   onToggleCapture,
   projects,
 }: {
+  instructionBusy: Record<string, boolean>;
+  onAnalyzeInstructions(project: ProjectSummary): void;
   onToggleCapture(project: ProjectSummary): void;
   projects: ProjectSummary[];
 }) {
@@ -1740,6 +3366,7 @@ function ProjectsView({
           <span>Latest capture</span>
           <span>Quality/sensitivity</span>
           <span>Reuse</span>
+          <span>Agent rules</span>
           <span>Capture</span>
         </div>
         {projects.map((project) => (
@@ -1772,6 +3399,41 @@ function ProjectsView({
                 saved {project.bookmarked_count}
               </span>
             </span>
+            <span className="project-instruction-cell">
+              {project.instruction_review ? (
+                <span className="instruction-review-summary">
+                  <span
+                    className={`badge score-badge ${project.instruction_review.score.band}`}
+                  >
+                    {project.instruction_review.score.value}
+                  </span>
+                  <small>
+                    {formatRulesFileCount(
+                      project.instruction_review.files_found,
+                    )}
+                  </small>
+                  {project.instruction_review.suggestions[0] && (
+                    <small>{project.instruction_review.suggestions[0]}</small>
+                  )}
+                </span>
+              ) : (
+                <span className="instruction-review-summary">
+                  <small>Not analyzed yet</small>
+                  <small>AGENTS.md / CLAUDE.md</small>
+                </span>
+              )}
+              <button
+                className="secondary-button compact-action"
+                disabled={instructionBusy[project.project_id]}
+                onClick={() => onAnalyzeInstructions(project)}
+                type="button"
+              >
+                <RefreshCw size={14} />
+                {instructionBusy[project.project_id]
+                  ? "Analyzing"
+                  : "Analyze rules"}
+              </button>
+            </span>
             <span>
               <button
                 aria-pressed={project.policy.capture_disabled}
@@ -1788,6 +3450,193 @@ function ProjectsView({
         ))}
       </div>
     </section>
+  );
+}
+
+function McpToolsView({
+  dashboard,
+  health,
+  settings,
+}: {
+  dashboard?: QualityDashboard;
+  health?: { ok: boolean; version: string; data_dir: string };
+  settings?: SettingsResponse;
+}) {
+  const [copiedKey, setCopiedKey] = useState<string | undefined>();
+  const readiness = createMcpReadiness({ dashboard, health, settings });
+
+  async function copySnippet(key: string, value: string): Promise<void> {
+    const copied = await copyTextToClipboard(value);
+    if (!copied) return;
+    setCopiedKey(key);
+    window.setTimeout(() => setCopiedKey(undefined), 2200);
+  }
+
+  return (
+    <div className="mcp-layout">
+      <section className="mcp-hero panel">
+        <div>
+          <p className="eyebrow">Agent tool surface</p>
+          <h2>Use prompt-memory from Claude Code or Codex</h2>
+          <p>
+            Start with status, then choose the scoring or project-rule review
+            tool that matches the user request.
+          </p>
+        </div>
+        <div className="mcp-command-stack" aria-label="MCP setup commands">
+          <CopyableCommand
+            copied={copiedKey === "mcp-command"}
+            label="Server command"
+            onCopy={() => void copySnippet("mcp-command", "prompt-memory mcp")}
+            value="prompt-memory mcp"
+          />
+          <CopyableCommand
+            copied={copiedKey === "claude-command"}
+            label="Claude Code"
+            onCopy={() =>
+              void copySnippet(
+                "claude-command",
+                "claude mcp add --transport stdio prompt-memory -- prompt-memory mcp",
+              )
+            }
+            value="claude mcp add --transport stdio prompt-memory -- prompt-memory mcp"
+          />
+          <CopyableCommand
+            copied={copiedKey === "codex-command"}
+            label="Codex"
+            onCopy={() =>
+              void copySnippet(
+                "codex-command",
+                "codex mcp add prompt-memory -- prompt-memory mcp",
+              )
+            }
+            value="codex mcp add prompt-memory -- prompt-memory mcp"
+          />
+        </div>
+      </section>
+
+      <McpReadinessPanel readiness={readiness} />
+
+      <section className="mcp-flow panel" aria-label="Recommended MCP flow">
+        <div className="panel-heading-row">
+          <h2>Recommended call order</h2>
+          <span>5 tools</span>
+        </div>
+        <div className="mcp-flow-steps">
+          {MCP_FLOW_STEPS.map((step, index) => (
+            <article className="mcp-flow-step" key={step.tool}>
+              <span>{index + 1}</span>
+              <div>
+                <strong>{step.tool}</strong>
+                <p>{step.detail}</p>
+              </div>
+            </article>
+          ))}
+        </div>
+      </section>
+
+      <section className="mcp-tool-grid" aria-label="MCP tool catalog">
+        {MCP_TOOL_CATALOG.map((tool) => (
+          <article className="mcp-tool-card" key={tool.name}>
+            <div className="mcp-tool-header">
+              <span className="badge">{tool.kind}</span>
+              <code>{tool.name}</code>
+            </div>
+            <h2>{tool.title}</h2>
+            <dl>
+              <dt>Use when</dt>
+              <dd>{tool.when}</dd>
+              <dt>Returns</dt>
+              <dd>{tool.returns}</dd>
+              <dt>Behavior</dt>
+              <dd>
+                <span className="mcp-assurance-row">
+                  {tool.assurances.map((assurance) => (
+                    <span className="mcp-assurance" key={assurance}>
+                      {assurance}
+                    </span>
+                  ))}
+                </span>
+              </dd>
+              <dt>Privacy</dt>
+              <dd>{tool.privacy}</dd>
+            </dl>
+            <div className="mcp-example">
+              <span>Agent prompt</span>
+              <code>{tool.prompt}</code>
+              <button
+                aria-label={`Copy ${tool.name} example`}
+                className="icon-button"
+                onClick={() => void copySnippet(tool.name, tool.prompt)}
+                title={`Copy ${tool.name} example`}
+                type="button"
+              >
+                <Copy size={15} />
+              </button>
+            </div>
+            {copiedKey === tool.name && <small>Copied example</small>}
+          </article>
+        ))}
+      </section>
+    </div>
+  );
+}
+
+function McpReadinessPanel({ readiness }: { readiness: McpReadiness }) {
+  return (
+    <section className="mcp-readiness panel" aria-label="MCP readiness">
+      <div className="mcp-readiness-header">
+        <div>
+          <p className="eyebrow">Live agent preflight</p>
+          <h2>MCP readiness</h2>
+          <p>{readiness.summary}</p>
+        </div>
+        <span className={`status-pill ${readiness.tone}`}>
+          {readiness.status}
+        </span>
+      </div>
+      <div className="mcp-readiness-grid">
+        {readiness.metrics.map((metric) => (
+          <div className="mcp-readiness-metric" key={metric.label}>
+            <span>{metric.label}</span>
+            <strong>{metric.value}</strong>
+          </div>
+        ))}
+      </div>
+      <div className="mcp-next-action">
+        <span>First MCP call</span>
+        <code>{readiness.firstCall}</code>
+        <p>{readiness.nextAction}</p>
+      </div>
+    </section>
+  );
+}
+
+function CopyableCommand({
+  copied,
+  label,
+  onCopy,
+  value,
+}: {
+  copied: boolean;
+  label: string;
+  onCopy(): void;
+  value: string;
+}) {
+  return (
+    <div className="copyable-command">
+      <span>{label}</span>
+      <code>{value}</code>
+      <button
+        aria-label={`Copy ${label}`}
+        className="icon-button"
+        onClick={onCopy}
+        title={`Copy ${label}`}
+        type="button"
+      >
+        {copied ? <ShieldCheck size={15} /> : <Copy size={15} />}
+      </button>
+    </div>
   );
 }
 
@@ -2015,7 +3864,9 @@ function buildSetupChecks({
     {
       label: "Local storage",
       status: settings?.data_dir ? "good" : "pending",
-      detail: settings?.data_dir ?? "Checking data directory.",
+      detail: settings?.data_dir
+        ? displayLocalPath(settings.data_dir)
+        : "Checking data directory.",
     },
     {
       label: "Redaction",
@@ -2063,6 +3914,13 @@ function setupStatusLabel(status: SetupCheckStatus): string {
   return "Waiting";
 }
 
+function qualityBandLabel(band: PromptQualityScoreBand): string {
+  if (band === "excellent") return "Excellent";
+  if (band === "good") return "Good";
+  if (band === "needs_work") return "Needs work";
+  return "Weak";
+}
+
 function StatusBadge({ prompt }: { prompt: PromptSummary }) {
   const label = prompt.is_sensitive ? "redacted" : prompt.index_status;
   return <span className="badge">{label}</span>;
@@ -2073,8 +3931,32 @@ function routeFromLocation(): View {
     return { name: "dashboard" };
   }
 
+  if (window.location.pathname === "/coach") {
+    return { name: "coach" };
+  }
+
+  if (window.location.pathname === "/practice") {
+    return { name: "practice" };
+  }
+
+  if (window.location.pathname === "/scores") {
+    return { name: "scores" };
+  }
+
+  if (window.location.pathname === "/benchmark") {
+    return { name: "benchmark" };
+  }
+
+  if (window.location.pathname === "/insights") {
+    return { name: "insights" };
+  }
+
   if (window.location.pathname === "/projects") {
     return { name: "projects" };
+  }
+
+  if (window.location.pathname === "/mcp") {
+    return { name: "mcp" };
   }
 
   if (window.location.pathname === "/exports") {
@@ -2091,6 +3973,26 @@ function routeFromLocation(): View {
   }
 
   return { name: "list" };
+}
+
+function needsDashboardData(viewName: View["name"]): boolean {
+  return [
+    "dashboard",
+    "coach",
+    "practice",
+    "scores",
+    "benchmark",
+    "insights",
+    "mcp",
+    "exports",
+    "settings",
+  ].includes(viewName);
+}
+
+function needsArchiveScoreData(viewName: View["name"]): boolean {
+  return ["dashboard", "coach", "practice", "scores", "benchmark"].includes(
+    viewName,
+  );
 }
 
 function filtersFromLocation(): PromptFilters {
@@ -2220,6 +4122,207 @@ const FOCUS_LABELS: Record<NonNullable<PromptFilters["focus"]>, string> = {
   "quality-gap": "Quality gaps",
 };
 
+const MCP_FLOW_STEPS = [
+  {
+    tool: "get_prompt_memory_status",
+    detail:
+      "Check setup, capture readiness, latest safe metadata, and the next tool to call.",
+  },
+  {
+    tool: "score_prompt",
+    detail:
+      "Score the latest, a pasted prompt, or a stored prompt id when the user asks about one request.",
+  },
+  {
+    tool: "improve_prompt",
+    detail:
+      "Generate an approval-ready rewritten request when the user wants to resubmit a better prompt.",
+  },
+  {
+    tool: "score_prompt_archive",
+    detail:
+      "Review accumulated prompt habits, recurring gaps, and low-score review candidates.",
+  },
+  {
+    tool: "review_project_instructions",
+    detail:
+      "Score AGENTS.md / CLAUDE.md rules when the user asks whether agent instructions are strong enough.",
+  },
+];
+
+const MCP_TOOL_CATALOG = [
+  {
+    kind: "preflight",
+    name: "get_prompt_memory_status",
+    title: "Check capture readiness first",
+    when: "The user asks if prompt-memory is working, whether prompts are being captured, or what to do next.",
+    returns:
+      "Ready/setup status, safe prompt counts, latest prompt metadata, available tools, and next actions.",
+    assurances: ["read-only", "local-only", "structured JSON", "output schema"],
+    privacy:
+      "No prompt body, no raw absolute path, no external LLM call, no secret value.",
+    prompt:
+      "Use prompt-memory get_prompt_memory_status and tell me whether capture is working before scoring anything.",
+  },
+  {
+    kind: "single prompt",
+    name: "score_prompt",
+    title: "Evaluate one request",
+    when: "The user wants feedback on the current request, a pasted prompt, one stored prompt id, or the latest captured prompt.",
+    returns:
+      "0-100 quality score, checklist, warnings, and concise improvement suggestions.",
+    assurances: ["read-only", "local-only", "structured JSON", "output schema"],
+    privacy:
+      "Direct prompt input is analyzed locally and not stored by this MCP tool.",
+    prompt:
+      "Use prompt-memory score_prompt with latest=true and tell me what to improve in my last request.",
+  },
+  {
+    kind: "rewrite",
+    name: "improve_prompt",
+    title: "Rewrite before resubmission",
+    when: "The user wants a clearer prompt draft to approve, copy, and manually resubmit to Claude Code or Codex.",
+    returns:
+      "Approval-ready improved prompt draft, changed sections, safety notes, and next action.",
+    assurances: ["read-only", "local-only", "structured JSON", "output schema"],
+    privacy:
+      "No auto-submit, no external LLM call, and direct prompt input is not stored.",
+    prompt:
+      "Use prompt-memory improve_prompt with latest=true and give me an approval-ready draft I can copy and resubmit.",
+  },
+  {
+    kind: "archive",
+    name: "score_prompt_archive",
+    title: "Find habit patterns",
+    when: "The user wants Claude Code or Codex to review many stored prompts and identify repeated weak habits.",
+    returns:
+      "Aggregate archive score, distribution, recurring gaps, practice plan, next prompt template, and low-score prompt metadata.",
+    assurances: ["read-only", "local-only", "structured JSON", "output schema"],
+    privacy:
+      "Returns metadata only; no prompt bodies and no raw absolute paths.",
+    prompt:
+      "Use prompt-memory score_prompt_archive for recent Codex prompts and summarize my recurring prompt habit gaps.",
+  },
+  {
+    kind: "project rules",
+    name: "review_project_instructions",
+    title: "Review AGENTS.md / CLAUDE.md",
+    when: "The user asks if coding-agent rules are strong enough for a captured project.",
+    returns:
+      "Project instruction score, checklist status, file metadata, suggestions, and next action.",
+    assurances: ["read-only", "local-only", "structured JSON", "output schema"],
+    privacy: "Returns no instruction file bodies and no raw absolute paths.",
+    prompt:
+      "Use prompt-memory review_project_instructions with latest=true and tell me whether my AGENTS.md/CLAUDE.md rules are strong enough.",
+  },
+];
+
+type McpReadinessTone = "ready" | "warning" | "muted";
+
+type McpReadiness = {
+  status: string;
+  tone: McpReadinessTone;
+  summary: string;
+  firstCall: string;
+  nextAction: string;
+  metrics: Array<{
+    label: string;
+    value: string;
+  }>;
+};
+
+function createMcpReadiness({
+  dashboard,
+  health,
+  settings,
+}: {
+  dashboard?: QualityDashboard;
+  health?: { ok: boolean; version: string; data_dir: string };
+  settings?: SettingsResponse;
+}): McpReadiness {
+  const totalPrompts = dashboard?.total_prompts;
+  const scoredPrompts = dashboard?.quality_score.scored_prompts;
+  const redactionMode = settings?.redaction_mode ?? "-";
+  const serverStatus = health?.ok ? "Server OK" : "Checking status";
+
+  let status = "Checking archive";
+  let tone: McpReadinessTone = "muted";
+  let summary =
+    "Load local archive status before asking Claude Code or Codex to score prompt habits.";
+  let firstCall = "get_prompt_memory_status";
+  let nextAction =
+    "Use the status tool first so the agent can confirm capture, scoring, and privacy readiness.";
+
+  if (health && !health.ok) {
+    status = "Server unavailable";
+    tone = "warning";
+    summary =
+      "Start the local prompt-memory server before using Claude Code or Codex MCP tools.";
+    nextAction =
+      "Run prompt-memory server, then call get_prompt_memory_status from the agent.";
+  } else if (redactionMode === "raw") {
+    status = "Privacy check needed";
+    tone = "warning";
+    summary =
+      "MCP tools avoid prompt bodies, but raw redaction mode should be reviewed before sharing reports.";
+    nextAction =
+      "Switch redaction to mask or review local settings before asking an agent to summarize results.";
+  } else if (totalPrompts === 0) {
+    status = "Capture prompts first";
+    tone = "warning";
+    summary =
+      "No stored prompts are available yet, so archive scoring cannot reveal habit patterns.";
+    nextAction =
+      "Capture a few Claude Code or Codex prompts, then call get_prompt_memory_status again.";
+  } else if (scoredPrompts === 0) {
+    status = "Ready to score";
+    tone = "ready";
+    summary =
+      "Stored prompts are available; the next useful step is an archive quality review.";
+    firstCall = "score_prompt_archive";
+    nextAction =
+      "Ask the agent to run score_prompt_archive and summarize recurring prompt habit gaps.";
+  } else if (typeof scoredPrompts === "number" && scoredPrompts > 0) {
+    status = "Ready for archive review";
+    tone = "ready";
+    summary =
+      "Stored and scored prompts are ready for Claude Code or Codex habit analysis.";
+    firstCall = "score_prompt_archive";
+    nextAction =
+      "Run archive scoring when you want a pattern review, or score_prompt for the latest request.";
+  }
+
+  return {
+    firstCall,
+    metrics: [
+      {
+        label: "Stored prompts",
+        value: typeof totalPrompts === "number" ? String(totalPrompts) : "-",
+      },
+      {
+        label: "Scored prompts",
+        value: typeof scoredPrompts === "number" ? String(scoredPrompts) : "-",
+      },
+      {
+        label: "Redaction",
+        value: redactionMode,
+      },
+      {
+        label: "Server",
+        value: serverStatus,
+      },
+    ],
+    nextAction,
+    status,
+    summary,
+    tone,
+  };
+}
+
+function formatRulesFileCount(count: number): string {
+  return `${count} rules file${count === 1 ? "" : "s"}`;
+}
+
 function formatDate(value: string): string {
   return new Intl.DateTimeFormat("ko-KR", {
     dateStyle: "short",
@@ -2232,6 +4335,10 @@ function formatTrendDate(value: string): string {
     day: "2-digit",
     month: "2-digit",
   }).format(new Date(`${value}T00:00:00.000Z`));
+}
+
+function formatSignedNumber(value: number): string {
+  return value > 0 ? `+${value}` : String(value);
 }
 
 function daysAgoDateInput(days: number): string {
@@ -2328,12 +4435,42 @@ function projectLabel(path: string): string {
   return path.split("/").filter(Boolean).at(-1) ?? path;
 }
 
+function displayLocalPath(path?: string): string {
+  if (!path) {
+    return "-";
+  }
+
+  const normalized = path.replace(/\\/g, "/").replace(/\/+$/, "");
+  const parts = normalized.split("/").filter(Boolean);
+  const last = parts.at(-1);
+
+  if (!last) {
+    return "[local path]";
+  }
+
+  return `[local path]/${last}`;
+}
+
+function isReviewableScorePrompt(
+  prompt: ArchiveScoreReport["low_score_prompts"][number],
+): boolean {
+  return (
+    prompt.quality_score < 70 ||
+    prompt.quality_score_band === "needs_work" ||
+    prompt.quality_score_band === "weak"
+  );
+}
+
 function isQualityGapKey(value: string | null): value is PromptQualityGap {
   return QUALITY_GAP_OPTIONS.some((item) => item.key === value);
 }
 
 function qualityGapLabel(key?: PromptQualityGap): string | undefined {
   return QUALITY_GAP_OPTIONS.find((item) => item.key === key)?.label;
+}
+
+function qualityGapKeyFromLabel(label?: string): PromptQualityGap | undefined {
+  return QUALITY_GAP_OPTIONS.find((item) => item.label === label)?.key;
 }
 
 function exportFieldLabel(value: string): string {

@@ -2,6 +2,8 @@ import type {
   PromptAnalysisPreview,
   PromptQualityChecklistItem,
   PromptQualityCriterion,
+  PromptQualityScore,
+  PromptQualityScoreBand,
   PromptQualityStatus,
   PromptTag,
 } from "../shared/schema.js";
@@ -12,6 +14,15 @@ export type AnalyzePromptInput = {
   prompt: string;
   createdAt: string;
 };
+
+const QUALITY_SCORE_MAX = 100;
+const QUALITY_SCORE_WEIGHTS = {
+  goal_clarity: 25,
+  background_context: 20,
+  scope_limits: 20,
+  output_format: 15,
+  verification_criteria: 20,
+} satisfies Record<PromptQualityCriterion, number>;
 
 export function analyzePrompt(
   input: AnalyzePromptInput,
@@ -71,9 +82,52 @@ export function analyzePrompt(
     suggestions: unique(suggestions).slice(0, 4),
     checklist,
     tags: extractTags(text),
+    quality_score: calculatePromptQualityScore(checklist),
     analyzer: LOCAL_RULES_ANALYZER,
     created_at: input.createdAt,
   };
+}
+
+export function calculatePromptQualityScore(
+  checklist: PromptQualityChecklistItem[],
+): PromptQualityScore {
+  const breakdown = checklist.map((item) => {
+    const weight = QUALITY_SCORE_WEIGHTS[item.key];
+    return {
+      key: item.key,
+      label: item.label,
+      status: item.status,
+      weight,
+      earned: Math.round(weight * statusMultiplier(item.status)),
+    };
+  });
+  const value = Math.min(
+    QUALITY_SCORE_MAX,
+    Math.max(
+      0,
+      breakdown.reduce((total, item) => total + item.earned, 0),
+    ),
+  );
+
+  return {
+    value,
+    max: QUALITY_SCORE_MAX,
+    band: qualityScoreBand(value),
+    breakdown,
+  };
+}
+
+export function qualityScoreBand(value: number): PromptQualityScoreBand {
+  if (value >= 85) return "excellent";
+  if (value >= 60) return "good";
+  if (value >= 40) return "needs_work";
+  return "weak";
+}
+
+function statusMultiplier(status: PromptQualityStatus): number {
+  if (status === "good") return 1;
+  if (status === "weak") return 0.5;
+  return 0;
 }
 
 type PromptSignals = {

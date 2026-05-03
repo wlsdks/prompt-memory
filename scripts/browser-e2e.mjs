@@ -18,7 +18,8 @@ const cliPath = join(repoRoot, "dist", "cli", "index.js");
 const tempRoot = mkdtempSync(join(tmpdir(), "prompt-memory-browser-e2e-"));
 const dataDir = join(tempRoot, "data");
 const homeDir = join(tempRoot, "home");
-const rawPathPrefix = "/Users/example";
+const rawPathPrefix = join(tempRoot, "workspace");
+const privateProjectDir = join(rawPathPrefix, "private-project");
 const rawSecret = "sk-proj-1234567890abcdef";
 const cliEnv = {
   ...process.env,
@@ -32,6 +33,18 @@ let browser;
 try {
   assert(existsSync(cliPath), "Run `pnpm build` before browser E2E.");
   mkdirSync(homeDir, { recursive: true });
+  mkdirSync(privateProjectDir, { recursive: true });
+  writeFileSync(
+    join(privateProjectDir, "AGENTS.md"),
+    [
+      "# prompt-memory",
+      "prompt-memory is a local-first developer tool built with TypeScript and SQLite.",
+      "Agents plan in tasks/todo.md, avoid reverting user changes, commit, and push.",
+      "Run pnpm test, pnpm lint, pnpm build, and Playwright E2E after UI changes.",
+      "Never expose secrets, prompt bodies, raw paths, tokens, stdout, or stderr leaks.",
+      "Respond with concise verification evidence.",
+    ].join("\n"),
+  );
   const serverPort = await freePort();
   const serverBaseUrl = `http://127.0.0.1:${serverPort}`;
 
@@ -47,7 +60,7 @@ try {
   await ingest(serverBaseUrl, "/api/v1/ingest/claude-code", {
     session_id: "browser-e2e-claude",
     transcript_path: `${rawPathPrefix}/.claude/session.jsonl`,
-    cwd: `${rawPathPrefix}/private-project`,
+    cwd: privateProjectDir,
     permission_mode: "default",
     hook_event_name: "UserPromptSubmit",
     prompt: `Fix ${rawPathPrefix}/private-project/src/secret.ts with token ${rawSecret}. Run pnpm test.`,
@@ -56,7 +69,7 @@ try {
     session_id: "browser-e2e-codex",
     turn_id: "turn-1",
     transcript_path: `${rawPathPrefix}/.codex/sessions/session.jsonl`,
-    cwd: `${rawPathPrefix}/private-project`,
+    cwd: privateProjectDir,
     hook_event_name: "UserPromptSubmit",
     model: "gpt-5.5",
     prompt: `Review ${rawPathPrefix}/private-project/src/web/App.tsx and return Markdown summary.`,
@@ -112,6 +125,7 @@ try {
   await page
     .getByRole("heading", { name: "Improvement draft for manual resubmission" })
     .waitFor();
+  await assertText(page, "Prompt score", "Detail should show prompt score.");
   await assertBrowserSafe(page, "detail");
   await page.getByRole("button", { name: "Copy draft" }).click();
   await page.getByRole("button", { name: "Copied" }).waitFor();
@@ -120,13 +134,316 @@ try {
 
   await page.getByRole("button", { name: "Dashboard" }).click();
   await page.getByRole("heading", { name: "Quality dashboard" }).waitFor();
+  await page.getByText("Average prompt score").waitFor();
+  await assertText(
+    page,
+    "Average prompt score",
+    "Dashboard should show average prompt score.",
+  );
+  await assertText(
+    page,
+    "Improve the next prompt",
+    "Dashboard should route users to prompt coaching.",
+  );
+  await assertText(
+    page,
+    "Draft with live score",
+    "Dashboard should route users to prompt practice.",
+  );
+  await assertText(
+    page,
+    "Review archive quality",
+    "Dashboard should route users to score review.",
+  );
+  await assertText(
+    page,
+    "Find reuse and project patterns",
+    "Dashboard should route users to insights.",
+  );
+  await assertChartVisible(page, "dashboard", 1);
   await assertBrowserSafe(page, "dashboard");
+
+  await page.getByRole("button", { name: "Coach", exact: true }).click();
+  await page.getByRole("heading", { name: "Prompt coach" }).waitFor();
+  await page.getByText("Prompt habit command center").waitFor();
+  await assertText(
+    page,
+    "Prompt habit command center",
+    "Coach should show prompt habit command center.",
+  );
+  await assertText(
+    page,
+    "Fix these next",
+    "Coach should show next habit fixes.",
+  );
+  await assertText(
+    page,
+    "Bad prompt review queue",
+    "Coach should show low score review queue.",
+  );
+  await assertTextAny(
+    page,
+    ["Next request brief", "다음 요청 브리프"],
+    "Coach should expose a copyable next request brief.",
+  );
+  await assertTextAny(
+    page,
+    [
+      "Preview and copy an approval-ready coaching prompt",
+      "승인 가능한 코칭 프롬프트 미리보기와 복사",
+    ],
+    "Coach should show the brief preview before copying.",
+  );
+  await assertTextAny(
+    page,
+    ["First fix", "첫 보완"],
+    "Coach should show the first habit fix in the brief preview.",
+  );
+  await assertTextAny(
+    page,
+    ["Review target", "리뷰 대상"],
+    "Coach should show the review target in the brief preview.",
+  );
+  await page.getByRole("button", { name: /Copy brief|브리프 복사/ }).click();
+  await assertTextAny(
+    page,
+    ["Copied brief", "브리프 복사됨"],
+    "Coach should confirm that the next request brief was copied.",
+  );
+  await assertBrowserSafe(page, "coach");
+
+  await page.getByRole("button", { name: "Practice", exact: true }).click();
+  await page.getByRole("heading", { name: "Prompt practice" }).waitFor();
+  await assertTextAny(
+    page,
+    ["Prompt practice workspace", "프롬프트 연습 작업면"],
+    "Practice should expose a prompt drafting workspace.",
+  );
+  await assertTextAny(
+    page,
+    ["Live local score", "실시간 로컬 점수"],
+    "Practice should show local prompt score preview.",
+  );
+  await assertTextAny(
+    page,
+    ["Practice history", "연습 기록"],
+    "Practice should show local score history.",
+  );
+  await page.getByLabel("Practice draft").fill("fix it");
+  await assertTextAny(
+    page,
+    ["One-click builder", "원클릭 빌더"],
+    "Practice should expose one-click missing section fixes.",
+  );
+  await assertTextAny(
+    page,
+    ["Add all missing sections", "부족한 섹션 모두 추가"],
+    "Practice should offer an all-fixes builder action.",
+  );
+  await assertTextAny(
+    page,
+    ["Projected after fixes", "보완 후 예상 점수"],
+    "Practice should show the projected score before applying fixes.",
+  );
+  await assertTextAny(
+    page,
+    ["points if all sections are added", "모든 섹션 추가 시"],
+    "Practice should show the projected score delta.",
+  );
+  await page
+    .getByRole("button", { name: /Add Verification|검증 추가/ })
+    .click();
+  assertIncludes(
+    await page.getByLabel("Practice draft").inputValue(),
+    "Verification: name commands or acceptance checks.",
+    "Practice should append selected quick-fix snippets to the draft.",
+  );
+  await page
+    .getByLabel("Practice draft")
+    .fill(
+      [
+        "Goal: improve the archive practice plan UI.",
+        "Context: use src/web/src/App.tsx and src/web/src/styles.css.",
+        "Scope: keep changes limited to the Practice screen.",
+        "Verification: run pnpm test and pnpm e2e:browser.",
+        "Output: concise Markdown summary with risks.",
+      ].join("\n"),
+    );
+  await assertTextAny(
+    page,
+    ["Excellent", "우수"],
+    "Practice should update the score preview while drafting.",
+  );
+  await page
+    .getByRole("button", { name: /Copy practice draft|연습 초안 복사/ })
+    .waitFor();
+  await page
+    .getByRole("button", { name: /Copy practice draft|연습 초안 복사/ })
+    .click();
+  await assertTextAny(
+    page,
+    ["1 copied drafts", "1 copied draft", "복사한 초안"],
+    "Practice should record copied draft score metadata.",
+  );
+  await page.waitForTimeout(2600);
+  await page
+    .getByRole("button", { name: /Copy practice draft|연습 초안 복사/ })
+    .click();
+  await assertTextAny(
+    page,
+    ["2 copied drafts", "복사한 초안"],
+    "Practice should keep multiple copied draft score points.",
+  );
+  await assertChartVisible(page, "practice", 1);
+  await assertTextAny(
+    page,
+    [
+      "Practice history stores scores and missing labels only",
+      "점수와 부족 항목 라벨만 저장",
+    ],
+    "Practice history should explain that draft text is not stored.",
+  );
+  await assertTextAny(
+    page,
+    ["Did the copied draft work?", "복사한 초안이 실제로 도움이 됐나요?"],
+    "Practice should ask for outcome feedback after copied drafts.",
+  );
+  await page.getByRole("button", { name: /Worked|성공/ }).click();
+  await assertTextAny(
+    page,
+    ["Latest outcome:", "최근 결과:"],
+    "Practice should show the latest copied draft outcome.",
+  );
+  await assertTextAny(
+    page,
+    ["Worked", "성공"],
+    "Practice should record worked outcomes.",
+  );
+  await assertBrowserSafe(page, "practice");
+
+  await page.getByRole("button", { name: "Scores", exact: true }).click();
+  await page.getByRole("heading", { name: "Prompt scores" }).waitFor();
+  await page.getByText("Archive score review").waitFor();
+  await assertText(
+    page,
+    "Archive score review",
+    "Scores should show archive score review.",
+  );
+  await page.getByRole("button", { name: "Evaluate archive" }).click();
+  await assertText(
+    page,
+    "Prompts to review",
+    "Scores should show prompts that need review.",
+  );
+  await assertText(
+    page,
+    "Practice plan",
+    "Scores should show actionable practice plan.",
+  );
+  await page.getByRole("button", { name: "Copy practice template" }).waitFor();
+  await assertChartVisible(page, "scores", 3);
+  await assertBrowserSafe(page, "scores");
+
+  await page.getByRole("button", { name: "Benchmark", exact: true }).click();
+  await page.getByRole("heading", { name: "Prompt benchmark" }).waitFor();
+  await page.getByText("Measure your prompt habits").waitFor();
+  await assertText(
+    page,
+    "Measure now",
+    "Benchmark should expose a live measurement action.",
+  );
+  await assertText(
+    page,
+    "Auto-updates every 12s while open",
+    "Benchmark should explain live measurement refresh.",
+  );
+  await page.getByRole("button", { name: "Measure now" }).click();
+  await page.getByText(/^Measured /).waitFor();
+  await assertText(
+    page,
+    "What this measures",
+    "Benchmark should explain the live archive measurement.",
+  );
+  await assertBrowserSafe(page, "benchmark");
+
+  await page.getByRole("button", { name: "Insights", exact: true }).click();
+  await page.getByRole("heading", { name: "Prompt insights" }).waitFor();
+  await page.getByText("Project quality profile").waitFor();
+  await assertText(
+    page,
+    "Project quality profile",
+    "Insights should show project quality profiles.",
+  );
+  await assertText(
+    page,
+    "Reuse candidates",
+    "Insights should show reuse candidates.",
+  );
+  await assertChartVisible(page, "insights", 2);
+  await assertBrowserSafe(page, "insights");
 
   await page.getByRole("button", { name: "Projects", exact: true }).click();
   await page.getByRole("heading", { name: "Projects" }).waitFor();
+  await page.getByText("Agent rules").waitFor();
+  await page.getByRole("button", { name: "Analyze rules" }).click();
+  await page.getByText("rules file").waitFor();
   await assertBrowserSafe(page, "projects");
   await page.getByRole("button", { name: "capture on" }).click();
   await page.getByRole("button", { name: "paused" }).waitFor();
+
+  await page.getByRole("button", { name: "MCP", exact: true }).click();
+  await page.getByRole("heading", { name: "MCP tools" }).waitFor();
+  await assertText(
+    page,
+    "MCP readiness",
+    "MCP page should show live readiness before the tool catalog.",
+  );
+  await assertTextAny(
+    page,
+    ["Stored prompts", "저장된 프롬프트"],
+    "MCP page should expose archive readiness metrics.",
+  );
+  await assertTextAny(
+    page,
+    ["First MCP call", "첫 MCP 호출"],
+    "MCP page should recommend the next agent tool call.",
+  );
+  await assertText(
+    page,
+    "Recommended call order",
+    "MCP page should show recommended tool call order.",
+  );
+  await assertText(
+    page,
+    "improve_prompt",
+    "MCP page should expose approval-ready prompt rewriting.",
+  );
+  await assertText(
+    page,
+    "get_prompt_memory_status",
+    "MCP page should expose the preflight status tool.",
+  );
+  await assertTextAny(
+    page,
+    ["structured JSON", "구조화 JSON"],
+    "MCP page should explain the structured tool result contract.",
+  );
+  await assertTextAny(
+    page,
+    ["output schema", "출력 스키마"],
+    "MCP page should explain the MCP output schema contract.",
+  );
+  await assertTextAny(
+    page,
+    ["read-only", "읽기 전용"],
+    "MCP page should expose read-only tool behavior.",
+  );
+  await assertText(
+    page,
+    "review_project_instructions",
+    "MCP page should expose project instruction review.",
+  );
+  await assertBrowserSafe(page, "mcp");
 
   await page.getByRole("button", { name: "Export" }).click();
   await page
@@ -143,6 +460,17 @@ try {
     "[REDACTED:path]",
     "Export JSON preview should include anonymized paths.",
   );
+
+  await page.getByRole("button", { name: "Settings" }).click();
+  await page.getByRole("heading", { name: "Settings" }).waitFor();
+  await page.getByText("[local path]").first().waitFor();
+  await assertBrowserSafe(page, "settings");
+  await assertText(
+    page,
+    "[local path]",
+    "Settings should show masked local paths.",
+  );
+  await assertNotText(page, tempRoot, "Settings must not show raw temp paths.");
 
   await page.setViewportSize({ width: 390, height: 844 });
   const viewport = await page.evaluate(() => ({
@@ -258,6 +586,33 @@ async function assertBrowserSafe(page, label) {
 async function assertText(page, expected, message) {
   const text = await page.locator("body").innerText();
   assertIncludes(text, expected, message);
+}
+
+async function assertTextAny(page, expectedOptions, message) {
+  const text = await page.locator("body").innerText();
+  const normalized = text.toLowerCase();
+  if (
+    expectedOptions.some((expected) =>
+      normalized.includes(expected.toLowerCase()),
+    )
+  ) {
+    return;
+  }
+  throw new Error(`${message} Missing one of ${expectedOptions.join(", ")}.`);
+}
+
+async function assertChartVisible(page, label, minCount) {
+  await page.locator(".recharts-surface").first().waitFor();
+  const count = await page.locator(".recharts-surface").count();
+  assert(
+    count >= minCount,
+    `${label} should render at least ${minCount} Recharts SVG chart(s). Found ${count}.`,
+  );
+}
+
+async function assertNotText(page, unexpected, message) {
+  const text = await page.locator("body").innerText();
+  assertNotIncludes(text, unexpected, message);
 }
 
 async function waitForHealth(url) {

@@ -18,8 +18,8 @@ The npm package intentionally includes:
 - `dist/web`: the compiled React web UI assets
 - `dist/storage`, `dist/analysis`, `dist/hooks`, `dist/importer`,
   `dist/exporter`, and related runtime modules
-- `README.md`, `LICENSE`, `SECURITY.md`, `CONTRIBUTING.md`,
-  `CODE_OF_CONDUCT.md`, and `SUPPORT.md`
+- `README.md`, `README.ko.md`, `CHANGELOG.md`, `LICENSE`, `SECURITY.md`,
+  `CONTRIBUTING.md`, `CODE_OF_CONDUCT.md`, and `SUPPORT.md`
 - public product and release docs under `docs/`
 - Claude Code plugin artifacts under `.claude-plugin`, `commands`, and
   `integrations/claude-code`

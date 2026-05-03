@@ -2,6 +2,7 @@ import type {
   NormalizedPromptEvent,
   PromptAnalysisPreview,
   PromptQualityCriterion,
+  PromptQualityScoreBand,
   RedactionResult,
 } from "../shared/schema.js";
 
@@ -32,6 +33,8 @@ export type PromptSummary = {
   index_status: string;
   tags: string[];
   quality_gaps: string[];
+  quality_score: number;
+  quality_score_band: PromptQualityScoreBand;
   usefulness: PromptUsefulness;
   duplicate_count: number;
 };
@@ -158,6 +161,7 @@ export type ProjectQualityProfile = {
   prompt_count: number;
   quality_gap_count: number;
   quality_gap_rate: number;
+  average_quality_score: number;
   sensitive_count: number;
   copied_count: number;
   bookmarked_count: number;
@@ -166,6 +170,49 @@ export type ProjectQualityProfile = {
     key: string;
     label: string;
     count: number;
+  };
+};
+
+export type ProjectInstructionChecklistItem = {
+  key:
+    | "project_context"
+    | "agent_workflow"
+    | "verification"
+    | "privacy_safety"
+    | "collaboration_output";
+  label: string;
+  status: "good" | "weak" | "missing";
+  weight: number;
+  earned: number;
+  suggestion?: string;
+};
+
+export type ProjectInstructionFileSnapshot = {
+  file_name: string;
+  bytes: number;
+  modified_at: string;
+  content_hash: string;
+  truncated: boolean;
+};
+
+export type ProjectInstructionReview = {
+  generated_at: string;
+  analyzer: string;
+  score: {
+    value: number;
+    max: 100;
+    band: PromptQualityScoreBand;
+  };
+  files: ProjectInstructionFileSnapshot[];
+  files_found: number;
+  checklist: ProjectInstructionChecklistItem[];
+  suggestions: string[];
+  privacy: {
+    local_only: true;
+    external_calls: false;
+    stores_file_bodies: false;
+    returns_file_bodies: false;
+    returns_raw_paths: false;
   };
 };
 
@@ -183,8 +230,15 @@ export type PromptQualityDashboard = {
       prompt_count: number;
       quality_gap_count: number;
       quality_gap_rate: number;
+      average_quality_score: number;
       sensitive_count: number;
     }>;
+  };
+  quality_score: {
+    average: number;
+    max: 100;
+    band: PromptQualityScoreBand;
+    scored_prompts: number;
   };
   distribution: {
     by_tool: DistributionBucket[];
@@ -220,6 +274,7 @@ export type ProjectSummary = {
   copied_count: number;
   bookmarked_count: number;
   policy: ProjectPolicy;
+  instruction_review?: ProjectInstructionReview;
 };
 
 export type ProjectListResult = {
@@ -383,6 +438,15 @@ export type ProjectPolicyStoragePort = {
     cwd: string;
     project_root?: string | null;
   }): ProjectPolicy | undefined;
+};
+
+export type ProjectInstructionStoragePort = {
+  getProjectInstructionReview(
+    projectId: string,
+  ): ProjectInstructionReview | undefined;
+  analyzeProjectInstructions(
+    projectId: string,
+  ): ProjectInstructionReview | undefined;
 };
 
 export type ImportJobStoragePort = {

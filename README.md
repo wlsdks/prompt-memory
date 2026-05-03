@@ -1,10 +1,12 @@
 # prompt-memory
 
+[English](README.md) | [한국어](README.ko.md)
+
 AI coding prompt memory and improvement workspace, local-first.
 
 `prompt-memory` is a developer tool that safely records prompts you enter into AI coding tools such as Claude Code and Codex, helps you find them again, analyzes weak prompting patterns, and helps you write better follow-up requests.
 
-It collects supported tool prompts locally, redacts sensitive values before storage, writes Markdown files, indexes them in SQLite, and serves a local web UI for search, review, analysis, deletion, and copy-based prompt improvement.
+It collects supported tool prompts locally, redacts sensitive values before storage, writes Markdown files, indexes them in SQLite, and serves a local web UI for search, review, archive scoring, prompt practice, analysis, deletion, and copy-based prompt improvement.
 
 This project is not affiliated with, endorsed by, or sponsored by Anthropic, OpenAI, or any other AI tool provider. Product names such as Claude Code and Codex are used only to describe compatibility.
 
@@ -15,7 +17,11 @@ This repository is pre-release software.
 - Claude Code support: MVP path
 - Codex support: beta adapter
 - Local rule-based analysis preview: implemented
-- Copy-based Prompt Coach: implemented
+- Prompt Quality Score: implemented as a local deterministic `0-100` rubric
+- MCP prompt scoring tools: implemented as a local stdio server
+- Copy-based Prompt Coach: implemented, including raw-free next request briefs
+- Prompt Practice workspace: implemented as a local draft-and-score UI with
+  score history and outcome feedback that do not store draft text
 - Transcript import: CLI only
 - Anonymized export: web UI and CLI preview/job flow
 - Benchmark v1: implemented as a local regression baseline
@@ -92,6 +98,7 @@ Codex currently exposes marketplace management through `codex plugin marketplace
 prompt-memory doctor claude-code
 prompt-memory doctor codex
 prompt-memory statusline claude-code
+prompt-memory buddy --once
 ```
 
 Open the local archive:
@@ -306,16 +313,34 @@ The Claude Code plugin provides slash commands:
 ```text
 /prompt-memory:setup
 /prompt-memory:status
+/prompt-memory:buddy
+/prompt-memory:coach
+/prompt-memory:score
+/prompt-memory:score-last
+/prompt-memory:improve-last
+/prompt-memory:habits
+/prompt-memory:rules
+/prompt-memory:coach-next
 /prompt-memory:open
 ```
 
 `/prompt-memory:setup` runs `prompt-memory setup --dry-run` first, asks before
 writing local settings, and can optionally install a small Claude Code
-`statusLine` indicator with:
+`statusLine` indicator with the latest prompt score:
 
 ```sh
 pnpm prompt-memory install-statusline claude-code
 ```
+
+For Claude Code or Codex, open a second terminal pane beside the agent and run
+the always-on prompt buddy:
+
+```sh
+pnpm prompt-memory buddy
+```
+
+Use `pnpm prompt-memory buddy --once` for a one-shot text snapshot, or
+`pnpm prompt-memory buddy --json` for automation.
 
 The Codex package under `plugins/prompt-memory` contains a `.codex-plugin`
 manifest, a fail-open `UserPromptSubmit` hook, and a small skill that helps
@@ -337,6 +362,12 @@ Render the Claude Code status line manually:
 
 ```sh
 pnpm prompt-memory statusline claude-code
+```
+
+Render a side-pane buddy snapshot manually:
+
+```sh
+pnpm prompt-memory buddy --once
 ```
 
 Codex can add the same repository as a marketplace:
@@ -411,19 +442,121 @@ project policy versions, redaction version, or preview counts change.
 Generate a copy-based Prompt Coach draft:
 
 ```sh
+pnpm prompt-memory coach --json
 pnpm prompt-memory improve --text "make this request clearer" --json
+pnpm prompt-memory improve --latest --json
+```
+
+Score accumulated prompt habits without returning prompt bodies:
+
+```sh
+pnpm prompt-memory score --json
+pnpm prompt-memory score --latest --json
+pnpm prompt-memory score --tool codex --json
 ```
 
 ## Local Analysis Preview
 
-Prompt detail views include a local rule-based analysis preview. It summarizes whether a prompt includes clear targets, context, constraints, output format, and verification criteria.
+Prompt detail views include a local rule-based analysis preview. It summarizes whether a prompt includes clear targets, context, constraints, output format, and verification criteria. Each prompt also receives a deterministic `0-100` Prompt Quality Score with a checklist-based breakdown.
 
 This preview runs locally against the stored, redacted prompt body. It does not call an external LLM provider.
+
+## Project Instruction Review
+
+The Projects screen can analyze project-local `AGENTS.md` and `CLAUDE.md`
+files. The review stores a local snapshot with file names, hashes, timestamps,
+checklist status, score, and improvement hints.
+
+It does not store or return instruction file bodies, raw absolute paths, or
+external LLM results. The score is a deterministic local rubric for project
+context, agent workflow, verification commands, privacy/safety, and reporting
+rules.
+
+## MCP Prompt Scoring
+
+`prompt-memory` can expose the same local Prompt Quality Score to Claude Code,
+Codex, or any MCP client through a stdio MCP server:
+
+```sh
+prompt-memory mcp
+```
+
+The MCP server exposes six tools:
+
+- `get_prompt_memory_status`: check whether the local archive is initialized,
+  whether prompts have been captured, and which MCP tool to call next.
+- `coach_prompt`: run the default one-call agent workflow for Claude Code or
+  Codex: local readiness, latest prompt score, approval-required rewrite,
+  recent habit review, project instruction review, and next request guidance.
+- `score_prompt`: score either direct prompt text, a stored `prompt_id`, or the
+  latest stored prompt.
+- `improve_prompt`: generate an approval-ready improved prompt draft for direct
+  prompt text, a stored `prompt_id`, or the latest stored prompt.
+- `score_prompt_archive`: score accumulated prompt habits across recent stored
+  prompts and return aggregate score, recurring gaps, a practice plan, a next
+  prompt template, and low-score prompt ids.
+- `review_project_instructions`: review local `AGENTS.md` / `CLAUDE.md`
+  instruction files for the latest or selected project and return score,
+  checklist status, and improvement hints.
+
+All tools are read-only, idempotent, local-only, and declare an MCP
+`outputSchema` for their structured JSON metadata plus a text JSON fallback.
+Archive-backed tools do not return stored prompt bodies, raw absolute paths,
+secrets, or external LLM results.
+
+Practical agent prompts:
+
+```text
+Use prompt-memory coach_prompt and give me the one-call coaching result for my
+latest request. Do not auto-submit the rewrite.
+
+Use prompt-memory get_prompt_memory_status and tell me whether prompt capture is
+working before you score anything.
+
+Use prompt-memory score_prompt with latest=true and tell me what to improve in
+my last request.
+
+Use prompt-memory improve_prompt with latest=true and give me an
+approval-ready draft I can copy and resubmit.
+
+Use prompt-memory score_prompt_archive for recent Codex prompts and summarize my
+top recurring prompt habit gaps.
+
+Use prompt-memory review_project_instructions with latest=true and tell me
+whether my AGENTS.md/CLAUDE.md rules are strong enough for coding agents.
+```
+
+The tools return score metadata, checklist breakdowns, warnings, recurring gaps,
+approval-ready rewrite drafts, and improvement hints. They do not store direct
+prompt text or call external LLMs. Archive-backed score/rewrite flows do not
+return stored original prompt bodies. The archive scoring tool also avoids raw
+absolute paths. The project instruction review tool also avoids instruction file
+bodies and raw absolute paths. The status tool returns only safe counts, latest
+prompt metadata, available tool names, and next actions.
+
+Example Claude Code registration:
+
+```sh
+claude mcp add --transport stdio prompt-memory -- prompt-memory mcp
+```
+
+Example Codex registration:
+
+```sh
+codex mcp add prompt-memory -- prompt-memory mcp
+```
+
+If you use a custom data directory:
+
+```sh
+prompt-memory mcp --data-dir /path/to/prompt-memory-data
+```
 
 ## Benchmark
 
 Benchmark v1 measures local regression signals for privacy, retrieval,
-rule-based prompt improvement, analytics, and latency:
+rule-based prompt improvement, prompt quality score calibration, analytics, and
+latency:
 
 ```sh
 pnpm benchmark
@@ -543,6 +676,7 @@ pull requests, or security reports.
 - [Package contents](docs/PACKAGE_CONTENTS.md)
 - [Pre-publish privacy audit](docs/PRE_PUBLISH_PRIVACY_AUDIT.md)
 - [Efficiency review](docs/EFFICIENCY_REVIEW.md)
+- [Architecture](docs/ARCHITECTURE.md)
 - [Tech spec](docs/TECH_SPEC.md)
 - [Implementation plan](docs/IMPLEMENTATION_PLAN.md)
 - [Adapter guide](docs/ADAPTERS.md)
