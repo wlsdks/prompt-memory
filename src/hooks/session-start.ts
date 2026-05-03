@@ -1,8 +1,8 @@
 import { spawn } from "node:child_process";
 import { existsSync, mkdirSync, readFileSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
-import { fileURLToPath } from "node:url";
 
+import { resolveCliEntryPath } from "../cli/entry-path.js";
 import { loadPromptMemoryConfig } from "../config/config.js";
 import type { HookRunResult } from "./wrapper.js";
 
@@ -164,7 +164,7 @@ function defaultOpenUrl(url: string): void {
 }
 
 function cliEntryPath(): string {
-  return fileURLToPath(new URL("../cli/index.js", import.meta.url));
+  return resolveCliEntryPath(import.meta.url, "../cli/index.js");
 }
 
 function emptyResult(): HookRunResult {

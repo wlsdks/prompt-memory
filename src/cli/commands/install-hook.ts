@@ -7,9 +7,9 @@ import {
 } from "node:fs";
 import { homedir } from "node:os";
 import { dirname, join } from "node:path";
-import { fileURLToPath } from "node:url";
 import type { Command } from "commander";
 
+import { resolveCliEntryPath } from "../entry-path.js";
 import {
   initializePromptMemory,
   revokeIngestToken,
@@ -727,7 +727,7 @@ function shellQuote(value: string): string {
 }
 
 function cliEntryPath(): string {
-  return fileURLToPath(new URL("../index.js", import.meta.url));
+  return resolveCliEntryPath(import.meta.url, "../index.js");
 }
 
 function readSettings(settingsPath: string): ClaudeSettings {
