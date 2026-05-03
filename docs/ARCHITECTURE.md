@@ -40,7 +40,7 @@ src/
   exporter/    anonymized export preview and execution
   hooks/       fail-open hook wrapper and delivery status
   importer/    markdown/source import and dry-run planning
-  mcp/         MCP tool definitions, schemas, and local stdio server
+  mcp/         MCP tool definitions, typed contracts, handlers, and stdio server
   redaction/   secret detection and redacted prompt representations
   server/      Fastify routes, auth, browser/API boundary
   shared/      shared schemas, ids, hashing, version helpers
@@ -103,8 +103,13 @@ Current known large modules:
   separate files and be imported into the app.
 - `src/storage/sqlite.ts`: SQLite implementation boundary. Prefer local helper
   extraction before adding new unrelated feature blocks.
-- `src/mcp/score-tool.ts`: MCP tool contract hub. Keep tool definitions,
-  schemas, result shaping, and privacy tests in sync.
+- `src/mcp/score-tool-definitions.ts`: agent-facing MCP names, descriptions,
+  input schemas, output schemas, and read-only annotations.
+- `src/mcp/score-tool-types.ts`: argument/result TypeScript contracts for MCP
+  handlers and tests.
+- `src/mcp/score-tool.ts`: MCP handler orchestration and privacy-safe result
+  shaping. Do not add tool schemas here.
+- `src/mcp/server.ts`: JSON-RPC stdio transport and tool-call routing only.
 
 These are not release blockers by themselves, but new work should reduce
 pressure on them rather than expanding them casually.

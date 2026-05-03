@@ -19,8 +19,11 @@ Claude Code must follow these repository rules in addition to `CLAUDE.md` and
   - `src/cli`: Commander commands and terminal formatting
   - `src/server`: Fastify HTTP/auth/validation boundary
   - `src/hooks`: fail-open hook wrapper and status
-  - `src/mcp`: MCP tool contract and stdio server
+  - `src/mcp`: MCP tool contracts, handlers, and stdio server
   - `src/web`: React UI and browser-only models
+- In `src/mcp`, keep tool definitions/schemas in `score-tool-definitions.ts`,
+  argument/result contracts in `score-tool-types.ts`, handler orchestration in
+  `score-tool.ts`, and JSON-RPC routing in `server.ts`.
 - Put reusable rules in:
   - `src/analysis`
   - `src/redaction`
