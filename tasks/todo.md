@@ -6,7 +6,7 @@
 - [x] `setup --profile coach` TDD 구현
 - [x] statusline / plugin / README 문서 갱신
 - [x] targeted/full 검증 실행
-- [ ] PR 생성, CI 확인, main merge, branch cleanup
+- [x] PR 생성, CI 확인, main merge, branch cleanup
 
 ### 판단 기준
 
