@@ -6,7 +6,7 @@
 - [x] `prompt-memory coach` 텍스트 출력에 agent-native follow-up 명령 추가
 - [x] privacy-safe CLI 회귀 테스트 추가
 - [x] 브라우저/릴리스 게이트로 실제 동작 검증
-- [ ] PR 생성, CI 확인, main merge, branch cleanup
+- [x] PR 생성, CI 확인, main merge, branch cleanup
 
 ### 판단 기준
 
