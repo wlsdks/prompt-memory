@@ -68,12 +68,11 @@ describe("renderClaudeCodeStatusLine", () => {
       checkServer: async () => true,
     });
 
-    expect(line).toContain("PM capture on");
+    expect(line).toContain("PM on");
     expect(line).toContain("score");
     expect(line).toContain("needs_work");
-    expect(line).toContain("try improve-last");
     expect(line).toContain("server ok");
-    expect(line).toContain("last ingest ok");
+    expect(line).toContain("ingest ok");
     expect(line).not.toContain("sk-proj-1234567890abcdef");
     expect(line).not.toContain("/Users/example");
   });
@@ -87,7 +86,7 @@ describe("renderClaudeCodeStatusLine", () => {
       checkServer: async () => false,
     });
 
-    expect(line).toBe("PM setup needed | server down | hook missing");
+    expect(line).toBe("PM setup | server down | hook missing");
   });
 });
 
@@ -222,7 +221,7 @@ describe("installClaudeCodeStatusLine", () => {
 });
 
 describe("renderChainedClaudeCodeStatusLine", () => {
-  it("prints previous and prompt-memory status lines together", () => {
+  it("prints prompt-memory on a separate line after an existing status line", () => {
     const line = renderChainedClaudeCodeStatusLine({
       previousCommand: "previous",
       promptMemoryCommand: "prompt-memory",
@@ -231,7 +230,24 @@ describe("renderChainedClaudeCodeStatusLine", () => {
       }),
     });
 
-    expect(line).toBe("HUD ready | PM capture on");
+    expect(line).toBe("HUD ready\nPM capture on");
+  });
+
+  it("preserves multiline output from an existing Claude Code status line", () => {
+    const line = renderChainedClaudeCodeStatusLine({
+      previousCommand: "previous",
+      promptMemoryCommand: "prompt-memory",
+      runCommand: (command) => ({
+        stdout:
+          command === "previous"
+            ? "HUD model line\nHUD context line\n"
+            : "PM on | score 23 weak\n",
+      }),
+    });
+
+    expect(line).toBe(
+      "HUD model line\nHUD context line\nPM on | score 23 weak",
+    );
   });
 
   it("keeps prompt-memory output when the previous status line fails", () => {

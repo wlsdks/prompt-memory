@@ -1,5 +1,21 @@
 # 작업 계획
 
+## 2026-05-03 Claude StatusLine Multiline Layout
+
+- [x] 현재 chained statusLine 출력이 기존 HUD 줄바꿈을 깨는 원인 확인
+- [x] 기존 HUD multiline 보존과 prompt-memory compact line 회귀 테스트 추가
+- [x] chained renderer와 prompt-memory statusLine 문구를 짧게 개선
+- [x] 로컬 Claude 설정/실행 출력 재검증
+- [x] targeted/full 검증 실행
+- [ ] PR 생성, CI 확인, main merge, branch cleanup
+
+### 판단 기준
+
+- `claude-hud` 같은 기존 HUD의 줄바꿈과 ANSI 출력은 prompt-memory가 한 줄로 뭉개면 안 된다.
+- 기존 HUD가 있으면 prompt-memory는 별도 짧은 line으로 붙여 가로 폭을 과도하게 늘리지 않는다.
+- 기존 HUD가 실패하거나 비어 있으면 prompt-memory만 짧고 읽기 쉬운 한 줄로 표시한다.
+- statusLine 출력은 prompt body, raw path, token을 포함하지 않는다.
+
 ## 2026-05-03 Stable CLI Entry Path For Hooks
 
 - [x] Claude Code hook error 원인 확인 및 로컬 설정 수리
