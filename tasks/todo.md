@@ -7,7 +7,7 @@
 - [x] 실패하거나 얇은 기능 경계에 회귀 테스트 추가
 - [x] 필요하면 privacy-safe, 문서 정확도, 사용성 관련 소규모 개선 적용
 - [x] 전체 release gate 재실행
-- [ ] PR 생성, CI 확인, main merge, branch cleanup
+- [x] PR 생성, CI 확인, main merge, branch cleanup
 
 ### 판단 기준
 
