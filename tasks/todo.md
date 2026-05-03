@@ -6,7 +6,7 @@
 - [x] 동작 변경 없이 SQLite row mapping/serialization 같은 고효과 경계 분리
 - [x] architecture docs/quality gate를 새 storage 경계에 맞춰 갱신
 - [x] storage targeted tests와 전체 release gate 실행
-- [ ] PR 생성, CI 확인, main merge, branch cleanup
+- [x] PR 생성, CI 확인, main merge, branch cleanup
 
 ### 판단 기준
 
