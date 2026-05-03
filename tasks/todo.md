@@ -2,11 +2,18 @@
 
 ## 2026-05-03 Merge And Architecture Handoff
 
-- [ ] 현재 PR의 mergeability, CI, review gate를 재확인
-- [ ] 오픈소스 아키텍처 관점에서 지금 머지할 범위와 후속 리팩터링 PR 범위를 분리
-- [ ] 보호 규칙을 지키는 방식으로 PR을 main에 머지 시도
+- [x] 현재 PR의 mergeability, CI, review gate를 재확인
+- [x] 오픈소스 아키텍처 관점에서 지금 머지할 범위와 후속 리팩터링 PR 범위를 분리
+- [x] 보호 규칙을 지키는 방식으로 PR을 main에 머지 시도
 - [ ] 머지 성공 시 원격/로컬 feature branch를 정리
-- [ ] 앞으로 작업 단위는 branch -> PR -> main merge -> branch cleanup으로 진행
+- [x] 앞으로 작업 단위는 branch -> PR -> main merge -> branch cleanup으로 진행
+
+### 현재 상태
+
+- 2026-05-03 기준 PR #1은 mergeable이고 CI는 Node 22/24 모두 통과했다.
+- 정상 `gh pr merge --squash --delete-branch`는 base branch required review 정책 때문에 차단되었다.
+- `--auto` merge도 저장소에서 auto-merge가 비활성화되어 차단되었다.
+- 오픈소스 보호 흐름을 지키기 위해 `--admin` bypass는 사용하지 않았다.
 
 ### 판단 기준
 
