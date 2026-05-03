@@ -157,6 +157,11 @@ try {
   );
   await assertText(
     page,
+    "prompt-memory:coach_prompt",
+    "Dashboard should expose the MCP coach command for Codex and Claude Code.",
+  );
+  await assertText(
+    page,
     "Draft with live score",
     "Dashboard should route users to prompt practice.",
   );

@@ -172,34 +172,39 @@ export async function renderClaudeCodeStatusLine(
   const result = await doctorClaudeCode(options);
   const configured = result.token.ok && result.settings.hookInstalled;
   const ready = result.server.ok && configured;
-  const parts = [ready ? "PM on" : configured ? "PM paused" : "PM setup"];
+  const readinessParts = [
+    ready
+      ? "PM capture on"
+      : configured
+        ? "PM capture paused"
+        : "PM setup needed",
+  ];
 
-  parts.push(result.server.ok ? "server ok" : "server down");
+  readinessParts.push(result.server.ok ? "server ok" : "server down");
+
+  let coachingLine: string | undefined;
 
   if (ready) {
-    const latestScore = formatLatestScoreForStatusLine(
+    coachingLine = formatLatestScoreForStatusLine(
       scorePromptTool(
         { latest: true, include_suggestions: false },
         { dataDir: options.dataDir },
       ),
     );
-    if (latestScore) {
-      parts.push(latestScore);
-    }
   }
 
   if (!result.settings.hookInstalled) {
-    parts.push("hook missing");
+    readinessParts.push("hook missing");
   } else if (!result.token.ok) {
-    parts.push("token missing");
+    readinessParts.push("token missing");
   } else {
     const ingest = formatLastIngest(result.lastIngestStatus);
     if (ingest) {
-      parts.push(ingest);
+      readinessParts.push(ingest);
     }
   }
 
-  return parts.join(" | ");
+  return [readinessParts.join(" | "), coachingLine].filter(Boolean).join("\n");
 }
 
 export function renderChainedClaudeCodeStatusLine(
@@ -226,9 +231,11 @@ function formatLatestScoreForStatusLine(
   const gap = result.checklist.find(
     (item) => item.status === "missing" || item.status === "weak",
   );
-  const score = `score ${result.quality_score.value} ${result.quality_score.band}`;
+  const score = `PM score ${result.quality_score.value}/${result.quality_score.max} ${result.quality_score.band}`;
 
-  return gap ? `${score} | gap ${gap.label}` : score;
+  return gap
+    ? `${score} | gap ${gap.label} | try /prompt-memory:improve-last`
+    : score;
 }
 
 export function installClaudeCodeStatusLine(
@@ -451,7 +458,7 @@ function normalizePromptMemoryStatusLineOutput(
     .split(/\r?\n/)
     .map((line) => line.trim())
     .filter(Boolean)
-    .join(" | ");
+    .join("\n");
 }
 
 function markerAssignment(marker: string): string {
