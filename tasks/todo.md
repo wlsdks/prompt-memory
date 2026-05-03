@@ -6,7 +6,7 @@
 - [x] Practice one-click builder에서 보완된 초안을 바로 복사하는 흐름 추가
 - [x] 한국어/영어 UI 문구와 브라우저 e2e 검증 보강
 - [x] 전체 테스트, 브라우저, 릴리스, 패키징 게이트 검증
-- [ ] PR 생성, CI 확인, main merge, branch cleanup
+- [x] PR 생성, CI 확인, main merge, branch cleanup
 
 ### 판단 기준
 
