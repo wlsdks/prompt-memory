@@ -18,21 +18,23 @@ installation. Users who want active prompt coaching should still run:
 
 ```sh
 prompt-memory start
-prompt-memory setup --profile coach
-claude mcp add --transport stdio prompt-memory -- prompt-memory mcp
+prompt-memory setup --profile coach --register-mcp
+# If MCP registration fails or you skip --register-mcp:
+# claude mcp add --transport stdio prompt-memory -- prompt-memory mcp
 # or: codex mcp add prompt-memory -- prompt-memory mcp
 ```
 
 The coach profile installs capture hooks, low-friction rewrite guidance through
 hook context, local server startup where supported, and the Claude Code status
-line when Claude Code is detected. MCP registration is still explicit because
-it gives the active agent session access to coach/rewrite/judge tools. Plain
+line when Claude Code is detected. `--register-mcp` is explicit consent to run
+the detected agent CLI registration commands for `prompt-memory mcp`, which
+gives the active agent session access to coach/rewrite/judge tools. Plain
 `prompt-memory setup` remains available for passive capture only.
 
 Use a preview first when reviewing changes:
 
 ```sh
-prompt-memory setup --profile coach --dry-run
+prompt-memory setup --profile coach --register-mcp --dry-run
 ```
 
 ## Codex Plugin
@@ -96,7 +98,7 @@ Prompt capture still uses Claude Code hook configuration in settings files. The
 supported install paths are:
 
 ```sh
-prompt-memory setup --profile coach
+prompt-memory setup --profile coach --register-mcp
 prompt-memory install-hook claude-code
 ```
 

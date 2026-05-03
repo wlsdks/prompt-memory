@@ -1,11 +1,36 @@
 export type AgentTool = "claude-code" | "codex";
 
-export function mcpRegistrationCommand(tool: AgentTool): string {
+export type AgentCommandSpec = {
+  command: string;
+  args: string[];
+};
+
+export function mcpRegistrationSpec(tool: AgentTool): AgentCommandSpec {
   if (tool === "claude-code") {
-    return "claude mcp add --transport stdio prompt-memory -- prompt-memory mcp";
+    return {
+      command: "claude",
+      args: [
+        "mcp",
+        "add",
+        "--transport",
+        "stdio",
+        "prompt-memory",
+        "--",
+        "prompt-memory",
+        "mcp",
+      ],
+    };
   }
 
-  return "codex mcp add prompt-memory -- prompt-memory mcp";
+  return {
+    command: "codex",
+    args: ["mcp", "add", "prompt-memory", "--", "prompt-memory", "mcp"],
+  };
+}
+
+export function mcpRegistrationCommand(tool: AgentTool): string {
+  const spec = mcpRegistrationSpec(tool);
+  return [spec.command, ...spec.args].join(" ");
 }
 
 export function doctorCommand(tool: AgentTool): string {

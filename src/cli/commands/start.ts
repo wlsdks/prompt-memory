@@ -48,15 +48,15 @@ export function buildStartGuide(options: StartOptions = {}): StartGuide {
     tools,
     steps: [
       {
-        title: "Set up capture and coaching",
+        title: "Set up capture, coaching, and MCP",
         detail:
-          "Installs local storage, hooks, service startup, and low-friction rewrite guidance.",
-        commands: ["prompt-memory setup --profile coach"],
+          "Installs local storage, hooks, service startup, low-friction rewrite guidance, and agent MCP commands.",
+        commands: ["prompt-memory setup --profile coach --register-mcp"],
       },
       {
-        title: "Enable agent commands",
+        title: "Manual MCP fallback",
         detail:
-          "Registers the local MCP server so Claude Code or Codex can run coach, rewrite, and judge tools inside the agent session.",
+          "Use these only if setup reports MCP registration failed or you skipped --register-mcp.",
         commands: tools.map((tool) => mcpRegistrationCommand(tool)),
       },
       {

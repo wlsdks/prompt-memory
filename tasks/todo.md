@@ -1,5 +1,21 @@
 # 작업 계획
 
+## 2026-05-03 Optional MCP Registration In Setup
+
+- [x] `setup --profile coach --register-mcp` 동작을 TDD로 설계
+- [x] dry-run에서는 실제 agent config를 쓰지 않고 등록 명령만 preview
+- [x] 명시 옵션이 있을 때만 Claude Code/Codex MCP 등록 명령 실행
+- [x] setup 출력/README/PLUGIN 문서를 one-command coach setup에 맞게 갱신
+- [x] targeted/full 검증 실행
+- [ ] PR 생성, CI 확인, main merge, branch cleanup
+
+### 판단 기준
+
+- 기본 `setup --profile coach`는 여전히 MCP 설정을 자동으로 바꾸지 않고 명령만 안내한다.
+- 사용자가 `--register-mcp`를 명시하면 setup consent 범위 안에서 MCP 등록까지 처리한다.
+- 실패한 MCP 등록은 capture hook 설치를 되돌리거나 숨기지 않고, 결과와 다음 명령을 명확히 보여준다.
+- dry-run은 실제 `claude`/`codex` 명령을 실행하지 않는다.
+
 ## 2026-05-03 Coach First Activation
 
 - [x] 첫 5분 성공 흐름을 `start`/setup/doctor 안내로 압축

@@ -24,8 +24,9 @@ For most users, start with:
 
 ```sh
 prompt-memory start
-prompt-memory setup --profile coach
-claude mcp add --transport stdio prompt-memory -- prompt-memory mcp
+prompt-memory setup --profile coach --register-mcp
+# If MCP registration fails or you skip --register-mcp:
+# claude mcp add --transport stdio prompt-memory -- prompt-memory mcp
 # or: codex mcp add prompt-memory -- prompt-memory mcp
 # send one real Claude Code or Codex prompt
 prompt-memory doctor claude-code
@@ -102,8 +103,8 @@ Inside Claude Code:
 ```
 
 `/prompt-memory:setup` checks that the CLI is available, previews
-`prompt-memory setup --profile coach`, asks before writing settings, and then
-runs the real setup if approved.
+`prompt-memory setup --profile coach --register-mcp`, asks before writing
+settings, and then runs the real setup if approved.
 
 ### 3. Add The Codex Marketplace
 
@@ -116,7 +117,7 @@ codex plugin marketplace add wlsdks/prompt-memory
 Then run the local coach setup:
 
 ```sh
-prompt-memory setup --profile coach
+prompt-memory setup --profile coach --register-mcp
 ```
 
 Codex currently exposes marketplace management through `codex plugin marketplace add/upgrade/remove`. The prompt capture hook is installed by `prompt-memory setup`, which writes the Codex hook config and enables Codex hooks.
@@ -157,7 +158,7 @@ pnpm build
 Run the guided local coach setup:
 
 ```sh
-pnpm prompt-memory setup --profile coach
+pnpm prompt-memory setup --profile coach --register-mcp
 ```
 
 `setup` is intentionally explicit. Installing an npm/pnpm package should not
@@ -175,6 +176,8 @@ The setup command:
   context instead of making you run separate score/improve commands
 - with `--profile coach`, installs the Claude Code status line when Claude Code
   is detected
+- with `--register-mcp`, registers `prompt-memory mcp` with detected Claude
+  Code and/or Codex CLIs
 - enables Codex hooks when Codex is detected
 - installs and starts a macOS LaunchAgent for the local server when supported
 - prints next steps and paths that were changed
@@ -182,7 +185,7 @@ The setup command:
 Preview setup without writing files:
 
 ```sh
-pnpm prompt-memory setup --profile coach --dry-run
+pnpm prompt-memory setup --profile coach --register-mcp --dry-run
 ```
 
 Use passive capture only when you do not want coaching:

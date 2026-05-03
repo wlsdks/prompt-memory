@@ -92,8 +92,12 @@ describe("plugin packaging files", () => {
     );
     const open = readFileSync(join(process.cwd(), "commands/open.md"), "utf8");
 
-    expect(setup).toContain("prompt-memory setup --profile coach --dry-run");
-    expect(setup).toContain("prompt-memory setup --profile coach");
+    expect(setup).toContain(
+      "prompt-memory setup --profile coach --register-mcp --dry-run",
+    );
+    expect(setup).toContain(
+      "prompt-memory setup --profile coach --register-mcp",
+    );
     expect(setup).toContain("prompt-memory statusline claude-code");
     expect(status).toContain("prompt-memory doctor claude-code");
     expect(status).toContain("prompt-memory statusline claude-code");
