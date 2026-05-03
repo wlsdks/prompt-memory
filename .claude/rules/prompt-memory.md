@@ -60,5 +60,6 @@ For UI work, also run the browser E2E path and inspect the rendered screen.
 
 - Do not push directly to `main`.
 - Commit in focused units using Conventional Commits.
-- Push the current branch and keep PR #1 updated.
-- Do not merge while branch protection says review is required.
+- Push the current branch and keep its pull request updated.
+- In the solo-maintainer phase, merge only after Node 22/24 CI passes and unresolved conversations are clear.
+- Re-enable one required approving review once an external collaborator or reviewer is available.

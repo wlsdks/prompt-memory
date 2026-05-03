@@ -46,6 +46,7 @@
     "integrations",
     "scripts/benchmark.mjs",
     "scripts/browser-e2e.mjs",
+    "scripts/quality-gate.mjs",
     "scripts/release-smoke.mjs"
   ],
   "scripts": {
@@ -58,7 +59,9 @@
     "benchmark": "pnpm build && node scripts/benchmark.mjs",
     "dev:web": "vite --config vite.web.config.ts",
     "e2e:browser": "pnpm build && node scripts/browser-e2e.mjs",
-    "lint": "tsc -p tsconfig.json --noEmit && tsc -p tsconfig.web.json --noEmit",
+    "lint": "pnpm lint:types && pnpm lint:quality",
+    "lint:quality": "node scripts/quality-gate.mjs",
+    "lint:types": "tsc -p tsconfig.json --noEmit && tsc -p tsconfig.web.json --noEmit",
     "pack:dry-run": "npm pack --dry-run",
     "prepack": "pnpm build",
     "prompt-memory": "node dist/cli/index.js",
