@@ -10,9 +10,11 @@ import { redactPrompt } from "../redaction/redact.js";
 import { createSqlitePromptStorage } from "../storage/sqlite.js";
 import {
   coachPromptTool,
+  prepareAgentRewriteTool,
   prepareAgentJudgeBatchTool,
   getPromptMemoryStatusTool,
   improvePromptTool,
+  recordAgentRewriteTool,
   recordAgentJudgmentsTool,
   reviewProjectInstructionsTool,
   scorePromptArchiveTool,
@@ -351,6 +353,135 @@ describe("getPromptMemoryStatusTool", () => {
 });
 
 describe("agent judge MCP tools", () => {
+  it("prepares a redacted agent rewrite packet for the latest stored prompt", async () => {
+    const dataDir = createTempDir();
+    const init = initializePromptMemory({ dataDir });
+    const storage = createSqlitePromptStorage({
+      dataDir,
+      hmacSecret: init.hookAuth.web_session_secret,
+      now: nextDate(["2026-05-03T18:30:00.000Z", "2026-05-03T18:31:00.000Z"]),
+    });
+    await storeClaudePrompt(
+      storage,
+      "Fix this with token sk-proj-1234567890abcdef in /Users/example/private-app",
+      "2026-05-03T18:29:00.000Z",
+    );
+    const latest = await storeClaudePrompt(
+      storage,
+      "Review src/mcp/score-tool.ts, keep the change scoped to MCP rewrite tools, run pnpm vitest run src/mcp/score-tool.test.ts, and return a concise risk summary.",
+      "2026-05-03T18:30:00.000Z",
+    );
+    storage.close();
+
+    const result = prepareAgentRewriteTool(
+      { latest: true, language: "en" },
+      { dataDir, now: new Date("2026-05-03T18:32:00.000Z") },
+    );
+    const serialized = JSON.stringify(result);
+
+    expect(result.mode).toBe("agent_rewrite_packet");
+    expect(result.prompt.prompt_id).toBe(latest.id);
+    expect(result.prompt.redacted_prompt).toContain("src/mcp/score-tool.ts");
+    expect(result.local_baseline?.improved_prompt).toContain(
+      "src/mcp/score-tool.ts",
+    );
+    expect(result.rewrite_contract.required_sections).toEqual([
+      "Goal",
+      "Context",
+      "Scope",
+      "Verification",
+      "Output",
+    ]);
+    expect(result.agent_instructions).toContain("record_agent_rewrite");
+    expect(result.privacy).toEqual({
+      local_only: true,
+      external_calls_by_prompt_memory: false,
+      intended_external_rewriter: "current_agent_session",
+      returns_redacted_prompt_body: true,
+      returns_raw_prompt_body: false,
+      returns_raw_paths: false,
+      stores_rewrite_result: false,
+      auto_submits: false,
+    });
+    expect(serialized).not.toContain("sk-proj-1234567890abcdef");
+    expect(serialized).not.toContain("/Users/example");
+  });
+
+  it("records an agent rewrite as a redacted improvement draft without returning the draft body", async () => {
+    const dataDir = createTempDir();
+    const init = initializePromptMemory({ dataDir });
+    const storage = createSqlitePromptStorage({
+      dataDir,
+      hmacSecret: init.hookAuth.web_session_secret,
+      now: nextDate(["2026-05-03T19:00:00.000Z", "2026-05-03T19:01:00.000Z"]),
+    });
+    const prompt = await storeClaudePrompt(
+      storage,
+      "Make this better with token sk-proj-1234567890abcdef",
+      "2026-05-03T18:59:00.000Z",
+    );
+    storage.close();
+
+    const result = recordAgentRewriteTool(
+      {
+        provider: "codex",
+        judge_model: "gpt-5.5",
+        prompt_id: prompt.id,
+        improved_prompt:
+          "## Goal\nImprove the MCP rewrite flow with token sk-proj-1234567890abcdef.\n## Verification\nRun pnpm vitest run src/mcp/score-tool.test.ts.",
+        confidence: 0.84,
+        summary:
+          "Added a concrete goal and verification command without using sk-proj-1234567890abcdef.",
+        changed_sections: ["goal_clarity", "verification_criteria"],
+        safety_notes: [
+          "Agent rewrite was reviewed with sk-proj-1234567890abcdef redacted.",
+        ],
+        copied: true,
+      },
+      { dataDir, now: new Date("2026-05-03T19:02:00.000Z") },
+    );
+    const serialized = JSON.stringify(result);
+
+    expect(result.recorded).toBe(true);
+    expect(result.draft).toEqual(
+      expect.objectContaining({
+        prompt_id: prompt.id,
+        analyzer: "agent-rewrite-v1:codex",
+        changed_sections: ["goal_clarity", "verification_criteria"],
+        is_sensitive: true,
+        copied_at: "2026-05-03T19:02:00.000Z",
+      }),
+    );
+    expect(result.draft).not.toHaveProperty("draft_text");
+    expect(result.agent_metadata.summary).toContain("[REDACTED:api_key]");
+    expect(result.draft.safety_notes.join("\n")).toContain(
+      "[REDACTED:api_key]",
+    );
+    expect(result.privacy).toEqual({
+      local_only: true,
+      external_calls_by_prompt_memory: false,
+      stores_original_prompt_body: false,
+      stores_rewrite_draft: true,
+      returns_rewrite_draft: false,
+      stores_raw_paths: false,
+    });
+    expect(serialized).not.toContain("Make this better");
+    expect(serialized).not.toContain("Improve the MCP rewrite flow");
+    expect(serialized).not.toContain("sk-proj-1234567890abcdef");
+  });
+
+  it("rejects invalid agent rewrite input before storage", () => {
+    const result = recordAgentRewriteTool({
+      provider: "codex",
+      prompt_id: "",
+      improved_prompt: "",
+      confidence: 2,
+    });
+
+    expect(result.is_error).toBe(true);
+    expect(result.error_code).toBe("invalid_input");
+  });
+
   it("prepares a redacted LLM judge packet for the current agent session", async () => {
     const dataDir = createTempDir();
     const init = initializePromptMemory({ dataDir });

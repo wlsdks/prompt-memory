@@ -144,7 +144,8 @@ Hard delete removes:
    or Codex.
 2. The client launches the command as a stdio subprocess.
 3. The MCP server exposes `get_prompt_memory_status`, `coach_prompt`,
-   `score_prompt`, `improve_prompt`, `score_prompt_archive`,
+   `score_prompt`, `improve_prompt`, `prepare_agent_rewrite`,
+   `record_agent_rewrite`, `score_prompt_archive`,
    `review_project_instructions`, `prepare_agent_judge_batch`, and
    `record_agent_judgments`.
 4. `get_prompt_memory_status` checks whether local storage is initialized,
@@ -157,34 +158,41 @@ Hard delete removes:
 8. `improve_prompt` accepts exactly one of direct prompt text, a stored prompt
    id, or `latest: true`, then returns a copy-based draft that requires user
    approval before resubmission.
-9. Archive scoring reads recent prompt summaries from SQLite and returns an
+9. `prepare_agent_rewrite` returns one locally redacted prompt body, local score
+   metadata, a local baseline draft, and a rewrite contract for the active
+   Claude Code, Codex, or Gemini CLI session. `prompt-memory` does not call a
+   provider or route credentials for this workflow.
+10. `record_agent_rewrite` stores the active agent session's approved rewrite as
+    a redacted improvement draft without returning the rewrite body or storing
+    the original prompt body.
+11. Archive scoring reads recent prompt summaries from SQLite and returns an
    aggregate score, distribution, recurring quality gaps, practice plan, next
    prompt template, and low-score prompt ids without prompt bodies or raw paths.
-10. Project instruction review reads local project metadata from SQLite, can
+12. Project instruction review reads local project metadata from SQLite, can
     rescan `AGENTS.md` / `CLAUDE.md`, and returns checklist metadata without
     instruction file bodies or raw paths.
-11. `prepare_agent_judge_batch` returns a bounded set of locally redacted
+13. `prepare_agent_judge_batch` returns a bounded set of locally redacted
     prompt bodies plus a rubric for the active Claude Code, Codex, or Gemini CLI
     session to judge. `prompt-memory` does not call a provider or route
     credentials for this workflow.
-12. `record_agent_judgments` stores advisory scores, confidence, risks, and
+14. `record_agent_judgments` stores advisory scores, confidence, risks, and
     suggestions from the active agent session without prompt bodies or raw
     paths.
-13. Read MCP tools are declared as read-only, idempotent, and local-only through
-    tool annotations. `record_agent_judgments` is declared as a non-destructive
-    write tool. Every tool declares an MCP `outputSchema`, and `tools/call`
-    returns both serialized JSON text and `structuredContent` for clients that
-    can consume structured tool results.
+15. Read MCP tools are declared as read-only, idempotent, and local-only through
+    tool annotations. `record_agent_rewrite` and `record_agent_judgments` are
+    declared as non-destructive write tools. Every tool declares an MCP
+    `outputSchema`, and `tools/call` returns both serialized JSON text and
+    `structuredContent` for clients that can consume structured tool results.
 
 Important rules:
 
 - stdout is reserved for newline-delimited JSON-RPC MCP messages
 - no hidden external LLM calls are made by `prompt-memory`
-- agent-judge mode is explicit: the active user-controlled agent session judges
-  redacted packets and then records metadata
+- agent rewrite/judge mode is explicit: the active user-controlled agent
+  session rewrites or judges redacted packets and then records approved metadata
 - MCP read tool definitions include read-only/local-only risk hints
-- MCP judgment recording is the only write tool and stores judgment metadata
-  only
+- MCP rewrite/judgment recording tools are non-destructive write tools; rewrite
+  recording stores a redacted draft and judgment recording stores metadata only
 - MCP tool definitions include `outputSchema` for structured result fields
 - MCP tool responses include `structuredContent` plus a JSON text content block
 - direct MCP prompt input is not written to Markdown or SQLite

@@ -69,6 +69,32 @@ export const MCP_TOOL_CATALOG = [
       "Use prompt-memory improve_prompt with latest=true and give me an approval-ready draft I can copy and resubmit.",
   },
   {
+    kind: "advanced rewrite",
+    name: "prepare_agent_rewrite",
+    title: "Prepare one prompt for semantic agent rewrite",
+    when: "The user explicitly wants Claude Code, Codex, or Gemini CLI to improve a stored prompt beyond the local deterministic rewrite.",
+    returns:
+      "One redacted prompt packet, local score metadata, local baseline rewrite, rewrite contract, and agent instructions.",
+    assurances: ["read-only", "opt-in", "redacted packet", "output schema"],
+    privacy:
+      "prompt-memory makes no external provider call; the redacted prompt is returned only to the active user-controlled agent session.",
+    prompt:
+      "Use prompt-memory prepare_agent_rewrite with latest=true. Rewrite that redacted prompt yourself, then ask before saving it.",
+  },
+  {
+    kind: "advanced rewrite",
+    name: "record_agent_rewrite",
+    title: "Store the agent rewrite draft",
+    when: "The active agent has already rewritten a prepare_agent_rewrite packet and the user wants the improved draft saved locally.",
+    returns:
+      "Saved draft metadata, agent metadata, next action, and privacy guarantees.",
+    assurances: ["write tool", "local-only", "redacted draft", "output schema"],
+    privacy:
+      "Stores a redacted rewrite draft and metadata only; does not store the original prompt body, return the rewrite body, or store raw paths.",
+    prompt:
+      "After I approve your rewrite, call prompt-memory record_agent_rewrite with provider, prompt_id, improved_prompt, confidence, summary, and changed_sections.",
+  },
+  {
     kind: "archive",
     name: "score_prompt_archive",
     title: "Find habit patterns",

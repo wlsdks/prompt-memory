@@ -31,11 +31,13 @@ function dashboardFixture(
 
 describe("mcp catalog", () => {
   it("keeps tool catalog privacy-safe", () => {
-    expect(MCP_TOOL_CATALOG).toHaveLength(7);
+    expect(MCP_TOOL_CATALOG).toHaveLength(9);
     expect(MCP_TOOL_CATALOG.map((tool) => tool.name)).toEqual([
       "get_prompt_memory_status",
       "score_prompt",
       "improve_prompt",
+      "prepare_agent_rewrite",
+      "record_agent_rewrite",
       "score_prompt_archive",
       "review_project_instructions",
       "prepare_agent_judge_batch",

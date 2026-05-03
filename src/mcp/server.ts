@@ -6,8 +6,10 @@ import {
   COACH_PROMPT_TOOL_DEFINITION,
   GET_PROMPT_MEMORY_STATUS_TOOL_DEFINITION,
   IMPROVE_PROMPT_TOOL_DEFINITION,
+  PREPARE_AGENT_REWRITE_TOOL_DEFINITION,
   PREPARE_AGENT_JUDGE_BATCH_TOOL_DEFINITION,
   PROMPT_MEMORY_MCP_TOOL_DEFINITIONS,
+  RECORD_AGENT_REWRITE_TOOL_DEFINITION,
   RECORD_AGENT_JUDGMENTS_TOOL_DEFINITION,
   REVIEW_PROJECT_INSTRUCTIONS_TOOL_DEFINITION,
   SCORE_PROMPT_ARCHIVE_TOOL_DEFINITION,
@@ -17,7 +19,9 @@ import {
   coachPromptTool,
   getPromptMemoryStatusTool,
   improvePromptTool,
+  prepareAgentRewriteTool,
   prepareAgentJudgeBatchTool,
+  recordAgentRewriteTool,
   recordAgentJudgmentsTool,
   reviewProjectInstructionsTool,
   scorePromptArchiveTool,
@@ -27,6 +31,10 @@ import type {
   PrepareAgentJudgeBatchToolArguments,
   RecordAgentJudgmentsToolArguments,
 } from "./agent-judge-tool-types.js";
+import type {
+  PrepareAgentRewriteToolArguments,
+  RecordAgentRewriteToolArguments,
+} from "./agent-rewrite-tool-types.js";
 import type {
   CoachPromptToolArguments,
   GetPromptMemoryStatusToolArguments,
@@ -70,6 +78,8 @@ type PromptMemoryToolResult =
   | ReturnType<typeof improvePromptTool>
   | ReturnType<typeof scorePromptArchiveTool>
   | ReturnType<typeof reviewProjectInstructionsTool>
+  | ReturnType<typeof prepareAgentRewriteTool>
+  | ReturnType<typeof recordAgentRewriteTool>
   | ReturnType<typeof prepareAgentJudgeBatchTool>
   | ReturnType<typeof recordAgentJudgmentsTool>;
 
@@ -98,6 +108,13 @@ const PROMPT_MEMORY_MCP_TOOL_HANDLERS: Record<string, PromptMemoryToolHandler> =
         args as ReviewProjectInstructionsToolArguments,
         options,
       ),
+    [PREPARE_AGENT_REWRITE_TOOL_DEFINITION.name]: (args, options) =>
+      prepareAgentRewriteTool(
+        args as PrepareAgentRewriteToolArguments,
+        options,
+      ),
+    [RECORD_AGENT_REWRITE_TOOL_DEFINITION.name]: (args, options) =>
+      recordAgentRewriteTool(args as RecordAgentRewriteToolArguments, options),
     [PREPARE_AGENT_JUDGE_BATCH_TOOL_DEFINITION.name]: (args, options) =>
       prepareAgentJudgeBatchTool(
         args as PrepareAgentJudgeBatchToolArguments,
@@ -183,7 +200,7 @@ export function handleMcpMessage(
           version: VERSION,
         },
         instructions:
-          "Use coach_prompt for the default one-call Claude Code/Codex coaching workflow: status, latest prompt score, approval-ready rewrite, habit review, project instruction review, and next request guidance. Use get_prompt_memory_status only for readiness checks, score_prompt for one prompt, improve_prompt for one rewrite, score_prompt_archive for habit-only review, and review_project_instructions for AGENTS.md/CLAUDE.md-only checks. This server is local-only and does not call external LLMs.",
+          "Use coach_prompt for the default one-call Claude Code/Codex coaching workflow: status, latest prompt score, approval-ready rewrite, habit review, project instruction review, and next request guidance. Use get_prompt_memory_status only for readiness checks, score_prompt for one prompt, improve_prompt for one local deterministic rewrite, prepare_agent_rewrite and record_agent_rewrite when the user explicitly wants the active agent session to semantically rewrite a stored prompt, score_prompt_archive for habit-only review, review_project_instructions for AGENTS.md/CLAUDE.md-only checks, and prepare_agent_judge_batch plus record_agent_judgments when the active agent should judge accumulated prompts. This server is local-only and does not call external LLMs.",
       });
     case "ping":
       return jsonRpcResult(id, {});

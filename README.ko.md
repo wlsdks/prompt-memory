@@ -456,12 +456,14 @@ privacy/safety, 보고 규칙을 보는 deterministic local rubric입니다.
 prompt-memory mcp
 ```
 
-MCP server는 여덟 개의 tool을 제공합니다.
+MCP server는 열 개의 tool을 제공합니다.
 
 - `get_prompt_memory_status`: 로컬 archive가 초기화되었는지, prompt가 캡처되었는지, 다음에 어떤 MCP tool을 호출하면 좋은지 확인합니다.
 - `coach_prompt`: Claude Code/Codex 안에서 로컬 readiness, 최신 prompt 점수, 승인형 rewrite, 누적 습관, 프로젝트 규칙, 다음 요청 가이드를 한 번에 받습니다.
 - `score_prompt`: 직접 전달한 prompt text, 저장된 `prompt_id`, 또는 최신 저장 prompt를 점수화합니다.
 - `improve_prompt`: 직접 전달한 prompt text, 저장된 `prompt_id`, 또는 최신 저장 prompt를 승인 가능한 개선 prompt 초안으로 재작성합니다.
+- `prepare_agent_rewrite`: 현재 Claude Code/Codex/Gemini CLI 세션이 의미론적으로 더 좋은 prompt를 만들 수 있도록, 하나의 redacted prompt packet, 로컬 점수 metadata, 로컬 baseline draft, rewrite contract를 준비합니다.
+- `record_agent_rewrite`: 사용자가 승인한 agent rewrite를 redacted improvement draft로 저장하고, rewrite 본문은 반환하지 않습니다.
 - `score_prompt_archive`: 최근 저장 prompt 전체를 대상으로 누적 prompt 습관을 점수화하고, 평균 점수, 반복 부족 항목, practice plan, 다음 prompt template, 낮은 점수 prompt id를 반환합니다.
 - `review_project_instructions`: 최신 또는 선택한 프로젝트의 `AGENTS.md` / `CLAUDE.md` 규칙 파일을 리뷰하고 점수, checklist 상태, 개선 힌트를 반환합니다.
 - `prepare_agent_judge_batch`: 현재 Claude Code/Codex/Gemini CLI 세션이 직접 LLM judge로 평가할 수 있도록, bounded redacted prompt packet과 rubric을 준비합니다. `prompt-memory`가 provider를 대신 호출하지 않습니다.
@@ -469,10 +471,12 @@ MCP server는 여덟 개의 tool을 제공합니다.
 
 읽기 tool은 local-only로 동작하고 구조화 JSON metadata에 대한 MCP
 `outputSchema`와 text JSON fallback을 함께 제공합니다.
-`record_agent_judgments`만 write tool이며 judgment metadata만 저장합니다.
+`record_agent_rewrite`와 `record_agent_judgments`는 non-destructive write tool입니다.
+전자는 redacted rewrite draft를 저장하고, 후자는 judgment metadata만 저장합니다.
 archive 기반 로컬 tool은 저장된 prompt 본문, raw absolute path, secret,
 숨은 외부 LLM 결과를 반환하지 않습니다. agent-judge 모드는 opt-in이며 현재
-agent 세션을 evaluator로 사용합니다.
+agent 세션을 evaluator로 사용합니다. agent-rewrite 모드도 opt-in이며 현재
+agent 세션을 rewriter로 사용합니다.
 
 Agent에게 이렇게 요청할 수 있습니다.
 
@@ -482,6 +486,8 @@ prompt-memory get_prompt_memory_status를 사용해서 점수 측정 전에 prom
 prompt-memory score_prompt를 latest=true로 사용해서 방금 내 요청에서 고칠 점을 알려줘.
 
 prompt-memory improve_prompt를 latest=true로 사용해서 내가 복사해 다시 입력할 수 있는 승인용 개선안을 만들어줘.
+
+prompt-memory prepare_agent_rewrite를 latest=true로 사용해줘. redacted prompt를 네가 직접 더 좋은 요청으로 고친 뒤, 내가 승인하면 record_agent_rewrite로 저장해줘.
 
 최근 Codex 프롬프트를 prompt-memory score_prompt_archive로 측정하고 반복되는 프롬프트 습관 약점을 요약해줘.
 
