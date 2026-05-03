@@ -18,19 +18,19 @@ The implementation records prompts from supported AI coding tools, redacts sensi
 
 ## 2. Stack
 
-| Area | Choice | Reason |
-| --- | --- | --- |
-| Language | TypeScript | shared types across CLI, server, adapters, and web |
-| Runtime | Node.js 22/24 | npm distribution and native dependency support |
-| Package manager | pnpm | deterministic lockfile and scripts |
-| CLI | Commander | simple command surface |
-| HTTP server | Fastify | local API, validation, low overhead |
-| Database | SQLite | local-first single-file storage |
-| SQLite driver | better-sqlite3 | simple local transactions |
-| Query layer | direct SQL + repository boundary | transparent migrations and FTS |
-| Web UI | Vite + React | small local web app |
-| Validation | Zod | runtime schema validation |
-| Testing | Vitest | TypeScript unit/integration tests |
+| Area            | Choice                           | Reason                                             |
+| --------------- | -------------------------------- | -------------------------------------------------- |
+| Language        | TypeScript                       | shared types across CLI, server, adapters, and web |
+| Runtime         | Node.js 22/24                    | npm distribution and native dependency support     |
+| Package manager | pnpm                             | deterministic lockfile and scripts                 |
+| CLI             | Commander                        | simple command surface                             |
+| HTTP server     | Fastify                          | local API, validation, low overhead                |
+| Database        | SQLite                           | local-first single-file storage                    |
+| SQLite driver   | better-sqlite3                   | simple local transactions                          |
+| Query layer     | direct SQL + repository boundary | transparent migrations and FTS                     |
+| Web UI          | Vite + React                     | small local web app                                |
+| Validation      | Zod                              | runtime schema validation                          |
+| Testing         | Vitest                           | TypeScript unit/integration tests                  |
 
 Unsupported for the public beta:
 
@@ -62,6 +62,11 @@ commands/
 plugins/
 integrations/
 ```
+
+Architecture rules and module ownership are documented in
+[ARCHITECTURE.md](./ARCHITECTURE.md). In short, `cli`, `server`, `hooks`, `mcp`,
+and `web` are runtime entrypoints; reusable local rules belong in `analysis`,
+`redaction`, `storage`, or `shared`.
 
 `dist/` contains built CLI/server modules and web assets. The npm package ships built files and does not require Vite at runtime.
 
@@ -149,8 +154,8 @@ Hard delete removes:
    aggregate score, distribution, recurring quality gaps, practice plan, next
    prompt template, and low-score prompt ids without prompt bodies or raw paths.
 10. Project instruction review reads local project metadata from SQLite, can
-   rescan `AGENTS.md` / `CLAUDE.md`, and returns checklist metadata without
-   instruction file bodies or raw paths.
+    rescan `AGENTS.md` / `CLAUDE.md`, and returns checklist metadata without
+    instruction file bodies or raw paths.
 11. Every MCP tool is declared as read-only, idempotent, and local-only through
     tool annotations, declares an MCP `outputSchema`, and `tools/call` returns
     both serialized JSON text and `structuredContent` for clients that can
@@ -215,17 +220,17 @@ Rules:
 
 ### Route Groups
 
-| Route group | Purpose |
-| --- | --- |
-| `/api/v1/health` | server health |
-| `/api/v1/session` | local browser session and CSRF |
-| `/api/v1/ingest/claude-code` | Claude Code ingest |
-| `/api/v1/ingest/codex` | Codex ingest |
-| `/api/v1/prompts` | list/search/detail/events/improvements/delete |
-| `/api/v1/score` | archive prompt score review |
-| `/api/v1/projects` | project list and policy mutation |
-| `/api/v1/exports` | anonymized export preview and execution |
-| `/api/v1/settings` | local diagnostics/config view |
+| Route group                  | Purpose                                       |
+| ---------------------------- | --------------------------------------------- |
+| `/api/v1/health`             | server health                                 |
+| `/api/v1/session`            | local browser session and CSRF                |
+| `/api/v1/ingest/claude-code` | Claude Code ingest                            |
+| `/api/v1/ingest/codex`       | Codex ingest                                  |
+| `/api/v1/prompts`            | list/search/detail/events/improvements/delete |
+| `/api/v1/score`              | archive prompt score review                   |
+| `/api/v1/projects`           | project list and policy mutation              |
+| `/api/v1/exports`            | anonymized export preview and execution       |
+| `/api/v1/settings`           | local diagnostics/config view                 |
 
 ## 8. Storage Design
 

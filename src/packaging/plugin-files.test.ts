@@ -168,6 +168,7 @@ describe("plugin packaging files", () => {
     expect(packageJson.files).toContain("commands");
     expect(packageJson.files).toContain("plugins");
     expect(packageJson.files).toContain("integrations");
+    expect(packageJson.files).toContain("docs/ARCHITECTURE.md");
     expect(packageJson.files).toContain("docs/PLUGINS.md");
   });
 

@@ -51,6 +51,16 @@ pnpm prompt-memory server -- --data-dir <temp-data-dir>
 - 삭제는 Markdown, DB row, FTS, 관련 이벤트/태그/분석 데이터를 함께 정리해야 한다.
 - `rebuild-index`는 Markdown archive를 source of truth로 보고 DB/FTS를 복구해야 한다.
 
+## Node/TypeScript 아키텍처 규칙
+
+- 구조 판단이 필요하면 `docs/ARCHITECTURE.md`를 먼저 읽고 그 경계를 따른다.
+- 이 저장소의 모듈화는 Spring 계층을 그대로 복제하지 않는다. `cli`, `server`, `hooks`, `mcp`, `web`은 entrypoint이고, 재사용되는 규칙은 `analysis`, `redaction`, `storage`, `shared` 쪽으로 옮긴다.
+- Node 런타임 코드는 ESM과 `module: NodeNext` 기준을 따른다. 타입만 쓰는 import는 `import type`을 사용한다.
+- CLI command 파일은 Commander 등록, orchestration, terminal formatting을 담당한다. 점수 계산, redaction, archive 분석 같은 도메인 규칙을 새로 만들지 않는다.
+- Fastify route는 HTTP/auth/validation/response shaping에 집중한다. 저장소 접근은 storage port나 명확한 storage 함수로 제한한다.
+- `src/web/src/App.tsx`, `src/storage/sqlite.ts`, `src/mcp/score-tool.ts`는 이미 큰 경계 모듈이다. 새 기능은 가능한 한 작은 모델/formatter/helper 파일로 분리하고, 이 파일들을 더 키우는 변경은 이유를 설명한다.
+- 새 public runtime entrypoint를 만들면 `package.json` `files`, packaging tests, README/PLUGINS 문서까지 같이 갱신한다.
+
 ## UI와 디자인
 
 - UI 작업 전 반드시 `DESIGN.md`를 읽는다.

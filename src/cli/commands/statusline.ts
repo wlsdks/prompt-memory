@@ -48,6 +48,12 @@ export type StatusLineInstallResult = {
 const STATUSLINE_MARKER = "prompt-memory statusline claude-code";
 
 export function registerStatusLineCommand(program: Command): void {
+  registerRenderStatusLineCommand(program);
+  registerInstallStatusLineCommand(program);
+  registerUninstallStatusLineCommand(program);
+}
+
+function registerRenderStatusLineCommand(program: Command): void {
   program
     .command("statusline")
     .argument("<tool>", "Tool to render a status line for.")
@@ -60,7 +66,9 @@ export function registerStatusLineCommand(program: Command): void {
 
       console.log(await renderClaudeCodeStatusLine(options));
     });
+}
 
+function registerInstallStatusLineCommand(program: Command): void {
   program
     .command("install-statusline")
     .argument("<tool>", "Tool to install status line for.")
@@ -86,7 +94,9 @@ export function registerStatusLineCommand(program: Command): void {
         ),
       );
     });
+}
 
+function registerUninstallStatusLineCommand(program: Command): void {
   program
     .command("uninstall-statusline")
     .argument("<tool>", "Tool to uninstall status line for.")

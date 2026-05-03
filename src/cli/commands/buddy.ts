@@ -13,6 +13,12 @@ type BuddyCliOptions = {
   once?: boolean;
 };
 
+const DEFAULT_BUDDY_INTERVAL_SECONDS = 2;
+const MIN_BUDDY_INTERVAL_SECONDS = 1;
+const BUDDY_INTERVAL_MS = 1000;
+const DEFAULT_ARCHIVE_PROMPT_LIMIT = 200;
+const DEFAULT_LOW_SCORE_LIMIT = 3;
+
 export type BuddySnapshot = {
   mode: "buddy";
   generated_at: string;
@@ -51,7 +57,7 @@ export function registerBuddyCommand(program: Command): void {
     .option(
       "--interval <seconds>",
       "Refresh interval for the terminal buddy.",
-      "2",
+      String(DEFAULT_BUDDY_INTERVAL_SECONDS),
     )
     .action(async (options: BuddyCliOptions) => {
       if (options.json || options.once || !process.stdout.isTTY) {
@@ -72,38 +78,9 @@ export function renderBuddyForCli(options: BuddyCliOptions = {}): string {
 }
 
 function createBuddySnapshot(options: BuddyCliOptions = {}): BuddySnapshot {
-  const result = coachPromptTool(
-    {
-      include_latest_score: true,
-      include_improvement: false,
-      include_archive: true,
-      include_project_rules: false,
-      max_prompts: 200,
-      low_score_limit: 3,
-    },
-    { dataDir: options.dataDir },
-  );
-  const latest =
-    result.latest_score && !("is_error" in result.latest_score)
-      ? {
-          value: result.latest_score.quality_score.value,
-          max: result.latest_score.quality_score.max,
-          band: result.latest_score.quality_score.band,
-          top_gap: result.latest_score.checklist.find(
-            (item) => item.status === "missing" || item.status === "weak",
-          )?.label,
-          tool: result.status.latest_prompt?.tool,
-        }
-      : undefined;
-  const habit =
-    result.archive && !("is_error" in result.archive)
-      ? {
-          average: result.archive.archive_score.average,
-          max: result.archive.archive_score.max,
-          band: result.archive.archive_score.band,
-          top_gap: result.archive.top_gaps[0]?.label,
-        }
-      : undefined;
+  const result = createBuddyCoachResult(options);
+  const latest = createLatestPromptSnapshot(result);
+  const habit = createHabitSnapshot(result);
 
   return {
     mode: "buddy",
@@ -118,6 +95,55 @@ function createBuddySnapshot(options: BuddyCliOptions = {}): BuddySnapshot {
       returns_prompt_bodies: false,
       returns_raw_paths: false,
     },
+  };
+}
+
+function createBuddyCoachResult(
+  options: BuddyCliOptions,
+): CoachPromptToolResult {
+  return coachPromptTool(
+    {
+      include_latest_score: true,
+      include_improvement: false,
+      include_archive: true,
+      include_project_rules: false,
+      max_prompts: DEFAULT_ARCHIVE_PROMPT_LIMIT,
+      low_score_limit: DEFAULT_LOW_SCORE_LIMIT,
+    },
+    { dataDir: options.dataDir },
+  );
+}
+
+function createLatestPromptSnapshot(
+  result: CoachPromptToolResult,
+): BuddySnapshot["latest_prompt"] {
+  if (!result.latest_score || "is_error" in result.latest_score) {
+    return undefined;
+  }
+
+  return {
+    value: result.latest_score.quality_score.value,
+    max: result.latest_score.quality_score.max,
+    band: result.latest_score.quality_score.band,
+    top_gap: result.latest_score.checklist.find(
+      (item) => item.status === "missing" || item.status === "weak",
+    )?.label,
+    tool: result.status.latest_prompt?.tool,
+  };
+}
+
+function createHabitSnapshot(
+  result: CoachPromptToolResult,
+): BuddySnapshot["habit"] {
+  if (!result.archive || "is_error" in result.archive) {
+    return undefined;
+  }
+
+  return {
+    average: result.archive.archive_score.average,
+    max: result.archive.archive_score.max,
+    band: result.archive.archive_score.band,
+    top_gap: result.archive.top_gaps[0]?.label,
   };
 }
 
@@ -184,7 +210,9 @@ function createNextMove({
 }
 
 async function runBuddyLoop(options: BuddyCliOptions): Promise<void> {
-  const intervalMs = Math.max(1, parseInterval(options.interval)) * 1000;
+  const intervalMs =
+    Math.max(MIN_BUDDY_INTERVAL_SECONDS, parseInterval(options.interval)) *
+    BUDDY_INTERVAL_MS;
 
   while (true) {
     process.stdout.write("\x1B[2J\x1B[H");
@@ -195,9 +223,9 @@ async function runBuddyLoop(options: BuddyCliOptions): Promise<void> {
 
 function parseInterval(value: string | number | undefined): number {
   if (value === undefined) {
-    return 2;
+    return DEFAULT_BUDDY_INTERVAL_SECONDS;
   }
 
   const parsed = typeof value === "number" ? value : Number.parseFloat(value);
-  return Number.isFinite(parsed) ? parsed : 2;
+  return Number.isFinite(parsed) ? parsed : DEFAULT_BUDDY_INTERVAL_SECONDS;
 }

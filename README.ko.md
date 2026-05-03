@@ -540,6 +540,7 @@ Issue, pull request, security report를 열기 전에 [CONTRIBUTING](CONTRIBUTIN
 - [Package contents](docs/PACKAGE_CONTENTS.md)
 - [Pre-publish privacy audit](docs/PRE_PUBLISH_PRIVACY_AUDIT.md)
 - [Efficiency review](docs/EFFICIENCY_REVIEW.md)
+- [Architecture](docs/ARCHITECTURE.md)
 - [Tech spec](docs/TECH_SPEC.md)
 - [Implementation plan](docs/IMPLEMENTATION_PLAN.md)
 - [Adapter guide](docs/ADAPTERS.md)

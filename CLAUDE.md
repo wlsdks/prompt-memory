@@ -51,6 +51,16 @@ git diff --check
 - Markdown archive는 사람이 읽을 수 있는 원본이며, `rebuild-index`는 이를 기준으로 DB/FTS를 복구한다.
 - Claude Code hook은 fail-open을 유지한다. 특히 `UserPromptSubmit`의 stdout은 Claude 컨텍스트가 될 수 있으므로 원문 프롬프트를 쓰지 않는다.
 
+## Node/TypeScript 모듈화
+
+- 구조 판단 전 `docs/ARCHITECTURE.md`를 읽는다.
+- Spring식 Controller/Service/Repository를 그대로 옮기지 않는다. 이 프로젝트에서는 `cli`, `server`, `hooks`, `mcp`, `web`이 entrypoint이고, 재사용 가능한 규칙은 `analysis`, `redaction`, `storage`, `shared`로 분리한다.
+- Node 런타임 코드는 ESM, `module: NodeNext`, 명시적 `.js` import specifier, `import type`을 기본으로 한다.
+- CLI command는 명령 등록과 출력 formatting에 집중한다. 도메인 규칙이 커지면 별도 pure module로 뺀다.
+- Fastify route는 HTTP boundary이고, SQLite 구현 세부사항을 route 안에 새로 만들지 않는다.
+- 큰 파일인 `src/web/src/App.tsx`, `src/storage/sqlite.ts`, `src/mcp/score-tool.ts`에 새 기능을 추가하기 전에 작은 모델/formatter/helper로 분리할 수 있는지 먼저 판단한다.
+- 새 runtime/public 표면을 추가하면 테스트, 문서, package contents 검증을 함께 갱신한다.
+
 ## UI 원칙
 
 - UI 작업 전 `DESIGN.md`를 읽는다.

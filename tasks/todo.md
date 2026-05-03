@@ -1,5 +1,20 @@
 # 작업 계획
 
+## 2026-05-03 Architecture QA And Agent Rules
+
+- [x] Always-on buddy/statusline 변경 코드 QA와 구조 리스크 점검
+- [x] `statusline` CLI registration을 작은 함수로 분리
+- [x] Node/TypeScript 모듈화 기준을 `docs/ARCHITECTURE.md`, `CLAUDE.md`, `AGENTS.md`, `.claude/rules`에 반영
+- [x] 문서 패키징/검증 게이트 재실행
+- [ ] 커밋, 푸시, CI 확인
+
+### 판단 기준
+
+- CLI command 파일은 명령 등록, orchestration, formatting을 과도하게 한 함수에 몰아넣지 않는다.
+- Node runtime 코드는 `module: NodeNext`, ESM, explicit runtime boundary, type-only import를 기준으로 한다.
+- Spring식 계층을 그대로 복제하지 않고 port/adapter, local domain service, CLI/server/MCP entrypoint 경계로 설명한다.
+- 문서와 agent rules는 privacy, local-first, hook fail-open, prompt body/raw path 미노출 규칙을 반복해서 고정한다.
+
 ## 2026-05-03 Always-On Prompt Buddy
 
 - [x] Claude Code status line에 최신 prompt score HUD를 TDD로 추가
