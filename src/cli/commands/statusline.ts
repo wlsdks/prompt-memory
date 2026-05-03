@@ -172,13 +172,7 @@ export async function renderClaudeCodeStatusLine(
   const result = await doctorClaudeCode(options);
   const configured = result.token.ok && result.settings.hookInstalled;
   const ready = result.server.ok && configured;
-  const parts = [
-    ready
-      ? "PM capture on"
-      : configured
-        ? "PM capture paused"
-        : "PM setup needed",
-  ];
+  const parts = [ready ? "PM on" : configured ? "PM paused" : "PM setup"];
 
   parts.push(result.server.ok ? "server ok" : "server down");
 
@@ -212,14 +206,14 @@ export function renderChainedClaudeCodeStatusLine(
   options: RenderChainedStatusLineOptions,
 ): string {
   const runCommand = options.runCommand ?? runStatusLineCommand;
-  const previous = normalizeStatusLineOutput(
+  const previous = normalizePreviousStatusLineOutput(
     runCommand(options.previousCommand, options.stdin).stdout,
   );
-  const promptMemory = normalizeStatusLineOutput(
+  const promptMemory = normalizePromptMemoryStatusLineOutput(
     runCommand(options.promptMemoryCommand, options.stdin).stdout,
   );
 
-  return [previous, promptMemory].filter(Boolean).join(" | ");
+  return [previous, promptMemory].filter(Boolean).join("\n");
 }
 
 function formatLatestScoreForStatusLine(
@@ -232,9 +226,9 @@ function formatLatestScoreForStatusLine(
   const gap = result.checklist.find(
     (item) => item.status === "missing" || item.status === "weak",
   );
-  const score = `score ${result.quality_score.value}/${result.quality_score.max} ${result.quality_score.band}`;
+  const score = `score ${result.quality_score.value} ${result.quality_score.band}`;
 
-  return gap ? `${score} | gap ${gap.label} | try improve-last` : score;
+  return gap ? `${score} | gap ${gap.label}` : score;
 }
 
 export function installClaudeCodeStatusLine(
@@ -298,10 +292,10 @@ function formatLastIngest(
   }
 
   if (status.ok) {
-    return "last ingest ok";
+    return "ingest ok";
   }
 
-  return `last ingest failed${status.status ? ` ${status.status}` : ""}`;
+  return `ingest failed${status.status ? ` ${status.status}` : ""}`;
 }
 
 function ensureStatusLine(
@@ -431,14 +425,33 @@ function readStatusLineStdin(): string | undefined {
   }
 }
 
-function normalizeStatusLineOutput(
+function normalizePreviousStatusLineOutput(
   output: string | Buffer | null | undefined,
 ): string {
   if (!output) {
     return "";
   }
 
-  return output.toString("utf8").trim().replace(/\s+/g, " ");
+  return output
+    .toString("utf8")
+    .replace(/\r\n/g, "\n")
+    .replace(/\n{3,}/g, "\n\n")
+    .trim();
+}
+
+function normalizePromptMemoryStatusLineOutput(
+  output: string | Buffer | null | undefined,
+): string {
+  if (!output) {
+    return "";
+  }
+
+  return output
+    .toString("utf8")
+    .split(/\r?\n/)
+    .map((line) => line.trim())
+    .filter(Boolean)
+    .join(" | ");
 }
 
 function markerAssignment(marker: string): string {
