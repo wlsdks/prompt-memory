@@ -8,7 +8,7 @@
 - [x] README/plugin/MCP 문구와 실제 기능 일치 점검
 - [x] 발견한 결함 또는 얇은 지점 개선
 - [x] 테스트/릴리스 게이트 실행
-- [ ] PR 생성, CI 확인, main merge, branch cleanup
+- [x] PR 생성, CI 확인, main merge, branch cleanup
 
 ### 판단 기준
 
