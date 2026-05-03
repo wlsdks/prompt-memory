@@ -226,6 +226,10 @@ pnpm prompt-memory install-hook claude-code --dry-run
 pnpm prompt-memory doctor claude-code
 ```
 
+`doctor`는 로컬 server 접근성, ingest token, hook 설치, MCP command access를
+확인합니다. MCP는 알려진 로컬 config 파일을 먼저 보고, 필요하면 read-only
+`claude mcp list`로 한 번 더 확인합니다.
+
 hook 제거:
 
 ```sh
@@ -267,6 +271,10 @@ pnpm prompt-memory install-hook codex --dry-run
 ```sh
 pnpm prompt-memory doctor codex
 ```
+
+`doctor`는 로컬 server 접근성, ingest token, hook 설치, Codex hook feature
+상태, MCP command access를 확인합니다. MCP는 알려진 로컬 config 파일을 먼저
+보고, 필요하면 read-only `codex mcp list`로 한 번 더 확인합니다.
 
 hook 제거:
 

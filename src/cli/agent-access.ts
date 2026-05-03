@@ -28,6 +28,14 @@ export function mcpRegistrationSpec(tool: AgentTool): AgentCommandSpec {
   };
 }
 
+export function mcpListSpec(tool: AgentTool): AgentCommandSpec {
+  if (tool === "claude-code") {
+    return { command: "claude", args: ["mcp", "list"] };
+  }
+
+  return { command: "codex", args: ["mcp", "list"] };
+}
+
 export function mcpRegistrationCommand(tool: AgentTool): string {
   const spec = mcpRegistrationSpec(tool);
   return [spec.command, ...spec.args].join(" ");

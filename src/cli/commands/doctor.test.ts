@@ -137,6 +137,53 @@ describe("doctorClaudeCode", () => {
       "MCP command access: registered",
     );
   });
+
+  it("detects Claude Code MCP registration from read-only mcp list fallback", async () => {
+    const dir = createTempDir();
+    const dataDir = join(dir, "data");
+    const settingsPath = join(dir, "settings.json");
+    const commands: string[] = [];
+    initializePromptMemory({ dataDir });
+    installClaudeCodeHook({ dataDir, settingsPath });
+
+    const result = await doctorClaudeCode({
+      dataDir,
+      settingsPath,
+      mcpConfigPath: join(dir, "missing-claude-mcp.json"),
+      checkServer: async () => true,
+      commandRunner: (command, args) => {
+        commands.push([command, ...args].join(" "));
+        return {
+          status: 0,
+          stdout: "prompt-memory  prompt-memory mcp\n",
+        };
+      },
+    });
+
+    expect(commands).toEqual(["claude mcp list"]);
+    expect(result.mcp.registered).toBe(true);
+  });
+
+  it("keeps Claude Code MCP missing when mcp list fallback fails", async () => {
+    const dir = createTempDir();
+    const dataDir = join(dir, "data");
+    const settingsPath = join(dir, "settings.json");
+    initializePromptMemory({ dataDir });
+    installClaudeCodeHook({ dataDir, settingsPath });
+
+    const result = await doctorClaudeCode({
+      dataDir,
+      settingsPath,
+      mcpConfigPath: join(dir, "missing-claude-mcp.json"),
+      checkServer: async () => true,
+      commandRunner: () => ({
+        status: 1,
+        stderr: "no mcp server registered",
+      }),
+    });
+
+    expect(result.mcp.registered).toBe(false);
+  });
 });
 
 describe("doctorCodex", () => {
@@ -237,6 +284,35 @@ describe("doctorCodex", () => {
     expect(output).toContain("MCP command access: not detected");
     expect(output).toContain("Register MCP: codex mcp add prompt-memory");
     expect(output).toContain("Run prompt-memory install-hook codex");
+  });
+
+  it("detects Codex MCP registration from read-only mcp list fallback", async () => {
+    const dir = createTempDir();
+    const dataDir = join(dir, "data");
+    const hooksPath = join(dir, ".codex", "hooks.json");
+    const configPath = join(dir, ".codex", "config.toml");
+    const commands: string[] = [];
+    initializePromptMemory({ dataDir });
+    installCodexHook({ dataDir, hooksPath, configPath });
+
+    const result = await doctorCodex({
+      dataDir,
+      hooksPath,
+      configPath,
+      mcpConfigPath: join(dir, "missing-codex-mcp.toml"),
+      checkServer: async () => true,
+      commandRunner: (command, args) => {
+        commands.push([command, ...args].join(" "));
+        return {
+          status: 0,
+          stdout:
+            "Name             Command\nprompt-memory    prompt-memory mcp\n",
+        };
+      },
+    });
+
+    expect(commands).toEqual(["codex mcp list"]);
+    expect(result.mcp.registered).toBe(true);
   });
 });
 

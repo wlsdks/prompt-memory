@@ -1,5 +1,20 @@
 # 작업 계획
 
+## 2026-05-03 Doctor MCP List Detection
+
+- [x] `doctor`가 설정 파일 감지 실패 시 agent CLI `mcp list`를 read-only fallback으로 확인
+- [x] `mcp list` 실패가 capture/server/token 진단을 깨지 않도록 TDD로 고정
+- [x] `setup --register-mcp` 이후 doctor 신뢰도 문서 갱신
+- [x] targeted/full 검증 실행
+- [ ] PR 생성, CI 확인, main merge, branch cleanup
+
+### 판단 기준
+
+- `doctor`는 실제 등록 성공 후에도 config path heuristic 차이 때문에 `not detected`를 과도하게 내면 안 된다.
+- fallback은 `claude mcp list` / `codex mcp list`처럼 read-only command만 사용한다.
+- CLI가 없거나 list가 실패하면 기존 설정 파일 heuristic 결과와 next action 안내를 유지한다.
+- 외부 command stderr/stdout에 prompt body나 token을 찍지 않는다.
+
 ## 2026-05-03 Optional MCP Registration In Setup
 
 - [x] `setup --profile coach --register-mcp` 동작을 TDD로 설계

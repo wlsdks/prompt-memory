@@ -284,6 +284,10 @@ Diagnose the setup:
 pnpm prompt-memory doctor claude-code
 ```
 
+`doctor` checks local server reachability, ingest token, hook installation, and
+MCP command access. For MCP, it first inspects known local config files and then
+falls back to read-only `claude mcp list` when needed.
+
 Remove the hook:
 
 ```sh
@@ -324,6 +328,11 @@ Diagnose the setup:
 ```sh
 pnpm prompt-memory doctor codex
 ```
+
+`doctor` checks local server reachability, ingest token, hook installation,
+Codex hook feature status, and MCP command access. For MCP, it first inspects
+known local config files and then falls back to read-only `codex mcp list` when
+needed.
 
 Remove the hook:
 
