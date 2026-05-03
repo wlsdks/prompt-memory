@@ -73,6 +73,7 @@ git diff --check
 - 사용자의 변경을 되돌리지 않는다.
 - Conventional Commits를 사용한다.
 - `main`은 보호 브랜치다. 새 브랜치에서 작업하고 PR을 통해서만 머지한다.
-- PR은 CI `test (22)`, `test (24)` 통과, 승인 리뷰 1개, conversation resolution 없이는 머지하지 않는다.
+- solo-maintainer 단계에서는 PR이 CI `test (22)`, `test (24)`를 통과하고 unresolved conversation이 없으면 머지할 수 있다.
+- 외부 collaborator/reviewer가 참여하는 시점에는 승인 리뷰 1개를 다시 필수로 설정한다.
 - 커밋 후 `main`에 직접 push하지 말고 현재 작업 브랜치를 push한다.
 - 최종 응답에는 커밋 해시, 푸시 여부, 검증 결과를 포함한다.
