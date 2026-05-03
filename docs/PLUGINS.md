@@ -119,6 +119,30 @@ prompt-memory buddy --json
 The buddy prints latest prompt score, tool, top gap, habit score, and the next
 move without returning prompt bodies, raw paths, or secrets.
 
+## Agent Wrappers
+
+The npm package also ships experimental `pm-claude` and `pm-codex` binaries.
+They sit in front of the real agent binary for the initial prompt argument:
+
+```sh
+pm-claude --pm-mode auto -- "fix this"
+pm-codex --pm-mode auto -- "fix this"
+pm-codex --pm-mode auto -- exec "fix this"
+```
+
+Use `--pm-dry-run` to inspect the local rewrite plan without launching the real
+agent:
+
+```sh
+pm-claude --pm-mode auto --pm-dry-run -- "fix this"
+pm-codex --pm-mode auto --pm-dry-run -- "fix this"
+```
+
+The wrappers intentionally do not rewrite management subcommands such as
+`auth`, `mcp`, `plugin`, and `login`. They also do not intercept every later
+message typed inside the interactive UI. For the latter, use hook-based coach
+profile feedback or future wrapper work.
+
 For manual configuration, see:
 
 ```text

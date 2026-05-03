@@ -3,8 +3,16 @@ import { chmodSync, existsSync } from "node:fs";
 import { platform } from "node:os";
 import { join } from "node:path";
 
-const binPath = join(process.cwd(), "dist", "cli", "index.js");
+const binPaths = [
+  join(process.cwd(), "dist", "cli", "index.js"),
+  join(process.cwd(), "dist", "cli", "pm-claude.js"),
+  join(process.cwd(), "dist", "cli", "pm-codex.js"),
+];
 
-if (platform() !== "win32" && existsSync(binPath)) {
-  chmodSync(binPath, 0o755);
+if (platform() !== "win32") {
+  for (const binPath of binPaths) {
+    if (existsSync(binPath)) {
+      chmodSync(binPath, 0o755);
+    }
+  }
 }
