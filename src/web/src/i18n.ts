@@ -399,6 +399,23 @@ const UI_TRANSLATIONS: Record<string, string> = {
   "Save draft": "개선안 저장",
   "Saved drafts": "저장된 개선안",
   "Original structure cleanup": "원문 구조 정리",
+  "Selected prompt agent actions": "선택 프롬프트 에이전트 액션",
+  "Agent follow-up": "에이전트 후속 작업",
+  "Continue in Claude Code or Codex": "Claude Code 또는 Codex에서 이어가기",
+  "Copy one command into Claude Code or Codex. These commands use only the stored prompt id.":
+    "명령 하나를 Claude Code 또는 Codex에 붙여넣으세요. 이 명령들은 저장된 프롬프트 id만 사용합니다.",
+  "Score selected prompt": "선택 프롬프트 점수 측정",
+  "Create local rewrite": "로컬 개선안 만들기",
+  "Agent-assisted rewrite": "에이전트 보조 개선",
+  "Inspect stored record": "저장 기록 점검",
+  "Re-score this stored prompt and return the exact weak fields.":
+    "이 저장 프롬프트를 다시 점수화하고 약한 항목을 정확히 반환합니다.",
+  "Create a copy-ready local rewrite without auto-submitting it.":
+    "자동 제출 없이 복사 가능한 로컬 개선안을 만듭니다.",
+  "Ask the active agent session to rewrite the redacted packet, then record the result if useful.":
+    "현재 에이전트 세션이 마스킹된 패킷을 개선하게 하고, 유용하면 결과를 기록합니다.",
+  "Inspect the stored metadata from the terminal when debugging.":
+    "디버깅할 때 터미널에서 저장 메타데이터를 확인합니다.",
   "Analysis preview": "분석 preview",
   "Analysis checklist": "분석 체크리스트",
   "View matching prompts": "같은 항목 보기",

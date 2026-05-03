@@ -1,5 +1,20 @@
 # 작업 계획
 
+## 2026-05-04 Detail Agent Actions Polish
+
+- [x] 기능/코드/UI 관점에서 다음 고효과 개선 후보 재점검
+- [x] Prompt detail 화면에 선택 프롬프트용 agent-native 후속 명령 추가
+- [x] 명령 스냅샷이 prompt body, raw path, token을 노출하지 않는 회귀 테스트 추가
+- [x] 브라우저/릴리스 게이트로 실제 동작 검증
+- [ ] PR 생성, CI 확인, main merge, branch cleanup
+
+### 판단 기준
+
+- 웹 detail은 회고 화면에서 끝나지 않고 Claude Code/Codex 안의 다음 action으로 이어져야 한다.
+- 선택한 prompt id 기반 `score_prompt`, `improve_prompt`, `prepare_agent_rewrite` 명령을 복사할 수 있어야 한다.
+- 표시되는 명령과 테스트 출력은 prompt body, raw path, token을 포함하지 않아야 한다.
+- 새 UI는 `DESIGN.md`의 dense developer workbench 기준을 유지하고 `App.tsx` 집중도를 줄이는 방향이어야 한다.
+
 ## 2026-05-04 Coach Follow-Up Commands Polish
 
 - [x] 기능/코드/UI 관점에서 다음 고효과 개선 후보 재점검

@@ -87,6 +87,7 @@ import {
   createPracticeQuickFixes,
   type PracticeQuickFix,
 } from "./practice-builder.js";
+import { PromptAgentActionsPanel } from "./prompt-agent-actions.js";
 import {
   DistributionBarChart,
   GapRateChart,
@@ -1331,6 +1332,7 @@ function PromptDetailView({
           saved={savedImprovement}
           savedDrafts={prompt.improvement_drafts}
         />
+        <PromptAgentActionsPanel prompt={prompt} />
         <div className="prompt-actions">
           <button className="secondary-action" onClick={onBack}>
             <ArrowLeft size={16} /> Back to list

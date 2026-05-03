@@ -126,6 +126,21 @@ try {
     .getByRole("heading", { name: "Improvement draft for manual resubmission" })
     .waitFor();
   await assertText(page, "Prompt score", "Detail should show prompt score.");
+  await assertText(
+    page,
+    "Continue in Claude Code or Codex",
+    "Detail should show selected-prompt agent follow-up actions.",
+  );
+  await assertText(
+    page,
+    "prompt-memory:score_prompt prompt_id=",
+    "Detail should expose a stored prompt MCP score command.",
+  );
+  await assertText(
+    page,
+    "prompt-memory:prepare_agent_rewrite prompt_id=",
+    "Detail should expose a stored prompt agent rewrite command.",
+  );
   await assertBrowserSafe(page, "detail");
   await page.getByRole("button", { name: "Copy draft" }).click();
   await page.getByRole("button", { name: "Copied" }).waitFor();
