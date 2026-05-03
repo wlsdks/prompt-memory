@@ -6,7 +6,7 @@
 - [x] MCP tool contract/schema를 handler 구현에서 분리
 - [x] architecture docs와 quality gate를 새 경계에 맞춰 갱신
 - [x] targeted MCP tests와 전체 release gate 실행
-- [ ] PR 생성, CI 확인, main merge, branch cleanup
+- [x] PR 생성, CI 확인, main merge, branch cleanup
 
 ### 판단 기준
 
