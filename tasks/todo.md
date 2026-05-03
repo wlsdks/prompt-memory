@@ -7,7 +7,7 @@
 - [x] installer/uninstaller에서 기존 HUD 보존 구현
 - [x] README/Plugin 문서에 coexistence 동작 반영
 - [x] 테스트/릴리스 게이트 실행
-- [ ] PR 생성, CI 확인, main merge, branch cleanup
+- [x] PR 생성, CI 확인, main merge, branch cleanup
 
 ### 판단 기준
 
