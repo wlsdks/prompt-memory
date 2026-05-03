@@ -69,6 +69,12 @@ The plugin exposes:
 - `/prompt-memory:setup` to preview and run local setup
 - `/prompt-memory:status` to run doctor and statusLine checks
 - `/prompt-memory:score` to score accumulated prompt habits
+- `/prompt-memory:score-last` to score the latest captured request
+- `/prompt-memory:improve-last` to generate an approval-ready rewrite for the
+  latest captured request
+- `/prompt-memory:habits` to summarize recurring prompt habit gaps
+- `/prompt-memory:rules` to review project `AGENTS.md` / `CLAUDE.md` quality
+- `/prompt-memory:coach-next` to create the next better request template
 - `/prompt-memory:open` to open the local archive
 
 Prompt capture still uses Claude Code hook configuration in settings files. The
@@ -158,6 +164,21 @@ Use `--data-dir` when the archive is not in the default location:
 
 ```sh
 prompt-memory mcp --data-dir /path/to/prompt-memory-data
+```
+
+For agent-native usage, prefer MCP first and CLI fallback second:
+
+```text
+prompt-memory:score_prompt latest=true
+prompt-memory:improve_prompt latest=true
+prompt-memory:score_prompt_archive max_prompts=200
+prompt-memory:review_project_instructions latest=true
+```
+
+```sh
+prompt-memory score --latest --json
+prompt-memory improve --latest --json
+prompt-memory score --json --limit 200
 ```
 
 ## Local-First Boundary

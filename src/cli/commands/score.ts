@@ -6,6 +6,10 @@ import {
   type ArchiveScoreReport,
 } from "../../analysis/archive-score.js";
 import { loadHookAuth, loadPromptMemoryConfig } from "../../config/config.js";
+import {
+  scorePromptTool,
+  type ScorePromptToolResult,
+} from "../../mcp/score-tool.js";
 import { createSqlitePromptStorage } from "../../storage/sqlite.js";
 
 type ScoreCliOptions = {
@@ -17,6 +21,7 @@ type ScoreCliOptions = {
   tool?: string;
   to?: string;
   cwdPrefix?: string;
+  latest?: boolean;
 };
 
 export function registerScoreCommand(program: Command): void {
@@ -27,6 +32,7 @@ export function registerScoreCommand(program: Command): void {
     )
     .option("--data-dir <path>", "Override the prompt-memory data directory.")
     .option("--json", "Print JSON.")
+    .option("--latest", "Score the latest stored prompt without printing it.")
     .option("--limit <count>", "Maximum number of recent prompts to score.")
     .option(
       "--low-score-limit <count>",
@@ -45,6 +51,17 @@ export function registerScoreCommand(program: Command): void {
 }
 
 export function scoreArchiveForCli(options: ScoreCliOptions = {}): string {
+  if (options.latest) {
+    const result = scorePromptTool(
+      { latest: true, include_suggestions: true },
+      { dataDir: options.dataDir },
+    );
+
+    return options.json
+      ? JSON.stringify(result, null, 2)
+      : formatLatestPromptScore(result);
+  }
+
   return withStorage(options.dataDir, (storage) => {
     const report = createArchiveScoreReport(storage, toScoreOptions(options));
 
@@ -52,6 +69,33 @@ export function scoreArchiveForCli(options: ScoreCliOptions = {}): string {
       ? JSON.stringify(report, null, 2)
       : formatArchiveScoreReport(report);
   });
+}
+
+function formatLatestPromptScore(result: ScorePromptToolResult): string {
+  if ("is_error" in result) {
+    return [
+      "Latest prompt score",
+      `error ${result.error_code}: ${result.message}`,
+      "",
+      "Privacy: local-only, no external calls, no prompt body.",
+    ].join("\n");
+  }
+
+  const suggestionRows =
+    result.suggestions && result.suggestions.length > 0
+      ? result.suggestions.map((suggestion) => `- ${suggestion}`)
+      : ["- none"];
+
+  return [
+    "Latest prompt score",
+    `${result.quality_score.value}/${result.quality_score.max} (${result.quality_score.band})`,
+    result.summary,
+    "",
+    "Suggestions",
+    ...suggestionRows,
+    "",
+    "Privacy: local-only, no external calls, no prompt body.",
+  ].join("\n");
 }
 
 function toScoreOptions(options: ScoreCliOptions): ArchiveScoreOptions {

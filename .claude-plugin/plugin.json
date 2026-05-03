@@ -10,6 +10,11 @@
     "./commands/setup.md",
     "./commands/status.md",
     "./commands/score.md",
+    "./commands/score-last.md",
+    "./commands/improve-last.md",
+    "./commands/habits.md",
+    "./commands/rules.md",
+    "./commands/coach-next.md",
     "./commands/open.md"
   ],
   "homepage": "https://github.com/wlsdks/prompt-memory",

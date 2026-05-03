@@ -137,6 +137,17 @@ describe("scorePromptTool", () => {
     expect(result.error_code).toBe("invalid_input");
     expect(result.message).toContain("Provide exactly one");
   });
+
+  it("does not include raw data directory paths in storage errors", () => {
+    const dataDir = join(tmpdir(), `prompt-memory-missing-${randomUUID()}`);
+    const result = scorePromptTool({ latest: true }, { dataDir });
+    const serialized = JSON.stringify(result);
+
+    expect(result.is_error).toBe(true);
+    expect(result.error_code).toBe("storage_unavailable");
+    expect(serialized).not.toContain(dataDir);
+    expect(serialized).not.toContain("/tmp/");
+  });
 });
 
 describe("improvePromptTool", () => {

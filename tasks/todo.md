@@ -1,5 +1,20 @@
 # 작업 계획
 
+## 2026-05-03 Agent-Native Prompt Coach Workflow
+
+- [x] Claude Code/Codex 안에서 바로 쓰는 핵심 workflow 범위 확정
+- [x] `score --latest`, `improve --latest` CLI fallback을 TDD로 추가
+- [x] Claude Code slash command 5종 추가 및 plugin manifest 반영
+- [x] Codex plugin skill/default prompt와 README/PLUGINS 문서 갱신
+- [x] targeted tests, release gate, 커밋/푸시 확인
+
+### 판단 기준
+
+- 사용자는 웹을 열지 않아도 Claude Code/Codex 안에서 방금 요청 점수화, 개선, 습관 요약, 프로젝트 규칙 평가, 다음 요청 템플릿 생성을 실행할 수 있어야 한다.
+- MCP가 있으면 MCP tool을 우선하고, MCP가 없으면 raw prompt body를 출력하지 않는 CLI fallback을 제공한다.
+- 새 기능은 prompt body, raw absolute path, secret을 stdout/stderr나 plugin 문서 예시에 노출하지 않는다.
+- tool 수를 불필요하게 늘리기보다 기존 MCP tool과 CLI fallback을 agent-facing command로 묶는다.
+
 ## 2026-05-03 Practice Projected Score Preview
 
 - [x] quick fix 전체 적용 draft preview 모델을 TDD로 추가

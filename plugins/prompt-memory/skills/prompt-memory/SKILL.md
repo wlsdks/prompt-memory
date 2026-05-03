@@ -58,6 +58,26 @@ Run the local MCP score server when Codex needs to score a prompt on request:
 prompt-memory mcp
 ```
 
+## Agent-Native Workflows
+
+Use these workflows before sending the user to the web UI:
+
+- Latest prompt score: call `prompt-memory:score_prompt` with `latest=true`.
+  If MCP is unavailable, run `prompt-memory score --latest --json`.
+- Latest prompt rewrite: call `prompt-memory:improve_prompt` with
+  `latest=true`. If MCP is unavailable, run
+  `prompt-memory improve --latest --json`.
+- Habit review: call `prompt-memory:score_prompt_archive` with
+  `max_prompts=200` and summarize recurring gaps, practice plan, and low-score
+  ids.
+- Project rules review: call `prompt-memory:review_project_instructions` with
+  `latest=true` for AGENTS.md / CLAUDE.md quality checks.
+- Next request template: use `score_prompt_archive` and turn
+  `next_prompt_template` plus `practice_plan` into one approval-ready template.
+
+Open the web UI only when the user wants the dashboard, archive browsing,
+project policy controls, export, or a visual review of trends.
+
 The MCP tools are:
 
 - `get_prompt_memory_status` for local setup, capture readiness, and next calls

@@ -65,6 +65,37 @@ describe("score CLI command", () => {
     expect(text).not.toContain("Make this better");
     expect(text).not.toContain("/Users/example");
   });
+
+  it("prints a privacy-safe latest prompt score without returning the prompt body", async () => {
+    const dataDir = createTempDir();
+    await createScoreFixture(dataDir);
+
+    const json = scoreArchiveForCli({
+      dataDir,
+      json: true,
+      latest: true,
+    });
+    const result = JSON.parse(json) as {
+      source: string;
+      prompt_id: string;
+      quality_score: { value: number };
+      privacy: { returns_prompt_body: boolean };
+    };
+
+    expect(result.source).toBe("latest");
+    expect(result.prompt_id).toBeTruthy();
+    expect(result.quality_score.value).toBeGreaterThanOrEqual(0);
+    expect(result.privacy.returns_prompt_body).toBe(false);
+    expect(json).not.toContain("Fix the dashboard copy");
+    expect(json).not.toContain("/Users/example");
+
+    const text = scoreArchiveForCli({ dataDir, latest: true });
+
+    expect(text).toContain("Latest prompt score");
+    expect(text).toContain("Privacy: local-only");
+    expect(text).not.toContain("Fix the dashboard copy");
+    expect(text).not.toContain("/Users/example");
+  });
 });
 
 async function createScoreFixture(dataDir: string) {

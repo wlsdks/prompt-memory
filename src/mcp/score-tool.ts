@@ -900,7 +900,7 @@ export function scorePromptArchiveTool(
     return {
       is_error: true,
       error_code: "storage_unavailable",
-      message: `Local prompt-memory archive is not available. Run \`prompt-memory init\` first or pass --data-dir. ${errorMessage(error)}`,
+      message: storageUnavailableMessage(error),
     };
   }
 }
@@ -1045,7 +1045,7 @@ export function reviewProjectInstructionsTool(
   } catch (error) {
     return projectInstructionToolError(
       "storage_unavailable",
-      `Local prompt-memory archive is not available. Run \`prompt-memory init\` first or pass --data-dir. ${errorMessage(error)}`,
+      storageUnavailableMessage(error),
     );
   }
 }
@@ -1094,10 +1094,7 @@ function withStoredPrompt(
       storage.close();
     }
   } catch (error) {
-    return toolError(
-      "storage_unavailable",
-      `Local prompt-memory archive is not available. Run \`prompt-memory init\` first or pass --data-dir. ${errorMessage(error)}`,
-    );
+    return toolError("storage_unavailable", storageUnavailableMessage(error));
   }
 }
 
@@ -1213,9 +1210,18 @@ function withStoredPromptImprovement(
   } catch (error) {
     return improvementToolError(
       "storage_unavailable",
-      `Local prompt-memory archive is not available. Run \`prompt-memory init\` first or pass --data-dir. ${errorMessage(error)}`,
+      storageUnavailableMessage(error),
     );
   }
+}
+
+function storageUnavailableMessage(error: unknown): string {
+  const reason =
+    error instanceof Error && "code" in error && typeof error.code === "string"
+      ? ` Reason: ${error.code}.`
+      : "";
+
+  return `Local prompt-memory archive is not available. Run \`prompt-memory init\` first or pass --data-dir.${reason}`;
 }
 
 function toImprovementToolResult(input: {
@@ -1291,8 +1297,4 @@ function projectInstructionToolError(
     error_code: errorCode,
     message,
   };
-}
-
-function errorMessage(error: unknown): string {
-  return error instanceof Error ? error.message : String(error);
 }

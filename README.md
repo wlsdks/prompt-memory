@@ -313,6 +313,11 @@ The Claude Code plugin provides slash commands:
 /prompt-memory:setup
 /prompt-memory:status
 /prompt-memory:score
+/prompt-memory:score-last
+/prompt-memory:improve-last
+/prompt-memory:habits
+/prompt-memory:rules
+/prompt-memory:coach-next
 /prompt-memory:open
 ```
 
@@ -419,12 +424,14 @@ Generate a copy-based Prompt Coach draft:
 
 ```sh
 pnpm prompt-memory improve --text "make this request clearer" --json
+pnpm prompt-memory improve --latest --json
 ```
 
 Score accumulated prompt habits without returning prompt bodies:
 
 ```sh
 pnpm prompt-memory score --json
+pnpm prompt-memory score --latest --json
 pnpm prompt-memory score --tool codex --json
 ```
 

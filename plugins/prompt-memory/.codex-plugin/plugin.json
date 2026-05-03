@@ -20,8 +20,8 @@
   "hooks": "./hooks.json",
   "interface": {
     "displayName": "Prompt Memory",
-    "shortDescription": "Capture and search local coding-agent prompts",
-    "longDescription": "Prompt Memory captures prompts from supported coding agents through local hooks, redacts sensitive values before storage, indexes Markdown in SQLite, and serves a local web UI for search, review, and deletion.",
+    "shortDescription": "Capture, score, and improve local coding-agent prompts",
+    "longDescription": "Prompt Memory captures prompts from supported coding agents through local hooks, redacts sensitive values before storage, indexes Markdown in SQLite, and exposes local MCP/CLI workflows for scoring the latest prompt, rewriting it with user approval, reviewing prompt habits, and checking project AGENTS.md or CLAUDE.md rules.",
     "developerName": "prompt-memory contributors",
     "category": "Coding",
     "capabilities": [
@@ -35,6 +35,10 @@
     "defaultPrompt": [
       "Set up prompt-memory for this machine",
       "Check whether prompt-memory is capturing Codex prompts",
+      "Score my latest captured prompt",
+      "Improve my latest captured prompt",
+      "Summarize my prompt habits",
+      "Review my current project AGENTS.md or CLAUDE.md rules",
       "Open my local prompt-memory archive"
     ],
     "brandColor": "#2563EB",

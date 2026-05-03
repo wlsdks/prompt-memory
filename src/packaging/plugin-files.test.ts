@@ -28,11 +28,16 @@ describe("plugin packaging files", () => {
       "./commands/setup.md",
       "./commands/status.md",
       "./commands/score.md",
+      "./commands/score-last.md",
+      "./commands/improve-last.md",
+      "./commands/habits.md",
+      "./commands/rules.md",
+      "./commands/coach-next.md",
       "./commands/open.md",
     ]);
   });
 
-  it("ships Claude Code command docs for setup, status, score, and open", () => {
+  it("ships Claude Code command docs for setup, status, score, coach, and open", () => {
     const setup = readFileSync(
       join(process.cwd(), "commands/setup.md"),
       "utf8",
@@ -45,6 +50,26 @@ describe("plugin packaging files", () => {
       join(process.cwd(), "commands/score.md"),
       "utf8",
     );
+    const scoreLast = readFileSync(
+      join(process.cwd(), "commands/score-last.md"),
+      "utf8",
+    );
+    const improveLast = readFileSync(
+      join(process.cwd(), "commands/improve-last.md"),
+      "utf8",
+    );
+    const habits = readFileSync(
+      join(process.cwd(), "commands/habits.md"),
+      "utf8",
+    );
+    const rules = readFileSync(
+      join(process.cwd(), "commands/rules.md"),
+      "utf8",
+    );
+    const coachNext = readFileSync(
+      join(process.cwd(), "commands/coach-next.md"),
+      "utf8",
+    );
     const open = readFileSync(join(process.cwd(), "commands/open.md"), "utf8");
 
     expect(setup).toContain("prompt-memory setup --dry-run");
@@ -53,6 +78,14 @@ describe("plugin packaging files", () => {
     expect(status).toContain("prompt-memory statusline claude-code");
     expect(score).toContain("prompt-memory score --json");
     expect(score).toContain("prompt-memory:score_prompt_archive");
+    expect(scoreLast).toContain("prompt-memory:score_prompt latest=true");
+    expect(scoreLast).toContain("prompt-memory score --latest --json");
+    expect(improveLast).toContain("prompt-memory:improve_prompt latest=true");
+    expect(improveLast).toContain("prompt-memory improve --latest --json");
+    expect(habits).toContain("prompt-memory:score_prompt_archive");
+    expect(rules).toContain("prompt-memory:review_project_instructions");
+    expect(coachNext).toContain("next_prompt_template");
+    expect(coachNext).toContain("prompt-memory score --json");
     expect(open).toContain("http://127.0.0.1:17373");
   });
 
@@ -61,7 +94,11 @@ describe("plugin packaging files", () => {
       name: string;
       hooks: string;
       skills: string;
-      interface: { displayName: string; category: string };
+      interface: {
+        displayName: string;
+        category: string;
+        defaultPrompt: string[];
+      };
     }>("plugins/prompt-memory/.codex-plugin/plugin.json");
 
     expect(manifest.name).toBe("prompt-memory");
@@ -69,6 +106,13 @@ describe("plugin packaging files", () => {
     expect(manifest.skills).toBe("./skills/");
     expect(manifest.interface.displayName).toBe("Prompt Memory");
     expect(manifest.interface.category).toBe("Coding");
+    expect(manifest.interface.defaultPrompt).toEqual(
+      expect.arrayContaining([
+        "Score my latest captured prompt",
+        "Improve my latest captured prompt",
+        "Summarize my prompt habits",
+      ]),
+    );
   });
 
   it("ships a fail-open Codex prompt hook without embedding secrets", () => {
