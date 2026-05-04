@@ -239,6 +239,47 @@
   padding: 2px 6px;
 }
 
+.coach-feedback {
+  align-items: center;
+  border-top: 1px solid var(--pm-border);
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 12px;
+  padding-top: 10px;
+}
+
+.coach-feedback-label {
+  color: var(--pm-text-subtle);
+  font-size: 12px;
+  margin-right: 4px;
+}
+
+.coach-feedback-button {
+  align-items: center;
+  background: transparent;
+  border: 1px solid var(--pm-border);
+  border-radius: 6px;
+  color: var(--pm-text-subtle);
+  cursor: pointer;
+  display: inline-flex;
+  font-size: 12px;
+  font-weight: 600;
+  gap: 4px;
+  padding: 4px 8px;
+}
+
+.coach-feedback-button.active {
+  background: rgba(94, 106, 210, 0.18);
+  border-color: rgba(94, 106, 210, 0.5);
+  color: var(--pm-text);
+}
+
+.coach-feedback-error {
+  color: #ef6b6b;
+  font-size: 12px;
+}
+
 @media (max-width: 720px) {
   .prompt-comparison {
     grid-template-columns: 1fr;

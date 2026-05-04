@@ -1,5 +1,6 @@
 import {
   ArrowLeft,
+  CheckCircle2,
   ChevronLeft,
   ChevronRight,
   Copy,
@@ -7,14 +8,23 @@ import {
   GitCompare,
   Star,
   Tags,
+  ThumbsDown,
   Trash2,
+  XOctagon,
 } from "lucide-react";
+import { useState } from "react";
 
 import {
   improvePrompt,
   type PromptImprovement,
 } from "../../analysis/improve.js";
-import type { PromptDetail, PromptQualityGap, PromptSummary } from "./api.js";
+import {
+  sendCoachFeedback,
+  type CoachFeedbackRating,
+  type PromptDetail,
+  type PromptQualityGap,
+  type PromptSummary,
+} from "./api.js";
 import { formatDate } from "./formatters.js";
 import type { Language } from "./i18n.js";
 import { SafeMarkdown } from "./markdown.js";
@@ -115,6 +125,7 @@ export function PromptDetailView({
           onCopy={() => onCopyImprovement(prompt)}
           onSave={() => onSaveImprovement(prompt)}
           originalPrompt={prompt.markdown}
+          promptId={prompt.id}
           saved={savedImprovement}
           savedDrafts={prompt.improvement_drafts}
         />
@@ -174,6 +185,7 @@ function PromptCoachPanel({
   onCopy,
   onSave,
   originalPrompt,
+  promptId,
   saved,
   savedDrafts,
 }: {
@@ -182,9 +194,19 @@ function PromptCoachPanel({
   onCopy(): void;
   onSave(): void;
   originalPrompt: string;
+  promptId: string;
   saved: boolean;
   savedDrafts: PromptDetail["improvement_drafts"];
 }) {
+  const [feedback, setFeedback] = useState<
+    CoachFeedbackRating | "error" | undefined
+  >();
+  const submitFeedback = (rating: CoachFeedbackRating): void => {
+    setFeedback(rating);
+    void sendCoachFeedback({ promptId, rating }).catch(() => {
+      setFeedback("error");
+    });
+  };
   return (
     <section className="coach-panel" aria-label="Prompt improvement draft">
       <div className="analysis-header">
@@ -242,6 +264,42 @@ function PromptCoachPanel({
         <button className="coach-save-button" onClick={onSave} type="button">
           <FileText size={16} /> {saved ? "Saved" : "Save draft"}
         </button>
+      </div>
+      <div
+        className="coach-feedback"
+        role="group"
+        aria-label="Was this draft useful?"
+      >
+        <span className="coach-feedback-label">Was this useful?</span>
+        <button
+          aria-pressed={feedback === "helpful"}
+          className={`coach-feedback-button${feedback === "helpful" ? " active" : ""}`}
+          onClick={() => submitFeedback("helpful")}
+          type="button"
+        >
+          <CheckCircle2 size={14} /> Helpful
+        </button>
+        <button
+          aria-pressed={feedback === "not_helpful"}
+          className={`coach-feedback-button${feedback === "not_helpful" ? " active" : ""}`}
+          onClick={() => submitFeedback("not_helpful")}
+          type="button"
+        >
+          <ThumbsDown size={14} /> Not helpful
+        </button>
+        <button
+          aria-pressed={feedback === "wrong"}
+          className={`coach-feedback-button${feedback === "wrong" ? " active" : ""}`}
+          onClick={() => submitFeedback("wrong")}
+          type="button"
+        >
+          <XOctagon size={14} /> Wrong
+        </button>
+        {feedback === "error" && (
+          <span className="coach-feedback-error">
+            Failed to record feedback.
+          </span>
+        )}
       </div>
       {savedDrafts.length > 0 && (
         <div className="saved-drafts" aria-label="Saved drafts">
