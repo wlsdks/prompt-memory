@@ -114,6 +114,7 @@ export function PromptDetailView({
           improvement={improvement}
           onCopy={() => onCopyImprovement(prompt)}
           onSave={() => onSaveImprovement(prompt)}
+          originalPrompt={prompt.markdown}
           saved={savedImprovement}
           savedDrafts={prompt.improvement_drafts}
         />
@@ -172,6 +173,7 @@ function PromptCoachPanel({
   improvement,
   onCopy,
   onSave,
+  originalPrompt,
   saved,
   savedDrafts,
 }: {
@@ -179,6 +181,7 @@ function PromptCoachPanel({
   improvement: PromptImprovement;
   onCopy(): void;
   onSave(): void;
+  originalPrompt: string;
   saved: boolean;
   savedDrafts: PromptDetail["improvement_drafts"];
 }) {
@@ -192,9 +195,21 @@ function PromptCoachPanel({
         <span className="badge">{improvement.mode}</span>
       </div>
       <p className="analysis-summary">{improvement.summary}</p>
-      <pre className="improved-prompt-preview">
-        {improvement.improved_prompt}
-      </pre>
+      <div
+        className="prompt-comparison"
+        aria-label="Original prompt next to improved draft"
+      >
+        <div className="prompt-comparison-column">
+          <h3 className="prompt-comparison-heading">Original</h3>
+          <pre className="prompt-comparison-body">{originalPrompt}</pre>
+        </div>
+        <div className="prompt-comparison-column">
+          <h3 className="prompt-comparison-heading">Improved draft</h3>
+          <pre className="prompt-comparison-body improved">
+            {improvement.improved_prompt}
+          </pre>
+        </div>
+      </div>
       <div className="coach-footer">
         <div className="coach-notes">
           {improvement.safety_notes.map((note) => (
