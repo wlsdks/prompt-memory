@@ -7,6 +7,9 @@ export function detectInitialLanguage(): Language {
   if (stored === "en" || stored === "ko") {
     return stored;
   }
+  if (window.navigator?.language?.toLowerCase().startsWith("ko")) {
+    return "ko";
+  }
   return "en";
 }
 
