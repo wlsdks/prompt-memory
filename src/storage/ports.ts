@@ -466,6 +466,31 @@ export type AgentPromptJudgmentStoragePort = {
   listAgentPromptJudgments(promptId: string): AgentPromptJudgment[];
 };
 
+export type CoachFeedbackRating = "helpful" | "not_helpful" | "wrong";
+
+export type CoachFeedbackEntry = {
+  id: string;
+  prompt_id: string;
+  rating: CoachFeedbackRating;
+  created_at: string;
+};
+
+export type CoachFeedbackSummary = {
+  total: number;
+  helpful: number;
+  not_helpful: number;
+  wrong: number;
+  helpful_ratio: number;
+};
+
+export type CoachFeedbackStoragePort = {
+  recordCoachFeedback(
+    promptId: string,
+    rating: CoachFeedbackRating,
+  ): CoachFeedbackEntry | undefined;
+  getCoachFeedbackSummary(): CoachFeedbackSummary;
+};
+
 export type ProjectPolicyStoragePort = {
   listProjects(): ProjectListResult;
   updateProjectPolicy(

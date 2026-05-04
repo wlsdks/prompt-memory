@@ -34,6 +34,7 @@ import type {
   CreateImportRecordInput,
   CreateExportJobInput,
   AgentPromptJudgmentStoragePort,
+  CoachFeedbackStoragePort,
   CreatePromptImprovementDraftInput,
   DeletePromptResult,
   DuplicatePromptGroup,
@@ -104,6 +105,14 @@ import {
   createAgentPromptJudgment,
   listAgentPromptJudgments,
 } from "./agent-judgments.js";
+import {
+  applyCoachFeedbackMigration,
+  getCoachFeedbackSummary,
+  recordCoachFeedback,
+  type CoachFeedbackEntry,
+  type CoachFeedbackRating,
+  type CoachFeedbackSummary,
+} from "./coach-feedback.js";
 
 export type { PromptRow } from "./sqlite-rows.js";
 
@@ -124,7 +133,8 @@ export type SqlitePromptStorage = PromptStoragePort &
   ProjectInstructionStoragePort &
   ImportJobStoragePort &
   ExportJobStoragePort &
-  AgentPromptJudgmentStoragePort & {
+  AgentPromptJudgmentStoragePort &
+  CoachFeedbackStoragePort & {
     close(): void;
     getAppliedMigrations(): AppliedMigration[];
     listPromptRows(): PromptRow[];
@@ -217,6 +227,17 @@ export function createSqlitePromptStorage(
     },
     listAgentPromptJudgments(promptId) {
       return listAgentPromptJudgments(db, promptId);
+    },
+    recordCoachFeedback(promptId, rating) {
+      return recordCoachFeedback(
+        db,
+        promptId,
+        rating,
+        options.now?.() ?? new Date(),
+      );
+    },
+    getCoachFeedbackSummary() {
+      return getCoachFeedbackSummary(db);
     },
     listProjects() {
       return listProjectsForPolicy(db, options.hmacSecret);
@@ -324,6 +345,7 @@ function applyMigrations(db: Database.Database): void {
   applyDashboardQueryIndexMigration(db);
   applyProjectInstructionReviewMigration(db);
   applyAgentPromptJudgmentMigration(db);
+  applyCoachFeedbackMigration(db);
 }
 
 function applyAnalysisChecklistTagsMigration(db: Database.Database): void {
