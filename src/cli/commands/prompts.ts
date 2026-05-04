@@ -82,9 +82,13 @@ export function listPromptsForCli(options: PromptCliOptions = {}): string {
       importJobId: options.importJobId ?? options.importJob,
       limit: parseLimit(options.limit),
     });
-    return options.json
-      ? JSON.stringify(result, null, 2)
-      : formatPromptRows(result.items);
+    if (options.json) {
+      return JSON.stringify(result, null, 2);
+    }
+    if (result.items.length === 0) {
+      return "no prompts captured yet.";
+    }
+    return formatPromptRows(result.items);
   });
 }
 
@@ -97,9 +101,13 @@ export function searchPromptsForCli(
       importJobId: options.importJobId ?? options.importJob,
       limit: parseLimit(options.limit),
     });
-    return options.json
-      ? JSON.stringify(result, null, 2)
-      : formatPromptRows(result.items);
+    if (options.json) {
+      return JSON.stringify(result, null, 2);
+    }
+    if (result.items.length === 0) {
+      return `no prompts matching "${query}".`;
+    }
+    return formatPromptRows(result.items);
   });
 }
 

@@ -68,6 +68,30 @@ describe("prompt CLI commands", () => {
       "Prompt not found",
     );
   });
+
+  it("explains an empty list result instead of printing a blank line", () => {
+    const dataDir = createTempDir();
+    initializePromptMemory({ dataDir });
+
+    expect(listPromptsForCli({ dataDir })).toBe("no prompts captured yet.");
+    expect(
+      JSON.parse(listPromptsForCli({ dataDir, json: true })),
+    ).toMatchObject({ items: [] });
+  });
+
+  it("echoes the search query when nothing matches", () => {
+    const dataDir = createTempDir();
+    initializePromptMemory({ dataDir });
+
+    expect(searchPromptsForCli("definitely-no-match", { dataDir })).toBe(
+      'no prompts matching "definitely-no-match".',
+    );
+    expect(
+      JSON.parse(
+        searchPromptsForCli("definitely-no-match", { dataDir, json: true }),
+      ),
+    ).toMatchObject({ items: [] });
+  });
 });
 
 async function createCliFixture(dataDir: string) {
