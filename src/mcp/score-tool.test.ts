@@ -8,6 +8,7 @@ import { normalizeClaudeCodePayload } from "../adapters/claude-code.js";
 import { initializePromptMemory } from "../config/config.js";
 import { redactPrompt } from "../redaction/redact.js";
 import { createSqlitePromptStorage } from "../storage/sqlite.js";
+import { SCORE_PROMPT_ARCHIVE_TOOL_DEFINITION } from "./score-tool-definitions.js";
 import {
   coachPromptTool,
   prepareAgentRewriteTool,
@@ -133,6 +134,17 @@ describe("scorePromptTool", () => {
     });
     expect(serialized).not.toContain("Make this better");
     expect(serialized).not.toContain("/Users/example");
+  });
+
+  it("declares the language argument in the score_prompt_archive MCP schema", () => {
+    const properties = (
+      SCORE_PROMPT_ARCHIVE_TOOL_DEFINITION.inputSchema as {
+        properties?: Record<string, { enum?: string[] }>;
+      }
+    ).properties;
+
+    expect(properties?.language).toBeDefined();
+    expect(properties?.language?.enum).toEqual(["en", "ko"]);
   });
 
   it("renders archive practice plan in Korean when language=ko is passed", async () => {

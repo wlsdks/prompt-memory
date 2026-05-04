@@ -387,6 +387,12 @@ export const SCORE_PROMPT_ARCHIVE_TOOL_DEFINITION: PromptMemoryMcpToolDefinition
           description:
             "Optional upper received_at bound. Date-only or ISO timestamp.",
         },
+        language: {
+          type: "string",
+          enum: ["en", "ko"],
+          description:
+            "Language for the practice plan, gap rule labels, and next-prompt template. Defaults to en.",
+        },
       },
       additionalProperties: false,
     },
@@ -742,7 +748,8 @@ export const COACH_PROMPT_TOOL_DEFINITION: PromptMemoryMcpToolDefinition = {
       language: {
         type: "string",
         enum: ["en", "ko"],
-        description: "Language for improvement draft. Defaults to en.",
+        description:
+          "Language for the improvement draft, archive practice plan, and next-prompt template. Defaults to en.",
       },
     },
     additionalProperties: false,
