@@ -64,14 +64,15 @@ export function canonicalizePath(path: string): string {
 function createIdempotencyKey(
   payload: ClaudeCodeUserPromptSubmitPayload,
 ): string {
+  const sessionId = normalizeField(payload.session_id);
   const basis = [
     "claude-code",
-    payload.session_id,
+    sessionId,
     payload.transcript_path ?? payload.cwd,
     payload.hook_event_name,
     payload.prompt.length.toString(),
   ].join(":");
   const digest = createHash("sha256").update(basis).digest("hex").slice(0, 16);
 
-  return `claude-code:${payload.session_id}:${digest}`;
+  return `claude-code:${sessionId}:${digest}`;
 }
