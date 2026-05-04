@@ -168,7 +168,11 @@ Release validation currently targets:
 
 macOS, Linux arm64, and Windows support are intended, but they still require release smoke validation for `better-sqlite3`, filesystem permissions, and hook command behavior before a stable release claim.
 
-## Install
+## Install (Development Checkout) And Setup Options
+
+This section is for contributors and for users who want every `setup` flag
+documented. End users who installed `prompt-memory` from npm should follow
+[Quick Start](#quick-start) instead and treat this section as a reference.
 
 For local development without the agent marketplace flow:
 
@@ -237,11 +241,7 @@ pnpm prompt-memory setup --no-service
 pnpm prompt-memory server
 ```
 
-Open the web UI:
-
-```text
-http://127.0.0.1:17373
-```
+The web UI URL is the same as in Quick Start: `http://127.0.0.1:17373`.
 
 You can still run each setup step manually.
 
