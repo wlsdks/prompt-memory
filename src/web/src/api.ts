@@ -460,9 +460,14 @@ export async function listPrompts(
   return body.data;
 }
 
-export async function getQualityDashboard(): Promise<QualityDashboard> {
+export async function getQualityDashboard(
+  options: { trendDays?: number } = {},
+): Promise<QualityDashboard> {
   await ensureSession();
-  const response = await fetch("/api/v1/quality", {
+  const url = options.trendDays
+    ? `/api/v1/quality?trend_days=${options.trendDays}`
+    : "/api/v1/quality";
+  const response = await fetch(url, {
     credentials: "same-origin",
   });
   const body = (await response.json()) as { data: QualityDashboard };
