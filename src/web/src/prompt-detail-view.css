@@ -167,6 +167,55 @@
   white-space: pre-wrap;
 }
 
+.prompt-comparison {
+  display: grid;
+  gap: 12px;
+  grid-template-columns: 1fr 1fr;
+  margin: 12px 0;
+}
+
+.prompt-comparison-column {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+
+.prompt-comparison-heading {
+  color: var(--pm-text-subtle);
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  margin: 0 0 6px;
+  text-transform: uppercase;
+}
+
+.prompt-comparison-body {
+  background: var(--pm-code-bg);
+  border: 1px solid var(--pm-border);
+  border-radius: 12px;
+  color: var(--pm-text);
+  flex: 1;
+  font-size: 12px;
+  line-height: 19px;
+  margin: 0;
+  max-height: 320px;
+  min-height: 160px;
+  overflow: auto;
+  overflow-wrap: anywhere;
+  padding: 10px;
+  white-space: pre-wrap;
+}
+
+.prompt-comparison-body.improved {
+  border-color: rgba(94, 106, 210, 0.4);
+}
+
+@media (max-width: 720px) {
+  .prompt-comparison {
+    grid-template-columns: 1fr;
+  }
+}
+
 .coach-footer {
   align-items: center;
   border-top: 1px solid var(--pm-border);
