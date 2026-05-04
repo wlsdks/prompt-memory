@@ -69,4 +69,37 @@ describe("improvePrompt", () => {
       "Sensitive content was represented only after mask redaction.",
     );
   });
+
+  it("auto-detects Korean prompts and produces a Korean draft when language is unset", () => {
+    const result = improvePrompt({
+      prompt: "더 잘 만들어주세요",
+      createdAt: "2026-05-04T00:00:00.000Z",
+    });
+
+    expect(result.improved_prompt).toContain("## 목표");
+    expect(result.improved_prompt).toContain("## 검증");
+    expect(result.improved_prompt).toContain("## 출력");
+  });
+
+  it("keeps the English draft for prompts with only a few Korean tokens", () => {
+    const result = improvePrompt({
+      prompt:
+        "Fix the delete API bug in src/server/routes/prompts.ts. Run pnpm test and return a summary. (메모: 한국어 한 줄)",
+      createdAt: "2026-05-04T00:00:00.000Z",
+    });
+
+    expect(result.improved_prompt).toContain("## Goal");
+    expect(result.improved_prompt).not.toContain("## 목표");
+  });
+
+  it("respects an explicit language override over auto-detection", () => {
+    const result = improvePrompt({
+      prompt: "Make this better",
+      createdAt: "2026-05-04T00:00:00.000Z",
+      language: "ko",
+    });
+
+    expect(result.improved_prompt).toContain("## 목표");
+    expect(result.improved_prompt).not.toContain("## Goal");
+  });
 });
