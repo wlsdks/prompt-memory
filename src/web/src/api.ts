@@ -606,6 +606,26 @@ export type CoachFeedbackEntry = {
   created_at: string;
 };
 
+export type CoachFeedbackSummary = {
+  total: number;
+  helpful: number;
+  not_helpful: number;
+  wrong: number;
+  helpful_ratio: number;
+};
+
+export async function getCoachFeedbackSummary(): Promise<CoachFeedbackSummary> {
+  await ensureSession();
+  const response = await fetch("/api/v1/coach-feedback/summary", {
+    credentials: "same-origin",
+  });
+  if (!response.ok) {
+    await failApi(response, "Coach feedback summary failed");
+  }
+  const body = (await response.json()) as { data: CoachFeedbackSummary };
+  return body.data;
+}
+
 export async function sendCoachFeedback(input: {
   promptId: string;
   rating: CoachFeedbackRating;
