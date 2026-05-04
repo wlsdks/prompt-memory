@@ -4,6 +4,7 @@ import { ZodError } from "zod";
 
 import type { RedactionPolicy } from "../shared/schema.js";
 import type {
+  CoachFeedbackStoragePort,
   ExportJobStoragePort,
   ProjectInstructionStoragePort,
   ProjectPolicyStoragePort,
@@ -12,6 +13,7 @@ import type {
 } from "../storage/ports.js";
 import type { ServerAuthConfig } from "./auth.js";
 import { HttpProblem, problem } from "./errors.js";
+import { registerCoachFeedbackRoutes } from "./routes/coach-feedback.js";
 import { registerExportRoutes } from "./routes/exports.js";
 import { registerImportRoutes } from "./routes/import.js";
 import { registerHealthRoutes } from "./routes/health.js";
@@ -29,7 +31,8 @@ export type CreateServerOptions = {
     Partial<ProjectPolicyStoragePort> &
     Partial<ProjectInstructionStoragePort> &
     Partial<PromptReadStoragePort> &
-    Partial<ExportJobStoragePort>;
+    Partial<ExportJobStoragePort> &
+    Partial<CoachFeedbackStoragePort>;
   redactionMode: RedactionPolicy;
   excludedProjectRoots?: string[];
   maxBodyBytes?: number;
@@ -132,6 +135,10 @@ export function createServer(options: CreateServerOptions): FastifyInstance {
   registerImportRoutes(server, {
     auth: options.auth,
     redactionMode: options.redactionMode,
+  });
+  registerCoachFeedbackRoutes(server, {
+    auth: options.auth,
+    storage: options.storage,
   });
   registerPromptRoutes(server, {
     auth: options.auth,
