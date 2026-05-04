@@ -11,6 +11,8 @@ import {
 import net from "node:net";
 import { tmpdir } from "node:os";
 import { join, resolve } from "node:path";
+import { randomUUID } from "node:crypto";
+import Database from "better-sqlite3";
 import { chromium } from "playwright";
 
 const repoRoot = resolve(new URL("..", import.meta.url).pathname);
@@ -73,6 +75,12 @@ try {
     hook_event_name: "UserPromptSubmit",
     model: "gpt-5.5",
     prompt: `Review ${rawPathPrefix}/private-project/src/web/App.tsx and return Markdown summary.`,
+  });
+
+  step("Seed a judge score so the JudgeScorePanel renders");
+  insertJudgeScoreForClaudePrompt({
+    score: 88,
+    reason: "Goal explicit, verification implied via pnpm test.",
   });
 
   step("Run browser flow");
@@ -163,6 +171,17 @@ try {
     page,
     "changed",
     "Detail should show the changed-sections badge.",
+  );
+  await page.locator(".judge-score-panel").first().waitFor();
+  await assertText(
+    page,
+    "Independent score from Claude Code",
+    "Detail should label the LLM judge panel with the tool that scored it.",
+  );
+  await assertText(
+    page,
+    "88",
+    "Detail should show the seeded LLM judge score value.",
   );
   await assertBrowserSafe(page, "detail");
   await page.getByRole("button", { name: "Copy draft" }).click();
@@ -612,6 +631,37 @@ try {
 
 function step(message) {
   console.log(`- ${message}`);
+}
+
+function insertJudgeScoreForClaudePrompt({ score, reason }) {
+  const dbPath = join(dataDir, "prompt-memory.sqlite");
+  const db = new Database(dbPath);
+  try {
+    const row = db
+      .prepare(
+        "SELECT id FROM prompts WHERE tool = 'claude-code' AND deleted_at IS NULL ORDER BY received_at DESC LIMIT 1",
+      )
+      .get();
+    if (!row) {
+      throw new Error("No claude-code prompt found to seed a judge score.");
+    }
+    db.prepare(
+      `
+      INSERT INTO prompt_judge_scores
+        (id, prompt_id, judge_tool, score, reason, created_at)
+      VALUES (?, ?, ?, ?, ?, ?)
+      `,
+    ).run(
+      `jdg_${randomUUID().replaceAll("-", "").slice(0, 24)}`,
+      row.id,
+      "claude",
+      score,
+      reason,
+      new Date().toISOString(),
+    );
+  } finally {
+    db.close();
+  }
 }
 
 function runCli(args) {
