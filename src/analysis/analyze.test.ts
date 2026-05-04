@@ -128,4 +128,32 @@ describe("analyzePrompt", () => {
       ]),
     );
   });
+
+  it("recognizes Korean prompt signals for context, output, and verification", () => {
+    const result = analyzePrompt({
+      prompt:
+        "현재 doctor 명령에서 401 오류가 발생합니다. 다음 단계 안내를 요약 형식으로 보강하고 vitest 테스트로 검증하세요. src/cli/commands/doctor.ts만 수정하고 그 외 파일은 유지합니다.",
+      createdAt: "2026-05-04T00:00:00.000Z",
+    });
+
+    const status = (key: string) =>
+      result.checklist.find((item) => item.key === key)?.status;
+
+    expect(status("background_context")).toBe("good");
+    expect(status("output_format")).toBe("good");
+    expect(status("verification_criteria")).toBe("good");
+    expect(result.quality_score.band).toBe("excellent");
+  });
+
+  it("extracts product tags from Korean prompt bodies", () => {
+    const result = analyzePrompt({
+      prompt:
+        "프롬프트 detail 화면에서 마스킹 회귀 테스트를 추가하고 문서를 업데이트해줘.",
+      createdAt: "2026-05-04T00:00:00.000Z",
+    });
+
+    expect(result.tags).toEqual(
+      expect.arrayContaining(["ui", "security", "test", "docs"]),
+    );
+  });
 });
