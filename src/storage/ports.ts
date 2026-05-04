@@ -491,6 +491,30 @@ export type CoachFeedbackStoragePort = {
   getCoachFeedbackSummary(): CoachFeedbackSummary;
 };
 
+export type JudgeTool = "claude" | "codex";
+
+export type JudgeScoreEntry = {
+  id: string;
+  prompt_id: string;
+  judge_tool: JudgeTool;
+  score: number;
+  reason: string;
+  created_at: string;
+};
+
+export type RecordJudgeScoreInput = {
+  promptId: string;
+  judgeTool: JudgeTool;
+  score: number;
+  reason: string;
+};
+
+export type JudgeScoreStoragePort = {
+  recordJudgeScore(input: RecordJudgeScoreInput): JudgeScoreEntry | undefined;
+  getLatestJudgeScore(promptId: string): JudgeScoreEntry | undefined;
+  listPromptIdsNeedingJudge(limit: number): string[];
+};
+
 export type ProjectPolicyStoragePort = {
   listProjects(): ProjectListResult;
   updateProjectPolicy(
