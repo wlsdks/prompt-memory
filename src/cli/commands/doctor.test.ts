@@ -106,6 +106,60 @@ describe("doctorClaudeCode", () => {
     expect(output).toContain("Use --json for automation.");
   });
 
+  it("recommends reinstalling the hook when last ingest returned 401", async () => {
+    const dir = createTempDir();
+    const dataDir = join(dir, "data");
+    const settingsPath = join(dir, "settings.json");
+    initializePromptMemory({ dataDir });
+    installClaudeCodeHook({ dataDir, settingsPath });
+    writeLastHookStatus(dataDir, {
+      ok: false,
+      status: 401,
+      checked_at: "2026-05-04T00:00:00.000Z",
+    });
+
+    const result = await doctorClaudeCode({
+      dataDir,
+      settingsPath,
+      mcpConfigPath: join(dir, "claude.json"),
+      checkServer: async () => true,
+    });
+
+    const output = formatDoctorResult("claude-code", result);
+
+    expect(output).toContain("Last ingest: failed (401)");
+    expect(output).toContain(
+      "Reinstall the hook to refresh the local ingest token: prompt-memory install-hook claude-code.",
+    );
+  });
+
+  it("recommends buddy diagnostics when last ingest failed for a non-token reason", async () => {
+    const dir = createTempDir();
+    const dataDir = join(dir, "data");
+    const settingsPath = join(dir, "settings.json");
+    initializePromptMemory({ dataDir });
+    installClaudeCodeHook({ dataDir, settingsPath });
+    writeLastHookStatus(dataDir, {
+      ok: false,
+      status: 503,
+      checked_at: "2026-05-04T00:00:00.000Z",
+    });
+
+    const result = await doctorClaudeCode({
+      dataDir,
+      settingsPath,
+      mcpConfigPath: join(dir, "claude.json"),
+      checkServer: async () => true,
+    });
+
+    const output = formatDoctorResult("claude-code", result);
+
+    expect(output).toContain("Last ingest: failed (503)");
+    expect(output).toContain(
+      "Run prompt-memory buddy --once to inspect the most recent failed hook ingest.",
+    );
+  });
+
   it("detects Claude Code MCP registration when config includes prompt-memory mcp", async () => {
     const dir = createTempDir();
     const dataDir = join(dir, "data");

@@ -216,6 +216,17 @@ function doctorNextSteps(
       "Remove the duplicate Codex hook from either user or project config.",
     );
   }
+  if (result.lastIngestStatus && !result.lastIngestStatus.ok) {
+    if (result.lastIngestStatus.status === 401) {
+      steps.push(
+        `Reinstall the hook to refresh the local ingest token: prompt-memory install-hook ${tool}.`,
+      );
+    } else {
+      steps.push(
+        "Run prompt-memory buddy --once to inspect the most recent failed hook ingest.",
+      );
+    }
+  }
   return steps;
 }
 
