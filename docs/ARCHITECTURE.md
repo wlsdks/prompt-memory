@@ -101,6 +101,10 @@ Current known large modules:
 
 - `src/web/src/App.tsx`: UI composition hub. New browser models should live in
   separate files and be imported into the app.
+- `src/web/src/api.ts`: browser-side API client for every server route. Keep
+  request shaping here; render and copy logic stay in components.
+- `src/web/src/i18n.ts`: web UI translation table. Korean strings stay grouped
+  by screen so a single localization change touches one section.
 - `src/storage/sqlite.ts`: SQLite implementation boundary for migrations,
   queries, transactions, and storage-port assembly. Keep row contracts and JSON
   decoding out of this file.
@@ -115,18 +119,29 @@ Current known large modules:
 - `src/mcp/score-tool.ts`: MCP handler orchestration and privacy-safe result
   shaping. Do not add tool schemas here.
 - `src/mcp/server.ts`: JSON-RPC stdio transport and tool-call routing only.
+- `src/hooks/rewrite-guard.ts`: hook decision logic only (mode dispatch,
+  language detection, clipboard side effect). Bilingual user-facing strings
+  live in `src/hooks/rewrite-guard-copy.ts` so the budget stays under 180
+  lines.
+- `src/cli/agent-wrapper.ts`: pm-claude/pm-codex argv parsing, prompt
+  rewriting, and child-process spawning. New domain logic should land in a
+  helper module rather than expanding the wrapper.
 
 These are not release blockers by themselves, but new work should reduce
-pressure on them rather than expanding them casually.
+pressure on them rather than expanding them casually. The line-budget gate in
+`scripts/quality-gate.mjs` is the enforcing rail.
 
 ## Privacy And Local-First Boundaries
 
-- Hook capture is fail-open.
+- Hook capture is fail-open. The wrapper still records a failed
+  `last_ingest_status` so `doctor` can surface the failure without leaking
+  prompt content.
 - Hook stdout must not include prompt bodies because some clients may treat it
   as context.
 - CLI, MCP, server errors, docs examples, and status lines must not print raw
   prompt bodies, raw absolute paths, tokens, hook payloads, or instruction file
-  bodies.
+  bodies. `/api/v1/health` returns only `{ ok, version }` and never the local
+  data directory.
 - Direct MCP prompt input is analyzed locally and is not stored.
 - Stored prompt scoring returns metadata, score, checklist, and suggestions,
   not the stored original body.
@@ -138,6 +153,12 @@ pressure on them rather than expanding them casually.
 - SQLite/FTS is the index and query layer; delete and rebuild flows must keep
   Markdown, DB rows, FTS rows, tags, analysis, drafts, judgments, and events
   coherent.
+- `src/shared/version.ts` `VERSION` must equal `package.json#version`. The
+  vitest in `src/shared/version.test.ts` is the release gate.
+- The redaction detector list in `src/redaction/detectors.ts`,
+  `docs/PRE_PUBLISH_PRIVACY_AUDIT.md`'s grep pattern, and the privacy
+  regression fixture in `src/security/privacy-regression.test.ts` must agree
+  on which token shapes are masked.
 
 ## Testing Expectations
 
