@@ -153,6 +153,18 @@ describe("scorePromptTool", () => {
     expect(serialized).not.toContain(dataDir);
     expect(serialized).not.toContain("/tmp/");
   });
+
+  it("hints next actions when latest=true on an empty archive", () => {
+    const dataDir = createTempDir();
+    initializePromptMemory({ dataDir });
+
+    const result = scorePromptTool({ latest: true }, { dataDir });
+
+    expect(result.is_error).toBe(true);
+    expect(result.error_code).toBe("not_found");
+    expect(result.message).toContain("Capture a Claude Code or Codex prompt");
+    expect(result.message).toContain("`prompt` text argument");
+  });
 });
 
 describe("improvePromptTool", () => {
