@@ -14,6 +14,10 @@ import net from "node:net";
 import { tmpdir } from "node:os";
 import { join, resolve } from "node:path";
 
+import {
+  analyzePrompt,
+  EXPERIMENTAL_RULE_IDS,
+} from "../dist/analysis/analyze.js";
 import { improvePrompt } from "../dist/analysis/improve.js";
 import { coachPromptTool } from "../dist/mcp/score-tool.js";
 
@@ -186,6 +190,8 @@ try {
     dashboard_ms: Math.round(dashboardMs),
     export_ms: Math.round(exportMs),
   };
+  const experimentalComparison = scoreExperimentalRulesAB();
+
   const report = {
     version: packageJson.version,
     dataset,
@@ -200,6 +206,7 @@ try {
     },
     details: {
       retrieval_cases: retrievalCases,
+      experimental_rules_ab: experimentalComparison,
     },
   };
 
@@ -218,6 +225,56 @@ try {
     await waitForExit(serverProcess);
   }
   rmSync(tempRoot, { recursive: true, force: true });
+}
+
+function scoreExperimentalRulesAB() {
+  const cases = [
+    ...fixtures.map((fixture) => ({
+      label: fixture.label,
+      prompt: fixture.prompt,
+    })),
+    ...coachCases.map((prompt, index) => ({
+      label: `coach_case_${index + 1}`,
+      prompt,
+    })),
+  ];
+  const now = new Date().toISOString();
+  const ruleResults = {};
+  for (const rule of EXPERIMENTAL_RULE_IDS) {
+    let liftCount = 0;
+    let totalDelta = 0;
+    let unchangedCount = 0;
+    const liftedLabels = [];
+    for (const fixture of cases) {
+      const baseline = analyzePrompt({
+        prompt: fixture.prompt,
+        createdAt: now,
+      }).quality_score.value;
+      const experimental = analyzePrompt({
+        prompt: fixture.prompt,
+        createdAt: now,
+        experimentalRules: [rule],
+      }).quality_score.value;
+      const delta = experimental - baseline;
+      if (delta > 0) {
+        liftCount += 1;
+        liftedLabels.push(`${fixture.label}+${delta}`);
+      } else if (delta === 0) {
+        unchangedCount += 1;
+      }
+      totalDelta += delta;
+    }
+    ruleResults[rule] = {
+      cases: cases.length,
+      lifted: liftCount,
+      unchanged: unchangedCount,
+      regressed: cases.length - liftCount - unchangedCount,
+      total_delta: totalDelta,
+      average_delta: roundScore(totalDelta / cases.length),
+      examples: liftedLabels.slice(0, 5),
+    };
+  }
+  return ruleResults;
 }
 
 function scorePromptCoach() {
@@ -507,6 +564,15 @@ function printReport(report) {
     console.log(
       `retrieval_misses: ${misses.map((item) => `${item.label}@${item.query}`).join(", ")}`,
     );
+  }
+  const ab = report.details.experimental_rules_ab ?? {};
+  for (const [rule, data] of Object.entries(ab)) {
+    console.log(
+      `experimental_rules_ab.${rule}: lifted ${data.lifted}/${data.cases}, avg_delta ${data.average_delta}`,
+    );
+    if (data.examples.length > 0) {
+      console.log(`  examples: ${data.examples.join(", ")}`);
+    }
   }
 }
 
