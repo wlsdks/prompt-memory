@@ -14,6 +14,7 @@ type CoachCliOptions = {
   noLatestScore?: boolean;
   limit?: string | number;
   lowScoreLimit?: string | number;
+  language?: string;
 };
 
 export function registerCoachCommand(program: Command): void {
@@ -31,6 +32,10 @@ export function registerCoachCommand(program: Command): void {
       "--low-score-limit <count>",
       "Maximum number of low scoring prompts to include.",
     )
+    .option(
+      "--language <code>",
+      "Coach language for improvement draft and archive plan: en or ko.",
+    )
     .action((options: CoachCliOptions) => {
       console.log(coachPromptForCli(options));
     });
@@ -45,11 +50,17 @@ export function coachPromptForCli(options: CoachCliOptions = {}): string {
       include_project_rules: options.noProjectRules !== true,
       max_prompts: parseCount(options.limit),
       low_score_limit: parseCount(options.lowScoreLimit),
+      language: parseLanguage(options.language),
     },
     { dataDir: options.dataDir },
   );
 
   return options.json ? JSON.stringify(result, null, 2) : formatCoach(result);
+}
+
+function parseLanguage(value: string | undefined): "en" | "ko" | undefined {
+  if (value === "en" || value === "ko") return value;
+  return undefined;
 }
 
 function formatCoach(result: CoachPromptToolResult): string {
