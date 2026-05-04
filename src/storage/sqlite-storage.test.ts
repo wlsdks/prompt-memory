@@ -70,6 +70,7 @@ describe("SQLite prompt storage", () => {
       { version: 9, name: "009_dashboard_query_indexes" },
       { version: 10, name: "010_project_instruction_reviews" },
       { version: 11, name: "011_agent_prompt_judgments" },
+      { version: 12, name: "012_coach_feedback" },
     ]);
     const db = new Database(join(dataDir, "prompt-memory.sqlite"));
     try {
@@ -1433,6 +1434,50 @@ describe("SQLite prompt storage", () => {
       .all();
     dbAfterDelete.close();
     expect(rowsAfterDelete).toEqual([]);
+  });
+
+  it("records coach feedback per prompt and aggregates summary counts", async () => {
+    const dataDir = createTempDir();
+    initializePromptMemory({ dataDir });
+    const storage = createSqlitePromptStorage({
+      dataDir,
+      hmacSecret: "test-secret",
+      now: nextDate(["2026-05-04T10:00:00.000Z", "2026-05-04T10:01:00.000Z"]),
+    });
+    const prompt = await storeClaudePrompt(storage, {
+      prompt: "store first then rate",
+      receivedAt: "2026-05-04T09:59:00.000Z",
+    });
+
+    const helpful = storage.recordCoachFeedback(prompt.id, "helpful");
+    const wrong = storage.recordCoachFeedback(prompt.id, "wrong");
+    const missingPrompt = storage.recordCoachFeedback(
+      "prmt_does_not_exist",
+      "helpful",
+    );
+
+    expect(helpful).toMatchObject({
+      prompt_id: prompt.id,
+      rating: "helpful",
+    });
+    expect(wrong).toMatchObject({
+      prompt_id: prompt.id,
+      rating: "wrong",
+    });
+    expect(missingPrompt).toBeUndefined();
+
+    const summary = storage.getCoachFeedbackSummary();
+    expect(summary).toMatchObject({
+      total: 2,
+      helpful: 1,
+      not_helpful: 0,
+      wrong: 1,
+      helpful_ratio: 0.5,
+    });
+
+    storage.deletePrompt(prompt.id);
+    expect(storage.getCoachFeedbackSummary().total).toBe(0);
+    storage.close();
   });
 
   it("rebuilds missing database rows from Markdown files", async () => {
