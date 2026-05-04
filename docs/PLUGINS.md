@@ -159,6 +159,10 @@ pm-claude --pm-mode auto --pm-dry-run -- "fix this"
 pm-codex --pm-mode auto --pm-dry-run -- "fix this"
 ```
 
+Run `pm-claude --pm-help` or `pm-codex --pm-help` to see every supported flag
+(`--pm-mode`, `--pm-min-score`, `--pm-language`, `--pm-dry-run`) with working
+example invocations.
+
 The wrappers intentionally do not rewrite management subcommands such as
 `auth`, `mcp`, `plugin`, and `login`. They also do not intercept every later
 message typed inside the interactive UI. For the latter, use hook-based coach
@@ -220,6 +224,12 @@ rubric so the current Claude Code, Codex, or Gemini CLI session can evaluate
 prompt quality itself. `record_agent_judgments` stores that active agent
 session's advisory scores, confidence, risks, and suggestions without storing
 prompt bodies or raw paths.
+
+`coach_prompt`, `improve_prompt`, and `score_prompt_archive` accept an optional
+`language: "en" | "ko"` argument. When unset, `improve_prompt` auto-detects
+Korean inputs by Hangul ratio and returns a Korean draft; the archive review
+falls back to English unless the agent explicitly forwards `language: "ko"` (or
+`coach_prompt` does so on the agent's behalf).
 
 These tools do not make hidden external LLM calls. Archive-backed score/rewrite
 flows do not return stored original prompt bodies. The archive and status tools
