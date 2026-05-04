@@ -449,7 +449,7 @@ export type PromptReadStoragePort = {
   ): PromptListResult;
   getPrompt(id: string): PromptDetail | undefined;
   deletePrompt(id: string): DeletePromptResult;
-  getQualityDashboard(): PromptQualityDashboard;
+  getQualityDashboard(options?: { trendDays?: number }): PromptQualityDashboard;
   recordPromptUsage(id: string, type: PromptUsageEventType): PromptUsageResult;
   setPromptBookmark(id: string, bookmarked: boolean): PromptBookmarkResult;
   createPromptImprovementDraft(
