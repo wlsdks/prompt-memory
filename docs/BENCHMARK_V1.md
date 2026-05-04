@@ -18,9 +18,17 @@ This benchmark is intentionally local-only. It does not call an external LLM jud
 ```sh
 pnpm benchmark
 pnpm benchmark -- --json
+pnpm benchmark -- --fixture-set real      # opt-in, soft signal only
 ```
 
 The command builds the production app first, creates an isolated temporary data directory, starts the local server on a temporary loopback port, ingests synthetic fixture prompts, and measures API/UI-adjacent behavior through the built app.
+
+### Fixture sets
+
+- `--fixture-set synthetic` (default) — hard CI gate. Synthetic fixtures designed to exercise each scoring axis. Threshold misses fail the run.
+- `--fixture-set real` — soft signal. Reads consent-bearing redacted prompts from `docs/benchmark-fixtures/real.json`. If the file is absent the script exits 0 with a `status: no_fixtures` notice. If it exists, threshold misses are reported but the script still exits 0 — so a regression on a noisy real corpus does not break CI but is visible in trend.
+
+The JSON report includes `fixture_set` and `soft_signal` fields so consumers can filter.
 
 ## Principles
 
