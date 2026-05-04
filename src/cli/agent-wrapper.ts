@@ -600,6 +600,18 @@ function writeWrapperHelp(
       "The wrapper rewrites only the supported initial prompt argument before launching the real CLI.",
       "It does not intercept every message typed later inside the interactive session.",
       "",
+      "Examples:",
+      `  # Ask before each rewrite (default)`,
+      `  pm-${tool} -- "Fix src/foo.ts and run pnpm test"`,
+      `  # Skip the rewrite entirely`,
+      `  pm-${tool} --pm-mode off -- "Quick log check"`,
+      `  # Auto-apply rewrites only when score is below 50`,
+      `  pm-${tool} --pm-mode auto --pm-min-score 50 -- "Refactor the importer"`,
+      `  # Force the Korean draft for an English-mixed prompt`,
+      `  pm-${tool} --pm-language ko -- "AGENTS.md 갱신해줘"`,
+      `  # Print the rewrite plan without launching ${tool}`,
+      `  pm-${tool} --pm-dry-run -- "Plan the next refactor"`,
+      "",
     ].join("\n"),
   );
 }
