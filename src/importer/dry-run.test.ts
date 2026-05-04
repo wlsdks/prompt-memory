@@ -127,6 +127,26 @@ describe("import dry-run", () => {
       prompt_preview: "Manual hook payload import candidate.",
     });
   });
+
+  it("explains the size limit when the source exceeds maxFileBytes", () => {
+    const file = writeJsonl([
+      JSON.stringify({
+        hook_event_name: "UserPromptSubmit",
+        session_id: "limit-session",
+        cwd: "/Users/example/project",
+        prompt: "x".repeat(2048),
+      }),
+    ]);
+
+    expect(() =>
+      runImportDryRun({
+        file,
+        redactionMode: "mask",
+        sourceType: "manual-jsonl",
+        maxFileBytes: 1024,
+      }),
+    ).toThrow(/exceeds file size limit\. Got .* MB, limit is .* MB/);
+  });
 });
 
 function writeJsonl(records: Array<Record<string, unknown> | string>): string {
