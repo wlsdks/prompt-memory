@@ -86,6 +86,35 @@ describe("createArchiveScoreReport", () => {
     expect(report.archive_score.scored_prompts).toBe(120);
     expect(report.has_more).toBe(true);
   });
+
+  it("renders practice plan and prompt template in Korean when language is ko", () => {
+    const storage = fakeStorage([
+      prompt({
+        id: "prmt_ko_low",
+        cwd: "/Users/example/project",
+        received_at: "2026-05-04T10:00:00.000Z",
+        quality_score: 10,
+        quality_score_band: "weak",
+        quality_gaps: ["Goal clarity", "Verification criteria"],
+      }),
+    ]);
+
+    const report = createArchiveScoreReport(storage, {
+      maxPrompts: 100,
+      lowScoreLimit: 5,
+      language: "ko",
+    });
+
+    expect(report.practice_plan[0]).toMatchObject({
+      priority: 1,
+      label: "목표 명확성",
+      prompt_rule: "정확한 목표와 기대 동작을 먼저 한 문장으로 적어주세요.",
+    });
+    expect(report.practice_plan[0]?.reason).toContain("측정된 프롬프트");
+    expect(report.next_prompt_template).toContain("목표:");
+    expect(report.next_prompt_template).toContain("검증:");
+    expect(report.next_prompt_template).not.toContain("Goal:");
+  });
 });
 
 function fakeStorage(items: PromptSummary[]): PromptReadStoragePort {
