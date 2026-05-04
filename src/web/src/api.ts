@@ -704,7 +704,6 @@ export async function setPromptBookmark(
 export async function getHealth(): Promise<{
   ok: boolean;
   version: string;
-  data_dir: string;
 }> {
   const response = await fetch("/api/v1/health", {
     credentials: "same-origin",
@@ -712,6 +711,5 @@ export async function getHealth(): Promise<{
   return response.json() as Promise<{
     ok: boolean;
     version: string;
-    data_dir: string;
   }>;
 }
