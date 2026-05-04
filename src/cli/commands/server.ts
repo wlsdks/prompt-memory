@@ -39,6 +39,7 @@ export async function startPromptMemoryServer(
   const storage = createSqlitePromptStorage({
     dataDir: config.data_dir,
     hmacSecret: hookAuth.web_session_secret,
+    experimentalRules: config.experimental_rules,
   });
   const server = createServer({
     dataDir: config.data_dir,

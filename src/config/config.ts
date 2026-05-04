@@ -30,6 +30,13 @@ export const AutoJudgeSettingsSchema = z.object({
 
 export type AutoJudgeSettings = z.infer<typeof AutoJudgeSettingsSchema>;
 
+export const ExperimentalRulesSchema = z
+  .array(z.enum(["verification_v2"]))
+  .max(20)
+  .default([]);
+
+export type ExperimentalRulesSetting = z.infer<typeof ExperimentalRulesSchema>;
+
 export const PromptMemoryConfigSchema = z.object({
   schema_version: z.literal(1),
   data_dir: z.string().min(1),
@@ -46,6 +53,7 @@ export const PromptMemoryConfigSchema = z.object({
     daily_limit: 50,
     per_minute_limit: 5,
   }),
+  experimental_rules: ExperimentalRulesSchema,
 });
 
 export const HookAuthSchema = z.object({

@@ -12,6 +12,7 @@ import { basename, dirname, join } from "node:path";
 
 import {
   analyzePrompt,
+  type ExperimentalRuleId,
   calculatePromptQualityScore,
   qualityScoreBand,
 } from "../analysis/analyze.js";
@@ -129,6 +130,7 @@ export type SqlitePromptStorageOptions = {
   dataDir: string;
   hmacSecret: string;
   now?: () => Date;
+  experimentalRules?: readonly ExperimentalRuleId[];
 };
 
 export type AppliedMigration = {
@@ -335,8 +337,13 @@ export function createSqlitePromptStorage(
 
       return rows.map((row) => row.prompt_id);
     },
-    rebuildIndex(options) {
-      return rebuildIndex(db, paths.promptsDir, options.redactionMode);
+    rebuildIndex(rebuildOptions) {
+      return rebuildIndex(
+        db,
+        paths.promptsDir,
+        rebuildOptions.redactionMode,
+        options.experimentalRules,
+      );
     },
     reconcileStorage() {
       return reconcileStorage(db);
@@ -722,6 +729,7 @@ function storePrompt(
   const analysis = analyzePrompt({
     prompt: input.redaction.stored_text,
     createdAt: now.toISOString(),
+    experimentalRules: options.experimentalRules,
   });
 
   const transaction = db.transaction(() => {
@@ -1703,6 +1711,7 @@ function rebuildIndex(
   db: Database.Database,
   promptsDir: string,
   redactionMode: RedactionPolicy,
+  experimentalRules: readonly ExperimentalRuleId[] | undefined,
 ): { rebuilt: string[]; hashMismatches: string[] } {
   const rebuilt: string[] = [];
   const hashMismatches: string[] = [];
@@ -1744,6 +1753,7 @@ function rebuildIndex(
       const analysis = analyzePrompt({
         prompt: redaction.stored_text,
         createdAt: row.received_at,
+        experimentalRules,
       });
 
       db.prepare(

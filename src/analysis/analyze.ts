@@ -10,9 +10,19 @@ import type {
 
 export const LOCAL_RULES_ANALYZER = "local-rules-v1";
 
+export const EXPERIMENTAL_RULE_IDS = ["verification_v2"] as const;
+export type ExperimentalRuleId = (typeof EXPERIMENTAL_RULE_IDS)[number];
+
+export function isExperimentalRuleId(
+  value: string,
+): value is ExperimentalRuleId {
+  return (EXPERIMENTAL_RULE_IDS as readonly string[]).includes(value);
+}
+
 export type AnalyzePromptInput = {
   prompt: string;
   createdAt: string;
+  experimentalRules?: readonly ExperimentalRuleId[];
 };
 
 const QUALITY_SCORE_MAX = 100;
@@ -28,11 +38,12 @@ export function analyzePrompt(
   input: AnalyzePromptInput,
 ): PromptAnalysisPreview {
   const text = input.prompt.trim();
+  const experimental = input.experimentalRules ?? [];
   const signals = {
     hasContext: hasContext(text),
     hasSpecificTarget: hasSpecificTarget(text),
     hasOutputFormat: hasOutputFormat(text),
-    hasVerification: hasVerification(text),
+    hasVerification: hasVerification(text, experimental),
     hasConstraints: hasConstraints(text),
   };
   const signalCount = Object.values(signals).filter(Boolean).length;
@@ -311,10 +322,23 @@ function hasOutputFormat(text: string): boolean {
   );
 }
 
-function hasVerification(text: string): boolean {
-  return /test|tests|vitest|playwright|verify|check|pass|run|success|acceptance|build|lint|테스트|검증|확인|통과|성공|빌드|점검/i.test(
-    text,
-  );
+function hasVerification(
+  text: string,
+  experimental: readonly ExperimentalRuleId[],
+): boolean {
+  if (
+    /test|tests|vitest|playwright|verify|check|pass|run|success|acceptance|build|lint|테스트|검증|확인|통과|성공|빌드|점검/i.test(
+      text,
+    )
+  ) {
+    return true;
+  }
+  if (experimental.includes("verification_v2")) {
+    return /\bassert\b|\bexpect\b|\bspec\b|\bbehavior\b|\bscenario\b|given\s+when\s+then|toBe\b|toEqual\b|toMatch\b|시나리오|행위|행동/i.test(
+      text,
+    );
+  }
+  return false;
 }
 
 function hasConstraints(text: string): boolean {

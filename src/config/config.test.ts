@@ -94,6 +94,14 @@ describe("initializePromptMemory", () => {
     expect(persisted.auto_judge).toEqual(tightened);
   });
 
+  it("defaults experimental_rules to an empty array on a fresh init", () => {
+    const dataDir = createTempDir();
+    const result = initializePromptMemory({ dataDir });
+
+    expect(result.config.experimental_rules).toEqual([]);
+    expect(loadPromptMemoryConfig(dataDir).experimental_rules).toEqual([]);
+  });
+
   it("uses owner-only permissions on POSIX systems", () => {
     if (process.platform === "win32") {
       return;

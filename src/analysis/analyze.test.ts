@@ -145,6 +145,47 @@ describe("analyzePrompt", () => {
     expect(result.quality_score.band).toBe("excellent");
   });
 
+  it("treats assert/expect keywords as missing verification without verification_v2", () => {
+    const result = analyzePrompt({
+      prompt:
+        "Update src/format.ts and use describe and expect blocks for the spec covering each scenario.",
+      createdAt: "2026-05-04T00:00:00.000Z",
+    });
+
+    const status = result.checklist.find(
+      (item) => item.key === "verification_criteria",
+    )?.status;
+    expect(status).toBe("missing");
+  });
+
+  it("recognizes assert/expect/scenario keywords once verification_v2 is enabled", () => {
+    const sharedPrompt =
+      "Refactor src/format.ts so each scenario uses the assert and expect blocks consistently.";
+
+    const baseline = analyzePrompt({
+      prompt: sharedPrompt,
+      createdAt: "2026-05-04T00:00:00.000Z",
+    });
+    const baselineStatus = baseline.checklist.find(
+      (item) => item.key === "verification_criteria",
+    )?.status;
+
+    const experimental = analyzePrompt({
+      prompt: sharedPrompt,
+      createdAt: "2026-05-04T00:00:00.000Z",
+      experimentalRules: ["verification_v2"],
+    });
+    const experimentalStatus = experimental.checklist.find(
+      (item) => item.key === "verification_criteria",
+    )?.status;
+
+    expect(baselineStatus).toBe("missing");
+    expect(experimentalStatus).toBe("good");
+    expect(experimental.quality_score.value).toBeGreaterThan(
+      baseline.quality_score.value,
+    );
+  });
+
   it("extracts product tags from Korean prompt bodies", () => {
     const result = analyzePrompt({
       prompt:
