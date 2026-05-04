@@ -74,10 +74,14 @@ export function importForCli(
 
 function importForCliSync(options: ImportCliOptions): string {
   if (!options.dryRun) {
-    throw new Error("--dry-run is required for import preview.");
+    throw new Error(
+      "--dry-run is required for import preview. Try: prompt-memory import --dry-run --file <transcript.jsonl> --source <manual-jsonl|claude-transcript-best-effort|codex-transcript-best-effort>",
+    );
   }
   if (!options.file) {
-    throw new Error("--file is required for import dry-run.");
+    throw new Error(
+      "--file is required for import dry-run. Pass the JSONL transcript path with --file <path>.",
+    );
   }
 
   const sourceType = parseImportSourceType(
@@ -114,7 +118,9 @@ function importForCliSync(options: ImportCliOptions): string {
 
 async function importExecuteForCli(options: ImportCliOptions): Promise<string> {
   if (!options.file) {
-    throw new Error("--file is required for import execution.");
+    throw new Error(
+      "--file is required for import execution. Pass the same transcript path used for the dry-run.",
+    );
   }
 
   const sourceType = parseImportSourceType(
