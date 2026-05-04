@@ -53,6 +53,9 @@ strings to test redaction behavior.
 
 ## Source Maps
 
-The build currently emits source maps inside `dist/`. These maps expose the
-open-source implementation for debugging, but they must not contain private
-paths, credentials, or local data.
+The build emits `.map` files inside `dist/` so that local development can step
+through compiled output. These maps are excluded from the published tarball
+through a `!dist/**/*.map` entry in `package.json#files` because end users of
+the CLI do not need them, and the saved bytes (~1 MB unpacked, ~75 files)
+shrink every install. The maps that stay in `dist/` for local debugging must
+not contain private paths, credentials, or local data.

@@ -19,6 +19,7 @@
   },
   "files": [
     "dist",
+    "!dist/**/*.map",
     ".claude-plugin",
     "commands",
     "README.md",
