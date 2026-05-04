@@ -341,6 +341,16 @@
   margin-left: auto;
 }
 
+.quality-points {
+  background: rgba(94, 106, 210, 0.12);
+  border-radius: 6px;
+  color: var(--pm-text);
+  font-size: 11px;
+  font-variant-numeric: tabular-nums;
+  letter-spacing: 0.02em;
+  padding: 2px 6px;
+}
+
 .tag-row {
   border-top: 1px solid var(--pm-border);
   margin-top: 12px;

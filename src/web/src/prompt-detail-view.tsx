@@ -259,6 +259,9 @@ function AnalysisPreview({
         <div className="checklist-grid" aria-label="Analysis checklist">
           {analysis.checklist.map((item) => {
             const qualityGap = isQualityGapKey(item.key) ? item.key : undefined;
+            const breakdown = analysis.quality_score.breakdown.find(
+              (entry) => entry.key === item.key,
+            );
 
             return (
               <div className="checklist-item" key={item.key}>
@@ -266,6 +269,15 @@ function AnalysisPreview({
                   <span className={`quality-dot ${item.status}`} />
                   <strong>{item.label}</strong>
                   <span className="quality-status">{item.status}</span>
+                  {breakdown && (
+                    <span
+                      className="quality-points"
+                      aria-label={`${item.label} earned ${breakdown.earned} of ${breakdown.weight} points`}
+                      title={`${breakdown.earned}/${breakdown.weight} points`}
+                    >
+                      {breakdown.earned}/{breakdown.weight}
+                    </span>
+                  )}
                 </div>
                 <p>{item.reason}</p>
                 {item.suggestion && <code>{item.suggestion}</code>}
