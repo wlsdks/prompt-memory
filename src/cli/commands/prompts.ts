@@ -16,6 +16,10 @@ type PromptIdOptions = {
   json?: boolean;
 };
 
+type ShowPromptCliOptions = PromptIdOptions & {
+  explain?: boolean;
+};
+
 export function registerPromptCommands(program: Command): void {
   program
     .command("list")
@@ -46,7 +50,11 @@ export function registerPromptCommands(program: Command): void {
     .argument("<id>", "Prompt id.")
     .option("--data-dir <path>", "Override the prompt-memory data directory.")
     .option("--json", "Print JSON.")
-    .action((id: string, options: PromptIdOptions) => {
+    .option(
+      "--explain",
+      "Print the per-criterion score breakdown and analysis reasons.",
+    )
+    .action((id: string, options: ShowPromptCliOptions) => {
       console.log(showPromptForCli(id, options));
     });
 
@@ -147,7 +155,7 @@ function formatHumanResult(
 
 export function showPromptForCli(
   id: string,
-  options: PromptIdOptions = {},
+  options: ShowPromptCliOptions = {},
 ): string {
   return withStorage(options.dataDir, (storage) => {
     const prompt = storage.getPrompt(id);
@@ -156,8 +164,43 @@ export function showPromptForCli(
       throw new Error(`Prompt not found: ${id}`);
     }
 
-    return options.json ? JSON.stringify(prompt, null, 2) : prompt.markdown;
+    if (options.json) {
+      return JSON.stringify(prompt, null, 2);
+    }
+    if (options.explain) {
+      return formatPromptExplanation(prompt);
+    }
+    return prompt.markdown;
   });
+}
+
+function formatPromptExplanation(
+  prompt: ReturnType<ReturnType<typeof createSqlitePromptStorage>["getPrompt"]>,
+): string {
+  if (!prompt) {
+    return "";
+  }
+  const analysis = prompt.analysis;
+  if (!analysis) {
+    return `${prompt.markdown}\n\n(no analysis available — run pnpm prompt-memory rebuild-index to refresh.)`;
+  }
+  const score = analysis.quality_score;
+  const lines = [
+    `Score: ${score.value}/${score.max} (${score.band})`,
+    `Summary: ${analysis.summary}`,
+    "",
+    "Breakdown:",
+  ];
+  for (const item of analysis.checklist) {
+    const points = score.breakdown.find((entry) => entry.key === item.key);
+    const pointsLabel = points ? ` ${points.earned}/${points.weight}` : "";
+    lines.push(`- ${item.label} [${item.status}]${pointsLabel}`);
+    lines.push(`    ${item.reason}`);
+    if (item.suggestion) {
+      lines.push(`    Try: ${item.suggestion}`);
+    }
+  }
+  return lines.join("\n");
 }
 
 export function deletePromptForCli(
