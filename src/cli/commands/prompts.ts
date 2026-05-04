@@ -95,6 +95,9 @@ export function listPromptsForCli(options: PromptCliOptions = {}): string {
   });
 }
 
+// Keep in sync with toSafeFtsQuery's slice(0, 8) in src/storage/sqlite.ts.
+const FTS_QUERY_TOKEN_LIMIT = 8;
+
 export function searchPromptsForCli(
   query: string,
   options: PromptCliOptions = {},
@@ -107,12 +110,20 @@ export function searchPromptsForCli(
     if (options.json) {
       return JSON.stringify(result, null, 2);
     }
+    const tokenCount = (query.match(/[\p{L}\p{N}_-]+/gu) ?? []).length;
+    const truncatedTokens =
+      tokenCount > FTS_QUERY_TOKEN_LIMIT
+        ? `using first ${FTS_QUERY_TOKEN_LIMIT} of ${tokenCount} query words — drop the extras for a tighter match`
+        : undefined;
     if (result.items.length === 0) {
-      return `no prompts matching "${query}".`;
+      return truncatedTokens
+        ? `no prompts matching "${query}" (${truncatedTokens}).`
+        : `no prompts matching "${query}".`;
     }
     return formatHumanResult(result, {
       header: `${result.items.length} match${result.items.length === 1 ? "" : "es"} for "${query}"`,
       moreHint: "more available — narrow the query or pass --limit higher",
+      extraHint: truncatedTokens,
     });
   });
 }
@@ -121,11 +132,16 @@ function formatHumanResult(
   result: ReturnType<
     ReturnType<typeof createSqlitePromptStorage>["listPrompts"]
   >,
-  labels: { header: string; moreHint: string },
+  labels: { header: string; moreHint: string; extraHint?: string },
 ): string {
-  const heading = result.nextCursor
-    ? `${labels.header} (${labels.moreHint}):`
-    : `${labels.header}:`;
+  const hints = [
+    result.nextCursor ? labels.moreHint : undefined,
+    labels.extraHint,
+  ].filter((value): value is string => Boolean(value));
+  const heading =
+    hints.length > 0
+      ? `${labels.header} (${hints.join("; ")}):`
+      : `${labels.header}:`;
   return `${heading}\n${formatPromptRows(result.items)}`;
 }
 
