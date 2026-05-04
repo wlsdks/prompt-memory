@@ -101,6 +101,27 @@ describe("prompt CLI commands", () => {
       "Prompt not found",
     );
   });
+
+  it("prefixes list results with a count and a more-available hint", async () => {
+    const dataDir = createTempDir();
+    await createCliFixture(dataDir);
+
+    const limited = listPromptsForCli({ dataDir, limit: 2 });
+    expect(limited).toMatch(/^2 prompts \(more available/);
+
+    const all = listPromptsForCli({ dataDir, limit: 10 });
+    expect(all).toMatch(/^3 prompts:/);
+    expect(all).not.toContain("more available");
+  });
+
+  it("prefixes search results with a count and the echoed query", async () => {
+    const dataDir = createTempDir();
+    await createCliFixture(dataDir);
+
+    const result = searchPromptsForCli("beta", { dataDir });
+
+    expect(result).toMatch(/^1 match for "beta":/);
+  });
 });
 
 async function createCliFixture(dataDir: string) {
