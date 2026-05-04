@@ -93,6 +93,44 @@ tools, benchmark/release validation, and an English/Korean web UI.
 - English and Korean README, full feature audit, release readiness docs,
   marketplace install guide, package contents check, and pre-publish privacy
   audit.
+- Vitest gate enforcing that `src/shared/version.ts` `VERSION` matches
+  `package.json#version`, so a one-sided release bump fails CI.
+
+#### Korean coverage end-to-end
+
+- `local-rules-v1` analyzer recognizes Korean prompt signals across goal,
+  background, scope, output, verification, and product tags.
+- `improvePrompt` auto-detects Korean inputs by Hangul ratio and renders
+  Korean section headers, copy, and safety notes.
+- `score_prompt_archive` returns Korean practice plan, gap rule labels,
+  and next-prompt template when `language: "ko"` is set.
+- `coach_prompt` and `prompt-memory coach --language ko` forward the
+  language argument all the way through the archive call.
+- Hook rewrite-guard emits Korean block/context messages for Korean
+  prompts; web UI auto-detects Korean from `navigator.language` on first
+  visit.
+
+#### Coach explanation surfaces
+
+- Web prompt detail shows per-criterion `earned/weight` next to each
+  checklist item so the score is no longer a single opaque number.
+- `prompt-memory show <id> --explain` renders the same per-axis breakdown
+  on the terminal.
+- MCP `score_prompt` already returns the breakdown; the plugin doc now
+  describes it explicitly so agents can relay the per-axis explanation.
+
+### Changed
+
+- npm tarball excludes `dist/**/*.map` source maps (~75 files,
+  ~1 MB unpacked) — local dev still builds them.
+- list/search human output now prefixes a count and warns when the
+  result is capped by `--limit` or the FTS 8-token cap.
+- Web API errors include the HTTP status and the server's problem
+  detail instead of a bare label.
+- Many CLI/MCP/hook errors now end with a working example or a next
+  command (import dry-run/execute, export preset, prompts open,
+  doctor last-ingest, MCP score/improve/rewrite/judge empty paths,
+  pm-* wrapper `--pm-help`).
 
 ### Changed
 
@@ -121,6 +159,15 @@ tools, benchmark/release validation, and an English/Korean web UI.
   collapsed to a single line.
 - Web filter controls now have stable accessible names so that screen
   reader and automated UI checks do not collide on duplicate labels.
+- `/api/v1/health` no longer returns the local `data_dir` absolute path.
+- Hook wrapper records a failed `last_ingest_status` entry even when
+  the post-to-server call throws, so `doctor` can surface the failure
+  with the next-step hint added in the same release.
+- Claude Code adapter normalizes `session_id` before hashing it into
+  the idempotency key, matching Codex behavior.
+- `prompt-memory open <id>` validates the id before printing a URL,
+  matching `show`/`delete`. The `runImportDryRun` ENOENT now produces
+  a friendly message that does not echo the resolved local path.
 
 ### Security
 
@@ -128,14 +175,19 @@ tools, benchmark/release validation, and an English/Korean web UI.
 - Hook ingest bearer token stored locally; same-origin session cookie and
   CSRF protection for browser writes.
 - Best-effort redaction before Markdown, SQLite, and FTS storage in mask mode,
-  including explicit secret assignments and Google API keys.
+  including explicit secret assignments, Google API keys, and npm publish
+  tokens (`npm_<36+>`).
 - Browser/export raw path masking; export job snapshots do not store raw
   prompt ids, raw cwd, raw paths, or raw secrets.
 - Privacy regression checks for Markdown, SQLite, FTS, browser APIs, import
-  jobs, export jobs, and hook output.
+  jobs, export jobs, hook output, and npm publish tokens across every
+  surface.
 - Prompt Coach output redaction hardened so that improvement drafts and
   follow-up commands do not leak prompt body, raw paths, or tokens.
 - Agent judge / MCP rewrite handoff is opt-in and routes through the user's
   active Claude Code/Codex/Gemini CLI session; prompt-memory does not extract
   or proxy provider credentials and does not call external LLMs from its own
   process.
+- Pre-publish privacy audit grep mirrors the live detector list so a
+  reviewer running the documented command catches the same token shapes
+  the runtime redactor masks.
