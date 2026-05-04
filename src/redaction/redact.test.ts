@@ -45,8 +45,27 @@ describe("redactPrompt", () => {
       "api_key",
     );
   });
+
+  it("masks npm publish access tokens", () => {
+    const rawNpmToken = createFakeNpmToken();
+    const result = redactPrompt(
+      `npm publish keeps failing with token ${rawNpmToken}, what should I check?`,
+      "mask",
+    );
+
+    expect(result.is_sensitive).toBe(true);
+    expect(result.stored_text).toContain("[REDACTED:api_key]");
+    expect(result.stored_text).not.toContain(rawNpmToken);
+    expect(result.findings.map((finding) => finding.detector_type)).toContain(
+      "api_key",
+    );
+  });
 });
 
 function createFakeGoogleApiKey(): string {
   return ["AI", "za", "Sy", "A1234567890abcdefghijklmnopqrstuvwxyz"].join("");
+}
+
+function createFakeNpmToken(): string {
+  return ["npm", "_", "0123456789ABCDEFabcdef0123456789ABCDef"].join("");
 }

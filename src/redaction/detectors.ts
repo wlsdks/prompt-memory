@@ -24,7 +24,7 @@ const DETECTORS: Detector[] = [
   {
     type: "api_key",
     pattern:
-      /\b(?:AIza[0-9A-Za-z_-]{20,}|(?:sk|pk|ghp|github_pat|xoxb|AKIA)[a-zA-Z0-9_-]{8,})\b/g,
+      /\b(?:AIza[0-9A-Za-z_-]{20,}|npm_[A-Za-z0-9]{30,}|(?:sk|pk|ghp|github_pat|xoxb|AKIA)[a-zA-Z0-9_-]{8,})\b/g,
   },
   {
     type: "secret_assignment",
