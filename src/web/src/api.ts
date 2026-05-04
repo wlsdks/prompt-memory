@@ -597,6 +597,41 @@ export async function analyzeProjectInstructions(
   return body.data;
 }
 
+export type CoachFeedbackRating = "helpful" | "not_helpful" | "wrong";
+
+export type CoachFeedbackEntry = {
+  id: string;
+  prompt_id: string;
+  rating: CoachFeedbackRating;
+  created_at: string;
+};
+
+export async function sendCoachFeedback(input: {
+  promptId: string;
+  rating: CoachFeedbackRating;
+}): Promise<CoachFeedbackEntry> {
+  await ensureSession();
+  const response = await fetch(
+    `/api/v1/prompts/${encodeURIComponent(input.promptId)}/coach-feedback`,
+    {
+      method: "POST",
+      credentials: "same-origin",
+      headers: {
+        "content-type": "application/json",
+        "x-csrf-token": csrfToken ?? "",
+      },
+      body: JSON.stringify({ rating: input.rating }),
+    },
+  );
+
+  if (!response.ok) {
+    await failApi(response, "Coach feedback failed");
+  }
+
+  const body = (await response.json()) as { data: CoachFeedbackEntry };
+  return body.data;
+}
+
 export async function previewImportDryRun(input: {
   sourceType: ImportSourceType;
   content: string;

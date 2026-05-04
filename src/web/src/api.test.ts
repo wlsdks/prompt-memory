@@ -132,6 +132,41 @@ describe("web api export client", () => {
     });
   });
 
+  it("posts coach feedback with CSRF for a specific prompt id", async () => {
+    fetchMock
+      .mockResolvedValueOnce(jsonResponse({ data: { csrf_token: "csrf-1" } }))
+      .mockResolvedValueOnce(
+        jsonResponse({
+          data: {
+            id: "cfb_abcdef",
+            prompt_id: "prmt_xyz",
+            rating: "helpful",
+            created_at: "2026-05-04T00:00:00.000Z",
+          },
+        }),
+      );
+    const { sendCoachFeedback } = await import("./api.js");
+
+    const result = await sendCoachFeedback({
+      promptId: "prmt_xyz",
+      rating: "helpful",
+    });
+
+    expect(result.rating).toBe("helpful");
+    expect(fetchMock).toHaveBeenLastCalledWith(
+      "/api/v1/prompts/prmt_xyz/coach-feedback",
+      {
+        method: "POST",
+        credentials: "same-origin",
+        headers: {
+          "content-type": "application/json",
+          "x-csrf-token": "csrf-1",
+        },
+        body: JSON.stringify({ rating: "helpful" }),
+      },
+    );
+  });
+
   it("posts the import dry-run upload with CSRF and returns the raw-free summary", async () => {
     fetchMock
       .mockResolvedValueOnce(jsonResponse({ data: { csrf_token: "csrf-1" } }))
