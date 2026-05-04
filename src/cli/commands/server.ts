@@ -45,6 +45,7 @@ export async function startPromptMemoryServer(
     storage,
     redactionMode: config.redaction_mode,
     serverConfig: config.server,
+    autoJudge: config.auto_judge,
     webRoot: fileURLToPath(new URL("../../web", import.meta.url)),
   });
   const url = await server.listen({

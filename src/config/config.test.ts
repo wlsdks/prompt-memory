@@ -8,6 +8,7 @@ import {
   initializePromptMemory,
   loadHookAuth,
   loadPromptMemoryConfig,
+  updateAutoJudgeSettings,
 } from "./config.js";
 
 const tempDirs: string[] = [];
@@ -52,6 +53,45 @@ describe("initializePromptMemory", () => {
     expect(second.created).toEqual({ config: false, hookAuth: false });
     expect(second.config).toEqual(first.config);
     expect(second.hookAuth).toEqual(first.hookAuth);
+  });
+
+  it("defaults auto_judge to disabled on a fresh init", () => {
+    const dataDir = createTempDir();
+    const result = initializePromptMemory({ dataDir });
+
+    expect(result.config.auto_judge).toEqual({
+      enabled: false,
+      tool: "claude",
+      daily_limit: 50,
+      per_minute_limit: 5,
+    });
+  });
+
+  it("merges auto_judge patches without losing untouched fields", () => {
+    const dataDir = createTempDir();
+    initializePromptMemory({ dataDir });
+
+    const enabled = updateAutoJudgeSettings(dataDir, { enabled: true });
+    expect(enabled).toMatchObject({
+      enabled: true,
+      tool: "claude",
+      daily_limit: 50,
+      per_minute_limit: 5,
+    });
+
+    const tightened = updateAutoJudgeSettings(dataDir, {
+      tool: "codex",
+      per_minute_limit: 1,
+    });
+    expect(tightened).toMatchObject({
+      enabled: true,
+      tool: "codex",
+      daily_limit: 50,
+      per_minute_limit: 1,
+    });
+
+    const persisted = loadPromptMemoryConfig(dataDir);
+    expect(persisted.auto_judge).toEqual(tightened);
   });
 
   it("uses owner-only permissions on POSIX systems", () => {

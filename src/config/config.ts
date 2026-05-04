@@ -21,6 +21,15 @@ export const ServerConfigSchema = z.object({
   port: z.number().int().positive().max(65535).default(17373),
 });
 
+export const AutoJudgeSettingsSchema = z.object({
+  enabled: z.boolean().default(false),
+  tool: z.enum(["claude", "codex"]).default("claude"),
+  daily_limit: z.number().int().nonnegative().max(10_000).default(50),
+  per_minute_limit: z.number().int().nonnegative().max(60).default(5),
+});
+
+export type AutoJudgeSettings = z.infer<typeof AutoJudgeSettingsSchema>;
+
 export const PromptMemoryConfigSchema = z.object({
   schema_version: z.literal(1),
   data_dir: z.string().min(1),
@@ -31,6 +40,12 @@ export const PromptMemoryConfigSchema = z.object({
   quarantine_dir: z.string().min(1),
   redaction_mode: z.enum(["mask", "raw", "reject"]).default("mask"),
   server: ServerConfigSchema,
+  auto_judge: AutoJudgeSettingsSchema.default({
+    enabled: false,
+    tool: "claude",
+    daily_limit: 50,
+    per_minute_limit: 5,
+  }),
 });
 
 export const HookAuthSchema = z.object({
@@ -136,6 +151,24 @@ export function writeHookAuth(
 ): void {
   const paths = getPromptMemoryPaths(dataDir);
   writeOwnerOnlyJson(paths.hookAuthPath, HookAuthSchema.parse(hookAuth));
+}
+
+export function updateAutoJudgeSettings(
+  dataDir: string | undefined,
+  patch: Partial<AutoJudgeSettings>,
+): AutoJudgeSettings {
+  const paths = getPromptMemoryPaths(dataDir);
+  const current = loadPromptMemoryConfig(dataDir);
+  const next = AutoJudgeSettingsSchema.parse({
+    ...current.auto_judge,
+    ...patch,
+  });
+  const updatedConfig = PromptMemoryConfigSchema.parse({
+    ...current,
+    auto_judge: next,
+  });
+  writeOwnerOnlyJson(paths.configPath, updatedConfig);
+  return next;
 }
 
 export function revokeIngestToken(dataDir?: string): HookAuth {

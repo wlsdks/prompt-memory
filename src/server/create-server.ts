@@ -2,6 +2,7 @@ import Fastify from "fastify";
 import type { FastifyInstance, FastifyReply, FastifyRequest } from "fastify";
 import { ZodError } from "zod";
 
+import type { AutoJudgeSettings } from "../config/config.js";
 import type { RedactionPolicy } from "../shared/schema.js";
 import type {
   CoachFeedbackStoragePort,
@@ -42,6 +43,7 @@ export type CreateServerOptions = {
     host: string;
     port: number;
   };
+  autoJudge?: AutoJudgeSettings;
   webRoot?: string;
   webAssets?: WebAssets;
   rateLimit?: {
@@ -152,6 +154,12 @@ export function createServer(options: CreateServerOptions): FastifyInstance {
     server: options.serverConfig ?? {
       host: "127.0.0.1",
       port: 17373,
+    },
+    autoJudge: options.autoJudge ?? {
+      enabled: false,
+      tool: "claude",
+      daily_limit: 50,
+      per_minute_limit: 5,
     },
   });
   registerStaticRoutes(server, {

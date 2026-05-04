@@ -1,8 +1,11 @@
-import { readFileSync } from "node:fs";
-import { dirname, resolve } from "node:path";
+import { mkdirSync, readFileSync, rmSync } from "node:fs";
+import { tmpdir } from "node:os";
+import { dirname, join, resolve } from "node:path";
+import { randomUUID } from "node:crypto";
 import { fileURLToPath } from "node:url";
-import { describe, expect, it } from "vitest";
+import { afterEach, describe, expect, it } from "vitest";
 
+import { initializePromptMemory } from "../config/config.js";
 import { createServer } from "./create-server.js";
 import type {
   ExportJob,
@@ -27,6 +30,25 @@ const codexFixture = JSON.parse(
     "utf8",
   ),
 ) as Record<string, unknown>;
+
+const persistedDataDirs: string[] = [];
+
+afterEach(() => {
+  while (persistedDataDirs.length > 0) {
+    const dir = persistedDataDirs.pop();
+    if (dir) {
+      rmSync(dir, { recursive: true, force: true });
+    }
+  }
+});
+
+function createPersistedTestDataDir(): string {
+  const dataDir = join(tmpdir(), `prompt-memory-server-${randomUUID()}`);
+  mkdirSync(dataDir, { recursive: true });
+  initializePromptMemory({ dataDir });
+  persistedDataDirs.push(dataDir);
+  return dataDir;
+}
 
 describe("createServer P2 ingest boundary", () => {
   it("returns health without auth", async () => {
@@ -141,11 +163,99 @@ describe("createServer P2 ingest boundary", () => {
           port: 17373,
         },
         excluded_project_roots: ["/Users/example/private-project"],
+        auto_judge: {
+          enabled: false,
+          tool: "claude",
+          daily_limit: 50,
+          per_minute_limit: 5,
+        },
       },
     });
     expect(response.body).not.toContain("app-token");
     expect(response.body).not.toContain("ingest-token");
     expect(response.body).not.toContain("web-session-secret");
+  });
+
+  it("updates auto_judge settings via PATCH and persists between GETs", async () => {
+    const dataDir = createPersistedTestDataDir();
+    const server = createTestServer({ dataDir });
+    const session = await server.inject({
+      method: "GET",
+      url: "/api/v1/session",
+      headers: { host: "127.0.0.1:17373" },
+    });
+    const cookie = String(session.headers["set-cookie"]);
+    const csrfToken = String(
+      (session.json() as { data: { csrf_token: string } }).data.csrf_token,
+    );
+
+    const noCsrf = await server.inject({
+      method: "PATCH",
+      url: "/api/v1/settings/auto-judge",
+      headers: { host: "127.0.0.1:17373", cookie },
+      payload: { enabled: true },
+    });
+    expect(noCsrf.statusCode).toBe(403);
+
+    const patched = await server.inject({
+      method: "PATCH",
+      url: "/api/v1/settings/auto-judge",
+      headers: {
+        host: "127.0.0.1:17373",
+        cookie,
+        "x-csrf-token": csrfToken,
+      },
+      payload: { enabled: true, tool: "codex", per_minute_limit: 1 },
+    });
+    expect(patched.statusCode).toBe(200);
+    expect(patched.json()).toEqual({
+      data: {
+        enabled: true,
+        tool: "codex",
+        daily_limit: 50,
+        per_minute_limit: 1,
+      },
+    });
+
+    const reload = await server.inject({
+      method: "GET",
+      url: "/api/v1/settings",
+      headers: { host: "127.0.0.1:17373", cookie },
+    });
+    expect(
+      (reload.json() as { data: { auto_judge: unknown } }).data.auto_judge,
+    ).toEqual({
+      enabled: true,
+      tool: "codex",
+      daily_limit: 50,
+      per_minute_limit: 1,
+    });
+  });
+
+  it("rejects auto_judge patches with out-of-range fields", async () => {
+    const dataDir = createPersistedTestDataDir();
+    const server = createTestServer({ dataDir });
+    const session = await server.inject({
+      method: "GET",
+      url: "/api/v1/session",
+      headers: { host: "127.0.0.1:17373" },
+    });
+    const cookie = String(session.headers["set-cookie"]);
+    const csrfToken = String(
+      (session.json() as { data: { csrf_token: string } }).data.csrf_token,
+    );
+
+    const tooHigh = await server.inject({
+      method: "PATCH",
+      url: "/api/v1/settings/auto-judge",
+      headers: {
+        host: "127.0.0.1:17373",
+        cookie,
+        "x-csrf-token": csrfToken,
+      },
+      payload: { daily_limit: 99_999 },
+    });
+    expect(tooHigh.statusCode).toBe(422);
   });
 
   it("returns browser-safe projects without exposing raw paths or tokens", async () => {
@@ -1024,11 +1134,19 @@ type TestServerOptions = {
   maxQueryLength?: number;
   rateLimit?: { max: number; windowMs: number };
   webAssets?: Record<string, string>;
+  dataDir?: string;
+  autoJudge?: {
+    enabled: boolean;
+    tool: "claude" | "codex";
+    daily_limit: number;
+    per_minute_limit: number;
+  };
 };
 
 function createTestServer(options: TestServerOptions = {}) {
   return createServer({
-    dataDir: "/tmp/prompt-memory-test",
+    dataDir: options.dataDir ?? "/tmp/prompt-memory-test",
+    autoJudge: options.autoJudge,
     auth: {
       appToken: "app-token",
       ingestToken: "ingest-token",
