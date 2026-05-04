@@ -52,7 +52,7 @@ export function prepareAgentRewriteTool(
       if (!promptId) {
         return rewriteError(
           "not_found",
-          "No stored prompt is available for agent rewrite.",
+          "No stored prompt is available for agent rewrite. Capture a Claude Code or Codex prompt first, or pass `prompt_id` for an existing one.",
         );
       }
 
@@ -60,7 +60,7 @@ export function prepareAgentRewriteTool(
       if (!prompt?.analysis) {
         return rewriteError(
           "not_found",
-          `Prompt not found or not analyzed: ${promptId}`,
+          `Prompt not found or not analyzed: ${promptId}. Run get_prompt_memory_status to confirm the archive state, or pass a different \`prompt_id\`.`,
         );
       }
 
