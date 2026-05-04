@@ -147,6 +147,23 @@ try {
     "prompt-memory:prepare_agent_rewrite prompt_id=",
     "Detail should expose a stored prompt agent rewrite command.",
   );
+  await page.locator(".prompt-comparison").first().waitFor();
+  await assertText(
+    page,
+    "Original",
+    "Detail should show the original prompt column in the comparison panel.",
+  );
+  await assertText(
+    page,
+    "Improved draft",
+    "Detail should show the improved draft column in the comparison panel.",
+  );
+  await page.locator(".prompt-comparison-changed").first().waitFor();
+  await assertText(
+    page,
+    "changed",
+    "Detail should show the changed-sections badge.",
+  );
   await assertBrowserSafe(page, "detail");
   await page.getByRole("button", { name: "Copy draft" }).click();
   await page.getByRole("button", { name: "Copied" }).waitFor();
