@@ -47,7 +47,7 @@ export function improvePrompt(input: ImprovePromptInput): PromptImprovement {
     prompt: sanitizedPrompt,
     createdAt: input.createdAt,
   });
-  const language = input.language ?? "en";
+  const language = input.language ?? detectPromptLanguage(input.prompt);
   const source = input.source ?? "direct";
   const changedSections = analysis.checklist
     .filter((item) => item.status !== "good")
@@ -366,3 +366,10 @@ const KO_COPY = {
     "변경 내용, 검증 결과, 남은 리스크를 짧은 Markdown 요약으로 알려주세요.",
   keepOutput: "원문에서 요청한 출력 형식을 유지해주세요.",
 };
+
+function detectPromptLanguage(prompt: string): "en" | "ko" {
+  const koreanChars = (prompt.match(/[가-힣]/g) ?? []).length;
+  const totalLetters = (prompt.match(/\p{L}/gu) ?? []).length;
+  if (totalLetters === 0) return "en";
+  return koreanChars / totalLetters > 0.2 ? "ko" : "en";
+}
