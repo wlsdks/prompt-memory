@@ -367,7 +367,7 @@ const KO_COPY = {
   keepOutput: "원문에서 요청한 출력 형식을 유지해주세요.",
 };
 
-function detectPromptLanguage(prompt: string): "en" | "ko" {
+export function detectPromptLanguage(prompt: string): "en" | "ko" {
   const koreanChars = (prompt.match(/[가-힣]/g) ?? []).length;
   const totalLetters = (prompt.match(/\p{L}/gu) ?? []).length;
   if (totalLetters === 0) return "en";

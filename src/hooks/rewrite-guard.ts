@@ -2,7 +2,8 @@ import { spawnSync } from "node:child_process";
 import { platform } from "node:os";
 
 import { analyzePrompt } from "../analysis/analyze.js";
-import { improvePrompt } from "../analysis/improve.js";
+import { detectPromptLanguage, improvePrompt } from "../analysis/improve.js";
+import { HOOK_COPY } from "./rewrite-guard-copy.js";
 
 export type PromptRewriteGuardMode = "off" | "block-and-copy" | "context";
 
@@ -52,20 +53,25 @@ export function createPromptRewriteGuardOutput(
     return undefined;
   }
 
+  const language = options.language ?? detectPromptLanguage(prompt);
   const improvement = improvePrompt({
     prompt,
     createdAt,
-    language: options.language,
+    language,
   });
+  const copy = HOOK_COPY[language];
 
   if (mode === "context") {
     return {
       hookSpecificOutput: {
         hookEventName: "UserPromptSubmit",
         additionalContext: [
-          "prompt-memory rewrite guidance",
-          `Original local score: ${analysis.quality_score.value}/100 (${analysis.quality_score.band})`,
-          "Use this improved request as the working brief when it is clearer than the submitted prompt.",
+          copy.contextHeader,
+          copy.scoreLine(
+            analysis.quality_score.value,
+            analysis.quality_score.band,
+          ),
+          copy.contextHint,
           "",
           improvement.improved_prompt,
         ].join("\n"),
@@ -80,15 +86,17 @@ export function createPromptRewriteGuardOutput(
   return {
     decision: "block",
     reason: [
-      `prompt-memory blocked this prompt before submission because its local score was ${analysis.quality_score.value}/100 (${analysis.quality_score.band}), below the configured threshold ${minScore}.`,
-      copied
-        ? "An improved prompt was copied to your clipboard. Paste it and press Enter to resubmit."
-        : "Copy the improved prompt below, paste it, and press Enter to resubmit.",
+      copy.blockedReason(
+        analysis.quality_score.value,
+        analysis.quality_score.band,
+        minScore,
+      ),
+      copied ? copy.clipboardHit : copy.clipboardMiss,
       "",
-      "Improved prompt:",
+      copy.improvedHeader,
       improvement.improved_prompt,
       "",
-      "Safety notes:",
+      copy.safetyHeader,
       ...improvement.safety_notes.map((note) => `- ${note}`),
     ].join("\n"),
     hookSpecificOutput: {
