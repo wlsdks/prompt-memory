@@ -13,6 +13,7 @@ import type {
 import type { ServerAuthConfig } from "./auth.js";
 import { HttpProblem, problem } from "./errors.js";
 import { registerExportRoutes } from "./routes/exports.js";
+import { registerImportRoutes } from "./routes/import.js";
 import { registerHealthRoutes } from "./routes/health.js";
 import { registerIngestRoutes } from "./routes/ingest.js";
 import { registerPromptRoutes } from "./routes/prompts.js";
@@ -127,6 +128,10 @@ export function createServer(options: CreateServerOptions): FastifyInstance {
   registerExportRoutes(server, {
     auth: options.auth,
     storage: options.storage,
+  });
+  registerImportRoutes(server, {
+    auth: options.auth,
+    redactionMode: options.redactionMode,
   });
   registerPromptRoutes(server, {
     auth: options.auth,
