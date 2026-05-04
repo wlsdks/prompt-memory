@@ -156,16 +156,14 @@ try {
     "Detail should expose a stored prompt agent rewrite command.",
   );
   await page.locator(".prompt-comparison").first().waitFor();
-  await assertText(
-    page,
-    "Original",
-    "Detail should show the original prompt column in the comparison panel.",
-  );
-  await assertText(
-    page,
-    "Improved draft",
-    "Detail should show the improved draft column in the comparison panel.",
-  );
+  await page
+    .locator('.prompt-comparison-heading:has-text("Original")')
+    .first()
+    .waitFor();
+  await page
+    .locator('.prompt-comparison-heading:has-text("Improved draft")')
+    .first()
+    .waitFor();
   await page.locator(".prompt-comparison-changed").first().waitFor();
   await assertText(
     page,
