@@ -93,10 +93,14 @@ export function scanImportSource(
   const stat = statSync(sourcePath);
 
   if (!stat.isFile()) {
-    throw new Error("Import source must be a file.");
+    throw new Error(
+      "Import source must be a file. Pass a single .jsonl transcript path with --file <path>.",
+    );
   }
   if (stat.size > maxFileBytes) {
-    throw new Error("Import source exceeds file size limit.");
+    throw new Error(
+      `Import source exceeds file size limit. Got ${formatMb(stat.size)} MB, limit is ${formatMb(maxFileBytes)} MB. Split the transcript or raise the limit.`,
+    );
   }
 
   const result: ImportDryRunResult = {
@@ -323,4 +327,8 @@ function buildRecordKey(
   }
 
   return `${sourcePathHash}:${recordOffset}:${hash.toString(16).padStart(8, "0")}`;
+}
+
+function formatMb(bytes: number): string {
+  return (bytes / (1024 * 1024)).toFixed(1);
 }
