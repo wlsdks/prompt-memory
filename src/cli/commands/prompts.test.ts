@@ -93,6 +93,20 @@ describe("prompt CLI commands", () => {
     ).toMatchObject({ items: [] });
   });
 
+  it("explains the score breakdown when --explain is passed to show", async () => {
+    const dataDir = createTempDir();
+    const ids = await createCliFixture(dataDir);
+
+    const explanation = showPromptForCli(ids.beta, { dataDir, explain: true });
+
+    expect(explanation).toMatch(
+      /^Score: \d+\/100 \((excellent|good|needs_work|weak)\)/,
+    );
+    expect(explanation).toContain("Breakdown:");
+    expect(explanation).toContain("Goal clarity");
+    expect(explanation).toContain("Verification criteria");
+  });
+
   it("refuses to print an open URL for an unknown prompt id", () => {
     const dataDir = createTempDir();
     initializePromptMemory({ dataDir });
