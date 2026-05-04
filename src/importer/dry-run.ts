@@ -89,7 +89,14 @@ export function scanImportSource(
   const maxFileBytes = options.maxFileBytes ?? DEFAULT_MAX_FILE_BYTES;
   const maxLineBytes = options.maxLineBytes ?? DEFAULT_MAX_LINE_BYTES;
   const sampleLimit = options.sampleLimit ?? 5;
-  const sourcePath = realpathSync(options.file);
+  let sourcePath: string;
+  try {
+    sourcePath = realpathSync(options.file);
+  } catch {
+    throw new Error(
+      "Import source file not found. Pass an existing JSONL transcript path with --file <path>.",
+    );
+  }
   const stat = statSync(sourcePath);
 
   if (!stat.isFile()) {

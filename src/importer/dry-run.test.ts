@@ -147,6 +147,30 @@ describe("import dry-run", () => {
       }),
     ).toThrow(/exceeds file size limit\. Got .* MB, limit is .* MB/);
   });
+
+  it("explains a missing source path without leaking the raw OS error", () => {
+    const dir = join(tmpdir(), `prompt-memory-missing-${randomUUID()}`);
+    mkdirSync(dir, { recursive: true });
+    tempDirs.push(dir);
+    const missing = join(dir, "does-not-exist.jsonl");
+
+    let captured: Error | undefined;
+    try {
+      runImportDryRun({
+        file: missing,
+        redactionMode: "mask",
+        sourceType: "manual-jsonl",
+      });
+    } catch (error) {
+      captured = error as Error;
+    }
+
+    expect(captured?.message).toMatch(
+      /Import source file not found.*JSONL transcript path with --file/,
+    );
+    expect(captured?.message).not.toContain(missing);
+    expect(captured?.message).not.toContain("ENOENT");
+  });
 });
 
 function writeJsonl(records: Array<Record<string, unknown> | string>): string {
