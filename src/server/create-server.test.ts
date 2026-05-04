@@ -852,6 +852,78 @@ describe("createServer P2 ingest boundary", () => {
     expect(invalid.body).not.toContain("sk-proj-1234567890abcdef");
     expect(invalid.body).not.toContain("../secret-project");
   });
+
+  it("dry-runs uploaded JSONL without retaining raw secrets or paths", async () => {
+    const server = createTestServer();
+    const session = await server.inject({
+      method: "GET",
+      url: "/api/v1/session",
+      headers: { host: "127.0.0.1:17373" },
+    });
+    const cookie = String(session.headers["set-cookie"]);
+    const csrfToken = session.json<{ data: { csrf_token: string } }>().data
+      .csrf_token;
+    const rawSecret = "sk-proj-import-dryrun-1234567890";
+    const rawPath = "/Users/example/private-project/src/secret.ts";
+    const content = `${JSON.stringify({
+      hook_event_name: "UserPromptSubmit",
+      session_id: "upload-session-1",
+      cwd: "/Users/example/private-project",
+      prompt: `Fix ${rawPath} with token ${rawSecret}.`,
+    })}\n`;
+
+    const noCsrf = await server.inject({
+      method: "POST",
+      url: "/api/v1/import/dry-run",
+      headers: { host: "127.0.0.1:17373", cookie },
+      payload: { source_type: "manual-jsonl", content },
+    });
+    expect(noCsrf.statusCode).toBe(403);
+
+    const ok = await server.inject({
+      method: "POST",
+      url: "/api/v1/import/dry-run",
+      headers: {
+        host: "127.0.0.1:17373",
+        cookie,
+        "x-csrf-token": csrfToken,
+      },
+      payload: { source_type: "manual-jsonl", content },
+    });
+    expect(ok.statusCode).toBe(200);
+    expect(ok.body).not.toContain(rawSecret);
+    expect(ok.body).not.toContain(rawPath);
+    const body = ok.json<{
+      data: { prompt_candidates: number; sensitive_prompt_count: number };
+    }>().data;
+    expect(body.prompt_candidates).toBe(1);
+    expect(body.sensitive_prompt_count).toBe(1);
+  });
+
+  it("rejects import dry-run uploads with an unsupported source_type", async () => {
+    const server = createTestServer();
+    const session = await server.inject({
+      method: "GET",
+      url: "/api/v1/session",
+      headers: { host: "127.0.0.1:17373" },
+    });
+    const cookie = String(session.headers["set-cookie"]);
+    const csrfToken = session.json<{ data: { csrf_token: string } }>().data
+      .csrf_token;
+
+    const bad = await server.inject({
+      method: "POST",
+      url: "/api/v1/import/dry-run",
+      headers: {
+        host: "127.0.0.1:17373",
+        cookie,
+        "x-csrf-token": csrfToken,
+      },
+      payload: { source_type: "not-a-source", content: "{}" },
+    });
+
+    expect(bad.statusCode).toBeGreaterThanOrEqual(400);
+  });
 });
 
 type TestServerOptions = {
