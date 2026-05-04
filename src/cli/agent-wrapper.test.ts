@@ -116,6 +116,27 @@ describe("agent wrapper", () => {
     expect(mcpPlan.args).toEqual(["mcp", "list"]);
   });
 
+  it("--pm-help prints working examples for each pm-* flag", async () => {
+    const stdout = new MemoryWritable();
+    const spawn = vi.fn();
+
+    const exitCode = await runAgentWrapper({
+      tool: "claude",
+      argv: ["--pm-help"],
+      stdout: stdout as NodeJS.WriteStream,
+      stdin: process.stdin,
+      isTTY: false,
+      spawn,
+    });
+
+    expect(exitCode).toBe(0);
+    expect(spawn).not.toHaveBeenCalled();
+    expect(stdout.output).toContain("Examples:");
+    expect(stdout.output).toContain("--pm-mode off");
+    expect(stdout.output).toContain("--pm-language ko");
+    expect(stdout.output).toContain("--pm-dry-run");
+  });
+
   it("dry-run prints the selected prompt plan and does not spawn the agent", async () => {
     const stdout = new MemoryWritable();
     const spawn = vi.fn();
