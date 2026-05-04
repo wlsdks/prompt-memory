@@ -6,6 +6,8 @@ import {
   type ArchiveScoreReport,
 } from "../../analysis/archive-score.js";
 import type {
+  JudgeScoreEntry,
+  JudgeScoreStoragePort,
   PromptDetail,
   PromptQualityDashboard,
   PromptReadStoragePort,
@@ -17,7 +19,9 @@ import { problem } from "../errors.js";
 
 export type PromptRouteOptions = {
   auth: ServerAuthConfig;
-  storage: PromptStoragePort & Partial<PromptReadStoragePort>;
+  storage: PromptStoragePort &
+    Partial<PromptReadStoragePort> &
+    Partial<JudgeScoreStoragePort>;
 };
 
 const ListQuerySchema = z.object({
@@ -151,7 +155,8 @@ export function registerPromptRoutes(
       throw problem(404, "Not Found", "Prompt not found.", request.url);
     }
 
-    return { data: toBrowserPromptDetail(prompt) };
+    const judgeScore = options.storage.getLatestJudgeScore?.(params.id);
+    return { data: toBrowserPromptDetail(prompt, judgeScore) };
   });
 
   server.get("/api/v1/quality", async (request) => {
@@ -249,12 +254,16 @@ function toBrowserPromptSummary(prompt: PromptSummary): PromptSummary {
   };
 }
 
-function toBrowserPromptDetail(prompt: PromptDetail): PromptDetail {
+function toBrowserPromptDetail(
+  prompt: PromptDetail,
+  judgeScore: JudgeScoreEntry | undefined,
+): PromptDetail & { judge_score?: JudgeScoreEntry } {
   return {
     ...prompt,
     cwd: browserProjectLabel(prompt.cwd),
     snippet: maskBrowserPathText(prompt.snippet),
     markdown: maskBrowserPathText(prompt.markdown),
+    ...(judgeScore ? { judge_score: judgeScore } : {}),
   };
 }
 
