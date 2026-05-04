@@ -166,6 +166,49 @@ describe("prompt read/delete API", () => {
     expect(missing.statusCode).toBe(404);
   });
 
+  it("includes the latest judge_score on prompt detail when storage has one recorded", async () => {
+    const { server, storage, ids } = await createPromptApiFixture();
+    storage.recordJudgeScore({
+      promptId: ids.beta,
+      judgeTool: "claude",
+      score: 85,
+      reason: "Goal clear, verification weak.",
+    });
+
+    const detail = await server.inject({
+      method: "GET",
+      url: `/api/v1/prompts/${ids.beta}`,
+      headers: {
+        host: "127.0.0.1:17373",
+        authorization: "Bearer app-token",
+      },
+    });
+    expect(detail.statusCode).toBe(200);
+    const body = detail.json<{
+      data: { id: string; judge_score?: { score: number; judge_tool: string } };
+    }>().data;
+    expect(body.judge_score).toMatchObject({
+      score: 85,
+      judge_tool: "claude",
+      reason: "Goal clear, verification weak.",
+    });
+  });
+
+  it("omits judge_score when no judgment has been recorded", async () => {
+    const { server, ids } = await createPromptApiFixture();
+
+    const detail = await server.inject({
+      method: "GET",
+      url: `/api/v1/prompts/${ids.beta}`,
+      headers: {
+        host: "127.0.0.1:17373",
+        authorization: "Bearer app-token",
+      },
+    });
+    expect(detail.statusCode).toBe(200);
+    expect(detail.json()).not.toHaveProperty("data.judge_score");
+  });
+
   it("stores improvement drafts with CSRF and returns them on prompt detail", async () => {
     const { server, ids } = await createPromptApiFixture();
 
