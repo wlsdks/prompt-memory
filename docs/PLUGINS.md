@@ -205,7 +205,12 @@ project instruction review, and next request guidance in one read-only call.
 counts, latest prompt metadata, available tool names, and next actions.
 `score_prompt` scores direct prompt text, a stored prompt id, or the latest
 stored prompt with the same local deterministic `0-100` Prompt Quality Score
-used by the web UI. `improve_prompt` returns an approval-ready copy-based
+used by the web UI. The response also includes a per-criterion `breakdown`
+(`weight` and `earned` for each of `goal_clarity`, `background_context`,
+`scope_limits`, `output_format`, `verification_criteria`) plus the same
+`weight`/`earned` on every `checklist` item, so an agent can tell the user
+exactly which axis cost points instead of repeating only the overall score.
+`improve_prompt` returns an approval-ready copy-based
 rewrite draft for direct prompt text, a stored prompt id, or the latest stored
 prompt. `prepare_agent_rewrite` is the opt-in semantic rewrite handoff: it
 returns one locally redacted prompt, local score metadata, a local baseline
