@@ -35,27 +35,48 @@ Use this checklist before publishing a public beta or npm package.
 
 Confirm `pnpm pack:dry-run` includes:
 
-- [ ] built CLI files under `dist/cli`
+- [ ] built CLI files under `dist/cli` (including `pm-claude.js`, `pm-codex.js`)
 - [ ] built server files under `dist/server`
 - [ ] built web assets under `dist/web`
-- [ ] `README.md`
-- [ ] `SECURITY.md`
-- [ ] `docs/PRD.md`
+- [ ] `README.md`, `README.ko.md`
+- [ ] `CHANGELOG.md`, `LICENSE`
+- [ ] `SECURITY.md`, `CODE_OF_CONDUCT.md`, `CONTRIBUTING.md`, `SUPPORT.md`
+- [ ] `docs/PRD.md`, `docs/PRD_PHASE2.md`
 - [ ] `docs/ARCHITECTURE.md`
+- [ ] `docs/EFFICIENCY_REVIEW.md`
+- [ ] `docs/LEGAL_USAGE_GUIDE.md`
 - [ ] `docs/TECH_SPEC.md`
 - [ ] `docs/IMPLEMENTATION_PLAN.md`
 - [ ] `docs/ADAPTERS.md`
+- [ ] `docs/PLUGINS.md`
 - [ ] `docs/BENCHMARK_V1.md`
+- [ ] `docs/FEATURE_AUDIT_2026-05-02.md`
+- [ ] `docs/PRD2_COMPLETION_AUDIT.md`
+- [ ] `docs/NPM_PUBLISHING.md`
+- [ ] `docs/PACKAGE_CONTENTS.md`
+- [ ] `docs/PRE_PUBLISH_PRIVACY_AUDIT.md`
 - [ ] `docs/RELEASE_CHECKLIST.md`
+- [ ] `.claude-plugin/` and `commands/` directories
+- [ ] `plugins/` and `integrations/` directories
 - [ ] `scripts/benchmark.mjs`
 - [ ] `scripts/browser-e2e.mjs`
+- [ ] `scripts/quality-gate.mjs`
 - [ ] `scripts/release-smoke.mjs`
+
+Confirm `pnpm pack:dry-run` excludes:
+
+- [ ] no `dist/**/*.map` files (source maps stay local-only)
+- [ ] no `src/`, `node_modules/`, `coverage/`, `tests/`, `.github/`
 
 ## Security Regression
 
 - [ ] Raw detected secrets are absent from Markdown under `mask` mode.
 - [ ] Raw detected secrets are absent from SQLite prompt rows and FTS search results under `mask` mode.
 - [ ] Raw prompt-body absolute paths are redacted from Markdown, SQLite, FTS, browser prompt APIs, export surfaces, import job summaries, and hook stdout/stderr.
+- [ ] npm publish tokens (`npm_<36+ char>`) are masked in the privacy regression fixture across the same surfaces.
+- [ ] `/api/v1/health` does not return `data_dir` or any raw filesystem path.
+- [ ] Hook wrappers record `last_ingest_status` even when `postPayload` throws, so `doctor` can surface the failure.
+- [ ] Adapter idempotency keys normalize the upstream `session_id` before hashing (Claude Code parity with Codex).
 - [ ] Invalid payload values are not echoed in error responses.
 - [ ] Hook wrappers fail open and do not write prompt text to stdout/stderr.
 - [ ] Browser state-changing requests require same-origin session and CSRF protection.
