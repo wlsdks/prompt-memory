@@ -132,6 +132,56 @@ describe("web api export client", () => {
     });
   });
 
+  it("posts the import dry-run upload with CSRF and returns the raw-free summary", async () => {
+    fetchMock
+      .mockResolvedValueOnce(jsonResponse({ data: { csrf_token: "csrf-1" } }))
+      .mockResolvedValueOnce(
+        jsonResponse({
+          data: {
+            dry_run: true,
+            source_type: "manual-jsonl",
+            source_path_hash: "path_aabbccdd",
+            records_read: 1,
+            prompt_candidates: 1,
+            sensitive_prompt_count: 1,
+            parse_errors: 0,
+            skipped_records: {
+              assistant_or_tool: 0,
+              empty_prompt: 0,
+              unsupported_record: 0,
+              too_large: 0,
+            },
+            samples: [],
+          },
+        }),
+      );
+    const { previewImportDryRun } = await import("./api.js");
+
+    const result = await previewImportDryRun({
+      sourceType: "manual-jsonl",
+      content: "line1\n",
+    });
+
+    expect(result).toMatchObject({
+      dry_run: true,
+      source_type: "manual-jsonl",
+      prompt_candidates: 1,
+      sensitive_prompt_count: 1,
+    });
+    expect(fetchMock).toHaveBeenLastCalledWith("/api/v1/import/dry-run", {
+      method: "POST",
+      credentials: "same-origin",
+      headers: {
+        "content-type": "application/json",
+        "x-csrf-token": "csrf-1",
+      },
+      body: JSON.stringify({
+        source_type: "manual-jsonl",
+        content: "line1\n",
+      }),
+    });
+  });
+
   it("includes the HTTP status and detail in error messages", async () => {
     fetchMock
       .mockResolvedValueOnce(jsonResponse({ data: { csrf_token: "csrf-1" } }))

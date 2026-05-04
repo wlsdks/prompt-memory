@@ -355,6 +355,36 @@ export type ExportPreset =
   | "anonymized_review"
   | "issue_report_attachment";
 
+export type ImportSourceType =
+  | "official-hook"
+  | "claude-transcript-best-effort"
+  | "codex-transcript-best-effort"
+  | "manual-jsonl";
+
+export type ImportDryRunResult = {
+  dry_run: true;
+  source_type: ImportSourceType;
+  source_path_hash: string;
+  records_read: number;
+  prompt_candidates: number;
+  sensitive_prompt_count: number;
+  parse_errors: number;
+  skipped_records: {
+    assistant_or_tool: number;
+    empty_prompt: number;
+    unsupported_record: number;
+    too_large: number;
+  };
+  samples: Array<{
+    record_offset: number;
+    session_id?: string;
+    turn_id?: string;
+    cwd_label?: string;
+    prompt_preview: string;
+    is_sensitive: boolean;
+  }>;
+};
+
 export type ExportJob = {
   id: string;
   preset: ExportPreset;
@@ -564,6 +594,32 @@ export async function analyzeProjectInstructions(
   }
 
   const body = (await response.json()) as { data: ProjectInstructionReview };
+  return body.data;
+}
+
+export async function previewImportDryRun(input: {
+  sourceType: ImportSourceType;
+  content: string;
+}): Promise<ImportDryRunResult> {
+  await ensureSession();
+  const response = await fetch("/api/v1/import/dry-run", {
+    method: "POST",
+    credentials: "same-origin",
+    headers: {
+      "content-type": "application/json",
+      "x-csrf-token": csrfToken ?? "",
+    },
+    body: JSON.stringify({
+      source_type: input.sourceType,
+      content: input.content,
+    }),
+  });
+
+  if (!response.ok) {
+    await failApi(response, "Import dry-run failed");
+  }
+
+  const body = (await response.json()) as { data: ImportDryRunResult };
   return body.data;
 }
 
