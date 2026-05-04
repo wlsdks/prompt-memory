@@ -13,6 +13,7 @@ export type View =
   | { name: "projects" }
   | { name: "mcp" }
   | { name: "exports" }
+  | { name: "import" }
   | { name: "settings" };
 
 export type WorkspaceSection = "coach" | "practice" | "scores" | "insights";
@@ -54,6 +55,10 @@ export function routeFromLocation(): View {
     return { name: "exports" };
   }
 
+  if (window.location.pathname === "/import") {
+    return { name: "import" };
+  }
+
   if (window.location.pathname === "/settings") {
     return { name: "settings" };
   }
@@ -76,6 +81,7 @@ export function needsDashboardData(viewName: View["name"]): boolean {
     "insights",
     "mcp",
     "exports",
+    "import",
     "settings",
   ].includes(viewName);
 }

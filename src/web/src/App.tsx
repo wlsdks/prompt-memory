@@ -6,6 +6,7 @@ import {
   Database,
   Download,
   FileText,
+  FileUp,
   FolderCog,
   Gauge,
   GitCompare,
@@ -69,6 +70,7 @@ import {
 } from "./charts.js";
 import { copyTextToClipboard } from "./clipboard.js";
 import { AgentCommandCenter } from "./agent-command-center.js";
+import { ImportView } from "./import-view.js";
 import { PracticeView } from "./practice-view.js";
 import {
   daysAgoDateInput,
@@ -271,6 +273,7 @@ export function App() {
   const visibleTitle = useMemo(() => {
     if (view.name === "settings") return "Settings";
     if (view.name === "exports") return "Anonymized export";
+    if (view.name === "import") return "Import transcript";
     if (view.name === "mcp") return "MCP tools";
     if (view.name === "projects") return "Projects";
     if (view.name === "insights") return "Prompt insights";
@@ -611,9 +614,11 @@ export function App() {
                         ? "/mcp"
                         : next.name === "exports"
                           ? "/exports"
-                          : next.name === "settings"
-                            ? "/settings"
-                            : "/";
+                          : next.name === "import"
+                            ? "/import"
+                            : next.name === "settings"
+                              ? "/settings"
+                              : "/";
     window.history.pushState({}, "", path);
     setView(next);
   }
@@ -687,6 +692,12 @@ export function App() {
           onClick={() => navigate({ name: "exports" })}
         >
           <Download size={16} /> Export
+        </button>
+        <button
+          className={`nav-button ${view.name === "import" ? "active" : ""}`}
+          onClick={() => navigate({ name: "import" })}
+        >
+          <FileUp size={16} /> Import
         </button>
         <button
           className={`nav-button ${view.name === "settings" ? "active" : ""}`}
@@ -1019,6 +1030,7 @@ export function App() {
             preview={exportPreview}
           />
         )}
+        {view.name === "import" && <ImportView />}
         {view.name === "settings" && (
           <SettingsView
             dashboard={dashboard}
