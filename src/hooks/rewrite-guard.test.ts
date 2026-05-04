@@ -77,4 +77,44 @@ describe("createPromptRewriteGuardOutput", () => {
 
     expect(output).toBeUndefined();
   });
+
+  it("uses Korean headers when the submitted prompt is Korean", () => {
+    const output = createPromptRewriteGuardOutput(
+      {
+        prompt: "더 잘 만들어주세요",
+      },
+      {
+        mode: "block-and-copy",
+        copyToClipboard: () => true,
+      },
+    );
+
+    expect(output).toBeDefined();
+    if (output && "decision" in output) {
+      expect(output.decision).toBe("block");
+      expect(output.reason).toContain("개선된 프롬프트:");
+      expect(output.reason).toContain("주의사항:");
+      expect(output.reason).toContain("prompt-memory가 이 프롬프트를 제출 전");
+      expect(output.reason).not.toContain("Improved prompt:");
+    }
+  });
+
+  it("uses Korean context header when the submitted prompt is Korean", () => {
+    const output = createPromptRewriteGuardOutput(
+      {
+        prompt: "더 잘 만들어주세요",
+      },
+      { mode: "context" },
+    );
+
+    expect(output).toBeDefined();
+    if (output && "hookSpecificOutput" in output && !("decision" in output)) {
+      expect(output.hookSpecificOutput.additionalContext).toContain(
+        "prompt-memory 개선안 가이드",
+      );
+      expect(output.hookSpecificOutput.additionalContext).not.toContain(
+        "prompt-memory rewrite guidance",
+      );
+    }
+  });
 });
