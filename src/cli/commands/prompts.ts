@@ -88,7 +88,10 @@ export function listPromptsForCli(options: PromptCliOptions = {}): string {
     if (result.items.length === 0) {
       return "no prompts captured yet.";
     }
-    return formatPromptRows(result.items);
+    return formatHumanResult(result, {
+      header: `${result.items.length} prompt${result.items.length === 1 ? "" : "s"}`,
+      moreHint: "more available — pass --limit higher to see more",
+    });
   });
 }
 
@@ -107,8 +110,23 @@ export function searchPromptsForCli(
     if (result.items.length === 0) {
       return `no prompts matching "${query}".`;
     }
-    return formatPromptRows(result.items);
+    return formatHumanResult(result, {
+      header: `${result.items.length} match${result.items.length === 1 ? "" : "es"} for "${query}"`,
+      moreHint: "more available — narrow the query or pass --limit higher",
+    });
   });
+}
+
+function formatHumanResult(
+  result: ReturnType<
+    ReturnType<typeof createSqlitePromptStorage>["listPrompts"]
+  >,
+  labels: { header: string; moreHint: string },
+): string {
+  const heading = result.nextCursor
+    ? `${labels.header} (${labels.moreHint}):`
+    : `${labels.header}:`;
+  return `${heading}\n${formatPromptRows(result.items)}`;
 }
 
 export function showPromptForCli(
