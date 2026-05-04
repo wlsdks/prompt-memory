@@ -122,6 +122,17 @@ describe("prompt CLI commands", () => {
 
     expect(result).toMatch(/^1 match for "beta":/);
   });
+
+  it("warns when a query exceeds the FTS token cap", async () => {
+    const dataDir = createTempDir();
+    await createCliFixture(dataDir);
+
+    const longQuery =
+      "alpha beta gamma delta epsilon zeta eta theta iota kappa lambda";
+    const result = searchPromptsForCli(longQuery, { dataDir });
+
+    expect(result).toMatch(/using first 8 of 11 query words/);
+  });
 });
 
 async function createCliFixture(dataDir: string) {
