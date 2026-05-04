@@ -16,7 +16,7 @@ export function McpToolsView({
   settings,
 }: {
   dashboard?: QualityDashboard;
-  health?: { ok: boolean; version: string; data_dir: string };
+  health?: { ok: boolean; version: string };
   settings?: SettingsResponse;
 }) {
   const [copiedKey, setCopiedKey] = useState<string | undefined>();

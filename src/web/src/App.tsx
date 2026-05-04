@@ -111,7 +111,7 @@ export function App() {
   const [nextCursor, setNextCursor] = useState<string | undefined>();
   const [selected, setSelected] = useState<PromptDetail | undefined>();
   const [health, setHealth] = useState<
-    { ok: boolean; version: string; data_dir: string } | undefined
+    { ok: boolean; version: string } | undefined
   >();
   const [settings, setSettings] = useState<SettingsResponse | undefined>();
   const [dashboard, setDashboard] = useState<QualityDashboard | undefined>();
@@ -2305,7 +2305,7 @@ function SettingsView({
   settings,
 }: {
   dashboard?: QualityDashboard;
-  health?: { ok: boolean; version: string; data_dir: string };
+  health?: { ok: boolean; version: string };
   settings?: SettingsResponse;
 }) {
   const setupChecks = buildSetupChecks({ dashboard, health, settings });
@@ -2335,7 +2335,7 @@ function SettingsView({
           <dt>Version</dt>
           <dd>{health?.version ?? "-"}</dd>
           <dt>Data directory</dt>
-          <dd>{displayLocalPath(settings?.data_dir ?? health?.data_dir)}</dd>
+          <dd>{displayLocalPath(settings?.data_dir)}</dd>
           <dt>Address</dt>
           <dd>
             {settings ? `${settings.server.host}:${settings.server.port}` : "-"}
@@ -2697,7 +2697,7 @@ function buildSetupChecks({
   settings,
 }: {
   dashboard?: QualityDashboard;
-  health?: { ok: boolean; version: string; data_dir: string };
+  health?: { ok: boolean; version: string };
   settings?: SettingsResponse;
 }): SetupCheck[] {
   const redactionMode = settings?.redaction_mode;
