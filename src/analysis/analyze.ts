@@ -244,19 +244,28 @@ function extractTags(text: string): PromptTag[] {
   const normalized = text.toLowerCase();
   const tags: PromptTag[] = [];
   const rules: Array<[PromptTag, RegExp]> = [
-    ["bugfix", /bug|fix|error|exception/iu],
-    ["refactor", /refactor|cleanup|structure/iu],
-    ["docs", /docs?|readme|markdown|guide/iu],
-    ["test", /test|vitest|playwright|verify|coverage/iu],
-    ["ui", /ui|ux|react|tsx|css|screen|button|layout|browser/iu],
-    ["backend", /api|server|route|fastify|cli|storage|queue|worker|backend/iu],
+    ["bugfix", /bug|fix|error|exception|버그|수정|에러|오류/iu],
+    ["refactor", /refactor|cleanup|structure|리팩터|리팩토링|정리|구조/iu],
+    ["docs", /docs?|readme|markdown|guide|문서|리드미|가이드|마크다운/iu],
+    ["test", /test|vitest|playwright|verify|coverage|테스트|검증/iu],
+    [
+      "ui",
+      /ui|ux|react|tsx|css|screen|button|layout|browser|화면|버튼|레이아웃|브라우저/iu,
+    ],
+    [
+      "backend",
+      /api|server|route|fastify|cli|storage|queue|worker|backend|서버|라우트|스토리지|큐|워커/iu,
+    ],
     [
       "security",
-      /csrf|xss|auth|token|secret|redaction|cross-site|permission/iu,
+      /csrf|xss|auth|token|secret|redaction|cross-site|permission|권한|인증|토큰|비밀|마스킹/iu,
     ],
-    ["db", /sqlite|database|sql|migration|fts|index|db/iu],
-    ["release", /release|pack|publish|version|npm/iu],
-    ["ops", /doctor|health|status|monitor|diagnostic/iu],
+    [
+      "db",
+      /sqlite|database|sql|migration|fts|index|db|데이터베이스|마이그레이션|인덱스/iu,
+    ],
+    ["release", /release|pack|publish|version|npm|배포|릴리스|퍼블리시/iu],
+    ["ops", /doctor|health|status|monitor|diagnostic|헬스|상태|진단/iu],
   ];
 
   for (const [tag, pattern] of rules) {
@@ -285,37 +294,39 @@ function summarize(text: string, signalCount: number): string {
 }
 
 function hasContext(text: string): boolean {
-  return /because|current|existing|error|problem|background|context|when|while|log|cause/i.test(
+  return /because|current|existing|error|problem|background|context|when|while|log|cause|현재|기존|에러|오류|문제|배경|컨텍스트|원인|이유|상황/i.test(
     text,
   );
 }
 
 function hasSpecificTarget(text: string): boolean {
-  return /[\w./-]+\.(ts|tsx|js|jsx|json|md|yml|yaml|toml|sql|css)\b|pnpm|npm|node|vitest|playwright|api|ui|cli|server|storage|database|sqlite|file|screen|test|command/i.test(
+  return /[\w./-]+\.(ts|tsx|js|jsx|json|md|yml|yaml|toml|sql|css)\b|pnpm|npm|node|vitest|playwright|api|ui|cli|server|storage|database|sqlite|file|screen|test|command|파일|화면|명령|함수|모듈|컴포넌트|라우트|서버|스토리지/i.test(
     text,
   );
 }
 
 function hasOutputFormat(text: string): boolean {
-  return /markdown|json|table|list|bullet|summary|format|return|response|output/i.test(
+  return /markdown|json|table|list|bullet|summary|format|return|response|output|마크다운|표|목록|리스트|요약|형식|응답|출력|구조/i.test(
     text,
   );
 }
 
 function hasVerification(text: string): boolean {
-  return /test|tests|vitest|playwright|verify|check|pass|run|success|acceptance|build|lint/i.test(
+  return /test|tests|vitest|playwright|verify|check|pass|run|success|acceptance|build|lint|테스트|검증|확인|통과|성공|빌드|점검/i.test(
     text,
   );
 }
 
 function hasConstraints(text: string): boolean {
-  return /only|avoid|without|do not|must|must not|concise|exclude|scope|constraint|required|forbid|minimal|unchanged/i.test(
+  return /only|avoid|without|do not|must|must not|concise|exclude|scope|constraint|required|forbid|minimal|unchanged|유지|제외|범위|필수|변경하지|건드리지|남기고|변경 없이/i.test(
     text,
   );
 }
 
 function isBroadRequest(text: string): boolean {
-  return /fix|improve|optimize|refactor|make better|clean up/i.test(text);
+  return /fix|improve|optimize|refactor|make better|clean up|수정|개선|리팩터|리팩토링|정리|최적화/i.test(
+    text,
+  );
 }
 
 function containsRedactedPlaceholder(text: string): boolean {
