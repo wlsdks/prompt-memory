@@ -221,6 +221,30 @@ pnpm prompt-memory server
 pnpm prompt-memory init --data-dir /path/to/prompt-memory-data
 ```
 
+## 로컬 서버 시작
+
+```sh
+pnpm prompt-memory server
+```
+
+기본 주소:
+
+```text
+http://127.0.0.1:17373
+```
+
+브라우저에서 위 주소를 열면 웹 UI를 사용할 수 있습니다.
+
+macOS에서는 `setup`이 LaunchAgent를 설치해서 로그인 시 서버를 자동 시작할
+수 있습니다. 직접 관리도 가능합니다:
+
+```sh
+pnpm prompt-memory service install
+pnpm prompt-memory service status
+pnpm prompt-memory service start
+pnpm prompt-memory service stop
+```
+
 ## Claude Code 연결
 
 Claude Code hook 설치:
