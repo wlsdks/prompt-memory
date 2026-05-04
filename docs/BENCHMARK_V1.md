@@ -138,7 +138,31 @@ Pass threshold:
 
 - `>= 0.8`
 
-### 7. Local Runtime Performance
+### 7. Experimental Rules A/B Lift
+
+For each rule registered in `EXPERIMENTAL_RULE_IDS` (currently `verification_v2`), the benchmark runs `analyzePrompt` over every fixture and coach case twice — baseline and the rule enabled in isolation — and reports the score delta.
+
+Output:
+
+- `details.experimental_rules_ab.<rule_id>` in the JSON report:
+  - `cases`, `lifted`, `unchanged`, `regressed`
+  - `total_delta`, `average_delta`
+  - up to 5 lifted-case `examples`
+- One console line per rule: `experimental_rules_ab.<rule_id>: lifted N/M, avg_delta D`
+
+This is reported only — there is no pass threshold on lift today, since the synthetic corpus does not exercise spec-style language. Once real user fixtures land (P2-1), the average lift becomes a meaningful trend signal.
+
+To enable a rule for live ingest, edit `~/.prompt-memory/config.json`:
+
+```json
+{
+  "experimental_rules": ["verification_v2"]
+}
+```
+
+The change applies on next server start. The setting is purely additive — if the rule is empty or omitted, the analyzer behaves exactly as the baseline.
+
+### 8. Local Runtime Performance
 
 Checks:
 
@@ -172,6 +196,19 @@ Pass thresholds:
     "search_p95_ms": 8,
     "dashboard_ms": 12,
     "export_ms": 16
+  },
+  "details": {
+    "experimental_rules_ab": {
+      "verification_v2": {
+        "cases": 10,
+        "lifted": 0,
+        "unchanged": 10,
+        "regressed": 0,
+        "total_delta": 0,
+        "average_delta": 0,
+        "examples": []
+      }
+    }
   },
   "thresholds": {
     "privacy_leak_count": 0,
