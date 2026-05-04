@@ -2,7 +2,21 @@
 
 [English](README.md) | [한국어](README.ko.md)
 
-AI 코딩 프롬프트를 로컬에서 기억하고, 다시 찾고, 더 나은 요청으로 고쳐 쓰게 돕는 도구입니다.
+**Claude Code · Codex용 로컬 prompt 기억 및 코치 도구.**
+
+- 🗂️ Claude Code / Codex에 보낸 모든 prompt를 로컬 Markdown + SQLite에
+  보관합니다 — 외부로 나가지 않습니다.
+- 🧠 각 prompt를 5개 기준으로 0–100점 평가하고 어떤 항목에서 점수가
+  깎였는지 알려줍니다. 추측 대신 학습합니다.
+- ✍️ 자동 재제출 없이 복사해서 바로 쓸 수 있는 개선안 초안을 만들어
+  줍니다 (영어/한국어 자동 감지).
+
+```sh
+npm install -g prompt-memory
+prompt-memory setup --profile coach --register-mcp --open-web
+# Claude Code 또는 Codex에 prompt 한 번 보낸 뒤:
+prompt-memory coach
+```
 
 `prompt-memory`는 Claude Code, Codex 같은 AI 코딩 도구에 입력한 프롬프트를 안전하게 로컬에 기록하고, 나중에 다시 찾고, 반복되는 약한 프롬프트 패턴을 분석하고, 다음 요청을 더 잘 쓰도록 돕는 developer tool입니다.
 

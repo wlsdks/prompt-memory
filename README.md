@@ -2,7 +2,21 @@
 
 [English](README.md) | [한국어](README.ko.md)
 
-AI coding prompt memory and improvement workspace, local-first.
+**Local-first prompt memory and coach for Claude Code and Codex.**
+
+- 🗂️ Captures every prompt you send to Claude Code / Codex into a local
+  Markdown + SQLite archive — nothing leaves your machine.
+- 🧠 Scores each prompt 0–100 across five criteria and tells you which
+  axis cost points, so you learn instead of guessing.
+- ✍️ Generates a copy-ready improved draft on demand (English or Korean,
+  auto-detected) without auto-resubmitting anything.
+
+```sh
+npm install -g prompt-memory
+prompt-memory setup --profile coach --register-mcp --open-web
+# then send a real Claude Code or Codex prompt and run:
+prompt-memory coach
+```
 
 `prompt-memory` is a developer tool that safely records prompts you enter into AI coding tools such as Claude Code and Codex, helps you find them again, analyzes weak prompting patterns, and helps you write better follow-up requests.
 
