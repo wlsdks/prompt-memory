@@ -5,6 +5,7 @@ import { randomUUID } from "node:crypto";
 import { afterEach, describe, expect, it } from "vitest";
 
 import { initializePromptMemory } from "../config/config.js";
+import { readLastHookStatus } from "./hook-status.js";
 import { runClaudeCodeHook, runCodexHook } from "./wrapper.js";
 
 const tempDirs: string[] = [];
@@ -59,6 +60,28 @@ describe("runClaudeCodeHook", () => {
     expect(result.stdout).toBe("");
     expect(result.stderr).toBe("");
     expect(JSON.stringify(result)).not.toContain(rawPrompt);
+  });
+
+  it("records a failed last_ingest_status when the post throws so doctor can surface it", async () => {
+    const dataDir = createTempDir();
+    initializePromptMemory({ dataDir });
+
+    await runClaudeCodeHook({
+      stdin: JSON.stringify({
+        hook_event_name: "UserPromptSubmit",
+        session_id: "session-fail",
+        cwd: "/repo",
+        prompt: "any prompt",
+      }),
+      dataDir,
+      postPayload: async () => {
+        throw new Error("ECONNREFUSED");
+      },
+    });
+
+    const status = readLastHookStatus(dataDir);
+    expect(status?.ok).toBe(false);
+    expect(status?.checked_at).toBeTruthy();
   });
 
   it("can block and copy a weak prompt when rewrite guard is enabled", async () => {

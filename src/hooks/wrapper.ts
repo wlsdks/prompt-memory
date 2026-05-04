@@ -78,6 +78,16 @@ async function runPromptMemoryHook(
     }
   } catch {
     // Hooks must fail open and must not leak prompt text to stdout/stderr.
+    // Record the failure so doctor can surface "Last ingest: failed" with a
+    // next-step hint instead of going silent on transport/parse errors.
+    try {
+      writeLastHookStatus(options.dataDir, {
+        ok: false,
+        checked_at: new Date().toISOString(),
+      });
+    } catch {
+      // status write may fail if data dir is unavailable; stay fail-open.
+    }
   }
 
   return { exitCode: 0, stdout, stderr: "" };
