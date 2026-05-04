@@ -498,6 +498,21 @@ export async function listProjects(): Promise<ProjectSummary[]> {
   return body.data.items;
 }
 
+async function failApi(response: Response, label: string): Promise<never> {
+  let detail = "";
+  try {
+    const body = (await response.json()) as {
+      detail?: string;
+      title?: string;
+    };
+    detail = body.detail || body.title || "";
+  } catch {
+    // body may not be JSON, that is fine.
+  }
+  const suffix = detail ? `: ${detail}` : "";
+  throw new Error(`${label} (${response.status})${suffix}`);
+}
+
 export async function updateProjectPolicy(
   projectId: string,
   patch: ProjectPolicyPatch,
@@ -517,7 +532,7 @@ export async function updateProjectPolicy(
   );
 
   if (!response.ok) {
-    throw new Error("Project policy update failed");
+    await failApi(response, "Project policy update failed");
   }
 
   const body = (await response.json()) as { data: ProjectSummary };
@@ -540,7 +555,7 @@ export async function analyzeProjectInstructions(
   );
 
   if (!response.ok) {
-    throw new Error("Project instruction analysis failed");
+    await failApi(response, "Project instruction analysis failed");
   }
 
   const body = (await response.json()) as { data: ProjectInstructionReview };
@@ -562,7 +577,7 @@ export async function createExportPreview(
   });
 
   if (!response.ok) {
-    throw new Error("Export preview failed");
+    await failApi(response, "Export preview failed");
   }
 
   const body = (await response.json()) as { data: ExportJob };
@@ -584,7 +599,7 @@ export async function executeExportJob(
   });
 
   if (!response.ok) {
-    throw new Error("Export job execution failed");
+    await failApi(response, "Export job execution failed");
   }
 
   const body = (await response.json()) as { data: AnonymizedExportPayload };
@@ -598,7 +613,7 @@ export async function getPrompt(id: string): Promise<PromptDetail> {
   });
 
   if (!response.ok) {
-    throw new Error("Prompt not found");
+    await failApi(response, "Prompt not found");
   }
 
   const body = (await response.json()) as { data: PromptDetail };
@@ -616,7 +631,7 @@ export async function deletePrompt(id: string): Promise<void> {
   });
 
   if (!response.ok) {
-    throw new Error("Delete failed");
+    await failApi(response, "Delete failed");
   }
 }
 
@@ -637,7 +652,7 @@ export async function recordPromptCopied(
     },
   );
   if (!response.ok) {
-    throw new Error("Prompt event failed");
+    await failApi(response, "Prompt event failed");
   }
   const body = (await response.json()) as {
     data: { usefulness: PromptUsefulness };
@@ -669,7 +684,7 @@ export async function savePromptImprovementDraft(
     },
   );
   if (!response.ok) {
-    throw new Error("Improvement draft save failed");
+    await failApi(response, "Improvement draft save failed");
   }
   const body = (await response.json()) as { data: PromptImprovementDraft };
   return body.data;
@@ -693,7 +708,7 @@ export async function setPromptBookmark(
     },
   );
   if (!response.ok) {
-    throw new Error("Bookmark failed");
+    await failApi(response, "Bookmark failed");
   }
   const body = (await response.json()) as {
     data: { usefulness: PromptUsefulness };
