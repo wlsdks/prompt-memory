@@ -552,6 +552,20 @@ try {
     "Export JSON preview should include anonymized paths.",
   );
 
+  await page.getByRole("button", { name: "Import" }).click();
+  await page
+    .getByRole("heading", {
+      name: "Upload a JSONL transcript for a dry-run",
+    })
+    .waitFor();
+  await page.locator(".import-dropzone").waitFor();
+  await assertText(
+    page,
+    "Click to select a .jsonl file",
+    "Import view should show the dropzone prompt.",
+  );
+  await assertBrowserSafe(page, "import");
+
   await page.getByRole("button", { name: "Settings" }).click();
   await page.getByRole("heading", { name: "Settings" }).waitFor();
   await page.getByText("[local path]").first().waitFor();
