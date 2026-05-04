@@ -132,6 +132,30 @@ describe("web api export client", () => {
     });
   });
 
+  it("includes the HTTP status and detail in error messages", async () => {
+    fetchMock
+      .mockResolvedValueOnce(jsonResponse({ data: { csrf_token: "csrf-1" } }))
+      .mockResolvedValueOnce(
+        errorResponse(403, { detail: "Forbidden by policy" }),
+      );
+    const { deletePrompt } = await import("./api.js");
+
+    await expect(deletePrompt("prmt_x")).rejects.toThrow(
+      /Delete failed \(403\): Forbidden by policy/,
+    );
+  });
+
+  it("still surfaces the status when the error body is not JSON", async () => {
+    fetchMock
+      .mockResolvedValueOnce(jsonResponse({ data: { csrf_token: "csrf-1" } }))
+      .mockResolvedValueOnce(errorResponse(500, undefined));
+    const { deletePrompt } = await import("./api.js");
+
+    await expect(deletePrompt("prmt_y")).rejects.toThrow(
+      /Delete failed \(500\)/,
+    );
+  });
+
   it("analyzes project instruction files with csrf", async () => {
     const review = {
       generated_at: "2026-05-03T00:00:00.000Z",
@@ -175,4 +199,17 @@ function jsonResponse(body: unknown): Response {
     ok: true,
     json: async () => body,
   } as Response;
+}
+
+function errorResponse(status: number, body: unknown): Response {
+  return {
+    ok: false,
+    status,
+    json: async () => {
+      if (body === undefined) {
+        throw new Error("not json");
+      }
+      return body;
+    },
+  } as unknown as Response;
 }
