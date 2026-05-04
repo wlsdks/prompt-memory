@@ -412,7 +412,7 @@ function withStoredPrompt(
       if (!id) {
         return toolError(
           "not_found",
-          "No stored prompt is available to score.",
+          "No stored prompt is available to score. Capture a Claude Code or Codex prompt first, or call score_prompt with a `prompt` text argument to score text directly.",
         );
       }
 
@@ -420,7 +420,7 @@ function withStoredPrompt(
       if (!prompt?.analysis) {
         return toolError(
           "not_found",
-          `Prompt not found or not analyzed: ${id}`,
+          `Prompt not found or not analyzed: ${id}. Run get_prompt_memory_status to confirm the archive state, or pass a \`prompt\` text argument instead.`,
         );
       }
 
@@ -622,7 +622,7 @@ function withStoredPromptImprovement(
       if (!id) {
         return improvementToolError(
           "not_found",
-          "No stored prompt is available to improve.",
+          "No stored prompt is available to improve. Capture a Claude Code or Codex prompt first, or call improve_prompt with a `prompt` text argument to rewrite text directly.",
         );
       }
 
@@ -630,7 +630,7 @@ function withStoredPromptImprovement(
       if (!prompt?.analysis) {
         return improvementToolError(
           "not_found",
-          `Prompt not found or not analyzed: ${id}`,
+          `Prompt not found or not analyzed: ${id}. Run get_prompt_memory_status to confirm the archive state, or pass a \`prompt\` text argument instead.`,
         );
       }
 
