@@ -204,7 +204,27 @@ function PromptCoachPanel({
           <pre className="prompt-comparison-body">{originalPrompt}</pre>
         </div>
         <div className="prompt-comparison-column">
-          <h3 className="prompt-comparison-heading">Improved draft</h3>
+          <h3 className="prompt-comparison-heading">
+            Improved draft
+            {improvement.changed_sections.length > 0 && (
+              <span
+                className="prompt-comparison-changed"
+                aria-label={`${improvement.changed_sections.length} section${improvement.changed_sections.length === 1 ? "" : "s"} changed`}
+              >
+                {improvement.changed_sections.length} changed
+              </span>
+            )}
+          </h3>
+          {improvement.changed_sections.length > 0 && (
+            <ul
+              className="prompt-comparison-changed-list"
+              aria-label="Changed sections"
+            >
+              {improvement.changed_sections.map((key) => (
+                <li key={key}>{qualityGapLabel(key)}</li>
+              ))}
+            </ul>
+          )}
           <pre className="prompt-comparison-body improved">
             {improvement.improved_prompt}
           </pre>

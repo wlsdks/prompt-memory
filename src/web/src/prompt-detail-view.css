@@ -210,6 +210,35 @@
   border-color: rgba(94, 106, 210, 0.4);
 }
 
+.prompt-comparison-changed {
+  background: rgba(94, 106, 210, 0.16);
+  border-radius: 6px;
+  color: var(--pm-text);
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  margin-left: 8px;
+  padding: 2px 6px;
+  text-transform: uppercase;
+}
+
+.prompt-comparison-changed-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+  list-style: none;
+  margin: 0 0 6px;
+  padding: 0;
+}
+
+.prompt-comparison-changed-list li {
+  background: rgba(94, 106, 210, 0.1);
+  border-radius: 4px;
+  color: var(--pm-text-subtle);
+  font-size: 11px;
+  padding: 2px 6px;
+}
+
 @media (max-width: 720px) {
   .prompt-comparison {
     grid-template-columns: 1fr;
