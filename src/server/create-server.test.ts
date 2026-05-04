@@ -900,6 +900,95 @@ describe("createServer P2 ingest boundary", () => {
     expect(body.sensitive_prompt_count).toBe(1);
   });
 
+  it("records coach feedback with CSRF and aggregates the summary", async () => {
+    const storage = createMemoryStorage();
+    const server = createTestServer({ storage });
+    const session = await server.inject({
+      method: "GET",
+      url: "/api/v1/session",
+      headers: { host: "127.0.0.1:17373" },
+    });
+    const cookie = String(session.headers["set-cookie"]);
+    const csrfToken = session.json<{ data: { csrf_token: string } }>().data
+      .csrf_token;
+
+    const noCsrf = await server.inject({
+      method: "POST",
+      url: "/api/v1/prompts/prmt_20260504_100000_aabbccddeeff/coach-feedback",
+      headers: { host: "127.0.0.1:17373", cookie },
+      payload: { rating: "helpful" },
+    });
+    expect(noCsrf.statusCode).toBe(403);
+
+    const helpful = await server.inject({
+      method: "POST",
+      url: "/api/v1/prompts/prmt_20260504_100000_aabbccddeeff/coach-feedback",
+      headers: {
+        host: "127.0.0.1:17373",
+        cookie,
+        "x-csrf-token": csrfToken,
+      },
+      payload: { rating: "helpful" },
+    });
+    expect(helpful.statusCode).toBe(200);
+    expect(helpful.json<{ data: { rating: string } }>().data.rating).toBe(
+      "helpful",
+    );
+
+    const wrong = await server.inject({
+      method: "POST",
+      url: "/api/v1/prompts/prmt_20260504_100000_aabbccddeeff/coach-feedback",
+      headers: {
+        host: "127.0.0.1:17373",
+        cookie,
+        "x-csrf-token": csrfToken,
+      },
+      payload: { rating: "wrong" },
+    });
+    expect(wrong.statusCode).toBe(200);
+
+    const summary = await server.inject({
+      method: "GET",
+      url: "/api/v1/coach-feedback/summary",
+      headers: {
+        host: "127.0.0.1:17373",
+        authorization: "Bearer app-token",
+      },
+    });
+    expect(summary.statusCode).toBe(200);
+    expect(
+      summary.json<{
+        data: { total: number; helpful: number; helpful_ratio: number };
+      }>().data,
+    ).toMatchObject({ total: 2, helpful: 1, helpful_ratio: 0.5 });
+  });
+
+  it("rejects coach feedback with an unsupported rating", async () => {
+    const storage = createMemoryStorage();
+    const server = createTestServer({ storage });
+    const session = await server.inject({
+      method: "GET",
+      url: "/api/v1/session",
+      headers: { host: "127.0.0.1:17373" },
+    });
+    const cookie = String(session.headers["set-cookie"]);
+    const csrfToken = session.json<{ data: { csrf_token: string } }>().data
+      .csrf_token;
+
+    const bad = await server.inject({
+      method: "POST",
+      url: "/api/v1/prompts/prmt_20260504_100000_aabbccddeeff/coach-feedback",
+      headers: {
+        host: "127.0.0.1:17373",
+        cookie,
+        "x-csrf-token": csrfToken,
+      },
+      payload: { rating: "amazing" },
+    });
+
+    expect(bad.statusCode).toBeGreaterThanOrEqual(400);
+  });
+
   it("rejects import dry-run uploads with an unsupported source_type", async () => {
     const server = createTestServer();
     const session = await server.inject({
@@ -965,6 +1054,12 @@ function createMemoryStorage() {
   }> = [];
   const exportJobs = new Map<string, ExportJob>();
   const instructionReviews = new Map<string, ProjectInstructionReview>();
+  const coachFeedback: Array<{
+    id: string;
+    prompt_id: string;
+    rating: "helpful" | "not_helpful" | "wrong";
+    created_at: string;
+  }> = [];
 
   return {
     events,
@@ -1119,6 +1214,34 @@ function createMemoryStorage() {
       return {
         updated: false,
         usefulness: { copied_count: 0, bookmarked: false },
+      };
+    },
+    recordCoachFeedback(promptId: string, rating: string) {
+      const id = `cfb_${coachFeedback.length + 1}`;
+      const entry = {
+        id,
+        prompt_id: promptId,
+        rating: rating as "helpful" | "not_helpful" | "wrong",
+        created_at: "2026-05-04T00:00:00.000Z",
+      };
+      coachFeedback.push(entry);
+      return entry;
+    },
+    getCoachFeedbackSummary() {
+      const helpful = coachFeedback.filter(
+        (e) => e.rating === "helpful",
+      ).length;
+      const not_helpful = coachFeedback.filter(
+        (e) => e.rating === "not_helpful",
+      ).length;
+      const wrong = coachFeedback.filter((e) => e.rating === "wrong").length;
+      const total = coachFeedback.length;
+      return {
+        total,
+        helpful,
+        not_helpful,
+        wrong,
+        helpful_ratio: total > 0 ? Number((helpful / total).toFixed(4)) : 0,
       };
     },
     createExportJob(input: {
