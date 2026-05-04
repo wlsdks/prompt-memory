@@ -996,6 +996,24 @@ dd {
   font-weight: 650;
 }
 
+.trend-window-toggle {
+  background: transparent;
+  border: 1px solid var(--pm-border);
+  border-radius: 6px;
+  color: var(--pm-text-subtle);
+  cursor: pointer;
+  font-size: 12px;
+  font-weight: 600;
+  margin-left: 4px;
+  padding: 3px 8px;
+}
+
+.trend-window-toggle.active {
+  background: var(--pm-surface-raised);
+  border-color: rgba(94, 106, 210, 0.4);
+  color: var(--pm-text);
+}
+
 .panel-link-button {
   background: var(--pm-surface-raised);
   border: 1px solid var(--pm-border);
