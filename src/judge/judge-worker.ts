@@ -1,4 +1,5 @@
 import { runAutoJudge, type JudgeOutcome } from "./auto-judge.js";
+import { redactPrompt } from "../redaction/redact.js";
 import type {
   JudgeScoreStoragePort,
   JudgeTool,
@@ -116,7 +117,7 @@ export function createJudgeWorker(options: JudgeWorkerOptions): JudgeWorker {
         promptId: id,
         judgeTool: settings.tool,
         score: outcome.score,
-        reason: outcome.reason,
+        reason: redactJudgeReason(outcome.reason),
       });
       minuteWindow.push(nowMs);
       dailyCount += 1;
@@ -158,4 +159,8 @@ function readPrompt(
     return undefined;
   }
   return reader(id);
+}
+
+function redactJudgeReason(reason: string): string {
+  return redactPrompt(reason, "mask").stored_text;
 }
