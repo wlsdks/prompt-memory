@@ -45,6 +45,7 @@ import type {
   ImportJobListResult,
   ImportRecord,
   ImportJobStoragePort,
+  JudgeScoreStoragePort,
   ListPromptsOptions,
   PromptDetail,
   ProjectListResult,
@@ -113,6 +114,14 @@ import {
   type CoachFeedbackRating,
   type CoachFeedbackSummary,
 } from "./coach-feedback.js";
+import {
+  applyJudgeScoreMigration,
+  getLatestJudgeScore,
+  listPromptIdsNeedingJudge,
+  recordJudgeScore,
+  type JudgeScoreEntry,
+  type JudgeTool,
+} from "./judge-score.js";
 
 export type { PromptRow } from "./sqlite-rows.js";
 
@@ -134,7 +143,8 @@ export type SqlitePromptStorage = PromptStoragePort &
   ImportJobStoragePort &
   ExportJobStoragePort &
   AgentPromptJudgmentStoragePort &
-  CoachFeedbackStoragePort & {
+  CoachFeedbackStoragePort &
+  JudgeScoreStoragePort & {
     close(): void;
     getAppliedMigrations(): AppliedMigration[];
     listPromptRows(): PromptRow[];
@@ -238,6 +248,18 @@ export function createSqlitePromptStorage(
     },
     getCoachFeedbackSummary() {
       return getCoachFeedbackSummary(db);
+    },
+    recordJudgeScore(input) {
+      return recordJudgeScore(db, {
+        ...input,
+        now: options.now?.() ?? new Date(),
+      });
+    },
+    getLatestJudgeScore(promptId) {
+      return getLatestJudgeScore(db, promptId);
+    },
+    listPromptIdsNeedingJudge(limit) {
+      return listPromptIdsNeedingJudge(db, { limit });
     },
     listProjects() {
       return listProjectsForPolicy(db, options.hmacSecret);
@@ -346,6 +368,7 @@ function applyMigrations(db: Database.Database): void {
   applyProjectInstructionReviewMigration(db);
   applyAgentPromptJudgmentMigration(db);
   applyCoachFeedbackMigration(db);
+  applyJudgeScoreMigration(db);
 }
 
 function applyAnalysisChecklistTagsMigration(db: Database.Database): void {

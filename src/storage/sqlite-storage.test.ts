@@ -71,6 +71,7 @@ describe("SQLite prompt storage", () => {
       { version: 10, name: "010_project_instruction_reviews" },
       { version: 11, name: "011_agent_prompt_judgments" },
       { version: 12, name: "012_coach_feedback" },
+      { version: 13, name: "013_prompt_judge_scores" },
     ]);
     const db = new Database(join(dataDir, "prompt-memory.sqlite"));
     try {
@@ -1477,6 +1478,113 @@ describe("SQLite prompt storage", () => {
 
     storage.deletePrompt(prompt.id);
     expect(storage.getCoachFeedbackSummary().total).toBe(0);
+    storage.close();
+  });
+
+  it("records and reads back judge scores per prompt and lists ones that need judging", async () => {
+    const dataDir = createTempDir();
+    initializePromptMemory({ dataDir });
+    const storage = createSqlitePromptStorage({
+      dataDir,
+      hmacSecret: "test-secret",
+      now: nextDate([
+        "2026-05-04T10:00:00.000Z",
+        "2026-05-04T10:01:00.000Z",
+        "2026-05-04T10:02:00.000Z",
+        "2026-05-04T10:03:00.000Z",
+        "2026-05-04T10:04:00.000Z",
+      ]),
+    });
+    const judged = await storeClaudePrompt(storage, {
+      prompt: "first prompt to judge",
+      receivedAt: "2026-05-04T09:55:00.000Z",
+    });
+    const unjudged = await storeClaudePrompt(storage, {
+      prompt: "second prompt left unscored",
+      receivedAt: "2026-05-04T09:56:00.000Z",
+    });
+
+    const recorded = storage.recordJudgeScore({
+      promptId: judged.id,
+      judgeTool: "claude",
+      score: 78,
+      reason: "Goal clear, verification weak.",
+    });
+    const updated = storage.recordJudgeScore({
+      promptId: judged.id,
+      judgeTool: "claude",
+      score: 92,
+      reason: "Verification added in retry.",
+    });
+    const missing = storage.recordJudgeScore({
+      promptId: "prmt_does_not_exist",
+      judgeTool: "claude",
+      score: 50,
+      reason: "ignored",
+    });
+
+    expect(recorded).toMatchObject({
+      prompt_id: judged.id,
+      judge_tool: "claude",
+      score: 78,
+    });
+    expect(updated).toMatchObject({ score: 92 });
+    expect(missing).toBeUndefined();
+
+    const latest = storage.getLatestJudgeScore(judged.id);
+    expect(latest).toMatchObject({ score: 92, judge_tool: "claude" });
+
+    const pending = storage.listPromptIdsNeedingJudge(10);
+    expect(pending).toContain(unjudged.id);
+    expect(pending).not.toContain(judged.id);
+
+    storage.deletePrompt(judged.id);
+    expect(storage.getLatestJudgeScore(judged.id)).toBeUndefined();
+    storage.close();
+  });
+
+  it("clamps judge scores into 0-100 and rounds floats", async () => {
+    const dataDir = createTempDir();
+    initializePromptMemory({ dataDir });
+    const storage = createSqlitePromptStorage({
+      dataDir,
+      hmacSecret: "test-secret",
+      now: nextDate([
+        "2026-05-04T10:00:00.000Z",
+        "2026-05-04T10:01:00.000Z",
+        "2026-05-04T10:02:00.000Z",
+        "2026-05-04T10:03:00.000Z",
+      ]),
+    });
+    const prompt = await storeClaudePrompt(storage, {
+      prompt: "prompt for clamp test",
+      receivedAt: "2026-05-04T09:55:00.000Z",
+    });
+
+    storage.recordJudgeScore({
+      promptId: prompt.id,
+      judgeTool: "claude",
+      score: 142,
+      reason: "above range",
+    });
+    expect(storage.getLatestJudgeScore(prompt.id)?.score).toBe(100);
+
+    storage.recordJudgeScore({
+      promptId: prompt.id,
+      judgeTool: "claude",
+      score: -7,
+      reason: "below range",
+    });
+    expect(storage.getLatestJudgeScore(prompt.id)?.score).toBe(0);
+
+    storage.recordJudgeScore({
+      promptId: prompt.id,
+      judgeTool: "claude",
+      score: 84.6,
+      reason: "fractional",
+    });
+    expect(storage.getLatestJudgeScore(prompt.id)?.score).toBe(85);
+
     storage.close();
   });
 
