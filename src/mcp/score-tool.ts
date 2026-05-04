@@ -97,6 +97,7 @@ export function coachPromptTool(
           {
             max_prompts: args.max_prompts ?? 200,
             low_score_limit: args.low_score_limit ?? 8,
+            language: args.language,
           },
           options,
         )
@@ -228,6 +229,7 @@ export function scorePromptArchiveTool(
           cwdPrefix: args.cwd_prefix,
           receivedFrom: args.received_from,
           receivedTo: args.received_to,
+          language: args.language,
         },
         options.now,
       );
