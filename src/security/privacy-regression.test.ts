@@ -20,9 +20,12 @@ import { createSqlitePromptStorage } from "../storage/sqlite.js";
 const tempDirs: string[] = [];
 
 const rawSecret = "sk-proj-privacy1234567890abcdef";
+const rawNpmToken = ["npm", "_", "0123456789ABCDEFabcdef0123456789ABCDef"].join(
+  "",
+);
 const rawCwd = "/Users/example/private-project";
 const rawPromptPath = `${rawCwd}/src/secret.ts`;
-const rawPrompt = `Fix ${rawPromptPath} with token ${rawSecret}. Run pnpm test.`;
+const rawPrompt = `Fix ${rawPromptPath} with token ${rawSecret}. Publish with ${rawNpmToken}. Run pnpm test.`;
 
 afterEach(() => {
   while (tempDirs.length > 0) {
@@ -48,6 +51,7 @@ describe("privacy regression fixture", () => {
       expectNoRawFixture(dbSnapshot, { includeCwd: false });
 
       expect(storage.searchPromptIds(rawSecret)).toEqual([]);
+      expect(storage.searchPromptIds(rawNpmToken)).toEqual([]);
       expect(storage.searchPromptIds(rawPromptPath)).toEqual([]);
       expect(storage.searchPromptIds("REDACTED")).toEqual([id]);
     } finally {
@@ -227,6 +231,7 @@ function expectNoRawFixture(
   options: { includeCwd: boolean },
 ): void {
   expect(value).not.toContain(rawSecret);
+  expect(value).not.toContain(rawNpmToken);
   expect(value).not.toContain(rawPromptPath);
 
   if (options.includeCwd) {
