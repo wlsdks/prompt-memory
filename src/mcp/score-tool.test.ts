@@ -531,6 +531,18 @@ describe("agent judge MCP tools", () => {
     expect(result.error_code).toBe("invalid_input");
   });
 
+  it("hints next actions when prepare_agent_rewrite latest=true on an empty archive", () => {
+    const dataDir = createTempDir();
+    initializePromptMemory({ dataDir });
+
+    const result = prepareAgentRewriteTool({ latest: true }, { dataDir });
+
+    expect(result.is_error).toBe(true);
+    expect(result.error_code).toBe("not_found");
+    expect(result.message).toContain("Capture a Claude Code or Codex prompt");
+    expect(result.message).toContain("`prompt_id`");
+  });
+
   it("prepares a redacted LLM judge packet for the current agent session", async () => {
     const dataDir = createTempDir();
     const init = initializePromptMemory({ dataDir });
@@ -659,6 +671,21 @@ describe("agent judge MCP tools", () => {
 
     expect(result.is_error).toBe(true);
     expect(result.error_code).toBe("invalid_input");
+  });
+
+  it("hints next actions when prepare_agent_judge_batch finds no prompts", () => {
+    const dataDir = createTempDir();
+    initializePromptMemory({ dataDir });
+
+    const result = prepareAgentJudgeBatchTool(
+      { selection: "low_score", max_prompts: 5 },
+      { dataDir },
+    );
+
+    expect(result.is_error).toBe(true);
+    expect(result.error_code).toBe("not_found");
+    expect(result.message).toContain("Capture Claude Code or Codex prompts");
+    expect(result.message).toContain("get_prompt_memory_status");
   });
 });
 

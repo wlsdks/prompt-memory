@@ -95,7 +95,7 @@ export function prepareAgentJudgeBatchTool(
       if (selected.length === 0) {
         return batchError(
           "not_found",
-          "No stored prompts are available for agent judging.",
+          "No stored prompts are available for agent judging. Capture Claude Code or Codex prompts first, or call get_prompt_memory_status to confirm what's in the archive.",
         );
       }
 
