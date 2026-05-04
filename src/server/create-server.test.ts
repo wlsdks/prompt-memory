@@ -45,6 +45,22 @@ describe("createServer P2 ingest boundary", () => {
     });
   });
 
+  it("does not expose the local data directory through health", async () => {
+    const server = createTestServer();
+
+    const response = await server.inject({
+      method: "GET",
+      url: "/api/v1/health",
+      headers: { host: "127.0.0.1:17373" },
+    });
+    const body = response.json() as Record<string, unknown>;
+
+    expect(body).not.toHaveProperty("data_dir");
+    expect(JSON.stringify(body)).not.toContain("/Users");
+    expect(JSON.stringify(body)).not.toContain("/home");
+    expect(JSON.stringify(body)).not.toContain("/tmp");
+  });
+
   it("returns an empty favicon response for browser probes", async () => {
     const server = createTestServer();
 
