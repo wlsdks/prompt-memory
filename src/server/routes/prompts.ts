@@ -52,6 +52,10 @@ const ArchiveScoreQuerySchema = z.object({
   to: z.string().trim().min(1).optional(),
 });
 
+const QualityDashboardQuerySchema = z.object({
+  trend_days: z.coerce.number().int().positive().max(90).optional(),
+});
+
 const PromptParamsSchema = z.object({
   id: z.string().regex(/^prmt_[A-Za-z0-9_]+$/),
 });
@@ -153,8 +157,13 @@ export function registerPromptRoutes(
   server.get("/api/v1/quality", async (request) => {
     requireAppAccess(request, options.auth);
     const storage = requireReadStorage(options.storage, request.url);
+    const query = QualityDashboardQuerySchema.parse(request.query);
 
-    return { data: toBrowserQualityDashboard(storage.getQualityDashboard()) };
+    return {
+      data: toBrowserQualityDashboard(
+        storage.getQualityDashboard({ trendDays: query.trend_days }),
+      ),
+    };
   });
 
   server.get("/api/v1/score", async (request) => {

@@ -491,6 +491,38 @@ describe("prompt read/delete API", () => {
     ]);
   });
 
+  it("returns the requested trend window when trend_days is passed", async () => {
+    const { server } = await createPromptApiFixture();
+
+    const monthly = await server.inject({
+      method: "GET",
+      url: "/api/v1/quality?trend_days=30",
+      headers: {
+        host: "127.0.0.1:17373",
+        authorization: "Bearer app-token",
+      },
+    });
+    expect(monthly.statusCode).toBe(200);
+    const body = monthly.json<{
+      data: { trend: { daily: Array<{ date: string }> } };
+    }>().data;
+    expect(body.trend.daily).toHaveLength(30);
+  });
+
+  it("rejects trend_days outside [1, 90]", async () => {
+    const { server } = await createPromptApiFixture();
+
+    const invalid = await server.inject({
+      method: "GET",
+      url: "/api/v1/quality?trend_days=200",
+      headers: {
+        host: "127.0.0.1:17373",
+        authorization: "Bearer app-token",
+      },
+    });
+    expect(invalid.statusCode).toBeGreaterThanOrEqual(400);
+  });
+
   it("returns exact duplicate prompt groups without prompt bodies", async () => {
     const { server, ids } = await createDuplicatePromptApiFixture();
 
