@@ -181,8 +181,12 @@ export function createSqlitePromptStorage(
     deletePrompt(id) {
       return deletePrompt(db, id);
     },
-    getQualityDashboard() {
-      return getQualityDashboard(db, options.now?.() ?? new Date());
+    getQualityDashboard(dashboardOptions = {}) {
+      return getQualityDashboard(
+        db,
+        options.now?.() ?? new Date(),
+        dashboardOptions,
+      );
     },
     recordPromptUsage(id, type) {
       return recordPromptUsage(db, id, type, options.now?.() ?? new Date());
@@ -1979,7 +1983,9 @@ function readPromptAnalysis(
 function getQualityDashboard(
   db: Database.Database,
   now: Date,
+  options: { trendDays?: number } = {},
 ): PromptQualityDashboard {
+  const trendDays = clampTrendDays(options.trendDays);
   const totalPrompts = readCount(
     db,
     "SELECT COUNT(*) AS count FROM prompts WHERE deleted_at IS NULL",
@@ -2021,7 +2027,7 @@ function getQualityDashboard(
     recent,
     quality_score: buildDashboardQualityScore(qualityRows),
     trend: {
-      daily: buildDailyTrend(qualityRows, now),
+      daily: buildDailyTrend(qualityRows, now, trendDays),
     },
     distribution: {
       by_tool: readDistribution(
@@ -2046,8 +2052,9 @@ function getQualityDashboard(
 function buildDailyTrend(
   rows: PromptQualityRow[],
   now: Date,
+  days = 7,
 ): PromptQualityDashboard["trend"]["daily"] {
-  const dates = lastDayKeys(now, 7);
+  const dates = lastDayKeys(now, days);
   const buckets = new Map<
     string,
     {
@@ -2677,6 +2684,11 @@ function patternMessage(
 
 function daysAgo(now: Date, days: number): string {
   return new Date(now.getTime() - days * 24 * 60 * 60 * 1000).toISOString();
+}
+
+function clampTrendDays(value: number | undefined): number {
+  if (value === undefined || !Number.isFinite(value)) return 7;
+  return Math.max(1, Math.min(90, Math.round(value)));
 }
 
 function lastDayKeys(now: Date, days: number): string[] {

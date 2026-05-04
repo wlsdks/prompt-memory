@@ -459,6 +459,49 @@ describe("SQLite prompt storage", () => {
     expect(storage.getPrompt(sensitive.id)?.is_sensitive).toBe(true);
   });
 
+  it("returns 30-day daily trend when getQualityDashboard is given trendDays=30", async () => {
+    const dataDir = createTempDir();
+    initializePromptMemory({ dataDir });
+    const storage = createSqlitePromptStorage({
+      dataDir,
+      hmacSecret: "test-secret",
+      now: () => new Date("2026-05-03T12:00:00.000Z"),
+    });
+    await storeClaudePrompt(storage, {
+      prompt: "Make this better.",
+      receivedAt: "2026-05-03T10:00:00.000Z",
+    });
+
+    const weekly = storage.getQualityDashboard();
+    const monthly = storage.getQualityDashboard({ trendDays: 30 });
+
+    expect(weekly.trend.daily).toHaveLength(7);
+    expect(monthly.trend.daily).toHaveLength(30);
+    expect(monthly.trend.daily[monthly.trend.daily.length - 1]?.date).toBe(
+      "2026-05-03",
+    );
+  });
+
+  it("clamps invalid trendDays to a sane range", async () => {
+    const dataDir = createTempDir();
+    initializePromptMemory({ dataDir });
+    const storage = createSqlitePromptStorage({
+      dataDir,
+      hmacSecret: "test-secret",
+      now: () => new Date("2026-05-03T12:00:00.000Z"),
+    });
+
+    expect(
+      storage.getQualityDashboard({ trendDays: 0 }).trend.daily,
+    ).toHaveLength(1);
+    expect(
+      storage.getQualityDashboard({ trendDays: 1000 }).trend.daily,
+    ).toHaveLength(90);
+    expect(
+      storage.getQualityDashboard({ trendDays: Number.NaN }).trend.daily,
+    ).toHaveLength(7);
+  });
+
   it("connects Claude ingest to real Markdown, SQLite, and FTS storage", async () => {
     const dataDir = createTempDir();
     initializePromptMemory({ dataDir });
