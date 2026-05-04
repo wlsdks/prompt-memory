@@ -135,6 +135,31 @@ describe("scorePromptTool", () => {
     expect(serialized).not.toContain("/Users/example");
   });
 
+  it("renders archive practice plan in Korean when language=ko is passed", async () => {
+    const dataDir = createTempDir();
+    const init = initializePromptMemory({ dataDir });
+    const storage = createSqlitePromptStorage({
+      dataDir,
+      hmacSecret: init.hookAuth.web_session_secret,
+      now: () => new Date("2026-05-04T10:00:00.000Z"),
+    });
+    await storeClaudePrompt(
+      storage,
+      "Make this better",
+      "2026-05-04T09:59:00.000Z",
+    );
+    storage.close();
+
+    const result = scorePromptArchiveTool(
+      { max_prompts: 100, low_score_limit: 1, language: "ko" },
+      { dataDir },
+    );
+
+    expect(result.next_prompt_template).toContain("목표:");
+    expect(result.next_prompt_template).not.toContain("Goal:");
+    expect(result.practice_plan[0]?.prompt_rule).toMatch(/[가-힣]/);
+  });
+
   it("returns an actionable tool error for ambiguous input", () => {
     const result = scorePromptTool({});
 

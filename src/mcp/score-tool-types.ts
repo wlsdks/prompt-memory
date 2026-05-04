@@ -32,6 +32,7 @@ export type ScorePromptArchiveToolArguments = {
   cwd_prefix?: string;
   received_from?: string;
   received_to?: string;
+  language?: "en" | "ko";
 };
 
 export type ReviewProjectInstructionsToolArguments = {
