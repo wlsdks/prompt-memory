@@ -88,7 +88,7 @@ describe("mcp catalog", () => {
         },
         total_prompts: 6,
       }),
-      health: { data_dir: "/tmp/prompt-memory", ok: true, version: "0.1.0" },
+      health: { ok: true, version: "0.1.0" },
       settings,
     });
 

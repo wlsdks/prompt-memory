@@ -185,7 +185,7 @@ export function createMcpReadiness({
   settings,
 }: {
   dashboard?: QualityDashboard;
-  health?: { ok: boolean; version: string; data_dir: string };
+  health?: { ok: boolean; version: string };
   settings?: SettingsResponse;
 }): McpReadiness {
   const totalPrompts = dashboard?.total_prompts;
