@@ -11,6 +11,7 @@ import { createSqlitePromptStorage } from "../storage/sqlite.js";
 import {
   createAnonymizedExportPreview,
   executeAnonymizedExport,
+  parseExportPreset,
 } from "./anonymized.js";
 
 const tempDirs: string[] = [];
@@ -193,6 +194,12 @@ describe("anonymized export", () => {
       }),
     ).toThrow("Export job is no longer valid");
     expect(storage.getExportJob(preview.id)?.status).toBe("invalid");
+  });
+
+  it("lists valid presets when an unsupported preset is given", () => {
+    expect(() => parseExportPreset("not-a-preset")).toThrow(
+      /Valid presets: personal_backup, anonymized_review, issue_report_attachment/,
+    );
   });
 });
 

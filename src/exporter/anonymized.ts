@@ -70,7 +70,9 @@ export function parseExportPreset(value: string): ExportPreset {
     return value as ExportPreset;
   }
 
-  throw new Error(`Unsupported export preset: ${value}`);
+  throw new Error(
+    `Unsupported export preset: ${value}. Valid presets: ${EXPORT_PRESETS.join(", ")}.`,
+  );
 }
 
 export function createAnonymizedExportPreview(
