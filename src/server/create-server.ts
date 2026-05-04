@@ -111,7 +111,7 @@ export function createServer(options: CreateServerOptions): FastifyInstance {
     reply.status(204).send();
   });
 
-  registerHealthRoutes(server, options.dataDir);
+  registerHealthRoutes(server);
   registerSessionRoutes(server, options.auth);
   registerIngestRoutes(server, {
     auth: options.auth,
