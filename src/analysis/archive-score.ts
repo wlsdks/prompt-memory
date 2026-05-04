@@ -15,6 +15,7 @@ export type ArchiveScoreOptions = {
   cwdPrefix?: string;
   receivedFrom?: string;
   receivedTo?: string;
+  language?: "en" | "ko";
 };
 
 export type ArchiveScoreReport = {
@@ -83,6 +84,14 @@ const DEFAULT_PROMPT_TEMPLATE = [
   "Output:",
 ].join("\n");
 
+const DEFAULT_PROMPT_TEMPLATE_KO = [
+  "목표:",
+  "맥락:",
+  "범위:",
+  "검증:",
+  "출력:",
+].join("\n");
+
 const GAP_RULES: Record<
   string,
   {
@@ -116,6 +125,41 @@ const GAP_RULES: Record<
     label: "Verification criteria",
     promptRule: "Include the test command, check, or acceptance criteria.",
     templateLine: "Verification: name commands or acceptance checks.",
+  },
+};
+
+const GAP_RULES_KO: Record<
+  string,
+  {
+    label: string;
+    promptRule: string;
+    templateLine: string;
+  }
+> = {
+  "goal clarity": {
+    label: "목표 명확성",
+    promptRule: "정확한 목표와 기대 동작을 먼저 한 문장으로 적어주세요.",
+    templateLine: "목표: 대상과 기대 동작을 한 문장으로 적어주세요.",
+  },
+  "background context": {
+    label: "배경 맥락",
+    promptRule: "관련 파일, 현재 상태, 제약을 함께 적어주세요.",
+    templateLine: "맥락: 관련 파일과 현재 상태, 제약을 적어주세요.",
+  },
+  "scope limits": {
+    label: "범위 제한",
+    promptRule: "변경 가능한 범위와 유지해야 할 부분을 함께 명시해주세요.",
+    templateLine: "범위: 허용 변경과 유지 영역을 명시해주세요.",
+  },
+  "output format": {
+    label: "출력 형식",
+    promptRule: "원하는 응답 형식을 먼저 알려주세요.",
+    templateLine: "출력: 원하는 응답 형식을 적어주세요.",
+  },
+  "verification criteria": {
+    label: "검증 기준",
+    promptRule: "실행할 테스트 명령이나 수용 기준을 함께 적어주세요.",
+    templateLine: "검증: 실행할 명령이나 수용 기준을 적어주세요.",
   },
 };
 
@@ -163,8 +207,8 @@ export function createArchiveScoreReport(
     },
     distribution: countBands(prompts),
     top_gaps: topGaps,
-    practice_plan: buildPracticePlan(topGaps),
-    next_prompt_template: buildNextPromptTemplate(topGaps),
+    practice_plan: buildPracticePlan(topGaps, options.language),
+    next_prompt_template: buildNextPromptTemplate(topGaps, options.language),
     low_score_prompts: prompts
       .map(toArchivePromptScoreSummary)
       .sort(
@@ -193,51 +237,72 @@ export function createArchiveScoreReport(
 
 function buildPracticePlan(
   gaps: ArchiveScoreReport["top_gaps"],
+  language: "en" | "ko" = "en",
 ): ArchivePracticePlanItem[] {
   return gaps.slice(0, 3).map((gap, index) => {
-    const rule = ruleFor(gap.label);
+    const rule = ruleFor(gap.label, language);
 
     return {
       priority: index + 1,
       label: rule.label,
       prompt_rule: rule.promptRule,
-      reason: `${gap.count} measured prompt${gap.count === 1 ? "" : "s"} missed this habit.`,
+      reason:
+        language === "ko"
+          ? `${gap.count}개의 측정된 프롬프트가 이 습관을 놓쳤습니다.`
+          : `${gap.count} measured prompt${gap.count === 1 ? "" : "s"} missed this habit.`,
       count: gap.count,
       rate: gap.rate,
     };
   });
 }
 
-function buildNextPromptTemplate(gaps: ArchiveScoreReport["top_gaps"]): string {
+function buildNextPromptTemplate(
+  gaps: ArchiveScoreReport["top_gaps"],
+  language: "en" | "ko" = "en",
+): string {
+  const fallback =
+    language === "ko" ? DEFAULT_PROMPT_TEMPLATE_KO : DEFAULT_PROMPT_TEMPLATE;
   if (gaps.length === 0) {
-    return DEFAULT_PROMPT_TEMPLATE;
+    return fallback;
   }
 
-  const selected = gaps.slice(0, 3).map((gap) => ruleFor(gap.label));
+  const selected = gaps.slice(0, 3).map((gap) => ruleFor(gap.label, language));
   const lines = [
     ...selected.map((rule) => rule.templateLine),
-    ...DEFAULT_PROMPT_TEMPLATE.split("\n").filter(
-      (line) =>
-        !selected.some((rule) =>
-          rule.templateLine.toLowerCase().startsWith(line.toLowerCase()),
-        ),
-    ),
+    ...fallback
+      .split("\n")
+      .filter(
+        (line) =>
+          !selected.some((rule) =>
+            rule.templateLine.toLowerCase().startsWith(line.toLowerCase()),
+          ),
+      ),
   ];
 
   return lines.join("\n");
 }
 
-function ruleFor(label: string): {
+function ruleFor(
+  label: string,
+  language: "en" | "ko" = "en",
+): {
   label: string;
   promptRule: string;
   templateLine: string;
 } {
   const normalized = label.trim().toLowerCase();
+  const table = language === "ko" ? GAP_RULES_KO : GAP_RULES;
   return (
-    GAP_RULES[normalized] ?? {
+    table[normalized] ?? {
       label,
-      promptRule: `Make "${label}" explicit before asking for implementation.`,
-      templateLine: `${label}: make this expectation explicit.`,
+      promptRule:
+        language === "ko"
+          ? `구현을 요청하기 전에 "${label}"을(를) 명확히 적어주세요.`
+          : `Make "${label}" explicit before asking for implementation.`,
+      templateLine:
+        language === "ko"
+          ? `${label}: 이 기대를 명확히 적어주세요.`
+          : `${label}: make this expectation explicit.`,
     }
   );
 }
