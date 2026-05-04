@@ -27,6 +27,7 @@ import {
 } from "./api.js";
 import { formatDate } from "./formatters.js";
 import type { Language } from "./i18n.js";
+import { JudgeScorePanel } from "./judge-score-panel.js";
 import { SafeMarkdown } from "./markdown.js";
 import { PromptAgentActionsPanel } from "./prompt-agent-actions.js";
 import { isQualityGapKey, qualityGapLabel } from "./quality-options.js";
@@ -119,6 +120,7 @@ export function PromptDetailView({
             onOpenQualityGap={onOpenQualityGap}
           />
         )}
+        <JudgeScorePanel prompt={prompt} />
         <PromptCoachPanel
           copied={copiedImprovement}
           improvement={improvement}

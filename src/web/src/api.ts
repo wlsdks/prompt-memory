@@ -40,6 +40,16 @@ export type PromptDetail = PromptSummary & {
     created_at: string;
   };
   improvement_drafts: PromptImprovementDraft[];
+  judge_score?: PromptJudgeScore;
+};
+
+export type PromptJudgeScore = {
+  id: string;
+  prompt_id: string;
+  judge_tool: "claude" | "codex";
+  score: number;
+  reason: string;
+  created_at: string;
 };
 
 export type PromptImprovementDraft = {
