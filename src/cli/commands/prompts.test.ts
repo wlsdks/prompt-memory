@@ -92,6 +92,15 @@ describe("prompt CLI commands", () => {
       ),
     ).toMatchObject({ items: [] });
   });
+
+  it("refuses to print an open URL for an unknown prompt id", () => {
+    const dataDir = createTempDir();
+    initializePromptMemory({ dataDir });
+
+    expect(() => openPromptForCli("prmt_does_not_exist", { dataDir })).toThrow(
+      "Prompt not found",
+    );
+  });
 });
 
 async function createCliFixture(dataDir: string) {

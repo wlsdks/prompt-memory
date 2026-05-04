@@ -145,8 +145,13 @@ export function openPromptForCli(
   id: string,
   options: PromptIdOptions = {},
 ): string {
-  const config = loadPromptMemoryConfig(options.dataDir);
-  return `http://${config.server.host}:${config.server.port}/prompts/${encodeURIComponent(id)}`;
+  return withStorage(options.dataDir, (storage) => {
+    if (!storage.getPrompt(id)) {
+      throw new Error(`Prompt not found: ${id}`);
+    }
+    const config = loadPromptMemoryConfig(options.dataDir);
+    return `http://${config.server.host}:${config.server.port}/prompts/${encodeURIComponent(id)}`;
+  });
 }
 
 export function rebuildIndexForCli(options: PromptIdOptions = {}): string {
