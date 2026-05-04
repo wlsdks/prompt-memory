@@ -3,6 +3,10 @@ import type { Command } from "commander";
 import { fileURLToPath } from "node:url";
 
 import { loadHookAuth, loadPromptMemoryConfig } from "../../config/config.js";
+import {
+  createJudgeWorker,
+  type JudgeWorker,
+} from "../../judge/judge-worker.js";
 import { createServer } from "../../server/create-server.js";
 import { createSqlitePromptStorage } from "../../storage/sqlite.js";
 
@@ -13,6 +17,7 @@ export type ServerCommandOptions = {
 export type StartedServer = {
   url: string;
   server: FastifyInstance;
+  judgeWorker: JudgeWorker;
   close(): Promise<void>;
 };
 
@@ -53,10 +58,18 @@ export async function startPromptMemoryServer(
     port: config.server.port,
   });
 
+  const judgeWorker = createJudgeWorker({
+    storage,
+    getSettings: () => loadPromptMemoryConfig(options.dataDir).auto_judge,
+  });
+  judgeWorker.start();
+
   return {
     url,
     server,
+    judgeWorker,
     async close() {
+      judgeWorker.stop();
       await server.close();
       storage.close();
     },
