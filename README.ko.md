@@ -165,7 +165,10 @@ http://127.0.0.1:17373
 
 macOS, Linux arm64, Windows 지원을 목표로 하지만 stable release로 주장하려면 `better-sqlite3`, 파일 권한, hook command 동작에 대한 release smoke 검증이 더 필요합니다.
 
-## 설치와 setup
+## 설치 (Development Checkout)와 setup 옵션 reference
+
+이 섹션은 contributor와 모든 `setup` 옵션이 필요한 사용자를 위한 reference입니다.
+npm으로 설치한 일반 사용자는 위의 [빠른 시작](#빠른-시작)을 따라가면 됩니다.
 
 agent marketplace 흐름 없이 로컬 개발로 설치:
 
@@ -204,11 +207,7 @@ pnpm prompt-memory setup --no-service
 pnpm prompt-memory server
 ```
 
-웹 UI:
-
-```text
-http://127.0.0.1:17373
-```
+웹 UI URL은 빠른 시작과 동일합니다: `http://127.0.0.1:17373`.
 
 기본 데이터 위치:
 
