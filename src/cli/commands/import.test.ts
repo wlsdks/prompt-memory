@@ -71,6 +71,25 @@ describe("import CLI", () => {
     ).toThrow("--dry-run is required");
   });
 
+  it("includes a usage example when --dry-run is omitted", () => {
+    expect(() =>
+      importDryRunForCli({
+        dryRun: false,
+        file: "/tmp/missing.jsonl",
+        source: "manual-jsonl",
+      }),
+    ).toThrow(/prompt-memory import --dry-run --file/);
+  });
+
+  it("includes a usage hint when --file is omitted", () => {
+    expect(() =>
+      importDryRunForCli({
+        dryRun: true,
+        source: "manual-jsonl",
+      }),
+    ).toThrow(/--file <path>/);
+  });
+
   it("does not mutate prompt storage during dry-run", () => {
     const dataDir = createTempDir("prompt-memory-import-data-");
     initializePromptMemory({ dataDir });
