@@ -51,16 +51,22 @@ export async function executeImport(
     : undefined;
 
   if (options.resumeJobId && !existingJob) {
-    throw new Error(`Import job not found: ${options.resumeJobId}`);
+    throw new Error(
+      `Import job not found: ${options.resumeJobId}. Run prompt-memory import-job <id> to confirm the saved job, or rerun --dry-run --save-job to start a new one.`,
+    );
   }
   if (
     existingJob &&
     existingJob.source_path_hash !== scan.summary.source_path_hash
   ) {
-    throw new Error("Import source does not match saved job.");
+    throw new Error(
+      "Import source does not match saved job. Use the same --file path that produced the dry-run, or rerun --dry-run --save-job for the new file.",
+    );
   }
   if (existingJob && existingJob.source_type !== scan.summary.source_type) {
-    throw new Error("Import source type does not match saved job.");
+    throw new Error(
+      `Import source type does not match saved job. The saved job was --source ${existingJob.source_type}; pass the same value.`,
+    );
   }
   if (existingJob?.status === "completed") {
     return toExecuteResult(existingJob);

@@ -90,6 +90,28 @@ describe("import CLI", () => {
     ).toThrow(/--file <path>/);
   });
 
+  it("hints at the next command when --resume points to a missing job", async () => {
+    const dataDir = createTempDir("prompt-memory-import-missing-");
+    initializePromptMemory({ dataDir });
+    const file = writeJsonl([
+      {
+        hook_event_name: "UserPromptSubmit",
+        session_id: "session-x",
+        cwd: "/Users/example/project",
+        prompt: "anything",
+      },
+    ]);
+
+    await expect(
+      importForCli({
+        dataDir,
+        file,
+        resume: "imp_does_not_exist",
+        source: "manual-jsonl",
+      }),
+    ).rejects.toThrow(/Import job not found.*prompt-memory import-job/);
+  });
+
   it("does not mutate prompt storage during dry-run", () => {
     const dataDir = createTempDir("prompt-memory-import-data-");
     initializePromptMemory({ dataDir });
