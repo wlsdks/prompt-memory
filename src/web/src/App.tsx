@@ -115,6 +115,7 @@ export function App() {
   >();
   const [settings, setSettings] = useState<SettingsResponse | undefined>();
   const [dashboard, setDashboard] = useState<QualityDashboard | undefined>();
+  const [trendDays, setTrendDays] = useState<7 | 30>(7);
   const [archiveScore, setArchiveScore] = useState<
     ArchiveScoreReport | undefined
   >();
@@ -198,14 +199,17 @@ export function App() {
   }, []);
 
   useEffect(() => {
-    if (!needsDashboardData(view.name) || dashboard) {
+    if (!needsDashboardData(view.name)) {
+      return;
+    }
+    if (dashboard && dashboard.trend.daily.length === trendDays) {
       return;
     }
 
-    void getQualityDashboard()
+    void getQualityDashboard({ trendDays })
       .then(setDashboard)
       .catch(() => undefined);
-  }, [dashboard, view.name]);
+  }, [dashboard, trendDays, view.name]);
 
   useEffect(() => {
     if (!needsArchiveScoreData(view.name) || archiveScore) {
@@ -910,6 +914,11 @@ export function App() {
             }}
             onMeasure={() => void measureArchive()}
             onNavigateSection={(section) => navigate({ name: section })}
+            trendDays={trendDays}
+            onChangeTrendDays={(days) => {
+              setTrendDays(days);
+              setDashboard(undefined);
+            }}
           />
         )}
         {view.name === "coach" && (
@@ -941,6 +950,11 @@ export function App() {
             }}
             onRefreshArchiveScore={() => void refreshArchiveScore()}
             onSelect={(id) => navigate({ name: "detail", id })}
+            trendDays={trendDays}
+            onChangeTrendDays={(days) => {
+              setTrendDays(days);
+              setDashboard(undefined);
+            }}
           />
         )}
         {view.name === "benchmark" && (
@@ -1197,6 +1211,8 @@ function DashboardView({
   onOpenFilteredList,
   onMeasure,
   onNavigateSection,
+  trendDays,
+  onChangeTrendDays,
 }: {
   archiveScore?: ArchiveScoreReport;
   dashboard?: QualityDashboard;
@@ -1206,6 +1222,8 @@ function DashboardView({
   onOpenFilteredList(filters: PromptFilters): void;
   onMeasure(): void;
   onNavigateSection(section: WorkspaceSection): void;
+  trendDays: 7 | 30;
+  onChangeTrendDays(days: 7 | 30): void;
 }) {
   if (loading || !dashboard) {
     return <div className="panel empty">Loading dashboard.</div>;
@@ -1292,6 +1310,8 @@ function DashboardView({
             receivedTo: date,
           })
         }
+        trendDays={trendDays}
+        onChangeTrendDays={onChangeTrendDays}
       />
     </div>
   );
@@ -1406,6 +1426,8 @@ function ScoresView({
   onOpenFilteredList,
   onRefreshArchiveScore,
   onSelect,
+  trendDays,
+  onChangeTrendDays,
 }: {
   archiveScore?: ArchiveScoreReport;
   dashboard?: QualityDashboard;
@@ -1413,6 +1435,8 @@ function ScoresView({
   onOpenFilteredList(filters: PromptFilters): void;
   onRefreshArchiveScore(): void;
   onSelect(id: string): void;
+  trendDays: 7 | 30;
+  onChangeTrendDays(days: 7 | 30): void;
 }) {
   if (loading || !dashboard) {
     return <div className="panel empty">Loading dashboard.</div>;
@@ -1433,6 +1457,8 @@ function ScoresView({
             receivedTo: date,
           })
         }
+        trendDays={trendDays}
+        onChangeTrendDays={onChangeTrendDays}
       />
     </div>
   );
@@ -2204,15 +2230,31 @@ function ProjectProfilesPanel({
 function TrendPanel({
   daily,
   onSelectDay,
+  trendDays,
+  onChangeTrendDays,
 }: {
   daily: QualityDashboard["trend"]["daily"];
   onSelectDay(date: string): void;
+  trendDays: 7 | 30;
+  onChangeTrendDays(days: 7 | 30): void;
 }) {
   return (
     <section className="panel trend-panel" aria-label="Recent quality trend">
       <div className="panel-heading-row">
         <h2>Recent quality trend</h2>
-        <span>7 days</span>
+        <div role="group" aria-label="Trend window">
+          {([7, 30] as const).map((days) => (
+            <button
+              aria-pressed={trendDays === days}
+              className={`trend-window-toggle${trendDays === days ? " active" : ""}`}
+              key={days}
+              onClick={() => onChangeTrendDays(days)}
+              type="button"
+            >
+              {days} days
+            </button>
+          ))}
+        </div>
       </div>
       <QualityTrendChart daily={daily} />
       <div className="trend-list">
