@@ -52,6 +52,40 @@ describe("scorePromptTool", () => {
     expect(serialized).not.toContain("src/web/src/App.tsx only");
   });
 
+  it("returns weight/earned per criterion in quality_score.breakdown and on each checklist item", () => {
+    const result = scorePromptTool({
+      prompt:
+        "Because export review is unclear, inspect src/web/src/App.tsx only, run pnpm test, and return a Markdown summary.",
+    });
+
+    if ("is_error" in result) {
+      throw new Error("scorePromptTool returned an error");
+    }
+
+    const breakdownKeys = result.quality_score.breakdown.map(
+      (entry) => entry.key,
+    );
+    expect(breakdownKeys).toEqual(
+      expect.arrayContaining([
+        "goal_clarity",
+        "background_context",
+        "scope_limits",
+        "output_format",
+        "verification_criteria",
+      ]),
+    );
+    for (const entry of result.quality_score.breakdown) {
+      expect(entry.weight).toBeGreaterThan(0);
+      expect(entry.earned).toBeGreaterThanOrEqual(0);
+      expect(entry.earned).toBeLessThanOrEqual(entry.weight);
+    }
+    for (const item of result.checklist) {
+      expect(item.weight).toBeGreaterThan(0);
+      expect(item.earned).toBeGreaterThanOrEqual(0);
+      expect(item.earned).toBeLessThanOrEqual(item.weight);
+    }
+  });
+
   it("scores the latest stored prompt by id without returning the prompt body", async () => {
     const dataDir = createTempDir();
     const init = initializePromptMemory({ dataDir });

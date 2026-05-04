@@ -126,6 +126,12 @@ try {
     .getByRole("heading", { name: "Improvement draft for manual resubmission" })
     .waitFor();
   await assertText(page, "Prompt score", "Detail should show prompt score.");
+  await page.locator(".quality-points").first().waitFor();
+  await assertText(
+    page,
+    "/25",
+    "Detail should expose per-criterion score breakdown chips (weight 25 for Goal clarity).",
+  );
   await assertText(
     page,
     "Continue in Claude Code or Codex",
