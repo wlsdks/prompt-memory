@@ -132,6 +132,37 @@ describe("web api export client", () => {
     });
   });
 
+  it("fetches the coach feedback summary without CSRF and parses ratios", async () => {
+    fetchMock
+      .mockResolvedValueOnce(jsonResponse({ data: { csrf_token: "csrf-1" } }))
+      .mockResolvedValueOnce(
+        jsonResponse({
+          data: {
+            total: 4,
+            helpful: 3,
+            not_helpful: 1,
+            wrong: 0,
+            helpful_ratio: 0.75,
+          },
+        }),
+      );
+    const { getCoachFeedbackSummary } = await import("./api.js");
+
+    const summary = await getCoachFeedbackSummary();
+
+    expect(summary).toEqual({
+      total: 4,
+      helpful: 3,
+      not_helpful: 1,
+      wrong: 0,
+      helpful_ratio: 0.75,
+    });
+    expect(fetchMock).toHaveBeenLastCalledWith(
+      "/api/v1/coach-feedback/summary",
+      { credentials: "same-origin" },
+    );
+  });
+
   it("posts coach feedback with CSRF for a specific prompt id", async () => {
     fetchMock
       .mockResolvedValueOnce(jsonResponse({ data: { csrf_token: "csrf-1" } }))

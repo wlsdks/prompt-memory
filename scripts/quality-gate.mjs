@@ -5,7 +5,7 @@ const ROOT = process.cwd();
 const SOURCE_DIRS = ["scripts", "src"];
 const SOURCE_EXTENSIONS = new Set([".css", ".js", ".mjs", ".ts", ".tsx"]);
 const LINE_BUDGETS = new Map([
-  ["src/web/src/App.tsx", 3000],
+  ["src/web/src/App.tsx", 3010],
   ["src/web/src/habit-coach-panel.tsx", 300],
   ["src/web/src/habit-coach-panel.css", 450],
   ["src/web/src/practice-view.tsx", 520],

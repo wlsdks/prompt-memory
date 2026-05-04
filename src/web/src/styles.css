@@ -2665,3 +2665,71 @@ dd {
     display: block;
   }
 }
+
+.coach-feedback-panel header {
+  align-items: baseline;
+  display: flex;
+  gap: 12px;
+  justify-content: space-between;
+  margin-bottom: 10px;
+}
+
+.coach-feedback-panel h2 {
+  font-size: 14px;
+  margin: 0;
+}
+
+.coach-feedback-total {
+  color: var(--pm-text-subtle);
+  font-size: 12px;
+  font-variant-numeric: tabular-nums;
+}
+
+.coach-feedback-empty {
+  color: var(--pm-text-muted);
+  font-size: 13px;
+  line-height: 20px;
+  margin: 0;
+}
+
+.coach-feedback-grid {
+  align-items: center;
+  display: grid;
+  gap: 16px;
+  grid-template-columns: auto 1fr;
+}
+
+.coach-feedback-metric {
+  align-items: baseline;
+  display: flex;
+  gap: 6px;
+}
+
+.coach-feedback-metric-value {
+  font-size: 28px;
+  font-variant-numeric: tabular-nums;
+  font-weight: 700;
+}
+
+.coach-feedback-metric-label {
+  color: var(--pm-text-muted);
+  font-size: 12px;
+  text-transform: uppercase;
+}
+
+.coach-feedback-breakdown {
+  color: var(--pm-text-muted);
+  display: flex;
+  flex-wrap: wrap;
+  font-size: 12px;
+  gap: 12px;
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.coach-feedback-breakdown strong {
+  color: var(--pm-text);
+  font-variant-numeric: tabular-nums;
+  margin-right: 4px;
+}

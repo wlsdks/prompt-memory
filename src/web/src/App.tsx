@@ -27,6 +27,7 @@ import {
   deletePrompt,
   executeExportJob,
   getArchiveScoreReport,
+  getCoachFeedbackSummary,
   getHealth,
   getPrompt,
   getQualityDashboard,
@@ -39,6 +40,7 @@ import {
   updateProjectPolicy,
   type AnonymizedExportPayload,
   type ArchiveScoreReport,
+  type CoachFeedbackSummary,
   type ExportJob,
   type ExportPreset,
   type ProjectSummary,
@@ -55,6 +57,7 @@ import {
   persistLanguage,
   type Language,
 } from "./i18n.js";
+import { CoachFeedbackPanel } from "./coach-feedback-panel.js";
 import { createPromptHabitCoach } from "./habit-coach.js";
 import { HabitCoachPanel } from "./habit-coach-panel.js";
 import {
@@ -117,6 +120,9 @@ export function App() {
   >();
   const [settings, setSettings] = useState<SettingsResponse | undefined>();
   const [dashboard, setDashboard] = useState<QualityDashboard | undefined>();
+  const [coachFeedback, setCoachFeedback] = useState<
+    CoachFeedbackSummary | undefined
+  >();
   const [trendDays, setTrendDays] = useState<7 | 30>(7);
   const [archiveScore, setArchiveScore] = useState<
     ArchiveScoreReport | undefined
@@ -222,6 +228,16 @@ export function App() {
       .then(setArchiveScore)
       .catch(() => undefined);
   }, [archiveScore, view.name]);
+
+  useEffect(() => {
+    if (view.name !== "dashboard" || coachFeedback) {
+      return;
+    }
+
+    void getCoachFeedbackSummary()
+      .then(setCoachFeedback)
+      .catch(() => undefined);
+  }, [coachFeedback, view.name]);
 
   useEffect(() => {
     if (view.name !== "projects" || projects.length > 0) {
@@ -915,6 +931,7 @@ export function App() {
         {view.name === "dashboard" && (
           <DashboardView
             archiveScore={archiveScore}
+            coachFeedback={coachFeedback}
             dashboard={dashboard}
             loading={!dashboard}
             measurementBusy={measurementBusy}
@@ -1216,6 +1233,7 @@ function ActiveFilterBar({
 
 function DashboardView({
   archiveScore,
+  coachFeedback,
   dashboard,
   loading,
   measurementBusy,
@@ -1227,6 +1245,7 @@ function DashboardView({
   onChangeTrendDays,
 }: {
   archiveScore?: ArchiveScoreReport;
+  coachFeedback?: CoachFeedbackSummary;
   dashboard?: QualityDashboard;
   loading: boolean;
   measurementBusy: boolean;
@@ -1325,6 +1344,7 @@ function DashboardView({
         trendDays={trendDays}
         onChangeTrendDays={onChangeTrendDays}
       />
+      <CoachFeedbackPanel summary={coachFeedback} />
     </div>
   );
 }
