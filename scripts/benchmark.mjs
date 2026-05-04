@@ -31,7 +31,8 @@ const dataDir = join(tempRoot, "data");
 const homeDir = join(tempRoot, "home");
 const rawPathPrefix = "/Users/example";
 const rawSecret = "sk-proj-benchmark1234567890abcdef";
-const dataset = "benchmark-v1";
+const fixtureSet = parseFixtureSet(process.argv);
+const dataset = fixtureSet === "real" ? "benchmark-v1-real" : "benchmark-v1";
 const jsonOutput = process.argv.includes("--json");
 const cliEnv = {
   ...process.env,
@@ -92,6 +93,28 @@ const coachCases = [
   "Check the DB part",
   "Fix the tests",
 ];
+
+if (fixtureSet === "real") {
+  const realFixturesPath = join(repoRoot, "docs/benchmark-fixtures/real.json");
+  if (!existsSync(realFixturesPath)) {
+    const message = {
+      dataset,
+      fixture_set: fixtureSet,
+      status: "no_fixtures",
+      detail:
+        "No real fixtures registered yet. Add docs/benchmark-fixtures/real.json (consent-bearing redacted prompts) and re-run.",
+    };
+    if (jsonOutput) {
+      console.log(JSON.stringify(message, null, 2));
+    } else {
+      console.log(`prompt-memory benchmark ${dataset}`);
+      console.log("status: no_fixtures");
+      console.log(message.detail);
+    }
+    rmSync(tempRoot, { recursive: true, force: true });
+    process.exit(0);
+  }
+}
 
 let serverProcess;
 
@@ -195,6 +218,8 @@ try {
   const report = {
     version: packageJson.version,
     dataset,
+    fixture_set: fixtureSet,
+    soft_signal: fixtureSet === "real",
     generated_at: new Date().toISOString(),
     pass: passes(scores),
     scores,
@@ -217,7 +242,13 @@ try {
   }
 
   if (!report.pass) {
-    process.exitCode = 1;
+    if (fixtureSet === "real") {
+      console.warn(
+        "warning: real fixture set failed thresholds — exiting 0 (soft signal). Synthetic remains the hard gate.",
+      );
+    } else {
+      process.exitCode = 1;
+    }
   }
 } finally {
   if (serverProcess) {
@@ -534,6 +565,21 @@ async function waitForHealth(url) {
     await delay(100);
   }
   throw new Error("Server did not become healthy within 10 seconds.");
+}
+
+function parseFixtureSet(argv) {
+  const flag = argv.find(
+    (entry) => entry === "--fixture-set" || entry.startsWith("--fixture-set="),
+  );
+  if (!flag) return "synthetic";
+  const value = flag.includes("=")
+    ? flag.split("=", 2)[1]
+    : argv[argv.indexOf(flag) + 1];
+  if (!value || value === "synthetic") return "synthetic";
+  if (value === "real") return "real";
+  throw new Error(
+    `Unknown --fixture-set value: ${value}. Expected synthetic or real.`,
+  );
 }
 
 function passes(scores) {
