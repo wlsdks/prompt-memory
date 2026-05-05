@@ -221,7 +221,12 @@ export function createPromptRewriteGuardOutput(
 export function parsePromptRewriteGuardMode(
   value: string | undefined,
 ): PromptRewriteGuardMode {
-  if (value === "block-and-copy" || value === "context" || value === "off") {
+  if (
+    value === "block-and-copy" ||
+    value === "context" ||
+    value === "off" ||
+    value === "ask"
+  ) {
     return value;
   }
 

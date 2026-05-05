@@ -706,8 +706,13 @@ function buildRewriteGuardArgs(
 
 function isRewriteGuardMode(
   value: string | undefined,
-): value is "off" | "block-and-copy" | "context" {
-  return value === "off" || value === "block-and-copy" || value === "context";
+): value is "off" | "block-and-copy" | "context" | "ask" {
+  return (
+    value === "off" ||
+    value === "block-and-copy" ||
+    value === "context" ||
+    value === "ask"
+  );
 }
 
 function isClaudePromptMemoryHook(command: string): boolean {

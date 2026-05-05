@@ -51,7 +51,7 @@ export function registerHookCommand(program: Command): void {
     .option("--data-dir <path>", "Override the prompt-memory data directory.")
     .option(
       "--rewrite-guard <mode>",
-      "Opt-in prompt rewrite guard: off, block-and-copy, or context.",
+      "Opt-in prompt rewrite guard: off, context, ask, or block-and-copy.",
       "off",
     )
     .option(
@@ -80,7 +80,7 @@ export function registerHookCommand(program: Command): void {
     .option("--data-dir <path>", "Override the prompt-memory data directory.")
     .option(
       "--rewrite-guard <mode>",
-      "Opt-in prompt rewrite guard: off, block-and-copy, or context.",
+      "Opt-in prompt rewrite guard: off, context, ask, or block-and-copy.",
       "off",
     )
     .option(
