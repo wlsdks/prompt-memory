@@ -266,23 +266,24 @@ pre {
   align-items: center;
   background: var(--pm-surface);
   border: 1px solid var(--pm-border);
-  border-radius: 14px;
+  border-radius: 10px;
   display: grid;
   grid-template-columns: 1fr 1fr;
   gap: 2px;
-  margin-top: 20px;
-  padding: 4px;
+  margin-top: 14px;
+  padding: 3px;
   width: 100%;
 }
 
 .language-switch button {
   background: transparent;
   border: 0;
-  border-radius: 10px;
+  border-radius: 6px;
   color: var(--pm-text-muted);
-  font-size: 15px;
-  font-weight: 700;
-  height: 40px;
+  font-size: 11px;
+  font-weight: 600;
+  height: 26px;
+  letter-spacing: 0.04em;
 }
 
 .language-switch button.active {
@@ -291,7 +292,7 @@ pre {
 }
 
 .workspace {
-  max-width: 1240px;
+  max-width: min(1680px, 100%);
   width: 100%;
   padding: 24px;
 }
