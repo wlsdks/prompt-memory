@@ -145,6 +145,11 @@ export function App() {
   const [pendingDelete, setPendingDelete] = useState<
     PromptDetail | undefined
   >();
+  const [pendingBulkDelete, setPendingBulkDelete] = useState(false);
+  const [bulkDeleteBusy, setBulkDeleteBusy] = useState(false);
+  const [selectedIds, setSelectedIds] = useState<Set<string>>(
+    () => new Set(),
+  );
   const [copiedPromptId, setCopiedPromptId] = useState<string | undefined>();
   const [copiedImprovementId, setCopiedImprovementId] = useState<
     string | undefined
@@ -316,6 +321,51 @@ export function App() {
       setError("Could not load prompts.");
     } finally {
       setLoading(false);
+    }
+  }
+
+  function toggleSelectId(id: string): void {
+    setSelectedIds((current) => {
+      const next = new Set(current);
+      if (next.has(id)) {
+        next.delete(id);
+      } else {
+        next.add(id);
+      }
+      return next;
+    });
+  }
+
+  function selectAllVisible(): void {
+    setSelectedIds(new Set(prompts.map((prompt) => prompt.id)));
+  }
+
+  function clearSelection(): void {
+    setSelectedIds(new Set());
+  }
+
+  async function confirmBulkDelete(): Promise<void> {
+    const ids = [...selectedIds];
+    if (ids.length === 0) {
+      setPendingBulkDelete(false);
+      return;
+    }
+    setBulkDeleteBusy(true);
+    try {
+      await Promise.all(ids.map((id) => deletePrompt(id)));
+      setPendingBulkDelete(false);
+      setSelectedIds(new Set());
+      await refreshList(filters, { replace: true });
+      void getQualityDashboard()
+        .then(setDashboard)
+        .catch(() => undefined);
+      void getArchiveScoreReport()
+        .then(setArchiveScore)
+        .catch(() => undefined);
+    } catch {
+      setError("Could not bulk delete some prompts.");
+    } finally {
+      setBulkDeleteBusy(false);
     }
   }
 
@@ -653,14 +703,6 @@ export function App() {
           <span className="sidebar-label">Coach</span>
         </button>
         <button
-          aria-label="Scores"
-          className={`nav-button ${view.name === "scores" ? "active" : ""}`}
-          onClick={() => navigate({ name: "scores" })}
-        >
-          <ListChecks size={16} />
-          <span className="sidebar-label">Scores</span>
-        </button>
-        <button
           aria-label="Projects"
           className={`nav-button ${view.name === "projects" ? "active" : ""}`}
           onClick={() => navigate({ name: "projects" })}
@@ -669,24 +711,14 @@ export function App() {
           <span className="sidebar-label">Projects</span>
         </button>
         <button
-          aria-label="MCP"
-          className={`nav-button ${view.name === "mcp" ? "active" : ""}`}
-          onClick={() => navigate({ name: "mcp" })}
-        >
-          <Plug size={16} />
-          <span className="sidebar-label">MCP</span>
-        </button>
-        <button
-          aria-label="Export"
-          className={`nav-button ${view.name === "exports" ? "active" : ""}`}
-          onClick={() => navigate({ name: "exports" })}
-        >
-          <Download size={16} />
-          <span className="sidebar-label">Export</span>
-        </button>
-        <button
           aria-label="Settings"
-          className={`nav-button ${view.name === "settings" ? "active" : ""}`}
+          className={`nav-button ${
+            view.name === "settings" ||
+            view.name === "mcp" ||
+            view.name === "exports"
+              ? "active"
+              : ""
+          }`}
           onClick={() => navigate({ name: "settings" })}
         >
           <Settings size={16} />
@@ -876,6 +908,12 @@ export function App() {
               }
               onSelect={(id) => navigate({ name: "detail", id })}
               prompts={prompts}
+              selectedIds={selectedIds}
+              onToggleSelect={toggleSelectId}
+              onSelectAll={selectAllVisible}
+              onClearSelection={clearSelection}
+              onBulkDelete={() => setPendingBulkDelete(true)}
+              bulkDeleteBusy={bulkDeleteBusy}
             />
           </>
         )}
@@ -904,7 +942,7 @@ export function App() {
             queueNavigation={queueNavigation}
           />
         )}
-        {view.name === "dashboard" && (
+        {(view.name === "dashboard" || view.name === "scores") && (
           <DashboardView
             archiveScore={archiveScore}
             coachFeedback={coachFeedback}
@@ -917,7 +955,8 @@ export function App() {
               navigate({ name: "list" });
             }}
             onMeasure={() => void measureArchive()}
-            onNavigateSection={(section) => navigate({ name: section })}
+            onRefreshArchiveScore={() => void refreshArchiveScore()}
+            onSelect={(id) => navigate({ name: "detail", id })}
             trendDays={trendDays}
             onChangeTrendDays={(days) => {
               setTrendDays(days);
@@ -937,24 +976,6 @@ export function App() {
             onSelect={(id) => navigate({ name: "detail", id })}
           />
         )}
-        {view.name === "scores" && (
-          <ScoresView
-            archiveScore={archiveScore}
-            dashboard={dashboard}
-            loading={!dashboard}
-            onOpenFilteredList={(nextFilters) => {
-              setFilters({ isSensitive: "all", ...nextFilters });
-              navigate({ name: "list" });
-            }}
-            onRefreshArchiveScore={() => void refreshArchiveScore()}
-            onSelect={(id) => navigate({ name: "detail", id })}
-            trendDays={trendDays}
-            onChangeTrendDays={(days) => {
-              setTrendDays(days);
-              setDashboard(undefined);
-            }}
-          />
-        )}
         {view.name === "projects" && (
           <ProjectsView
             instructionBusy={projectInstructionBusy}
@@ -965,38 +986,53 @@ export function App() {
             projects={projects}
           />
         )}
-        {view.name === "mcp" && (
-          <McpToolsView
-            dashboard={dashboard}
-            health={health}
-            settings={settings}
-          />
-        )}
-        {view.name === "exports" && (
-          <ExportView
-            busy={exportBusy}
-            copied={exportCopied}
-            dashboard={dashboard}
-            onCopy={() => void copyExportPayload()}
-            onDownload={downloadExportPayload}
-            onExecute={() => void executeExport()}
-            onPresetChange={(preset) => {
-              setExportPreset(preset);
-              setExportPreview(undefined);
-              setExportPayload(undefined);
-            }}
-            onPreview={() => void previewExport()}
-            payload={exportPayload}
-            preset={exportPreset}
-            preview={exportPreview}
-          />
-        )}
-        {view.name === "settings" && (
-          <SettingsView
-            dashboard={dashboard}
-            health={health}
-            settings={settings}
-          />
+        {(view.name === "settings" ||
+          view.name === "mcp" ||
+          view.name === "exports") && (
+          <div className="dashboard-layout">
+            <SettingsView
+              dashboard={dashboard}
+              health={health}
+              settings={settings}
+            />
+            <details className="panel admin-fold" open={view.name === "mcp"}>
+              <summary>
+                <h2>MCP integration</h2>
+                <span>Setup commands, tool catalog</span>
+              </summary>
+              <McpToolsView
+                dashboard={dashboard}
+                health={health}
+                settings={settings}
+              />
+            </details>
+            <details
+              className="panel admin-fold"
+              open={view.name === "exports"}
+            >
+              <summary>
+                <h2>Anonymized export</h2>
+                <span>JSON without raw paths or stable ids</span>
+              </summary>
+              <ExportView
+                busy={exportBusy}
+                copied={exportCopied}
+                dashboard={dashboard}
+                onCopy={() => void copyExportPayload()}
+                onDownload={downloadExportPayload}
+                onExecute={() => void executeExport()}
+                onPresetChange={(preset) => {
+                  setExportPreset(preset);
+                  setExportPreview(undefined);
+                  setExportPayload(undefined);
+                }}
+                onPreview={() => void previewExport()}
+                payload={exportPayload}
+                preset={exportPreset}
+                preview={exportPreview}
+              />
+            </details>
+          </div>
         )}
       </section>
 
@@ -1019,6 +1055,33 @@ export function App() {
           </div>
         </div>
       )}
+      {pendingBulkDelete && (
+        <div className="modal-backdrop" role="presentation">
+          <div aria-modal="true" className="modal" role="dialog">
+            <h2>Bulk delete</h2>
+            <p>
+              <strong>{selectedIds.size}</strong> prompts will be deleted.
+              Markdown files and index rows are removed for each. This cannot
+              be undone.
+            </p>
+            <div className="modal-actions">
+              <button
+                disabled={bulkDeleteBusy}
+                onClick={() => setPendingBulkDelete(false)}
+              >
+                Cancel
+              </button>
+              <button
+                className="danger"
+                disabled={bulkDeleteBusy}
+                onClick={() => void confirmBulkDelete()}
+              >
+                {bulkDeleteBusy ? "Deleting..." : "Delete all"}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </main>
   );
 }
@@ -1031,6 +1094,12 @@ function PromptList({
   onLoadMore,
   onSelect,
   prompts,
+  selectedIds,
+  onToggleSelect,
+  onSelectAll,
+  onClearSelection,
+  onBulkDelete,
+  bulkDeleteBusy,
 }: {
   focus?: PromptFilters["focus"];
   qualityGap?: PromptFilters["qualityGap"];
@@ -1039,6 +1108,12 @@ function PromptList({
   onLoadMore(): void;
   onSelect(id: string): void;
   prompts: PromptSummary[];
+  selectedIds: Set<string>;
+  onToggleSelect(id: string): void;
+  onSelectAll(): void;
+  onClearSelection(): void;
+  onBulkDelete(): void;
+  bulkDeleteBusy: boolean;
 }) {
   if (loading && prompts.length === 0) {
     return <div className="panel empty">Loading prompts.</div>;
@@ -1059,10 +1134,49 @@ function PromptList({
     );
   }
 
+  const allSelected =
+    prompts.length > 0 && prompts.every((prompt) => selectedIds.has(prompt.id));
+  const selectionCount = selectedIds.size;
   return (
     <>
+      {selectionCount > 0 && (
+        <div className="bulk-action-bar" role="region" aria-label="Bulk actions">
+          <span>
+            <strong>{selectionCount}</strong> selected
+          </span>
+          <button
+            className="bulk-action-clear"
+            onClick={onClearSelection}
+            type="button"
+          >
+            Clear
+          </button>
+          <button
+            className="bulk-action-delete danger"
+            disabled={bulkDeleteBusy}
+            onClick={onBulkDelete}
+            type="button"
+          >
+            {bulkDeleteBusy ? "Deleting..." : "Delete selected"}
+          </button>
+        </div>
+      )}
       <div className="prompt-table" role="table">
         <div className="table-row table-head" role="row">
+          <span className="select-cell">
+            <input
+              aria-label="Select all visible prompts"
+              checked={allSelected}
+              onChange={(event) => {
+                if (event.target.checked) {
+                  onSelectAll();
+                } else {
+                  onClearSelection();
+                }
+              }}
+              type="checkbox"
+            />
+          </span>
           <span>Received</span>
           <span>Tool</span>
           <span>Path</span>
@@ -1070,12 +1184,25 @@ function PromptList({
           <span>Length</span>
         </div>
         {prompts.map((prompt) => (
-          <button
-            className="table-row"
+          <div
+            className={`table-row${selectedIds.has(prompt.id) ? " selected" : ""}`}
             key={prompt.id}
-            onClick={() => onSelect(prompt.id)}
             role="row"
+            onClick={(event) => {
+              const target = event.target as HTMLElement;
+              if (target.closest('input[type="checkbox"]')) return;
+              onSelect(prompt.id);
+            }}
           >
+            <span className="select-cell">
+              <input
+                aria-label={`Select prompt ${prompt.id}`}
+                checked={selectedIds.has(prompt.id)}
+                onChange={() => onToggleSelect(prompt.id)}
+                onClick={(event) => event.stopPropagation()}
+                type="checkbox"
+              />
+            </span>
             <span>{formatDate(prompt.received_at)}</span>
             <span>{prompt.tool}</span>
             <span className="path-cell">
@@ -1114,7 +1241,7 @@ function PromptList({
               )}
             </span>
             <span>{prompt.prompt_length}</span>
-          </button>
+          </div>
         ))}
       </div>
       {nextCursor && (
@@ -1183,7 +1310,8 @@ function DashboardView({
   measurementCheckedAt,
   onOpenFilteredList,
   onMeasure,
-  onNavigateSection,
+  onRefreshArchiveScore,
+  onSelect,
   trendDays,
   onChangeTrendDays,
 }: {
@@ -1195,7 +1323,8 @@ function DashboardView({
   measurementCheckedAt?: string;
   onOpenFilteredList(filters: PromptFilters): void;
   onMeasure(): void;
-  onNavigateSection(section: WorkspaceSection): void;
+  onRefreshArchiveScore(): void;
+  onSelect(id: string): void;
   trendDays: 7 | 30;
   onChangeTrendDays(days: 7 | 30): void;
 }) {
@@ -1226,11 +1355,16 @@ function DashboardView({
         measurementBusy={measurementBusy}
         onMeasure={onMeasure}
         onOpenFilteredList={onOpenFilteredList}
-        onOpenScores={() => onNavigateSection("scores")}
+        onOpenScores={onRefreshArchiveScore}
       />
       <DashboardMetricStrip
         dashboard={dashboard}
         onOpenFilteredList={onOpenFilteredList}
+      />
+      <ArchiveScoreReviewPanel
+        report={archiveScore}
+        onRefresh={onRefreshArchiveScore}
+        onSelect={onSelect}
       />
       <CoachFeedbackPanel summary={coachFeedback} />
     </div>
@@ -1265,51 +1399,6 @@ function CoachView({
       />
       <RepeatedPatternsPanel dashboard={dashboard} />
       <InstructionSuggestionsPanel dashboard={dashboard} />
-    </div>
-  );
-}
-
-function ScoresView({
-  archiveScore,
-  dashboard,
-  loading,
-  onOpenFilteredList,
-  onRefreshArchiveScore,
-  onSelect,
-  trendDays,
-  onChangeTrendDays,
-}: {
-  archiveScore?: ArchiveScoreReport;
-  dashboard?: QualityDashboard;
-  loading: boolean;
-  onOpenFilteredList(filters: PromptFilters): void;
-  onRefreshArchiveScore(): void;
-  onSelect(id: string): void;
-  trendDays: 7 | 30;
-  onChangeTrendDays(days: 7 | 30): void;
-}) {
-  if (loading || !dashboard) {
-    return <div className="panel empty">Loading dashboard.</div>;
-  }
-
-  return (
-    <div className="dashboard-layout">
-      <ArchiveScoreReviewPanel
-        report={archiveScore}
-        onRefresh={onRefreshArchiveScore}
-        onSelect={onSelect}
-      />
-      <TrendPanel
-        daily={dashboard.trend.daily}
-        onSelectDay={(date) =>
-          onOpenFilteredList({
-            receivedFrom: date,
-            receivedTo: date,
-          })
-        }
-        trendDays={trendDays}
-        onChangeTrendDays={onChangeTrendDays}
-      />
     </div>
   );
 }
@@ -1467,15 +1556,6 @@ function DashboardMetricStrip({
         value={dashboard.total_prompts}
       />
       <Metric
-        label="Average prompt score"
-        onSelect={() =>
-          onOpenFilteredList({
-            focus: "quality-gap",
-          })
-        }
-        value={dashboard.quality_score.average}
-      />
-      <Metric
         label="Contains sensitive data"
         onSelect={() =>
           onOpenFilteredList({
@@ -1602,11 +1682,11 @@ function ArchiveScoreReviewPanel({
   }
 
   return (
-    <section
+    <details
       className="panel archive-score-panel"
       aria-label="Archive score review"
     >
-      <div className="panel-heading-row">
+      <summary className="panel-heading-row">
         <div>
           <h2>Archive score review</h2>
           {report && (
@@ -1616,10 +1696,25 @@ function ArchiveScoreReviewPanel({
             </span>
           )}
         </div>
-        <button className="panel-link-button" onClick={onRefresh} type="button">
+        <span
+          className="panel-link-button"
+          role="button"
+          tabIndex={0}
+          onClick={(event) => {
+            event.preventDefault();
+            event.stopPropagation();
+            onRefresh();
+          }}
+          onKeyDown={(event) => {
+            if (event.key === "Enter" || event.key === " ") {
+              event.preventDefault();
+              onRefresh();
+            }
+          }}
+        >
           <RefreshCw size={14} /> Evaluate archive
-        </button>
-      </div>
+        </span>
+      </summary>
       {!report && <p className="muted">No archive score report yet.</p>}
       {report && (
         <div className="archive-score-grid">
@@ -1736,7 +1831,7 @@ function ArchiveScoreReviewPanel({
           </div>
         </div>
       )}
-    </section>
+    </details>
   );
 }
 
