@@ -40,6 +40,16 @@ const ACK_PATTERNS: readonly RegExp[] = [
   /^let'?s\b/i,
 ];
 
+export type AskEventReport = {
+  tool: "claude-code" | "codex";
+  score: number;
+  band: "weak" | "needs_work" | "good" | "excellent";
+  missing_axes: string[];
+  language: "en" | "ko";
+  prompt_length: number;
+  triggered_at: string;
+};
+
 export type PromptRewriteGuardOptions = {
   mode?: PromptRewriteGuardMode;
   minScore?: number;
@@ -61,6 +71,12 @@ export type PromptRewriteGuardOptions = {
    * preserve existing Claude Code behavior.
    */
   suppressOutput?: boolean;
+  /**
+   * Optional sink invoked exactly when ask mode actually fires
+   * (additionalContext built). Lets the wrapper post a measurement event
+   * to the local server for dashboard analytics.
+   */
+  onAskTriggered?: (report: AskEventReport) => void;
 };
 
 export type PromptRewriteGuardOutput =
@@ -161,6 +177,24 @@ export function createPromptRewriteGuardOutput(
     const askInstruction = isCodex
       ? copy.askInstructionCodex
       : copy.askInstruction;
+
+    if (options.onAskTriggered) {
+      try {
+        options.onAskTriggered({
+          tool: options.tool ?? "claude-code",
+          score: analysis.quality_score.value,
+          band: analysis.quality_score.band,
+          missing_axes: improvement.clarifying_questions.map(
+            (question) => question.axis,
+          ),
+          language,
+          prompt_length: prompt.trim().length,
+          triggered_at: createdAt,
+        });
+      } catch {
+        // Telemetry must never block the hook.
+      }
+    }
 
     return {
       hookSpecificOutput: {

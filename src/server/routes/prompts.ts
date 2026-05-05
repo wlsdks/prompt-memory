@@ -6,6 +6,7 @@ import {
   type ArchiveScoreReport,
 } from "../../analysis/archive-score.js";
 import type {
+  AskEventStoragePort,
   JudgeScoreEntry,
   JudgeScoreStoragePort,
   PromptDetail,
@@ -21,7 +22,8 @@ export type PromptRouteOptions = {
   auth: ServerAuthConfig;
   storage: PromptStoragePort &
     Partial<PromptReadStoragePort> &
-    Partial<JudgeScoreStoragePort>;
+    Partial<JudgeScoreStoragePort> &
+    Partial<AskEventStoragePort>;
 };
 
 const ListQuerySchema = z.object({
@@ -49,6 +51,10 @@ const ListQuerySchema = z.object({
 
 const SimilarPromptsQuerySchema = z.object({
   limit: z.coerce.number().int().positive().max(20).optional(),
+});
+
+const AskEventSummaryQuerySchema = z.object({
+  days: z.coerce.number().int().positive().max(90).optional(),
 });
 
 const ArchiveScoreQuerySchema = z.object({
@@ -170,6 +176,21 @@ export function registerPromptRoutes(
     const query = SimilarPromptsQuerySchema.parse(request.query);
     const items = storage.findSimilarPrompts(params.id, query.limit ?? 5);
     return { data: items.map(toBrowserPromptSummary) };
+  });
+
+  server.get("/api/v1/ask-events/summary", async (request) => {
+    requireAppAccess(request, options.auth);
+    if (!options.storage.getAskEventSummary) {
+      throw problem(
+        503,
+        "Service Unavailable",
+        "Storage backend does not expose ask event metrics.",
+        request.url,
+      );
+    }
+    const query = AskEventSummaryQuerySchema.parse(request.query);
+    const summary = options.storage.getAskEventSummary({ days: query.days });
+    return { data: summary };
   });
 
   server.get("/api/v1/quality", async (request) => {
