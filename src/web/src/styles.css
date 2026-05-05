@@ -2044,6 +2044,40 @@ dd {
   padding: 16px;
 }
 
+.mcp-tool-card > summary {
+  cursor: pointer;
+  display: grid;
+  gap: 8px;
+  list-style: none;
+  outline: none;
+  position: relative;
+}
+
+.mcp-tool-card > summary::-webkit-details-marker {
+  display: none;
+}
+
+.mcp-tool-card > summary::after {
+  color: var(--pm-text-subtle);
+  content: "+";
+  font-size: 16px;
+  font-weight: 700;
+  position: absolute;
+  right: 0;
+  top: 0;
+}
+
+.mcp-tool-card[open] > summary::after {
+  content: "−";
+}
+
+.mcp-tool-when {
+  color: var(--pm-text-muted);
+  font-size: 13px;
+  line-height: 20px;
+  margin: 0;
+}
+
 .mcp-tool-header {
   align-items: center;
   display: flex;

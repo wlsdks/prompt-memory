@@ -94,15 +94,16 @@ export function McpToolsView({
 
       <section className="mcp-tool-grid" aria-label="MCP tool catalog">
         {MCP_TOOL_CATALOG.map((tool) => (
-          <article className="mcp-tool-card" key={tool.name}>
-            <div className="mcp-tool-header">
-              <span className="badge">{tool.kind}</span>
-              <code>{tool.name}</code>
-            </div>
-            <h2>{tool.title}</h2>
+          <details className="mcp-tool-card" key={tool.name}>
+            <summary>
+              <div className="mcp-tool-header">
+                <span className="badge">{tool.kind}</span>
+                <code>{tool.name}</code>
+              </div>
+              <h2>{tool.title}</h2>
+              <p className="mcp-tool-when">{tool.when}</p>
+            </summary>
             <dl>
-              <dt>Use when</dt>
-              <dd>{tool.when}</dd>
               <dt>Returns</dt>
               <dd>{tool.returns}</dd>
               <dt>Behavior</dt>
@@ -132,7 +133,7 @@ export function McpToolsView({
               </button>
             </div>
             {copiedKey === tool.name && <small>Copied example</small>}
-          </article>
+          </details>
         ))}
       </section>
     </div>
