@@ -197,6 +197,9 @@ export function createSqlitePromptStorage(
     searchPrompts(query, options) {
       return searchPrompts(db, query, options);
     },
+    findSimilarPrompts(promptId, limit = 5) {
+      return findSimilarPrompts(db, promptId, limit);
+    },
     getPrompt(id) {
       return getPrompt(db, id);
     },
@@ -911,6 +914,100 @@ function searchPrompts(
     .all(match, ...filters.values, limit + 1) as PromptRow[];
 
   return toListResult(db, rows, limit);
+}
+
+function findSimilarPrompts(
+  db: Database.Database,
+  promptId: string,
+  limit: number,
+): PromptSummary[] {
+  const seedRow = db
+    .prepare<[string]>(
+      "SELECT snippet, body, tags FROM prompt_fts WHERE prompt_id = ? LIMIT 1",
+    )
+    .get(promptId) as
+    | { snippet?: string; body?: string; tags?: string }
+    | undefined;
+
+  if (!seedRow) {
+    return [];
+  }
+
+  const seedText = [seedRow.snippet, seedRow.tags, seedRow.body]
+    .filter((part): part is string => Boolean(part?.trim()))
+    .join(" ");
+
+  const match = toSimilarityFtsQuery(seedText);
+  if (!match) {
+    return [];
+  }
+
+  const safeLimit = Math.max(1, Math.min(20, Math.floor(limit)));
+  const rows = db
+    .prepare(
+      `
+      SELECT p.*
+      FROM prompt_fts
+      JOIN prompts p ON p.id = prompt_fts.prompt_id
+      WHERE prompt_fts MATCH ?
+        AND p.deleted_at IS NULL
+        AND p.id != ?
+      ORDER BY rank
+      LIMIT ?
+      `,
+    )
+    .all(match, promptId, safeLimit) as PromptRow[];
+
+  const result = toListResult(db, rows, safeLimit);
+  return result.items;
+}
+
+const SIMILARITY_STOPWORDS = new Set([
+  "the",
+  "and",
+  "for",
+  "with",
+  "this",
+  "that",
+  "from",
+  "into",
+  "have",
+  "will",
+  "your",
+  "you",
+  "are",
+  "REDACTED",
+  "path",
+  "tasknotification",
+  "taskuseid",
+  "tooluseid",
+  "tooluseinput",
+  "tooluseoutput",
+]);
+
+function toSimilarityFtsQuery(text: string): string {
+  const tokens = text.match(/[\p{L}\p{N}_-]+/gu);
+  if (!tokens || tokens.length === 0) {
+    return "";
+  }
+
+  const seen = new Set<string>();
+  const keep: string[] = [];
+  for (const token of tokens) {
+    if (token.length < 3) continue;
+    if (SIMILARITY_STOPWORDS.has(token)) continue;
+    const key = token.toLowerCase();
+    if (seen.has(key)) continue;
+    seen.add(key);
+    keep.push(token.replaceAll('"', '""'));
+    if (keep.length >= 12) break;
+  }
+
+  if (keep.length === 0) {
+    return "";
+  }
+
+  return keep.map((token) => `"${token}"`).join(" OR ");
 }
 
 function buildPromptFilters(
