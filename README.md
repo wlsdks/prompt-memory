@@ -472,6 +472,7 @@ The Claude Code plugin provides slash commands:
 ```text
 /prompt-memory:setup
 /prompt-memory:status
+/prompt-memory:guard
 /prompt-memory:buddy
 /prompt-memory:coach
 /prompt-memory:score
@@ -483,6 +484,11 @@ The Claude Code plugin provides slash commands:
 /prompt-memory:coach-next
 /prompt-memory:open
 ```
+
+`/prompt-memory:guard` opens an interactive picker (off / context / ask /
+block-and-copy) that flips the `UserPromptSubmit` rewrite-guard mode without
+requiring you to remember CLI flags. Run `prompt-memory hook status` to see
+the mode currently installed for each detected tool.
 
 `/prompt-memory:setup` runs `prompt-memory setup --dry-run` first, asks before
 writing local settings, and can optionally install a small Claude Code

@@ -120,9 +120,9 @@ Current known large modules:
   shaping. Do not add tool schemas here.
 - `src/mcp/server.ts`: JSON-RPC stdio transport and tool-call routing only.
 - `src/hooks/rewrite-guard.ts`: hook decision logic only (mode dispatch,
-  language detection, clipboard side effect). Bilingual user-facing strings
-  live in `src/hooks/rewrite-guard-copy.ts` so the budget stays under 180
-  lines.
+  language detection, clipboard side effect, ask-mode trigger gate +
+  acknowledgment patterns). Bilingual user-facing strings live in
+  `src/hooks/rewrite-guard-copy.ts` so the budget stays under 290 lines.
 - `src/cli/agent-wrapper.ts`: pm-claude/pm-codex argv parsing, prompt
   rewriting, and child-process spawning. New domain logic should land in a
   helper module rather than expanding the wrapper.

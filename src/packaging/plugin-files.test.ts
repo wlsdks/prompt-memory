@@ -27,6 +27,7 @@ describe("plugin packaging files", () => {
     expect(manifest.commands).toEqual([
       "./commands/setup.md",
       "./commands/status.md",
+      "./commands/guard.md",
       "./commands/buddy.md",
       "./commands/coach.md",
       "./commands/score.md",
@@ -91,6 +92,16 @@ describe("plugin packaging files", () => {
       "utf8",
     );
     const open = readFileSync(join(process.cwd(), "commands/open.md"), "utf8");
+    const guard = readFileSync(
+      join(process.cwd(), "commands/guard.md"),
+      "utf8",
+    );
+
+    expect(guard).toContain(
+      "prompt-memory setup --profile coach --rewrite-guard <chosen>",
+    );
+    expect(guard).toContain("AskUserQuestion");
+    expect(guard).toMatch(/off.*context.*ask.*block-and-copy/s);
 
     expect(setup).toContain(
       "prompt-memory setup --profile coach --register-mcp --dry-run",
@@ -148,6 +159,8 @@ describe("plugin packaging files", () => {
     expect(manifest.interface.defaultPrompt).toEqual(
       expect.arrayContaining([
         "Show my prompt-memory buddy side pane command",
+        "Show my prompt-memory hook rewrite-guard mode",
+        "Toggle the prompt-memory rewrite guard between off / context / ask / block-and-copy",
         "Score my latest captured prompt",
         "Improve my latest captured prompt",
         "Rewrite my latest captured prompt with the active agent session",

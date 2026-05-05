@@ -411,6 +411,7 @@ Claude Code plugin slash commands:
 ```text
 /prompt-memory:setup
 /prompt-memory:status
+/prompt-memory:guard
 /prompt-memory:buddy
 /prompt-memory:coach
 /prompt-memory:score
@@ -422,6 +423,11 @@ Claude Code plugin slash commands:
 /prompt-memory:coach-next
 /prompt-memory:open
 ```
+
+`/prompt-memory:guard`는 `off / context / ask / block-and-copy` 네 가지
+`UserPromptSubmit` rewrite-guard 모드를 인터랙티브 picker로 전환합니다.
+CLI 옵션을 외울 필요 없이 슬래시 명령 한 번으로 모드를 바꿀 수 있습니다.
+`prompt-memory hook status`로 현재 설치된 모드를 도구별로 확인할 수 있습니다.
 
 `/prompt-memory:setup`은 먼저 dry-run을 실행하고, 로컬 설정을 쓰기 전에 승인받습니다. Claude Code status line은 최신 prompt score HUD로 쓸 수 있으며 다음 명령으로 설치할 수 있습니다.
 
