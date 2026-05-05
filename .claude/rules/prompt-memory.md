@@ -36,6 +36,35 @@ Claude Code must follow these repository rules in addition to `CLAUDE.md` and
 - Do not add new domain logic directly to large hub files unless the change is
   clearly part of that boundary.
 
+## Naming and identifiers
+
+A name is the spec. If the function does something the name does not promise,
+rename instead of adding a comment.
+
+- Functions are verbs: `buildClarifyingQuestions`, `applyClarifications`,
+  `redactPrompt`, `extractPromptFacts`. Variables are nouns. Types are nouns in
+  `PascalCase` (`PromptImprovement`, `ClarifyingAnswer`).
+- Boolean variables and predicates use `is*`, `has*`, `should*`, `can*`. Prefer
+  positive form (`isAnswered` over `isNotMissing`); avoid double negatives.
+- Avoid bare abbreviations. Prefer `config` over `cfg`, `transaction` over
+  `tx`, `directory` over `dir`. Domain-standard short names that already appear
+  in the surrounding code (`url`, `id`, `db`, `mcp`, `tx` inside SQLite paths)
+  are acceptable.
+- Stay consistent with the repo's domain vocabulary: `prompt`, `axis`,
+  `archive`, `improvement`, `draft`, `redaction`, `clarifying_questions`,
+  `answers`. Do not invent synonyms — `question` and `clarification` are
+  distinct concepts here.
+- Plurals match shape. `prompts` is an array, `prompt` is a single value.
+  `answersByAxis` for `Record<axis, string>`-shaped maps.
+- File names use `kebab-case.ts`. Test files use `*.test.ts` colocated with
+  the source. JSON keys in HTTP / MCP / CLI output use `snake_case` to match
+  the existing wire format. TypeScript identifiers stay `lowerCamelCase`.
+- Identifiers describe domain intent, not implementation. Prefer
+  `applyClarifications` over `processAnswers`,
+  `removeOriginalPromptSection` over `cleanString`.
+- Negative names lie quickly. If a flag is named `disableX` but defaults to
+  `false`, rename to `enableX` so the default reads naturally.
+
 ## Privacy
 
 - Do not print raw prompt bodies, hook payloads, raw absolute paths, tokens,
