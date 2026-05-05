@@ -653,14 +653,6 @@ export function App() {
           <span className="sidebar-label">Coach</span>
         </button>
         <button
-          aria-label="Scores"
-          className={`nav-button ${view.name === "scores" ? "active" : ""}`}
-          onClick={() => navigate({ name: "scores" })}
-        >
-          <ListChecks size={16} />
-          <span className="sidebar-label">Scores</span>
-        </button>
-        <button
           aria-label="Projects"
           className={`nav-button ${view.name === "projects" ? "active" : ""}`}
           onClick={() => navigate({ name: "projects" })}
@@ -669,24 +661,14 @@ export function App() {
           <span className="sidebar-label">Projects</span>
         </button>
         <button
-          aria-label="MCP"
-          className={`nav-button ${view.name === "mcp" ? "active" : ""}`}
-          onClick={() => navigate({ name: "mcp" })}
-        >
-          <Plug size={16} />
-          <span className="sidebar-label">MCP</span>
-        </button>
-        <button
-          aria-label="Export"
-          className={`nav-button ${view.name === "exports" ? "active" : ""}`}
-          onClick={() => navigate({ name: "exports" })}
-        >
-          <Download size={16} />
-          <span className="sidebar-label">Export</span>
-        </button>
-        <button
           aria-label="Settings"
-          className={`nav-button ${view.name === "settings" ? "active" : ""}`}
+          className={`nav-button ${
+            view.name === "settings" ||
+            view.name === "mcp" ||
+            view.name === "exports"
+              ? "active"
+              : ""
+          }`}
           onClick={() => navigate({ name: "settings" })}
         >
           <Settings size={16} />
@@ -904,7 +886,7 @@ export function App() {
             queueNavigation={queueNavigation}
           />
         )}
-        {view.name === "dashboard" && (
+        {(view.name === "dashboard" || view.name === "scores") && (
           <DashboardView
             archiveScore={archiveScore}
             coachFeedback={coachFeedback}
@@ -917,7 +899,8 @@ export function App() {
               navigate({ name: "list" });
             }}
             onMeasure={() => void measureArchive()}
-            onNavigateSection={(section) => navigate({ name: section })}
+            onRefreshArchiveScore={() => void refreshArchiveScore()}
+            onSelect={(id) => navigate({ name: "detail", id })}
             trendDays={trendDays}
             onChangeTrendDays={(days) => {
               setTrendDays(days);
@@ -937,24 +920,6 @@ export function App() {
             onSelect={(id) => navigate({ name: "detail", id })}
           />
         )}
-        {view.name === "scores" && (
-          <ScoresView
-            archiveScore={archiveScore}
-            dashboard={dashboard}
-            loading={!dashboard}
-            onOpenFilteredList={(nextFilters) => {
-              setFilters({ isSensitive: "all", ...nextFilters });
-              navigate({ name: "list" });
-            }}
-            onRefreshArchiveScore={() => void refreshArchiveScore()}
-            onSelect={(id) => navigate({ name: "detail", id })}
-            trendDays={trendDays}
-            onChangeTrendDays={(days) => {
-              setTrendDays(days);
-              setDashboard(undefined);
-            }}
-          />
-        )}
         {view.name === "projects" && (
           <ProjectsView
             instructionBusy={projectInstructionBusy}
@@ -965,38 +930,38 @@ export function App() {
             projects={projects}
           />
         )}
-        {view.name === "mcp" && (
-          <McpToolsView
-            dashboard={dashboard}
-            health={health}
-            settings={settings}
-          />
-        )}
-        {view.name === "exports" && (
-          <ExportView
-            busy={exportBusy}
-            copied={exportCopied}
-            dashboard={dashboard}
-            onCopy={() => void copyExportPayload()}
-            onDownload={downloadExportPayload}
-            onExecute={() => void executeExport()}
-            onPresetChange={(preset) => {
-              setExportPreset(preset);
-              setExportPreview(undefined);
-              setExportPayload(undefined);
-            }}
-            onPreview={() => void previewExport()}
-            payload={exportPayload}
-            preset={exportPreset}
-            preview={exportPreview}
-          />
-        )}
-        {view.name === "settings" && (
-          <SettingsView
-            dashboard={dashboard}
-            health={health}
-            settings={settings}
-          />
+        {(view.name === "settings" ||
+          view.name === "mcp" ||
+          view.name === "exports") && (
+          <div className="dashboard-layout">
+            <SettingsView
+              dashboard={dashboard}
+              health={health}
+              settings={settings}
+            />
+            <McpToolsView
+              dashboard={dashboard}
+              health={health}
+              settings={settings}
+            />
+            <ExportView
+              busy={exportBusy}
+              copied={exportCopied}
+              dashboard={dashboard}
+              onCopy={() => void copyExportPayload()}
+              onDownload={downloadExportPayload}
+              onExecute={() => void executeExport()}
+              onPresetChange={(preset) => {
+                setExportPreset(preset);
+                setExportPreview(undefined);
+                setExportPayload(undefined);
+              }}
+              onPreview={() => void previewExport()}
+              payload={exportPayload}
+              preset={exportPreset}
+              preview={exportPreview}
+            />
+          </div>
         )}
       </section>
 
@@ -1183,7 +1148,8 @@ function DashboardView({
   measurementCheckedAt,
   onOpenFilteredList,
   onMeasure,
-  onNavigateSection,
+  onRefreshArchiveScore,
+  onSelect,
   trendDays,
   onChangeTrendDays,
 }: {
@@ -1195,7 +1161,8 @@ function DashboardView({
   measurementCheckedAt?: string;
   onOpenFilteredList(filters: PromptFilters): void;
   onMeasure(): void;
-  onNavigateSection(section: WorkspaceSection): void;
+  onRefreshArchiveScore(): void;
+  onSelect(id: string): void;
   trendDays: 7 | 30;
   onChangeTrendDays(days: 7 | 30): void;
 }) {
@@ -1226,11 +1193,16 @@ function DashboardView({
         measurementBusy={measurementBusy}
         onMeasure={onMeasure}
         onOpenFilteredList={onOpenFilteredList}
-        onOpenScores={() => onNavigateSection("scores")}
+        onOpenScores={onRefreshArchiveScore}
       />
       <DashboardMetricStrip
         dashboard={dashboard}
         onOpenFilteredList={onOpenFilteredList}
+      />
+      <ArchiveScoreReviewPanel
+        report={archiveScore}
+        onRefresh={onRefreshArchiveScore}
+        onSelect={onSelect}
       />
       <CoachFeedbackPanel summary={coachFeedback} />
     </div>
@@ -1265,51 +1237,6 @@ function CoachView({
       />
       <RepeatedPatternsPanel dashboard={dashboard} />
       <InstructionSuggestionsPanel dashboard={dashboard} />
-    </div>
-  );
-}
-
-function ScoresView({
-  archiveScore,
-  dashboard,
-  loading,
-  onOpenFilteredList,
-  onRefreshArchiveScore,
-  onSelect,
-  trendDays,
-  onChangeTrendDays,
-}: {
-  archiveScore?: ArchiveScoreReport;
-  dashboard?: QualityDashboard;
-  loading: boolean;
-  onOpenFilteredList(filters: PromptFilters): void;
-  onRefreshArchiveScore(): void;
-  onSelect(id: string): void;
-  trendDays: 7 | 30;
-  onChangeTrendDays(days: 7 | 30): void;
-}) {
-  if (loading || !dashboard) {
-    return <div className="panel empty">Loading dashboard.</div>;
-  }
-
-  return (
-    <div className="dashboard-layout">
-      <ArchiveScoreReviewPanel
-        report={archiveScore}
-        onRefresh={onRefreshArchiveScore}
-        onSelect={onSelect}
-      />
-      <TrendPanel
-        daily={dashboard.trend.daily}
-        onSelectDay={(date) =>
-          onOpenFilteredList({
-            receivedFrom: date,
-            receivedTo: date,
-          })
-        }
-        trendDays={trendDays}
-        onChangeTrendDays={onChangeTrendDays}
-      />
     </div>
   );
 }
