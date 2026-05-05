@@ -207,6 +207,10 @@ function doctorNextSteps(
   }
   if (!result.mcp.registered) {
     steps.push(`Register MCP: ${mcpRegistrationCommand(tool)}.`);
+  } else {
+    steps.push(
+      "Note: ask_clarifying_questions drives MCP elicitation only when the client advertises capabilities.elicitation (Claude Code 2.1.76+). Older clients fall back to clarifying_questions metadata that the agent must route through its own ask UI before calling apply_clarifications.",
+    );
   }
   if (
     tool === "codex" &&
