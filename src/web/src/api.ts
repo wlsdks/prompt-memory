@@ -24,9 +24,7 @@ export type PromptSummary = {
 export type PromptDetail = PromptSummary & {
   markdown: string;
   analysis?: {
-    summary: string;
-    warnings: string[];
-    suggestions: string[];
+    redaction_notice?: string;
     checklist: Array<{
       key: string;
       label: string;
@@ -110,8 +108,6 @@ export type PromptQualityScore = {
   band: PromptQualityScoreBand;
   breakdown: Array<{
     key: PromptQualityGap;
-    label: string;
-    status: "good" | "weak" | "missing";
     weight: number;
     earned: number;
   }>;

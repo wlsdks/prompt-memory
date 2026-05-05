@@ -456,6 +456,9 @@ export type PromptReadStoragePort = {
     promptId: string,
     input: CreatePromptImprovementDraftInput,
   ): PromptImprovementDraft | undefined;
+  countImprovementDraftsByPromptIds(
+    promptIds: readonly string[],
+  ): Map<string, number>;
 };
 
 export type AgentPromptJudgmentStoragePort = {

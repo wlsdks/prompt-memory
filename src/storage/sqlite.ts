@@ -229,6 +229,9 @@ export function createSqlitePromptStorage(
         options.now?.() ?? new Date(),
       );
     },
+    countImprovementDraftsByPromptIds(promptIds) {
+      return countImprovementDraftsByPromptIds(db, promptIds);
+    },
     createAgentPromptJudgment(promptId, input) {
       return createAgentPromptJudgment(
         db,
@@ -1606,6 +1609,29 @@ function createExportJobId(): string {
 
 function createPromptImprovementDraftId(): string {
   return `impdraft_${randomUUID().replaceAll("-", "").slice(0, 24)}`;
+}
+
+function countImprovementDraftsByPromptIds(
+  db: Database.Database,
+  promptIds: readonly string[],
+): Map<string, number> {
+  const counts = new Map<string, number>();
+  if (promptIds.length === 0) return counts;
+  const placeholders = promptIds.map(() => "?").join(",");
+  const rows = db
+    .prepare(
+      `
+      SELECT prompt_id, COUNT(*) AS draft_count
+      FROM prompt_improvement_drafts
+      WHERE prompt_id IN (${placeholders})
+      GROUP BY prompt_id
+      `,
+    )
+    .all(...promptIds) as Array<{ prompt_id: string; draft_count: number }>;
+  for (const row of rows) {
+    counts.set(row.prompt_id, Number(row.draft_count));
+  }
+  return counts;
 }
 
 function hasLivePrompt(db: Database.Database, id: string): boolean {
