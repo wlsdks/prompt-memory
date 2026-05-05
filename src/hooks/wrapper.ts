@@ -27,6 +27,7 @@ export type RunClaudeCodeHookOptions = {
     minScore?: number;
     language?: "en" | "ko";
     copyToClipboard?: (text: string) => boolean;
+    suppressOutput?: boolean;
   };
   postPayload?: (
     request: PostHookPayloadRequest,
@@ -73,6 +74,12 @@ async function runPromptMemoryHook(
       const rewriteOutput = createPromptRewriteGuardOutput(payload, {
         ...options.rewriteGuard,
         now: new Date(),
+        // Codex renders hook stdout (additionalContext / block reason) directly
+        // in the user-visible chat. Setting `suppressOutput: true` keeps the
+        // guidance available to the model while hiding it from the user, which
+        // is the same effective behavior Claude Code already gives by default.
+        suppressOutput:
+          options.rewriteGuard?.suppressOutput ?? tool === "codex",
       });
       stdout = rewriteOutput ? `${JSON.stringify(rewriteOutput)}\n` : "";
     }

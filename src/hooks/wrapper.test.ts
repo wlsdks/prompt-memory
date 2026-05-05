@@ -182,6 +182,53 @@ describe("runCodexHook", () => {
     expect(result).toEqual({ exitCode: 0, stdout: "", stderr: "" });
     expect(JSON.stringify(result)).not.toContain(rawPrompt);
   });
+
+  it("emits suppressOutput=true on Codex rewrite-guard context output so the body stays out of the user-visible chat", async () => {
+    const dataDir = createTempDir();
+    initializePromptMemory({ dataDir });
+
+    const result = await runCodexHook({
+      stdin: JSON.stringify({
+        hook_event_name: "UserPromptSubmit",
+        prompt: "fix",
+      }),
+      dataDir,
+      rewriteGuard: { mode: "context", minScore: 100 },
+      postPayload: async () => ({ ok: true, status: 200 }),
+    });
+
+    const output = JSON.parse(result.stdout) as {
+      hookSpecificOutput: { hookEventName: string; additionalContext: string };
+      suppressOutput?: boolean;
+    };
+
+    expect(output.suppressOutput).toBe(true);
+    expect(output.hookSpecificOutput.hookEventName).toBe("UserPromptSubmit");
+    expect(output.hookSpecificOutput.additionalContext.length).toBeGreaterThan(
+      0,
+    );
+  });
+
+  it("does not set suppressOutput on Claude Code rewrite-guard output (existing behavior)", async () => {
+    const dataDir = createTempDir();
+    initializePromptMemory({ dataDir });
+
+    const result = await runClaudeCodeHook({
+      stdin: JSON.stringify({
+        hook_event_name: "UserPromptSubmit",
+        prompt: "fix",
+      }),
+      dataDir,
+      rewriteGuard: { mode: "context", minScore: 100 },
+      postPayload: async () => ({ ok: true, status: 200 }),
+    });
+
+    const output = JSON.parse(result.stdout) as {
+      suppressOutput?: boolean;
+    };
+
+    expect(output.suppressOutput).toBeUndefined();
+  });
 });
 
 function createTempDir(): string {
