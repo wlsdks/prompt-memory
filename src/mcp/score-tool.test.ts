@@ -900,6 +900,11 @@ describe("coachPromptTool", () => {
     expect(result.agent_brief.next_actions).toEqual(
       expect.arrayContaining([expect.stringContaining("Ask the user")]),
     );
+    expect(result.agent_brief.next_actions).toEqual(
+      expect.arrayContaining([
+        expect.stringContaining("ask_clarifying_questions"),
+      ]),
+    );
     expect(result.agent_brief.next_actions).not.toEqual(
       expect.arrayContaining([
         "Use the approval-ready rewrite only after the user explicitly accepts it.",
