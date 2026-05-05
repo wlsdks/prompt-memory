@@ -538,12 +538,15 @@ privacy/safety, 보고 규칙을 보는 deterministic local rubric입니다.
 prompt-memory mcp
 ```
 
-MCP server는 열 개의 tool을 제공합니다.
+MCP server는 열세 개의 tool을 제공합니다.
 
 - `get_prompt_memory_status`: 로컬 archive가 초기화되었는지, prompt가 캡처되었는지, 다음에 어떤 MCP tool을 호출하면 좋은지 확인합니다.
 - `coach_prompt`: Claude Code/Codex 안에서 로컬 readiness, 최신 prompt 점수, 승인형 rewrite, 누적 습관, 프로젝트 규칙, 다음 요청 가이드를 한 번에 받습니다.
 - `score_prompt`: 직접 전달한 prompt text, 저장된 `prompt_id`, 또는 최신 저장 prompt를 점수화합니다.
-- `improve_prompt`: 직접 전달한 prompt text, 저장된 `prompt_id`, 또는 최신 저장 prompt를 승인 가능한 개선 prompt 초안으로 재작성합니다.
+- `improve_prompt`: 직접 전달한 prompt text, 저장된 `prompt_id`, 또는 최신 저장 prompt를 승인 가능한 개선 prompt 초안으로 재작성합니다. 결과에는 사용자에게 native ask UI로 물어야 할 `clarifying_questions` 배열(JSON-Schema 형태의 `answer_schema.examples` 포함)이 포함됩니다.
+- `apply_clarifications`: 사용자가 직접 답한 답변(각 항목은 `origin: "user"` 필수)을 받아 최종 승인용 draft를 합성합니다. agent가 자기 ask UI로 답을 모은 뒤 호출합니다.
+- `ask_clarifying_questions`: prompt-memory가 ask-then-apply 흐름 자체를 주도합니다. 클라이언트가 elicitation capability를 광고하면(Claude Code 2.1.76+) MCP `elicitation/create`로 직접 사용자에게 묻고 final draft를 합성하며, 미지원 / 거부 / 타임아웃 시 clarifying_questions metadata로 fallback합니다. rewrite를 자동 제출하지 않습니다.
+- `record_clarifications`: 사용자가 답한 verbatim 답변과 합성된 최종 draft를 prompt id에 묶어 로컬 archive(`prompt_improvement_drafts`)에 영구 저장합니다. 응답에는 metadata(`draft_id`, `answers_count`, `changed_sections` 등)만 들어가고 prompt body나 draft 본문은 echo하지 않습니다.
 - `prepare_agent_rewrite`: 현재 Claude Code/Codex/Gemini CLI 세션이 의미론적으로 더 좋은 prompt를 만들 수 있도록, 하나의 redacted prompt packet, 로컬 점수 metadata, 로컬 baseline draft, rewrite contract를 준비합니다.
 - `record_agent_rewrite`: 사용자가 승인한 agent rewrite를 redacted improvement draft로 저장하고, rewrite 본문은 반환하지 않습니다.
 - `score_prompt_archive`: 최근 저장 prompt 전체를 대상으로 누적 prompt 습관을 점수화하고, 평균 점수, 반복 부족 항목, practice plan, 다음 prompt template, 낮은 점수 prompt id를 반환합니다.
@@ -578,7 +581,7 @@ prompt-memory review_project_instructions를 latest=true로 사용해서 내 AGE
 prompt-memory prepare_agent_judge_batch를 selection=low_score, max_prompts=5로 사용해줘. redacted prompt를 네가 직접 평가한 뒤 record_agent_judgments로 점수와 제안을 저장해줘.
 ```
 
-이 tool들은 점수, band, checklist breakdown, warning, 반복 부족 항목, 승인 가능한 재작성 초안, 개선 힌트를 반환합니다.
+이 tool들은 점수, band, checklist breakdown(축별 earned/weight 포인트), redaction 알림, 반복 부족 항목, clarifying_questions, 승인 가능한 재작성 초안을 반환합니다.
 직접 전달한 prompt text는 저장하지 않고, 숨은 외부 LLM 호출도 하지 않습니다. archive 기반 score/rewrite 흐름은 저장된 원문 prompt body를 반환하지 않습니다. archive scoring tool은 raw absolute path도 반환하지 않습니다. project instruction review tool은 instruction file 본문과 raw absolute path를 반환하지 않습니다. status tool은 안전한 개수, 최신 prompt metadata, 사용 가능한 tool 이름, 다음 행동만 반환합니다.
 
 Agent-judge packet은 예외적으로 명시 요청 시 로컬에서 redaction된 prompt body를 반환합니다. 이는 현재 Claude Code/Codex/Gemini CLI 세션이 직접 평가할 수 있게 하기 위한 것이며, `prompt-memory`가 provider 계정이나 token을 대신 호출하거나 proxy하지 않습니다. 근거와 경계는 [Legal usage guide](docs/LEGAL_USAGE_GUIDE.md)에 기록되어 있습니다.

@@ -144,8 +144,9 @@ Hard delete removes:
    or Codex.
 2. The client launches the command as a stdio subprocess.
 3. The MCP server exposes `get_prompt_memory_status`, `coach_prompt`,
-   `score_prompt`, `improve_prompt`, `prepare_agent_rewrite`,
-   `record_agent_rewrite`, `score_prompt_archive`,
+   `score_prompt`, `improve_prompt`, `apply_clarifications`,
+   `ask_clarifying_questions`, `record_clarifications`,
+   `prepare_agent_rewrite`, `record_agent_rewrite`, `score_prompt_archive`,
    `review_project_instructions`, `prepare_agent_judge_batch`, and
    `record_agent_judgments`.
 4. `get_prompt_memory_status` checks whether local storage is initialized,
