@@ -34,6 +34,22 @@ After setup, ask the user to send one real coding prompt in Claude Code or
 Codex, then run `prompt-memory coach`. Use `doctor` and manual MCP registration
 only if capture or agent-native commands do not appear.
 
+Toggle the `UserPromptSubmit` rewrite guard between four modes
+(`off`, `context`, `ask`, `block-and-copy`) without remembering CLI flags:
+
+```sh
+prompt-memory hook status        # see the mode currently installed per tool
+prompt-memory setup --rewrite-guard ask --no-service --skip-statusline
+```
+
+In `ask` mode, when a captured Codex prompt scores low and clears the
+trigger gate (length ≥ 30, score < 60, not an acknowledgment), the
+hook tells the active agent to call the prompt-memory
+`ask_clarifying_questions` MCP tool with `allow_native_dialog: true`.
+The MCP tool prefers `elicitation/create` and falls back to a native
+OS dialog (osascript / zenity / PowerShell InputBox) when the host
+CLI does not advertise elicitation support.
+
 When working from this repository during development, build first and use the
 repo script:
 

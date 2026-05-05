@@ -25,7 +25,7 @@ type HookCliOptions = {
   openWeb?: boolean;
 };
 
-type HookStatusReport = {
+export type HookStatusReport = {
   tool: "claude-code" | "codex";
   installed: boolean;
   mode: PromptRewriteGuardMode | "unknown";
@@ -148,7 +148,7 @@ export function registerHookCommand(program: Command): void {
     });
 }
 
-function readHookStatusReports(options: {
+export function readHookStatusReports(options: {
   settingsPath?: string;
   hooksPath?: string;
 }): HookStatusReport[] {
@@ -225,7 +225,9 @@ function parseLanguageFlag(command: string): "en" | "ko" | undefined {
   return raw === "en" || raw === "ko" ? raw : undefined;
 }
 
-function formatHookStatusReports(reports: readonly HookStatusReport[]): string {
+export function formatHookStatusReports(
+  reports: readonly HookStatusReport[],
+): string {
   const lines = ["prompt-memory hook status", ""];
   for (const report of reports) {
     if (!report.installed) {

@@ -159,6 +159,8 @@ describe("plugin packaging files", () => {
     expect(manifest.interface.defaultPrompt).toEqual(
       expect.arrayContaining([
         "Show my prompt-memory buddy side pane command",
+        "Show my prompt-memory hook rewrite-guard mode",
+        "Toggle the prompt-memory rewrite guard between off / context / ask / block-and-copy",
         "Score my latest captured prompt",
         "Improve my latest captured prompt",
         "Rewrite my latest captured prompt with the active agent session",

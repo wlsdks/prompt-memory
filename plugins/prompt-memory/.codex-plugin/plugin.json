@@ -31,6 +31,8 @@
     "defaultPrompt": [
       "Set up prompt-memory for this machine",
       "Check whether prompt-memory is capturing Codex prompts",
+      "Show my prompt-memory hook rewrite-guard mode",
+      "Toggle the prompt-memory rewrite guard between off / context / ask / block-and-copy",
       "Show my prompt-memory buddy side pane command",
       "Run my full prompt coach workflow",
       "Score my latest captured prompt",
