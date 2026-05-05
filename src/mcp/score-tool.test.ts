@@ -323,6 +323,38 @@ describe("improvePromptTool", () => {
     expect(result.error_code).toBe("invalid_input");
     expect(result.message).toContain("Provide exactly one");
   });
+
+  it("emits clarifying_questions and an ask-the-user next_action for weak prompts", () => {
+    const result = improvePromptTool({ prompt: "Make this better" });
+
+    if ("is_error" in result) {
+      throw new Error("improvePromptTool returned an error");
+    }
+
+    expect(result.clarifying_questions.length).toBeGreaterThanOrEqual(1);
+    expect(result.clarifying_questions.length).toBeLessThanOrEqual(2);
+    expect(result.next_action).toContain("Ask the user");
+    expect(result.next_action).toContain("clarifying_questions");
+    for (const question of result.clarifying_questions) {
+      expect(question.id).toBe(`q_${question.axis}`);
+      expect(question.ask.length).toBeGreaterThan(0);
+    }
+  });
+
+  it("returns an empty clarifying_questions list and the original next_action for strong prompts", () => {
+    const result = improvePromptTool({
+      prompt:
+        "Because the export review is unclear, inspect src/web/src/App.tsx only, run pnpm test, and return a Markdown summary.",
+    });
+
+    if ("is_error" in result) {
+      throw new Error("improvePromptTool returned an error");
+    }
+
+    expect(result.clarifying_questions).toEqual([]);
+    expect(result.next_action).toContain("Review the draft");
+    expect(result.next_action).not.toContain("Ask the user");
+  });
 });
 
 describe("reviewProjectInstructionsTool", () => {

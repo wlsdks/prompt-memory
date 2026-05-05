@@ -296,6 +296,29 @@ export const IMPROVE_PROMPT_TOOL_DEFINITION: PromptMemoryMcpToolDefinition = {
       summary: { type: "string" },
       improved_prompt: { type: "string" },
       changed_sections: { type: "array", items: { type: "string" } },
+      clarifying_questions: {
+        type: "array",
+        description:
+          "One-line questions the agent should ask the user (through its native ask UI) before producing or submitting any rewrite. Each item maps to a missing prompt-quality axis and stays redaction-safe. May be empty when no axis is missing. Capped to two highest-priority questions.",
+        items: {
+          type: "object",
+          required: ["id", "axis", "ask"],
+          properties: {
+            id: { type: "string" },
+            axis: {
+              type: "string",
+              enum: [
+                "goal_clarity",
+                "background_context",
+                "scope_limits",
+                "output_format",
+                "verification_criteria",
+              ],
+            },
+            ask: { type: "string" },
+          },
+        },
+      },
       safety_notes: { type: "array", items: { type: "string" } },
       created_at: { type: "string" },
       analyzer: { type: "string" },
@@ -329,6 +352,7 @@ export const IMPROVE_PROMPT_TOOL_DEFINITION: PromptMemoryMcpToolDefinition = {
           "summary",
           "improved_prompt",
           "changed_sections",
+          "clarifying_questions",
           "safety_notes",
           "created_at",
           "analyzer",

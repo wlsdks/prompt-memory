@@ -673,6 +673,11 @@ function toImprovementToolResult(input: {
   improvement: PromptImprovement;
   rewriteSource?: "direct_prompt" | "redacted_stored_prompt";
 }): ImprovePromptToolResult {
+  const hasQuestions = input.improvement.clarifying_questions.length > 0;
+  const nextAction = hasQuestions
+    ? "Ask the user the listed clarifying_questions through the agent's native ask UI before producing or submitting any rewrite. Wait for the user's own answers; do not guess on their behalf."
+    : "Review the draft, copy it manually, and resubmit it only after user approval.";
+
   return {
     ...input.improvement,
     source: input.source,
@@ -681,8 +686,7 @@ function toImprovementToolResult(input: {
     improved_prompt: removeOriginalPromptSection(
       input.improvement.improved_prompt,
     ),
-    next_action:
-      "Review the draft, copy it manually, and resubmit it only after user approval.",
+    next_action: nextAction,
     privacy: {
       local_only: true,
       stores_input: false,
