@@ -12,12 +12,14 @@ import {
   Trash2,
   XOctagon,
 } from "lucide-react";
-import { useState } from "react";
+import { useMemo, useState } from "react";
 
 import {
-  improvePrompt,
+  applyClarifications,
+  type ClarifyingQuestion,
   type PromptImprovement,
 } from "../../analysis/improve.js";
+import type { PromptQualityCriterion } from "../../shared/schema.js";
 import {
   sendCoachFeedback,
   type CoachFeedbackRating,
@@ -69,15 +71,33 @@ export function PromptDetailView({
     total?: number;
   };
 }) {
-  if (!prompt) {
+  const [answersByAxis, setAnswersByAxis] = useState<
+    Partial<Record<PromptQualityCriterion, string>>
+  >({});
+
+  const improvement = useMemo<PromptImprovement | undefined>(() => {
+    if (!prompt) return undefined;
+    const answers = Object.entries(answersByAxis)
+      .filter(
+        ([, value]) => typeof value === "string" && value.trim().length > 0,
+      )
+      .map(([axis, value]) => ({
+        question_id: `q_${axis}`,
+        axis: axis as PromptQualityCriterion,
+        answer: value as string,
+        origin: "user" as const,
+      }));
+    return applyClarifications({
+      prompt: prompt.markdown,
+      createdAt: prompt.received_at,
+      language,
+      answers,
+    });
+  }, [prompt, language, answersByAxis]);
+
+  if (!prompt || !improvement) {
     return <div className="panel empty">Loading prompt details.</div>;
   }
-
-  const improvement = improvePrompt({
-    prompt: prompt.markdown,
-    createdAt: prompt.received_at,
-    language,
-  });
 
   return (
     <div className="detail-layout">
@@ -122,8 +142,12 @@ export function PromptDetailView({
         )}
         <JudgeScorePanel prompt={prompt} />
         <PromptCoachPanel
+          answersByAxis={answersByAxis}
           copied={copiedImprovement}
           improvement={improvement}
+          onAnswerChange={(axis, value) =>
+            setAnswersByAxis((current) => ({ ...current, [axis]: value }))
+          }
           onCopy={() => onCopyImprovement(prompt)}
           onSave={() => onSaveImprovement(prompt)}
           originalPrompt={prompt.markdown}
@@ -182,8 +206,10 @@ export function PromptDetailView({
 }
 
 function PromptCoachPanel({
+  answersByAxis,
   copied,
   improvement,
+  onAnswerChange,
   onCopy,
   onSave,
   originalPrompt,
@@ -191,8 +217,10 @@ function PromptCoachPanel({
   saved,
   savedDrafts,
 }: {
+  answersByAxis: Partial<Record<PromptQualityCriterion, string>>;
   copied: boolean;
   improvement: PromptImprovement;
+  onAnswerChange(axis: PromptQualityCriterion, value: string): void;
   onCopy(): void;
   onSave(): void;
   originalPrompt: string;
@@ -254,6 +282,13 @@ function PromptCoachPanel({
           </pre>
         </div>
       </div>
+      {improvement.clarifying_questions.length > 0 && (
+        <ClarifyingQuestionsCard
+          answersByAxis={answersByAxis}
+          onAnswerChange={onAnswerChange}
+          questions={improvement.clarifying_questions}
+        />
+      )}
       <div className="coach-footer">
         <div className="coach-notes">
           {improvement.safety_notes.map((note) => (
@@ -421,5 +456,52 @@ function AnalysisPreview({
         </div>
       )}
     </section>
+  );
+}
+
+function ClarifyingQuestionsCard({
+  answersByAxis,
+  onAnswerChange,
+  questions,
+}: {
+  answersByAxis: Partial<Record<PromptQualityCriterion, string>>;
+  onAnswerChange(axis: PromptQualityCriterion, value: string): void;
+  questions: ClarifyingQuestion[];
+}) {
+  return (
+    <div
+      className="clarifying-questions-card"
+      aria-label="Thinking step questions"
+    >
+      <h3 className="clarifying-questions-heading">
+        Fill the missing thinking step
+      </h3>
+      <p className="clarifying-questions-hint">
+        Answer in one line. Your answer is redacted locally and replaces the
+        placeholder for that section in the improved draft.
+      </p>
+      <ul className="clarifying-questions-list">
+        {questions.map((question) => (
+          <li key={question.id} className="clarifying-question">
+            <label htmlFor={`clarify-${question.id}`}>
+              <span className="clarifying-question-axis">
+                {qualityGapLabel(question.axis) ?? question.axis}
+              </span>
+              <span className="clarifying-question-ask">{question.ask}</span>
+            </label>
+            <textarea
+              id={`clarify-${question.id}`}
+              className="clarifying-question-input"
+              rows={2}
+              value={answersByAxis[question.axis] ?? ""}
+              onChange={(event) =>
+                onAnswerChange(question.axis, event.target.value)
+              }
+              placeholder="Your answer in one line"
+            />
+          </li>
+        ))}
+      </ul>
+    </div>
   );
 }
