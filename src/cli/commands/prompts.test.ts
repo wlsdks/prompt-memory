@@ -107,6 +107,41 @@ describe("prompt CLI commands", () => {
     expect(explanation).toContain("Verification criteria");
   });
 
+  it("shows drafts:N suffix on list rows that have saved improvement drafts", async () => {
+    const dataDir = createTempDir();
+    const ids = await createCliFixture(dataDir);
+    const init = initializePromptMemory({ dataDir });
+    const storage = createSqlitePromptStorage({
+      dataDir,
+      hmacSecret: init.hookAuth.web_session_secret,
+    });
+    try {
+      storage.createPromptImprovementDraft(ids.beta, {
+        draft_text: "draft body",
+        analyzer: "clarifications-v1",
+        changed_sections: [],
+        safety_notes: [],
+        accepted: true,
+      });
+    } finally {
+      storage.close();
+    }
+
+    const listing = listPromptsForCli({ dataDir, limit: 10 });
+    const betaLine = listing
+      .split("\n")
+      .find((line) => line.includes(ids.beta));
+    expect(betaLine).toBeDefined();
+    expect(betaLine).toContain("drafts:1");
+    // Rows without drafts should not get the suffix.
+    const otherRows = listing
+      .split("\n")
+      .filter((line) => line.includes("\t") && !line.includes(ids.beta));
+    for (const row of otherRows) {
+      expect(row).not.toContain("drafts:");
+    }
+  });
+
   it("appends saved drafts with friendly analyzer labels to --explain output", async () => {
     const dataDir = createTempDir();
     const ids = await createCliFixture(dataDir);

@@ -96,7 +96,10 @@ export function listPromptsForCli(options: PromptCliOptions = {}): string {
     if (result.items.length === 0) {
       return "no prompts captured yet.";
     }
-    return formatHumanResult(result, {
+    const draftCounts = storage.countImprovementDraftsByPromptIds(
+      result.items.map((row) => row.id),
+    );
+    return formatHumanResult(result, draftCounts, {
       header: `${result.items.length} prompt${result.items.length === 1 ? "" : "s"}`,
       moreHint: "more available — pass --limit higher to see more",
     });
@@ -128,7 +131,10 @@ export function searchPromptsForCli(
         ? `no prompts matching "${query}" (${truncatedTokens}).`
         : `no prompts matching "${query}".`;
     }
-    return formatHumanResult(result, {
+    const draftCounts = storage.countImprovementDraftsByPromptIds(
+      result.items.map((row) => row.id),
+    );
+    return formatHumanResult(result, draftCounts, {
       header: `${result.items.length} match${result.items.length === 1 ? "" : "es"} for "${query}"`,
       moreHint: "more available — narrow the query or pass --limit higher",
       extraHint: truncatedTokens,
@@ -140,6 +146,7 @@ function formatHumanResult(
   result: ReturnType<
     ReturnType<typeof createSqlitePromptStorage>["listPrompts"]
   >,
+  draftCounts: Map<string, number>,
   labels: { header: string; moreHint: string; extraHint?: string },
 ): string {
   const hints = [
@@ -150,7 +157,7 @@ function formatHumanResult(
     hints.length > 0
       ? `${labels.header} (${hints.join("; ")}):`
       : `${labels.header}:`;
-  return `${heading}\n${formatPromptRows(result.items)}`;
+  return `${heading}\n${formatPromptRows(result.items, draftCounts)}`;
 }
 
 export function showPromptForCli(
@@ -284,16 +291,18 @@ function formatPromptRows(
   rows: ReturnType<
     ReturnType<typeof createSqlitePromptStorage>["listPrompts"]
   >["items"],
+  draftCounts: Map<string, number>,
 ): string {
   if (rows.length === 0) {
     return "";
   }
 
   return rows
-    .map(
-      (row) =>
-        `${row.received_at}\t${row.id}\t${row.tool}\t${row.cwd}\t${row.prompt_length}`,
-    )
+    .map((row) => {
+      const drafts = draftCounts.get(row.id) ?? 0;
+      const draftsLabel = drafts > 0 ? `\tdrafts:${drafts}` : "";
+      return `${row.received_at}\t${row.id}\t${row.tool}\t${row.cwd}\t${row.prompt_length}${draftsLabel}`;
+    })
     .join("\n");
 }
 
