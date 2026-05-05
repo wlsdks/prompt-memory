@@ -563,8 +563,8 @@ function SimilarPromptsPanel({
       {error && <p className="muted">{error}</p>}
       {items && items.length === 0 && (
         <p className="muted">
-          No similar prompts in the archive yet. Capture more sessions to
-          see matches.
+          No similar prompts in the archive yet. Capture more sessions to see
+          matches.
         </p>
       )}
       {items && items.length > 0 && (
@@ -586,9 +586,7 @@ function SimilarPromptsPanel({
                   <small>{formatDate(item.received_at)}</small>
                 </span>
                 {item.snippet && (
-                  <span className="similar-prompt-snippet">
-                    {item.snippet}
-                  </span>
+                  <span className="similar-prompt-snippet">{item.snippet}</span>
                 )}
               </button>
             </li>

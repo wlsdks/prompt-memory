@@ -743,9 +743,7 @@ export function readClaudeSettings(settingsPath: string): ClaudeSettings {
   return JSON.parse(readFileSync(settingsPath, "utf8")) as ClaudeSettings;
 }
 
-export function readCodexHooksSettings(
-  hooksPath: string,
-): CodexHooksSettings {
+export function readCodexHooksSettings(hooksPath: string): CodexHooksSettings {
   if (!existsSync(hooksPath)) {
     return {};
   }
