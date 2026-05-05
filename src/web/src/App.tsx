@@ -254,32 +254,6 @@ export function App() {
   }, [projects.length, view.name]);
 
   useEffect(() => {
-    if (view.name !== "benchmark") {
-      return;
-    }
-
-    let cancelled = false;
-    const timer = window.setInterval(() => {
-      void Promise.all([getQualityDashboard(), getArchiveScoreReport()])
-        .then(([nextDashboard, nextArchiveScore]) => {
-          if (cancelled) {
-            return;
-          }
-
-          setDashboard(nextDashboard);
-          setArchiveScore(nextArchiveScore);
-          setMeasurementCheckedAt(new Date().toISOString());
-        })
-        .catch(() => undefined);
-    }, LIVE_MEASUREMENT_REFRESH_MS);
-
-    return () => {
-      cancelled = true;
-      window.clearInterval(timer);
-    };
-  }, [view.name]);
-
-  useEffect(() => {
     if (view.name !== "detail") {
       setSelected(undefined);
       return;
@@ -1043,17 +1017,7 @@ export function App() {
         )}
         {view.name === "benchmark" && (
           <BenchmarkView
-            archiveScore={archiveScore}
-            dashboard={dashboard}
-            loading={!dashboard}
-            measurementBusy={measurementBusy}
-            measurementCheckedAt={measurementCheckedAt}
-            onMeasure={() => void measureArchive()}
             onNavigateScores={() => navigate({ name: "scores" })}
-            onOpenFilteredList={(nextFilters) => {
-              setFilters({ isSensitive: "all", ...nextFilters });
-              navigate({ name: "list" });
-            }}
           />
         )}
         {view.name === "insights" && (
@@ -1405,62 +1369,35 @@ function DashboardView({
 }
 
 function BenchmarkView({
-  archiveScore,
-  dashboard,
-  loading,
-  measurementBusy,
-  measurementCheckedAt,
-  onMeasure,
   onNavigateScores,
-  onOpenFilteredList,
 }: {
-  archiveScore?: ArchiveScoreReport;
-  dashboard?: QualityDashboard;
-  loading: boolean;
-  measurementBusy: boolean;
-  measurementCheckedAt?: string;
-  onMeasure(): void;
   onNavigateScores(): void;
-  onOpenFilteredList(filters: PromptFilters): void;
 }) {
-  if (loading || !dashboard) {
-    return <div className="panel empty">Loading dashboard.</div>;
-  }
-
-  const measurement = createArchiveMeasurement({
-    archiveScore,
-    dashboard,
-    measuredAt: measurementCheckedAt,
-  });
-
   return (
     <div className="dashboard-layout benchmark-layout">
-      <ArchiveMeasurementPanel
-        autoRefresh
-        measurement={measurement}
-        measurementBusy={measurementBusy}
-        onMeasure={onMeasure}
-        onOpenFilteredList={onOpenFilteredList}
-        onOpenScores={onNavigateScores}
-      />
       <section className="panel measurement-explainer">
         <div>
-          <h2>What this measures</h2>
+          <h2>Benchmark CLI gate</h2>
           <p>
-            This is your live archive measurement: it scores recent Claude Code
-            and Codex prompts stored locally, finds repeated gaps, and points to
-            the next review action.
+            The development benchmark lives in the CLI as{" "}
+            <code>pnpm benchmark -- --json</code>. It is a regression gate that
+            scores a fixed set of fixtures, not a replacement for measuring
+            your real prompt archive.
           </p>
         </div>
         <div>
-          <h2>Benchmark v1</h2>
+          <h2>Where to look instead</h2>
           <p>
-            <span>The development benchmark still lives in the CLI as</span>
-            <code>pnpm benchmark -- --json</code>
-            <span>
-              It is a regression gate, not a replacement for measuring your real
-              prompt archive here.
-            </span>
+            Your live archive measurement, score distribution, and habit
+            review queue are on the{" "}
+            <button
+              type="button"
+              className="panel-link-button"
+              onClick={onNavigateScores}
+            >
+              Scores
+            </button>{" "}
+            page. The trend chart is on the dashboard.
           </p>
         </div>
       </section>
