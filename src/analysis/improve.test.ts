@@ -156,6 +156,37 @@ describe("improvePrompt", () => {
     expect(serialized).not.toContain("foo.ts");
   });
 
+  it("populates answer_schema with non-empty string examples for every clarifying question", () => {
+    const result = improvePrompt({
+      prompt: "Make this better",
+      createdAt: "2026-05-05T00:00:00.000Z",
+      language: "en",
+    });
+
+    expect(result.clarifying_questions.length).toBeGreaterThan(0);
+    for (const question of result.clarifying_questions) {
+      expect(question.answer_schema.type).toBe("string");
+      expect(question.answer_schema.examples.length).toBeGreaterThan(0);
+      for (const example of question.answer_schema.examples) {
+        expect(typeof example).toBe("string");
+        expect(example.trim().length).toBeGreaterThan(0);
+      }
+    }
+  });
+
+  it("uses Korean examples for Korean prompts", () => {
+    const result = improvePrompt({
+      prompt: "더 잘 만들어주세요",
+      createdAt: "2026-05-05T00:00:00.000Z",
+    });
+
+    expect(result.clarifying_questions.length).toBeGreaterThan(0);
+    for (const question of result.clarifying_questions) {
+      const joined = question.answer_schema.examples.join(" ");
+      expect(joined).toMatch(/[가-힣]/);
+    }
+  });
+
   it("only emits clarifying questions for axes that are also in changed_sections", () => {
     const samples = [
       "Make this better",

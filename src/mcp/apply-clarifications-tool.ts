@@ -119,11 +119,19 @@ export const APPLY_CLARIFICATIONS_TOOL_DEFINITION: PromptMemoryMcpToolDefinition
           type: "array",
           items: {
             type: "object",
-            required: ["id", "axis", "ask"],
+            required: ["id", "axis", "ask", "answer_schema"],
             properties: {
               id: { type: "string" },
               axis: { type: "string" },
               ask: { type: "string" },
+              answer_schema: {
+                type: "object",
+                required: ["type", "examples"],
+                properties: {
+                  type: { const: "string" },
+                  examples: { type: "array", items: { type: "string" } },
+                },
+              },
             },
           },
         },

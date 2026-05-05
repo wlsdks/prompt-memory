@@ -497,7 +497,9 @@ function ClarifyingQuestionsCard({
               onChange={(event) =>
                 onAnswerChange(question.axis, event.target.value)
               }
-              placeholder="Your answer in one line"
+              placeholder={
+                question.answer_schema.examples[0] ?? "Your answer in one line"
+              }
             />
           </li>
         ))}

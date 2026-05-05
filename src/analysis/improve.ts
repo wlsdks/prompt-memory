@@ -13,10 +13,16 @@ export type ImprovePromptInput = {
   source?: "direct" | "stored";
 };
 
+export type ClarifyingAnswerSchema = {
+  type: "string";
+  examples: string[];
+};
+
 export type ClarifyingQuestion = {
   id: string;
   axis: PromptQualityCriterion;
   ask: string;
+  answer_schema: ClarifyingAnswerSchema;
 };
 
 export type PromptImprovement = {
@@ -124,6 +130,52 @@ const KO_CLARIFYING: Record<PromptQualityCriterion, string> = {
   verification_criteria: "이 변경이 잘 됐는지 어떤 명령으로 확인할까요?",
 };
 
+const EN_EXAMPLES: Record<PromptQualityCriterion, string[]> = {
+  goal_clarity: [
+    "Fix the delete API bug in src/server/routes/prompts.ts.",
+    "Add a GET /api/v1/health endpoint that returns build version.",
+  ],
+  background_context: [
+    "The current delete returns 500 because of a missing FTS sync after delete.",
+    "We need this for the upcoming beta release smoke.",
+  ],
+  scope_limits: [
+    "Only touch the delete route; keep storage and migrations unchanged.",
+    "No refactor of unrelated handlers.",
+  ],
+  output_format: [
+    "Markdown summary of changes, verification, and remaining risks.",
+    "Code diff with one-line rationale per hunk.",
+  ],
+  verification_criteria: [
+    "Run pnpm test and confirm 0 failures.",
+    "curl http://127.0.0.1:17373/api/v1/health and expect 200 OK.",
+  ],
+};
+
+const KO_EXAMPLES: Record<PromptQualityCriterion, string[]> = {
+  goal_clarity: [
+    "src/server/routes/prompts.ts 의 삭제 API 500 버그를 고쳐주세요.",
+    "GET /api/v1/health 엔드포인트를 추가해 빌드 버전을 반환하게 해주세요.",
+  ],
+  background_context: [
+    "삭제 후 FTS 동기화가 빠져 현재 500이 떨어지고 있습니다.",
+    "이번 beta release smoke 전에 필요합니다.",
+  ],
+  scope_limits: [
+    "삭제 라우트만 건드리고 storage 와 migration 은 그대로 두세요.",
+    "관련 없는 핸들러 리팩터링은 하지 말아주세요.",
+  ],
+  output_format: [
+    "변경 내용, 검증, 남은 리스크를 짧은 Markdown 요약으로 정리해주세요.",
+    "코드 diff 와 hunk 별 1줄 근거를 함께 알려주세요.",
+  ],
+  verification_criteria: [
+    "pnpm test 를 실행하고 0 fail 인지 확인해주세요.",
+    "curl http://127.0.0.1:17373/api/v1/health 가 200 OK 인지 확인해주세요.",
+  ],
+};
+
 export type ClarifyingAnswer = {
   question_id: string;
   axis: PromptQualityCriterion;
@@ -209,7 +261,8 @@ function buildClarifyingQuestions(
   checklist: PromptQualityChecklistItem[],
   language: "en" | "ko",
 ): ClarifyingQuestion[] {
-  const map = language === "ko" ? KO_CLARIFYING : EN_CLARIFYING;
+  const askMap = language === "ko" ? KO_CLARIFYING : EN_CLARIFYING;
+  const examplesMap = language === "ko" ? KO_EXAMPLES : EN_EXAMPLES;
 
   return checklist
     .map((item, index) => ({ item, index }))
@@ -223,7 +276,11 @@ function buildClarifyingQuestions(
     .map(({ item }) => ({
       id: `q_${item.key}`,
       axis: item.key,
-      ask: map[item.key],
+      ask: askMap[item.key],
+      answer_schema: {
+        type: "string" as const,
+        examples: [...examplesMap[item.key]],
+      },
     }));
 }
 

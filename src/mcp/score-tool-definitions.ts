@@ -300,10 +300,10 @@ export const IMPROVE_PROMPT_TOOL_DEFINITION: PromptMemoryMcpToolDefinition = {
       clarifying_questions: {
         type: "array",
         description:
-          "One-line questions the agent should ask the user (through its native ask UI) before producing or submitting any rewrite. Each item maps to a missing prompt-quality axis and stays redaction-safe. May be empty when no axis is missing. Capped to two highest-priority questions.",
+          "One-line questions the agent should ask the user (through its native ask UI) before producing or submitting any rewrite. Each item maps to a missing prompt-quality axis, includes an `answer_schema` (JSON-Schema-shaped, with example answers the agent may surface as hints in the ask UI), and stays redaction-safe. May be empty when no axis is missing. Capped to two highest-priority questions.",
         items: {
           type: "object",
-          required: ["id", "axis", "ask"],
+          required: ["id", "axis", "ask", "answer_schema"],
           properties: {
             id: { type: "string" },
             axis: {
@@ -317,6 +317,14 @@ export const IMPROVE_PROMPT_TOOL_DEFINITION: PromptMemoryMcpToolDefinition = {
               ],
             },
             ask: { type: "string" },
+            answer_schema: {
+              type: "object",
+              required: ["type", "examples"],
+              properties: {
+                type: { const: "string" },
+                examples: { type: "array", items: { type: "string" } },
+              },
+            },
           },
         },
       },
