@@ -73,6 +73,7 @@ describe("SQLite prompt storage", () => {
       { version: 12, name: "012_coach_feedback" },
       { version: 13, name: "013_prompt_judge_scores" },
       { version: 14, name: "014_drop_dead_analysis_columns" },
+      { version: 15, name: "015_prompt_ask_events" },
     ]);
     const db = new Database(join(dataDir, "prompt-memory.sqlite"));
     try {
@@ -1623,6 +1624,46 @@ describe("SQLite prompt storage", () => {
     );
     expect(rebuiltStorage.searchPromptIds("truth")).toEqual([stored.id]);
     expect(existsSync(row.markdown_path)).toBe(true);
+  });
+
+  it("records ask events and returns a 7-day summary", () => {
+    const dataDir = createTempDir();
+    const storage = createSqlitePromptStorage({
+      dataDir,
+      now: () => new Date("2026-05-05T00:00:00.000Z"),
+    });
+
+    const empty = storage.getAskEventSummary({ days: 7 });
+    expect(empty.total_count).toBe(0);
+    expect(empty.recent_count).toBe(0);
+    expect(empty.average_score).toBe(0);
+
+    storage.recordAskEvent({
+      tool: "claude-code",
+      score: 23,
+      band: "weak",
+      missing_axes: ["scope_limits", "verification_criteria"],
+      language: "ko",
+      prompt_length: 48,
+      triggered_at: "2026-05-04T10:00:00.000Z",
+    });
+    storage.recordAskEvent({
+      tool: "codex",
+      score: 30,
+      band: "weak",
+      missing_axes: ["scope_limits"],
+      language: "en",
+      prompt_length: 65,
+      triggered_at: "2026-05-04T11:00:00.000Z",
+    });
+
+    const summary = storage.getAskEventSummary({ days: 7 });
+    expect(summary.total_count).toBe(2);
+    expect(summary.recent_count).toBe(2);
+    expect(summary.axis_counts.scope_limits).toBe(2);
+    expect(summary.axis_counts.verification_criteria).toBe(1);
+    expect(summary.average_score).toBe(27);
+    expect(summary.last_triggered_at).toBe("2026-05-04T11:00:00.000Z");
   });
 });
 

@@ -441,6 +441,29 @@ export type PromptStoragePort = {
   storePrompt(input: StorePromptInput): Promise<StorePromptResult>;
 };
 
+export type AskEventInput = {
+  tool: "claude-code" | "codex";
+  score: number;
+  band: PromptQualityScoreBand;
+  missing_axes: PromptQualityCriterion[];
+  language?: "en" | "ko";
+  prompt_length: number;
+  triggered_at: string;
+};
+
+export type AskEventSummary = {
+  total_count: number;
+  recent_count: number;
+  axis_counts: Record<string, number>;
+  average_score: number;
+  last_triggered_at?: string;
+};
+
+export type AskEventStoragePort = {
+  recordAskEvent(input: AskEventInput): void;
+  getAskEventSummary(options?: { days?: number }): AskEventSummary;
+};
+
 export type PromptReadStoragePort = {
   listPrompts(options?: ListPromptsOptions): PromptListResult;
   searchPrompts(
