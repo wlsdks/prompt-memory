@@ -60,11 +60,9 @@ const QUALITY_SCORE_SCHEMA = {
       type: "array",
       items: {
         type: "object",
-        required: ["key", "label", "status", "weight", "earned"],
+        required: ["key", "weight", "earned"],
         properties: {
           key: { type: "string" },
-          label: { type: "string" },
-          status: { type: "string", enum: ["good", "partial", "missing"] },
           weight: { type: "integer", minimum: 1 },
           earned: { type: "integer", minimum: 0 },
         },
@@ -180,11 +178,6 @@ export const SCORE_PROMPT_TOOL_DEFINITION: PromptMemoryMcpToolDefinition = {
         description:
           "Set true to score the latest stored prompt in the local prompt-memory archive.",
       },
-      include_suggestions: {
-        type: "boolean",
-        description:
-          "Whether to include concise improvement suggestions in the result. Defaults to true.",
-      },
     },
     additionalProperties: false,
   },
@@ -194,7 +187,6 @@ export const SCORE_PROMPT_TOOL_DEFINITION: PromptMemoryMcpToolDefinition = {
       source: { type: "string", enum: ["text", "prompt_id", "latest"] },
       prompt_id: { type: "string" },
       quality_score: QUALITY_SCORE_SCHEMA,
-      summary: { type: "string" },
       checklist: {
         type: "array",
         items: {
@@ -211,8 +203,7 @@ export const SCORE_PROMPT_TOOL_DEFINITION: PromptMemoryMcpToolDefinition = {
           },
         },
       },
-      warnings: { type: "array", items: { type: "string" } },
-      suggestions: { type: "array", items: { type: "string" } },
+      redaction_notice: { type: "string" },
       analyzer: { type: "string" },
       privacy: {
         type: "object",
@@ -238,9 +229,7 @@ export const SCORE_PROMPT_TOOL_DEFINITION: PromptMemoryMcpToolDefinition = {
         required: [
           "source",
           "quality_score",
-          "summary",
           "checklist",
-          "warnings",
           "analyzer",
           "privacy",
         ],

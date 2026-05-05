@@ -185,12 +185,11 @@ function formatPromptExplanation(
     return `${prompt.markdown}\n\n(no analysis available — run pnpm prompt-memory rebuild-index to refresh.)`;
   }
   const score = analysis.quality_score;
-  const lines = [
-    `Score: ${score.value}/${score.max} (${score.band})`,
-    `Summary: ${analysis.summary}`,
-    "",
-    "Breakdown:",
-  ];
+  const lines = [`Score: ${score.value}/${score.max} (${score.band})`];
+  if (analysis.redaction_notice) {
+    lines.push(`Notice: ${analysis.redaction_notice}`);
+  }
+  lines.push("", "Breakdown:");
   for (const item of analysis.checklist) {
     const points = score.breakdown.find((entry) => entry.key === item.key);
     const pointsLabel = points ? ` ${points.earned}/${points.weight}` : "";

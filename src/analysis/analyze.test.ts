@@ -30,10 +30,6 @@ describe("analyzePrompt", () => {
         }),
       ]),
     );
-    expect(result.summary).toContain("relatively clear");
-    expect(result.warnings).not.toContain(
-      "Completion criteria or verification steps are missing.",
-    );
     expect(result.checklist).toEqual(
       expect.arrayContaining([
         expect.objectContaining({
@@ -46,39 +42,31 @@ describe("analyzePrompt", () => {
     expect(result.tags).toEqual(
       expect.arrayContaining(["backend", "security", "test"]),
     );
-    expect(result.suggestions).toEqual([]);
+    expect(result.redaction_notice).toBeUndefined();
   });
 
-  it("flags vague prompts and suggests concrete improvements", () => {
+  it("flags vague prompts via the checklist (not duplicate warnings/hints)", () => {
     const result = analyzePrompt({
       prompt: "Make this better",
       createdAt: "2026-05-01T10:00:00.000Z",
     });
 
-    expect(result.summary).toContain("short request");
     expect(result.quality_score).toMatchObject({
       value: 10,
       max: 100,
       band: "weak",
     });
-    expect(result.warnings).toContain(
-      "The target or background context is missing.",
-    );
-    expect(result.warnings).toContain(
-      "Completion criteria or verification steps are missing.",
-    );
-    expect(result.suggestions).toContain(
-      "Add the target file, command, error message, and expected behavior.",
-    );
-    expect(result.suggestions).toContain(
-      "Add verification criteria: list the tests to run and the expected result.",
-    );
     expect(result.checklist).toEqual(
       expect.arrayContaining([
-        expect.objectContaining({ key: "goal_clarity", status: "missing" }),
+        expect.objectContaining({
+          key: "goal_clarity",
+          status: "missing",
+          suggestion: expect.stringContaining("Add a goal"),
+        }),
         expect.objectContaining({
           key: "verification_criteria",
           status: "missing",
+          suggestion: expect.stringContaining("Add verification criteria"),
         }),
       ]),
     );
@@ -91,9 +79,7 @@ describe("analyzePrompt", () => {
     });
     const serialized = JSON.stringify(result);
 
-    expect(result.warnings).toContain(
-      "Sensitive content was masked, so analysis may be less precise.",
-    );
+    expect(result.redaction_notice).toContain("Sensitive content was masked");
     expect(serialized).not.toContain("[REDACTED:api_key]");
     expect(result.tags).not.toContain("security");
   });
@@ -122,7 +108,6 @@ describe("analyzePrompt", () => {
       expect.arrayContaining([
         expect.objectContaining({
           key: "verification_criteria",
-          status: "missing",
           earned: 0,
         }),
       ]),

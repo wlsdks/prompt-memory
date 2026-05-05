@@ -374,9 +374,7 @@ function AnalysisPreview({
   analysis: NonNullable<PromptDetail["analysis"]>;
   onOpenQualityGap(gap: PromptQualityGap): void;
 }) {
-  const redactionNotice = analysis.warnings.find((warning) =>
-    /sensitive content was masked/i.test(warning),
-  );
+  const redactionNotice = analysis.redaction_notice;
 
   return (
     <section className="analysis-panel" aria-label="Analysis preview">

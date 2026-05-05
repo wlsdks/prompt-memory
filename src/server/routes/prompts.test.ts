@@ -107,7 +107,6 @@ describe("prompt read/delete API", () => {
           markdown: string;
           analysis: {
             analyzer: string;
-            warnings: string[];
             checklist: Array<{ key: string; status: string }>;
             tags: string[];
           };
@@ -119,9 +118,6 @@ describe("prompt read/delete API", () => {
       markdown: expect.stringContaining("beta prompt"),
       analysis: {
         analyzer: "local-rules-v1",
-        warnings: expect.arrayContaining([
-          "The target or background context is missing.",
-        ]),
         checklist: expect.arrayContaining([
           expect.objectContaining({
             key: "verification_criteria",

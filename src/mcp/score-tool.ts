@@ -454,7 +454,6 @@ function toToolResult(input: {
     source: input.source,
     ...(input.promptId ? { prompt_id: input.promptId } : {}),
     quality_score: input.analysis.quality_score,
-    summary: input.analysis.summary,
     checklist: input.analysis.checklist.map((item) => {
       const score = breakdownByKey.get(item.key);
       return {
@@ -463,9 +462,8 @@ function toToolResult(input: {
         earned: score?.earned ?? 0,
       };
     }),
-    warnings: input.analysis.warnings,
-    ...(input.includeSuggestions
-      ? { suggestions: input.analysis.suggestions }
+    ...(input.analysis.redaction_notice
+      ? { redaction_notice: input.analysis.redaction_notice }
       : {}),
     analyzer: input.analysis.analyzer,
     privacy: {
