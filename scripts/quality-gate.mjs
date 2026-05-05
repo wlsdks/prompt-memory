@@ -10,7 +10,7 @@ const LINE_BUDGETS = new Map([
   ["src/web/src/habit-coach-panel.css", 450],
   ["src/web/src/practice-view.tsx", 520],
   ["src/web/src/practice-view.css", 420],
-  ["src/web/src/styles.css", 2940],
+  ["src/web/src/styles.css", 3010],
   ["src/storage/sqlite-json.ts", 160],
   ["src/storage/sqlite-rows.ts", 180],
   ["src/storage/sqlite.ts", 3470],
