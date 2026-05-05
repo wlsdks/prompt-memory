@@ -18,14 +18,23 @@ the npm package is published, the normal install path is:
 npm install -g prompt-memory
 ```
 
-For local development from a cloned repository, use:
+For local development from a cloned repository, use the two-line bring-up:
 
 ```bash
-pnpm install
-pnpm build
+pnpm install   # also runs `pnpm build` via the prepare lifecycle
+pnpm setup     # alias for prompt-memory setup --profile coach --register-mcp --open-web
 ```
 
-For the lowest-friction setup, preview the coach profile first:
+`pnpm setup` is the same one-command path the README recommends — it
+installs the Claude Code and Codex hooks, registers the MCP server with
+absolute paths so PATH ordering does not matter, installs the Claude
+Code status line, and enables the local-server SessionStart hook. Use
+`pnpm setup` when the user just wants "make it work"; only fall back to
+the explicit `prompt-memory setup ...` invocations below when the user
+wants a different profile or a dry-run preview.
+
+For the lowest-friction setup with the explicit invocation, preview the
+coach profile first:
 
 ```bash
 prompt-memory setup --profile coach --register-mcp --dry-run
