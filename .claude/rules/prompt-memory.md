@@ -3,6 +3,20 @@
 Claude Code must follow these repository rules in addition to `CLAUDE.md` and
 `AGENTS.md`.
 
+## Operational stage
+
+- Pre-release. The maintainer is the only user; no published npm package and
+  no third-party archives in the field.
+- Backward-compatibility for archived data, settings, or external API
+  consumers is **not** a constraint. Refactors, migrations, schema drops, and
+  rename-only changes can be aggressive — focus on the cleanest end state
+  rather than preserving every legacy column or wire-format field.
+- Keep tests, lint, build, and `pnpm e2e:browser` green for every change so
+  the maintainer's own dev environment stays usable. That is the only
+  compatibility surface that matters today.
+- Revisit this stance once an external collaborator joins or the package is
+  published.
+
 ## Product Identity
 
 - `prompt-memory` is an AI coding prompt memory and improvement workspace,
