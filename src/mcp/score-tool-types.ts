@@ -61,15 +61,13 @@ export type ScorePromptToolResult =
       source: "text" | "prompt_id" | "latest";
       prompt_id?: string;
       quality_score: PromptQualityScore;
-      summary: string;
       checklist: Array<
         PromptAnalysisPreview["checklist"][number] & {
           weight: number;
           earned: number;
         }
       >;
-      warnings: string[];
-      suggestions?: string[];
+      redaction_notice?: string;
       analyzer: string;
       privacy: {
         local_only: true;

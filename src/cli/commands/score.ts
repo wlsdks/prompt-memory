@@ -81,18 +81,19 @@ function formatLatestPromptScore(result: ScorePromptToolResult): string {
     ].join("\n");
   }
 
-  const suggestionRows =
-    result.suggestions && result.suggestions.length > 0
-      ? result.suggestions.map((suggestion) => `- ${suggestion}`)
-      : ["- none"];
+  const checklistRows = result.checklist.map((item) => {
+    const points = `${item.earned}/${item.weight}`;
+    const suggestion = item.suggestion ? ` — ${item.suggestion}` : "";
+    return `- ${item.label} [${item.status}] ${points}${suggestion}`;
+  });
 
   return [
     "Latest prompt score",
     `${result.quality_score.value}/${result.quality_score.max} (${result.quality_score.band})`,
-    result.summary,
+    ...(result.redaction_notice ? [`Notice: ${result.redaction_notice}`] : []),
     "",
-    "Suggestions",
-    ...suggestionRows,
+    "Checklist",
+    ...checklistRows,
     "",
     "Privacy: local-only, no external calls, no prompt body.",
   ].join("\n");

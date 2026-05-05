@@ -243,9 +243,6 @@ describe("SQLite prompt storage", () => {
           }),
         ]),
       },
-      summary: expect.stringContaining("relatively clear"),
-      warnings: [],
-      suggestions: [],
       checklist: expect.arrayContaining([
         expect.objectContaining({
           key: "verification_criteria",

@@ -126,8 +126,6 @@ export const PromptQualityScoreSchema = z.object({
   breakdown: z.array(
     z.object({
       key: PromptQualityCriterionSchema,
-      label: z.string().min(1),
-      status: PromptQualityStatusSchema,
       weight: z.number().int().positive(),
       earned: z.number().int().min(0),
     }),
@@ -135,9 +133,7 @@ export const PromptQualityScoreSchema = z.object({
 });
 
 export const PromptAnalysisPreviewSchema = z.object({
-  summary: z.string(),
-  warnings: z.array(z.string()),
-  suggestions: z.array(z.string()),
+  redaction_notice: z.string().optional(),
   checklist: z.array(PromptQualityChecklistItemSchema),
   tags: z.array(PromptTagSchema),
   quality_score: PromptQualityScoreSchema,

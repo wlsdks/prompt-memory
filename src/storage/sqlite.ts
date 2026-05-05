@@ -1965,9 +1965,11 @@ function upsertPromptAnalysis(
   ).run(
     `${promptId}:${analysis.analyzer}`,
     promptId,
-    analysis.summary,
-    JSON.stringify(analysis.warnings),
-    JSON.stringify(analysis.suggestions),
+    "",
+    JSON.stringify(
+      analysis.redaction_notice ? [analysis.redaction_notice] : [],
+    ),
+    JSON.stringify([]),
     JSON.stringify(analysis.checklist),
     JSON.stringify(analysis.tags),
     analysis.analyzer,
@@ -2022,11 +2024,10 @@ function readPromptAnalysis(
   }
 
   const checklist = readChecklist(row.checklist_json);
+  const legacyWarnings = readStringArray(row.warnings_json);
 
   return {
-    summary: row.summary ?? "",
-    warnings: readStringArray(row.warnings_json),
-    suggestions: readStringArray(row.suggestions_json),
+    ...(legacyWarnings[0] ? { redaction_notice: legacyWarnings[0] } : {}),
     checklist,
     tags: readPromptTags(row.tags_json),
     quality_score: calculatePromptQualityScore(checklist),

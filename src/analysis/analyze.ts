@@ -46,51 +46,15 @@ export function analyzePrompt(
     hasVerification: hasVerification(text, experimental),
     hasConstraints: hasConstraints(text),
   };
-  const signalCount = Object.values(signals).filter(Boolean).length;
   const checklist = buildChecklist(text, signals);
-  const warnings: string[] = [];
-  const suggestions: string[] = [];
-
-  if (text.length < 30 || (!signals.hasContext && !signals.hasSpecificTarget)) {
-    warnings.push("The target or background context is missing.");
-    suggestions.push(
-      "Add the target file, command, error message, and expected behavior.",
-    );
-  }
-
-  if (!signals.hasOutputFormat) {
-    warnings.push("The desired output format is unclear.");
-    suggestions.push(
-      "Add an output format: specify the response structure and required fields.",
-    );
-  }
-
-  if (!signals.hasVerification) {
-    warnings.push("Completion criteria or verification steps are missing.");
-    suggestions.push(
-      "Add verification criteria: list the tests to run and the expected result.",
-    );
-  }
-
-  if (!signals.hasConstraints || isBroadRequest(text)) {
-    warnings.push(
-      "The work scope or constraints could be interpreted too broadly.",
-    );
-    suggestions.push(
-      "State what may be changed and what should stay untouched.",
-    );
-  }
-
-  if (containsRedactedPlaceholder(text)) {
-    warnings.push(
-      "Sensitive content was masked, so analysis may be less precise.",
-    );
-  }
 
   return {
-    summary: summarize(text, signalCount),
-    warnings: unique(warnings).slice(0, 5),
-    suggestions: unique(suggestions).slice(0, 4),
+    ...(containsRedactedPlaceholder(text)
+      ? {
+          redaction_notice:
+            "Sensitive content was masked, so analysis may be less precise.",
+        }
+      : {}),
     checklist,
     tags: extractTags(text),
     quality_score: calculatePromptQualityScore(checklist),
@@ -106,8 +70,6 @@ export function calculatePromptQualityScore(
     const weight = QUALITY_SCORE_WEIGHTS[item.key];
     return {
       key: item.key,
-      label: item.label,
-      status: item.status,
       weight,
       earned: Math.round(weight * statusMultiplier(item.status)),
     };
@@ -286,22 +248,6 @@ function extractTags(text: string): PromptTag[] {
   }
 
   return unique(tags);
-}
-
-function summarize(text: string, signalCount: number): string {
-  if (text.length < 30) {
-    return "This is a short request; the intent is visible, but execution criteria are thin.";
-  }
-
-  if (signalCount >= 4) {
-    return "The target and verification criteria are relatively clear.";
-  }
-
-  if (signalCount >= 2) {
-    return "The goal is visible, but context, constraints, or completion criteria could be clearer.";
-  }
-
-  return "The request has intent, but the target and success criteria are open to broad interpretation.";
 }
 
 function hasContext(text: string): boolean {
