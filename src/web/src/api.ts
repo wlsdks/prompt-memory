@@ -742,6 +742,25 @@ export async function getPrompt(id: string): Promise<PromptDetail> {
   return body.data;
 }
 
+export async function getSimilarPrompts(
+  id: string,
+  limit = 5,
+): Promise<PromptSummary[]> {
+  await ensureSession();
+  const params = new URLSearchParams({ limit: String(limit) });
+  const response = await fetch(
+    `/api/v1/prompts/${encodeURIComponent(id)}/similar?${params}`,
+    { credentials: "same-origin" },
+  );
+
+  if (!response.ok) {
+    await failApi(response, "Similar prompts unavailable");
+  }
+
+  const body = (await response.json()) as { data: PromptSummary[] };
+  return body.data;
+}
+
 export async function deletePrompt(id: string): Promise<void> {
   await ensureSession();
   const response = await fetch(`/api/v1/prompts/${encodeURIComponent(id)}`, {

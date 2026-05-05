@@ -447,6 +447,7 @@ export type PromptReadStoragePort = {
     query: string,
     options?: SearchPromptsOptions,
   ): PromptListResult;
+  findSimilarPrompts(promptId: string, limit?: number): PromptSummary[];
   getPrompt(id: string): PromptDetail | undefined;
   deletePrompt(id: string): DeletePromptResult;
   getQualityDashboard(options?: { trendDays?: number }): PromptQualityDashboard;

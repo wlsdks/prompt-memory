@@ -47,6 +47,10 @@ const ListQuerySchema = z.object({
   to: z.string().trim().min(1).optional(),
 });
 
+const SimilarPromptsQuerySchema = z.object({
+  limit: z.coerce.number().int().positive().max(20).optional(),
+});
+
 const ArchiveScoreQuerySchema = z.object({
   limit: z.coerce.number().int().positive().max(1000).optional(),
   low_score_limit: z.coerce.number().int().positive().max(50).optional(),
@@ -157,6 +161,15 @@ export function registerPromptRoutes(
 
     const judgeScore = options.storage.getLatestJudgeScore?.(params.id);
     return { data: toBrowserPromptDetail(prompt, judgeScore) };
+  });
+
+  server.get("/api/v1/prompts/:id/similar", async (request) => {
+    requireAppAccess(request, options.auth);
+    const storage = requireReadStorage(options.storage, request.url);
+    const params = PromptParamsSchema.parse(request.params);
+    const query = SimilarPromptsQuerySchema.parse(request.query);
+    const items = storage.findSimilarPrompts(params.id, query.limit ?? 5);
+    return { data: items.map(toBrowserPromptSummary) };
   });
 
   server.get("/api/v1/quality", async (request) => {

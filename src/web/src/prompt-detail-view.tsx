@@ -12,7 +12,7 @@ import {
   Trash2,
   XOctagon,
 } from "lucide-react";
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 
 import {
   applyClarifications,
@@ -21,6 +21,7 @@ import {
 } from "../../analysis/improve.js";
 import type { PromptQualityCriterion } from "../../shared/schema.js";
 import {
+  getSimilarPrompts,
   sendCoachFeedback,
   type CoachFeedbackRating,
   type PromptDetail,
@@ -160,6 +161,7 @@ export function PromptDetailView({
           savedDrafts={prompt.improvement_drafts}
         />
         <PromptAgentActionsPanel prompt={prompt} />
+        <SimilarPromptsPanel promptId={prompt.id} onSelect={onNavigate} />
         <div className="prompt-actions">
           <button className="secondary-action" onClick={onBack}>
             <ArrowLeft size={16} /> Back to list
@@ -513,5 +515,86 @@ function ClarifyingQuestionsCard({
         ))}
       </ul>
     </div>
+  );
+}
+
+function SimilarPromptsPanel({
+  promptId,
+  onSelect,
+}: {
+  promptId: string;
+  onSelect(id: string): void;
+}) {
+  const [items, setItems] = useState<PromptSummary[] | undefined>();
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | undefined>();
+
+  useEffect(() => {
+    let cancelled = false;
+    setLoading(true);
+    setError(undefined);
+    void getSimilarPrompts(promptId, 5)
+      .then((next) => {
+        if (!cancelled) setItems(next);
+      })
+      .catch(() => {
+        if (!cancelled) setError("Could not load similar prompts.");
+      })
+      .finally(() => {
+        if (!cancelled) setLoading(false);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [promptId]);
+
+  return (
+    <section
+      className="panel similar-prompts-panel"
+      aria-label="Similar prompts"
+    >
+      <div className="analysis-header">
+        <div>
+          <p className="eyebrow">Similar prompts</p>
+          <h3>Past prompts that share keywords</h3>
+        </div>
+      </div>
+      {loading && !items && <p className="muted">Looking up…</p>}
+      {error && <p className="muted">{error}</p>}
+      {items && items.length === 0 && (
+        <p className="muted">
+          No similar prompts in the archive yet. Capture more sessions to
+          see matches.
+        </p>
+      )}
+      {items && items.length > 0 && (
+        <ul className="similar-prompts-list">
+          {items.map((item) => (
+            <li key={item.id}>
+              <button
+                className="similar-prompt-row"
+                onClick={() => onSelect(item.id)}
+                type="button"
+              >
+                <span
+                  className={`badge score-badge ${item.quality_score_band}`}
+                >
+                  {item.quality_score}
+                </span>
+                <span className="similar-prompt-meta">
+                  <strong>{item.tool}</strong>
+                  <small>{formatDate(item.received_at)}</small>
+                </span>
+                {item.snippet && (
+                  <span className="similar-prompt-snippet">
+                    {item.snippet}
+                  </span>
+                )}
+              </button>
+            </li>
+          ))}
+        </ul>
+      )}
+    </section>
   );
 }
