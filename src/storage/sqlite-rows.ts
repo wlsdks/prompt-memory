@@ -19,9 +19,7 @@ export type PromptRow = {
 };
 
 export type PromptAnalysisRow = {
-  summary: string | null;
   warnings_json: string | null;
-  suggestions_json: string | null;
   checklist_json: string | null;
   tags_json: string | null;
   analyzer: string;
