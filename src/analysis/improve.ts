@@ -83,7 +83,11 @@ export function improvePrompt(input: ImprovePromptInput): PromptImprovement {
     improved_prompt: [
       introFor(language),
       "",
-      ...sections.flatMap(([label, body]) => [`## ${label}`, body, ""]),
+      ...sections.flatMap((section) => [
+        `## ${section.label}`,
+        section.body,
+        "",
+      ]),
     ]
       .join("\n")
       .trim(),
@@ -204,8 +208,10 @@ export function applyClarifications(
   }
 
   const answeredAxes = new Set(validAnswers.map((entry) => entry.axis));
+  const answersByAxis = new Map(
+    validAnswers.map((entry) => [entry.axis, entry.answer] as const),
+  );
   const language = input.language ?? detectPromptLanguage(input.prompt);
-  const labels = SECTION_LABELS[language];
   const redaction = redactPrompt(input.prompt, "mask");
   const sanitizedPrompt = sanitizePrompt(redaction.stored_text);
   const source = input.source ?? "direct";
@@ -218,17 +224,12 @@ export function applyClarifications(
       ? buildStoredSections(sanitizedPrompt, remainingChanged, language)
       : buildSections(sanitizedPrompt, remainingChanged, language);
 
-  const sectionsWithAnswers = sections.map<[string, string]>(
-    ([label, body]) => {
-      const axisEntry = (
-        Object.entries(labels) as Array<[PromptQualityCriterion, string]>
-      ).find(([, axisLabel]) => axisLabel === label);
-      if (!axisEntry) return [label, body];
-      const matched = validAnswers.find((entry) => entry.axis === axisEntry[0]);
-      if (!matched) return [label, body];
-      return [label, sanitizeAnswer(matched.answer)];
-    },
-  );
+  const sectionsWithAnswers = sections.map<ImprovementSection>((section) => {
+    if (section.axis === "original_prompt") return section;
+    const userAnswer = answersByAxis.get(section.axis);
+    if (typeof userAnswer !== "string") return section;
+    return { ...section, body: sanitizeAnswer(userAnswer) };
+  });
 
   return {
     ...baseImprovement,
@@ -236,9 +237,9 @@ export function applyClarifications(
     improved_prompt: [
       introFor(language),
       "",
-      ...sectionsWithAnswers.flatMap(([label, body]) => [
-        `## ${label}`,
-        body,
+      ...sectionsWithAnswers.flatMap((section) => [
+        `## ${section.label}`,
+        section.body,
         "",
       ]),
     ]
@@ -284,48 +285,63 @@ function buildClarifyingQuestions(
     }));
 }
 
+type ImprovementSection = {
+  axis: PromptQualityCriterion | "original_prompt";
+  label: string;
+  body: string;
+};
+
 function buildStoredSections(
   prompt: string,
   changedSections: PromptQualityCriterion[],
   language: "en" | "ko",
-): Array<[string, string]> {
+): ImprovementSection[] {
   const changed = new Set(changedSections);
   const labels = SECTION_LABELS[language];
   const copy = language === "ko" ? KO_COPY : EN_COPY;
   const facts = extractPromptFacts(prompt);
 
   return [
-    [
-      labels.goal_clarity,
-      changed.has("goal_clarity")
+    {
+      axis: "goal_clarity",
+      label: labels.goal_clarity,
+      body: changed.has("goal_clarity")
         ? copy.goal
         : storedGoalFor(facts.targets, language),
-    ],
-    [
-      labels.background_context,
-      changed.has("background_context")
+    },
+    {
+      axis: "background_context",
+      label: labels.background_context,
+      body: changed.has("background_context")
         ? copy.context
         : storedContextFor(facts.targets, language),
-    ],
-    [
-      labels.scope_limits,
-      changed.has("scope_limits")
+    },
+    {
+      axis: "scope_limits",
+      label: labels.scope_limits,
+      body: changed.has("scope_limits")
         ? copy.scope
         : storedScopeFor(facts.constraints, language),
-    ],
-    [
-      labels.verification_criteria,
-      changed.has("verification_criteria")
+    },
+    {
+      axis: "verification_criteria",
+      label: labels.verification_criteria,
+      body: changed.has("verification_criteria")
         ? copy.verification
         : storedVerificationFor(facts.commands, language),
-    ],
-    [
-      labels.output_format,
-      changed.has("output_format")
+    },
+    {
+      axis: "output_format",
+      label: labels.output_format,
+      body: changed.has("output_format")
         ? copy.output
         : storedOutputFor(facts.outputFormat, language),
-    ],
-    [language === "ko" ? "원문" : "Original prompt", prompt],
+    },
+    {
+      axis: "original_prompt",
+      label: language === "ko" ? "원문" : "Original prompt",
+      body: prompt,
+    },
   ];
 }
 
@@ -333,32 +349,44 @@ function buildSections(
   prompt: string,
   changedSections: PromptQualityCriterion[],
   language: "en" | "ko",
-): Array<[string, string]> {
+): ImprovementSection[] {
   const changed = new Set(changedSections);
   const labels = SECTION_LABELS[language];
   const copy = language === "ko" ? KO_COPY : EN_COPY;
 
   return [
-    [labels.goal_clarity, changed.has("goal_clarity") ? copy.goal : prompt],
-    [
-      labels.background_context,
-      changed.has("background_context") ? copy.context : copy.keepContext,
-    ],
-    [
-      labels.scope_limits,
-      changed.has("scope_limits") ? copy.scope : copy.keepScope,
-    ],
-    [
-      labels.verification_criteria,
-      changed.has("verification_criteria")
+    {
+      axis: "goal_clarity",
+      label: labels.goal_clarity,
+      body: changed.has("goal_clarity") ? copy.goal : prompt,
+    },
+    {
+      axis: "background_context",
+      label: labels.background_context,
+      body: changed.has("background_context") ? copy.context : copy.keepContext,
+    },
+    {
+      axis: "scope_limits",
+      label: labels.scope_limits,
+      body: changed.has("scope_limits") ? copy.scope : copy.keepScope,
+    },
+    {
+      axis: "verification_criteria",
+      label: labels.verification_criteria,
+      body: changed.has("verification_criteria")
         ? copy.verification
         : copy.keepVerification,
-    ],
-    [
-      labels.output_format,
-      changed.has("output_format") ? copy.output : copy.keepOutput,
-    ],
-    [language === "ko" ? "원문" : "Original prompt", prompt],
+    },
+    {
+      axis: "output_format",
+      label: labels.output_format,
+      body: changed.has("output_format") ? copy.output : copy.keepOutput,
+    },
+    {
+      axis: "original_prompt",
+      label: language === "ko" ? "원문" : "Original prompt",
+      body: prompt,
+    },
   ];
 }
 
