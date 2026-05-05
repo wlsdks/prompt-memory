@@ -18,6 +18,8 @@ export const HOOK_COPY = {
       `The user's prompt scored ${score}/100 (${band}). Missing axes: ${axesLabel}.`,
     askInstruction:
       "BEFORE answering the user's request, call the AskUserQuestion tool with the questions below to gather the missing details. Wait for the user's answers, then answer the original prompt using their verbatim answers as scope.",
+    askInstructionCodex:
+      "BEFORE answering the user's request, call the prompt-memory `ask_clarifying_questions` MCP tool with the original prompt to gather the missing details (the tool will use elicitation/create or the native dialog fallback). Wait for the user's answers, then answer the original prompt using their verbatim answers as scope.",
     askQuestionsHeader: "Questions to ask via AskUserQuestion:",
     askFooter:
       "Do not answer the prompt directly without first asking these clarifying questions.",
@@ -41,6 +43,8 @@ export const HOOK_COPY = {
       `사용자 프롬프트의 로컬 점수가 ${score}/100 (${band})이고 누락된 축: ${axesLabel}.`,
     askInstruction:
       "원 요청에 답하기 전에, 반드시 AskUserQuestion 툴을 아래 질문들로 호출해 사용자의 답을 받으세요. 답을 받은 뒤에 그 답을 작업 범위로 사용해 원 프롬프트에 응답하세요.",
+    askInstructionCodex:
+      "원 요청에 답하기 전에, 반드시 prompt-memory의 `ask_clarifying_questions` MCP 툴을 원 프롬프트와 함께 호출해 사용자의 답을 받으세요 (툴이 elicitation/create 또는 네이티브 대화상자 fallback으로 처리). 답을 받은 뒤에 그 답을 작업 범위로 사용해 원 프롬프트에 응답하세요.",
     askQuestionsHeader: "AskUserQuestion으로 물어볼 질문:",
     askFooter:
       "이 명확화 질문들을 먼저 묻지 않고 원 요청에 직접 답하지 마세요.",

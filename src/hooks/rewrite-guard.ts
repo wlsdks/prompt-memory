@@ -45,6 +45,13 @@ export type PromptRewriteGuardOptions = {
   now?: Date;
   copyToClipboard?: (text: string) => boolean;
   /**
+   * Tool that triggered the hook. Ask mode emits a Claude-Code-specific
+   * AskUserQuestion instruction by default; on Codex it switches to an
+   * MCP-tool-call instruction since Codex has no native AskUserQuestion
+   * but can call the prompt-memory `ask_clarifying_questions` MCP tool.
+   */
+  tool?: "claude-code" | "codex";
+  /**
    * When true, ask the host CLI to keep the hook output (additionalContext or
    * block reason) hidden from the user-visible chat surface and only feed it
    * to the model. Codex's UserPromptSubmit honors this `suppressOutput` field
@@ -148,6 +155,10 @@ export function createPromptRewriteGuardOutput(
     const numberedQuestions = improvement.clarifying_questions
       .map((question, index) => `${index + 1}. ${question.ask}`)
       .join("\n");
+    const isCodex = options.tool === "codex";
+    const askInstruction = isCodex
+      ? copy.askInstructionCodex
+      : copy.askInstruction;
 
     return {
       hookSpecificOutput: {
@@ -160,7 +171,7 @@ export function createPromptRewriteGuardOutput(
             axesLabel,
           ),
           "",
-          copy.askInstruction,
+          askInstruction,
           "",
           copy.askQuestionsHeader,
           numberedQuestions,

@@ -74,6 +74,7 @@ async function runPromptMemoryHook(
       const rewriteOutput = createPromptRewriteGuardOutput(payload, {
         ...options.rewriteGuard,
         now: new Date(),
+        tool,
         // Codex renders hook stdout (additionalContext / block reason) directly
         // in the user-visible chat. Setting `suppressOutput: true` keeps the
         // guidance available to the model while hiding it from the user, which

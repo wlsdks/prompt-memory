@@ -193,6 +193,40 @@ describe("createPromptRewriteGuardOutput", () => {
 
       expect(output).toBeUndefined();
     });
+
+    it("emits an MCP ask_clarifying_questions instruction for Codex", () => {
+      const output = createPromptRewriteGuardOutput(
+        {
+          prompt: "이 코드 어딘가 이상한데 한번 봐주고 안되면 알아서 고쳐줘",
+        },
+        { mode: "ask", tool: "codex" },
+      );
+
+      expect(output).toBeDefined();
+      if (output && "hookSpecificOutput" in output && !("decision" in output)) {
+        const additionalContext = output.hookSpecificOutput.additionalContext;
+        expect(additionalContext).toContain("ask_clarifying_questions");
+        expect(additionalContext).not.toContain("AskUserQuestion 툴을");
+      } else {
+        throw new Error("expected ask-mode hook output without decision");
+      }
+    });
+
+    it("keeps the AskUserQuestion instruction for Claude Code", () => {
+      const output = createPromptRewriteGuardOutput(
+        {
+          prompt: "이 코드 어딘가 이상한데 한번 봐주고 안되면 알아서 고쳐줘",
+        },
+        { mode: "ask", tool: "claude-code" },
+      );
+
+      expect(output).toBeDefined();
+      if (output && "hookSpecificOutput" in output && !("decision" in output)) {
+        const additionalContext = output.hookSpecificOutput.additionalContext;
+        expect(additionalContext).toContain("AskUserQuestion");
+        expect(additionalContext).not.toContain("ask_clarifying_questions");
+      }
+    });
   });
 
   describe("isAcknowledgment", () => {

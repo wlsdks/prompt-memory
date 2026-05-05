@@ -661,16 +661,7 @@ function buildHookCommandWithOptions(
   > = {},
 ): string {
   const dataDirArg = dataDir ? ` --data-dir ${JSON.stringify(dataDir)}` : "";
-  // Ask mode emits an AskUserQuestion instruction, which only Claude Code
-  // honors today. Codex has no native AskUserQuestion tool, so installing
-  // ask there would print a misleading instruction the agent cannot fulfill.
-  // Downgrade Codex to context so the user still gets soft rewrite
-  // guidance via additionalContext until a Codex-specific ask path lands.
-  const effectiveOptions: typeof options =
-    tool === "codex" && options.rewriteGuard === "ask"
-      ? { ...options, rewriteGuard: "context" }
-      : options;
-  const rewriteArgs = buildRewriteGuardArgs(effectiveOptions);
+  const rewriteArgs = buildRewriteGuardArgs(options);
   const marker =
     tool === "claude-code" ? PROMPT_MEMORY_MARKER : CODEX_PROMPT_MEMORY_MARKER;
   return `${markerAssignment(marker)} ${shellQuote(

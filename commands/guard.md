@@ -30,10 +30,12 @@ mode does so the user can choose without reading docs.
 - **context** — Soft. Adds an improved prompt as `additionalContext`
   alongside the user's submission. Claude sees both. Nothing is blocked.
 - **ask** — Active. When a weak prompt clears the trigger gate
-  (length ≥ 30, score < 60, not an acknowledgment), the hook tells
-  Claude to call `AskUserQuestion` with one or two clarifying questions
-  before answering. Claude Code only — on Codex this falls back to
-  `context` until a Codex-specific ask path lands.
+  (length ≥ 30, score < 60, not an acknowledgment), the hook tells the
+  agent to ask one or two clarifying questions before answering. On
+  Claude Code that means calling the native `AskUserQuestion` tool;
+  on Codex it means calling the prompt-memory
+  `ask_clarifying_questions` MCP tool, which uses elicitation/create
+  with a native dialog fallback.
 - **block-and-copy** — Hard. Submitted prompts under the score threshold
   are blocked and an improved version is copied to the clipboard.
 
