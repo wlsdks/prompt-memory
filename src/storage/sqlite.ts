@@ -379,6 +379,28 @@ function applyMigrations(db: Database.Database): void {
   applyAgentPromptJudgmentMigration(db);
   applyCoachFeedbackMigration(db);
   applyJudgeScoreMigration(db);
+  applyDropDeadAnalysisColumnsMigration(db);
+}
+
+function applyDropDeadAnalysisColumnsMigration(db: Database.Database): void {
+  const applied = db
+    .prepare("SELECT 1 FROM schema_migrations WHERE version = ?")
+    .get(14);
+
+  if (hasColumn(db, "prompt_analyses", "summary")) {
+    db.prepare("ALTER TABLE prompt_analyses DROP COLUMN summary").run();
+  }
+  if (hasColumn(db, "prompt_analyses", "suggestions_json")) {
+    db.prepare(
+      "ALTER TABLE prompt_analyses DROP COLUMN suggestions_json",
+    ).run();
+  }
+
+  if (!applied) {
+    db.prepare(
+      "INSERT INTO schema_migrations(version, name, applied_at) VALUES (?, ?, ?)",
+    ).run(14, "014_drop_dead_analysis_columns", new Date().toISOString());
+  }
 }
 
 function applyAnalysisChecklistTagsMigration(db: Database.Database): void {
@@ -1983,19 +2005,17 @@ function upsertPromptAnalysis(
   db.prepare(
     `
     INSERT INTO prompt_analyses(
-      id, prompt_id, summary, warnings_json, suggestions_json,
+      id, prompt_id, warnings_json,
       checklist_json, tags_json, analyzer, created_at
     )
-    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+    VALUES (?, ?, ?, ?, ?, ?, ?)
     `,
   ).run(
     `${promptId}:${analysis.analyzer}`,
     promptId,
-    "",
     JSON.stringify(
       analysis.redaction_notice ? [analysis.redaction_notice] : [],
     ),
-    JSON.stringify([]),
     JSON.stringify(analysis.checklist),
     JSON.stringify(analysis.tags),
     analysis.analyzer,
@@ -2035,7 +2055,7 @@ function readPromptAnalysis(
   const row = db
     .prepare(
       `
-      SELECT summary, warnings_json, suggestions_json, checklist_json,
+      SELECT warnings_json, checklist_json,
         tags_json, analyzer, created_at
       FROM prompt_analyses
       WHERE prompt_id = ?
@@ -3331,9 +3351,7 @@ CREATE TABLE IF NOT EXISTS prompts (
 CREATE TABLE IF NOT EXISTS prompt_analyses (
   id TEXT PRIMARY KEY,
   prompt_id TEXT NOT NULL,
-  summary TEXT,
   warnings_json TEXT,
-  suggestions_json TEXT,
   checklist_json TEXT,
   tags_json TEXT,
   analyzer TEXT NOT NULL,

@@ -72,6 +72,7 @@ describe("SQLite prompt storage", () => {
       { version: 11, name: "011_agent_prompt_judgments" },
       { version: 12, name: "012_coach_feedback" },
       { version: 13, name: "013_prompt_judge_scores" },
+      { version: 14, name: "014_drop_dead_analysis_columns" },
     ]);
     const db = new Database(join(dataDir, "prompt-memory.sqlite"));
     try {
