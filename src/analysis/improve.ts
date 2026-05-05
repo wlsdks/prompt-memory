@@ -34,7 +34,7 @@ export type PromptImprovement = {
   clarifying_questions: ClarifyingQuestion[];
   safety_notes: string[];
   created_at: string;
-  analyzer: "local-rules-v1";
+  analyzer: "local-rules-v1" | "clarifications-v1";
 };
 
 const MAX_CLARIFYING_QUESTIONS = 2;

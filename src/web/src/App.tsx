@@ -22,7 +22,7 @@ import {
 } from "lucide-react";
 import { useEffect, useMemo, useState, type ReactNode } from "react";
 
-import { improvePrompt } from "../../analysis/improve.js";
+import type { PromptImprovement } from "../../analysis/improve.js";
 import {
   analyzeProjectInstructions,
   createExportPreview,
@@ -401,12 +401,10 @@ export function App() {
     setError("Could not copy the prompt.");
   }
 
-  async function copyImprovedPrompt(prompt: PromptDetail): Promise<void> {
-    const improvement = improvePrompt({
-      prompt: prompt.markdown,
-      createdAt: prompt.received_at,
-      language,
-    });
+  async function copyImprovedPrompt(
+    prompt: PromptDetail,
+    improvement: PromptImprovement,
+  ): Promise<void> {
     const copied = await copyTextToClipboard(improvement.improved_prompt);
     if (copied) {
       setCopiedImprovementId(prompt.id);
@@ -417,13 +415,10 @@ export function App() {
     setError("Could not copy the improvement draft.");
   }
 
-  async function saveImprovementDraft(prompt: PromptDetail): Promise<void> {
-    const improvement = improvePrompt({
-      prompt: prompt.markdown,
-      createdAt: prompt.received_at,
-      language,
-    });
-
+  async function saveImprovementDraft(
+    prompt: PromptDetail,
+    improvement: PromptImprovement,
+  ): Promise<void> {
     try {
       const draft = await savePromptImprovementDraft(prompt.id, {
         draft_text: improvement.improved_prompt,

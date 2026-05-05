@@ -58,11 +58,11 @@ export function PromptDetailView({
   onBack(): void;
   onBookmark(prompt: PromptDetail): void;
   onCopy(prompt: PromptDetail): void;
-  onCopyImprovement(prompt: PromptDetail): void;
+  onCopyImprovement(prompt: PromptDetail, improvement: PromptImprovement): void;
   onDelete(prompt: PromptDetail): void;
   onNavigate(id: string): void;
   onOpenQualityGap(gap: PromptQualityGap): void;
-  onSaveImprovement(prompt: PromptDetail): void;
+  onSaveImprovement(prompt: PromptDetail, improvement: PromptImprovement): void;
   prompt?: PromptDetail;
   queueNavigation: {
     current?: number;
@@ -87,12 +87,16 @@ export function PromptDetailView({
         answer: value as string,
         origin: "user" as const,
       }));
-    return applyClarifications({
+    const composed = applyClarifications({
       prompt: prompt.markdown,
       createdAt: prompt.received_at,
       language,
       answers,
     });
+    if (answers.length === 0) return composed;
+    // Tag the improvement so saved-draft pills surface "From your answers"
+    // and the local archive can distinguish user-driven drafts from auto rewrites.
+    return { ...composed, analyzer: "clarifications-v1" as const };
   }, [prompt, language, answersByAxis]);
 
   if (!prompt || !improvement) {
@@ -148,8 +152,8 @@ export function PromptDetailView({
           onAnswerChange={(axis, value) =>
             setAnswersByAxis((current) => ({ ...current, [axis]: value }))
           }
-          onCopy={() => onCopyImprovement(prompt)}
-          onSave={() => onSaveImprovement(prompt)}
+          onCopy={() => onCopyImprovement(prompt, improvement)}
+          onSave={() => onSaveImprovement(prompt, improvement)}
           originalPrompt={prompt.markdown}
           promptId={prompt.id}
           saved={savedImprovement}
