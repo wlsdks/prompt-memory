@@ -31,6 +31,9 @@ describe("MCP stdio server", () => {
             name: "improve_prompt",
           }),
           expect.objectContaining({
+            name: "apply_clarifications",
+          }),
+          expect.objectContaining({
             name: "score_prompt_archive",
           }),
           expect.objectContaining({
@@ -62,7 +65,7 @@ describe("MCP stdio server", () => {
 
     const tools = (response?.result as { tools: Array<unknown> }).tools;
 
-    expect(tools).toHaveLength(10);
+    expect(tools).toHaveLength(11);
     for (const tool of tools.filter(
       (tool) =>
         !["record_agent_rewrite", "record_agent_judgments"].includes(

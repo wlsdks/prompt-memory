@@ -3,6 +3,11 @@ import type { Readable, Writable } from "node:stream";
 
 import { VERSION } from "../shared/version.js";
 import {
+  APPLY_CLARIFICATIONS_TOOL_DEFINITION,
+  applyClarificationsTool,
+  type ApplyClarificationsToolArguments,
+} from "./apply-clarifications-tool.js";
+import {
   COACH_PROMPT_TOOL_DEFINITION,
   GET_PROMPT_MEMORY_STATUS_TOOL_DEFINITION,
   IMPROVE_PROMPT_TOOL_DEFINITION,
@@ -76,6 +81,7 @@ type PromptMemoryToolResult =
   | ReturnType<typeof coachPromptTool>
   | ReturnType<typeof scorePromptTool>
   | ReturnType<typeof improvePromptTool>
+  | ReturnType<typeof applyClarificationsTool>
   | ReturnType<typeof scorePromptArchiveTool>
   | ReturnType<typeof reviewProjectInstructionsTool>
   | ReturnType<typeof prepareAgentRewriteTool>
@@ -101,6 +107,11 @@ const PROMPT_MEMORY_MCP_TOOL_HANDLERS: Record<string, PromptMemoryToolHandler> =
       scorePromptTool(args as ScorePromptToolArguments, options),
     [IMPROVE_PROMPT_TOOL_DEFINITION.name]: (args, options) =>
       improvePromptTool(args as ImprovePromptToolArguments, options),
+    [APPLY_CLARIFICATIONS_TOOL_DEFINITION.name]: (args, options) =>
+      applyClarificationsTool(
+        args as ApplyClarificationsToolArguments,
+        options,
+      ),
     [SCORE_PROMPT_ARCHIVE_TOOL_DEFINITION.name]: (args, options) =>
       scorePromptArchiveTool(args as ScorePromptArchiveToolArguments, options),
     [REVIEW_PROJECT_INSTRUCTIONS_TOOL_DEFINITION.name]: (args, options) =>
@@ -200,7 +211,7 @@ export function handleMcpMessage(
           version: VERSION,
         },
         instructions:
-          "Use coach_prompt for the default one-call Claude Code/Codex coaching workflow: status, latest prompt score, approval-ready rewrite, habit review, project instruction review, and next request guidance. Use get_prompt_memory_status only for readiness checks, score_prompt for one prompt, improve_prompt for one local deterministic rewrite, prepare_agent_rewrite and record_agent_rewrite when the user explicitly wants the active agent session to semantically rewrite a stored prompt, score_prompt_archive for habit-only review, review_project_instructions for AGENTS.md/CLAUDE.md-only checks, and prepare_agent_judge_batch plus record_agent_judgments when the active agent should judge accumulated prompts. This server is local-only and does not call external LLMs.",
+          "Use coach_prompt for the default one-call Claude Code/Codex coaching workflow: status, latest prompt score, approval-ready rewrite, habit review, project instruction review, and next request guidance. Use get_prompt_memory_status only for readiness checks, score_prompt for one prompt, improve_prompt for one local deterministic rewrite, apply_clarifications when the user has answered the clarifying_questions returned by improve_prompt or coach_prompt and you need to compose the final draft from the user's verbatim answers, prepare_agent_rewrite and record_agent_rewrite when the user explicitly wants the active agent session to semantically rewrite a stored prompt, score_prompt_archive for habit-only review, review_project_instructions for AGENTS.md/CLAUDE.md-only checks, and prepare_agent_judge_batch plus record_agent_judgments when the active agent should judge accumulated prompts. This server is local-only and does not call external LLMs.",
       });
     case "ping":
       return jsonRpcResult(id, {});
