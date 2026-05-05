@@ -17,7 +17,7 @@ const LINE_BUDGETS = new Map([
   ["src/hooks/rewrite-guard.ts", 180],
   ["src/mcp/score-tool-definitions.ts", 870],
   ["src/mcp/score-tool-types.ts", 220],
-  ["src/mcp/score-tool.ts", 750],
+  ["src/mcp/score-tool.ts", 770],
 ]);
 
 const FORBIDDEN_PATTERNS = [

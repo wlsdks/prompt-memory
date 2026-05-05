@@ -869,6 +869,43 @@ describe("coachPromptTool", () => {
     expect(serialized).not.toContain(dataDir);
     expect(serialized).not.toContain("/tmp/");
   });
+
+  it("routes the agent to ask the user when the latest prompt has clarifying_questions", async () => {
+    const dataDir = createTempDir();
+    const init = initializePromptMemory({ dataDir });
+    const storage = createSqlitePromptStorage({
+      dataDir,
+      hmacSecret: init.hookAuth.web_session_secret,
+      now: () => new Date("2026-05-05T11:00:00.000Z"),
+    });
+    await storeClaudePrompt(
+      storage,
+      "Make this better",
+      "2026-05-05T10:59:00.000Z",
+    );
+    storage.close();
+
+    const result = coachPromptTool(
+      { include_archive: false, include_project_rules: false },
+      { dataDir },
+    );
+
+    expect(result.improvement).toBeDefined();
+    if (!result.improvement || "is_error" in result.improvement) {
+      throw new Error("coachPromptTool did not produce an improvement");
+    }
+    expect(
+      result.improvement.clarifying_questions.length,
+    ).toBeGreaterThanOrEqual(1);
+    expect(result.agent_brief.next_actions).toEqual(
+      expect.arrayContaining([expect.stringContaining("Ask the user")]),
+    );
+    expect(result.agent_brief.next_actions).not.toEqual(
+      expect.arrayContaining([
+        "Use the approval-ready rewrite only after the user explicitly accepts it.",
+      ]),
+    );
+  });
 });
 
 function createTempDir(): string {

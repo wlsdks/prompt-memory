@@ -528,9 +528,16 @@ function createAgentCoachBrief(input: {
       ? `${input.latestScore.quality_score.value}/${input.latestScore.quality_score.max} (${input.latestScore.quality_score.band})`
       : "not available";
 
+  const improvementHasQuestions =
+    !!input.improvement &&
+    !isToolError(input.improvement) &&
+    input.improvement.clarifying_questions.length > 0;
+
   if (input.improvement && !isToolError(input.improvement)) {
     nextActions.push(
-      "Use the approval-ready rewrite only after the user explicitly accepts it.",
+      improvementHasQuestions
+        ? "Ask the user the listed clarifying_questions through the agent's native ask UI before producing or submitting any rewrite. Wait for the user's own answers; do not guess on their behalf."
+        : "Use the approval-ready rewrite only after the user explicitly accepts it.",
     );
   }
 
