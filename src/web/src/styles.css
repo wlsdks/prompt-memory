@@ -42,6 +42,13 @@
   --pm-warning-weak: rgba(244, 183, 49, 0.1);
   --pm-code-bg: var(--color-canvas);
   --pm-shadow: none;
+  --pm-content-width: min(1680px, 100%);
+  --pm-form-width: 720px;
+  --pm-readable-width: 720px;
+  --pm-panel-min: 320px;
+  --pm-grid-gap: 16px;
+  --pm-card-pad: 16px;
+  --pm-card-radius: 16px;
   color-scheme: dark;
   color: var(--pm-text);
   background: var(--pm-bg);
@@ -292,7 +299,7 @@ pre {
 }
 
 .workspace {
-  max-width: min(1680px, 100%);
+  max-width: var(--pm-content-width);
   width: 100%;
   padding: 24px;
 }
