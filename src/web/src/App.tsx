@@ -74,7 +74,6 @@ import {
   ScoreDistributionChart,
 } from "./charts.js";
 import { copyTextToClipboard } from "./clipboard.js";
-import { AgentCommandCenter } from "./agent-command-center.js";
 import { ImportView } from "./import-view.js";
 import { PracticeView } from "./practice-view.js";
 import {
@@ -1327,6 +1326,17 @@ function DashboardView({
 
   return (
     <div className="dashboard-layout dashboard-overview">
+      <TrendPanel
+        daily={dashboard.trend.daily}
+        onSelectDay={(date) =>
+          onOpenFilteredList({
+            receivedFrom: date,
+            receivedTo: date,
+          })
+        }
+        trendDays={trendDays}
+        onChangeTrendDays={onChangeTrendDays}
+      />
       <ArchiveMeasurementPanel
         compact
         measurement={createArchiveMeasurement({
@@ -1339,7 +1349,6 @@ function DashboardView({
         onOpenFilteredList={onOpenFilteredList}
         onOpenScores={() => onNavigateSection("scores")}
       />
-      <AgentCommandCenter archiveScore={archiveScore} dashboard={dashboard} />
       <DashboardMetricStrip
         dashboard={dashboard}
         onOpenFilteredList={onOpenFilteredList}
@@ -1390,17 +1399,6 @@ function DashboardView({
           title="Find reuse and project patterns"
         />
       </section>
-      <TrendPanel
-        daily={dashboard.trend.daily}
-        onSelectDay={(date) =>
-          onOpenFilteredList({
-            receivedFrom: date,
-            receivedTo: date,
-          })
-        }
-        trendDays={trendDays}
-        onChangeTrendDays={onChangeTrendDays}
-      />
       <CoachFeedbackPanel summary={coachFeedback} />
     </div>
   );
