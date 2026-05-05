@@ -1226,6 +1226,10 @@ dd {
   grid-template-columns: minmax(180px, 0.7fr) minmax(240px, 1fr);
 }
 
+.archive-score-grid > .archive-gaps {
+  grid-column: 1 / -1;
+}
+
 .archive-score-summary,
 .archive-distribution,
 .archive-gaps,
