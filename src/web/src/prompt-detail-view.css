@@ -122,34 +122,32 @@
   line-height: 14px;
 }
 
-.analysis-summary {
-  font-size: 14px;
-  line-height: 22px;
-  margin: 10px 0 0;
+.analysis-header-title {
+  align-items: center;
+  display: flex;
+  gap: 8px;
 }
 
-.analysis-list {
-  border-top: 1px solid var(--pm-border);
-  margin-top: 12px;
-  padding-top: 12px;
+.analysis-analyzer-tag {
+  background: rgba(255, 255, 255, 0.04);
+  border-radius: 999px;
+  color: var(--pm-text-subtle);
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  padding: 2px 6px;
+  text-transform: uppercase;
 }
 
-.analysis-list h3 {
-  color: var(--pm-text-muted);
+.analysis-redaction-notice {
+  background: rgba(228, 184, 95, 0.12);
+  border-left: 2px solid rgba(228, 184, 95, 0.6);
+  border-radius: 4px;
+  color: #e4b85f;
   font-size: 12px;
   line-height: 18px;
-  margin: 0 0 6px;
-}
-
-.analysis-list ul {
-  margin: 0;
-  padding-left: 18px;
-}
-
-.analysis-list li {
-  font-size: 13px;
-  line-height: 20px;
-  margin: 4px 0;
+  margin: 8px 0 0;
+  padding: 6px 10px;
 }
 
 .improved-prompt-preview {
