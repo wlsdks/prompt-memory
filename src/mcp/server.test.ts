@@ -6,8 +6,8 @@ import { describe, expect, it } from "vitest";
 import { handleMcpMessage } from "./server.js";
 
 describe("MCP stdio server", () => {
-  it("declares prompt scoring tools through tools/list", () => {
-    const response = handleMcpMessage({
+  it("declares prompt scoring tools through tools/list", async () => {
+    const response = await handleMcpMessage({
       jsonrpc: "2.0",
       id: 1,
       method: "tools/list",
@@ -34,6 +34,9 @@ describe("MCP stdio server", () => {
             name: "apply_clarifications",
           }),
           expect.objectContaining({
+            name: "ask_clarifying_questions",
+          }),
+          expect.objectContaining({
             name: "score_prompt_archive",
           }),
           expect.objectContaining({
@@ -56,8 +59,8 @@ describe("MCP stdio server", () => {
     });
   });
 
-  it("declares safe local tool annotations for each tool", () => {
-    const response = handleMcpMessage({
+  it("declares safe local tool annotations for each tool", async () => {
+    const response = await handleMcpMessage({
       jsonrpc: "2.0",
       id: "tool-contract",
       method: "tools/list",
@@ -65,7 +68,7 @@ describe("MCP stdio server", () => {
 
     const tools = (response?.result as { tools: Array<unknown> }).tools;
 
-    expect(tools).toHaveLength(11);
+    expect(tools).toHaveLength(12);
     for (const tool of tools.filter(
       (tool) =>
         !["record_agent_rewrite", "record_agent_judgments"].includes(
@@ -107,8 +110,8 @@ describe("MCP stdio server", () => {
     );
   });
 
-  it("declares output schemas for structured MCP results", () => {
-    const response = handleMcpMessage({
+  it("declares output schemas for structured MCP results", async () => {
+    const response = await handleMcpMessage({
       jsonrpc: "2.0",
       id: "tool-output-contract",
       method: "tools/list",
@@ -228,8 +231,8 @@ describe("MCP stdio server", () => {
     );
   });
 
-  it("returns text MCP content for score_prompt_archive calls", () => {
-    const response = handleMcpMessage(
+  it("returns text MCP content for score_prompt_archive calls", async () => {
+    const response = await handleMcpMessage(
       {
         jsonrpc: "2.0",
         id: "archive-score-1",
@@ -261,8 +264,8 @@ describe("MCP stdio server", () => {
     });
   });
 
-  it("returns text MCP content for score_prompt calls", () => {
-    const response = handleMcpMessage({
+  it("returns text MCP content for score_prompt calls", async () => {
+    const response = await handleMcpMessage({
       jsonrpc: "2.0",
       id: "score-1",
       method: "tools/call",
@@ -297,8 +300,8 @@ describe("MCP stdio server", () => {
     });
   });
 
-  it("returns structured MCP content for improve_prompt calls", () => {
-    const response = handleMcpMessage({
+  it("returns structured MCP content for improve_prompt calls", async () => {
+    const response = await handleMcpMessage({
       jsonrpc: "2.0",
       id: "improve-1",
       method: "tools/call",
@@ -334,8 +337,8 @@ describe("MCP stdio server", () => {
     });
   });
 
-  it("returns text MCP content for review_project_instructions calls", () => {
-    const response = handleMcpMessage(
+  it("returns text MCP content for review_project_instructions calls", async () => {
+    const response = await handleMcpMessage(
       {
         jsonrpc: "2.0",
         id: "project-review-1",
@@ -367,8 +370,8 @@ describe("MCP stdio server", () => {
     });
   });
 
-  it("returns text MCP content for get_prompt_memory_status calls", () => {
-    const response = handleMcpMessage(
+  it("returns text MCP content for get_prompt_memory_status calls", async () => {
+    const response = await handleMcpMessage(
       {
         jsonrpc: "2.0",
         id: "status-1",
@@ -398,8 +401,8 @@ describe("MCP stdio server", () => {
     });
   });
 
-  it("returns structured MCP content for coach_prompt setup guidance", () => {
-    const response = handleMcpMessage(
+  it("returns structured MCP content for coach_prompt setup guidance", async () => {
+    const response = await handleMcpMessage(
       {
         jsonrpc: "2.0",
         id: "coach-1",
@@ -444,9 +447,9 @@ describe("MCP stdio server", () => {
     });
   });
 
-  it("does not respond to initialized notifications", () => {
+  it("does not respond to initialized notifications", async () => {
     expect(
-      handleMcpMessage({
+      await handleMcpMessage({
         jsonrpc: "2.0",
         method: "notifications/initialized",
       }),

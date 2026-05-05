@@ -2,11 +2,17 @@ import { createInterface } from "node:readline";
 import type { Readable, Writable } from "node:stream";
 
 import { VERSION } from "../shared/version.js";
+import { createRpcChannel, type RpcChannel } from "./rpc-channel.js";
 import {
   APPLY_CLARIFICATIONS_TOOL_DEFINITION,
   applyClarificationsTool,
   type ApplyClarificationsToolArguments,
 } from "./apply-clarifications-tool.js";
+import {
+  ASK_CLARIFYING_QUESTIONS_TOOL_DEFINITION,
+  askClarifyingQuestionsTool,
+  type AskClarifyingQuestionsToolArguments,
+} from "./ask-clarifying-questions-tool.js";
 import {
   COACH_PROMPT_TOOL_DEFINITION,
   GET_PROMPT_MEMORY_STATUS_TOOL_DEFINITION,
@@ -74,7 +80,14 @@ type JsonRpcResponse =
       };
     };
 
-export type PromptMemoryMcpServerOptions = ScorePromptToolOptions;
+export type PromptMemoryMcpServerContext = {
+  channel: RpcChannel;
+  clientCapabilities: Record<string, unknown>;
+};
+
+export type PromptMemoryMcpServerOptions = ScorePromptToolOptions & {
+  ctx?: PromptMemoryMcpServerContext;
+};
 
 type PromptMemoryToolResult =
   | ReturnType<typeof getPromptMemoryStatusTool>
@@ -82,6 +95,7 @@ type PromptMemoryToolResult =
   | ReturnType<typeof scorePromptTool>
   | ReturnType<typeof improvePromptTool>
   | ReturnType<typeof applyClarificationsTool>
+  | Awaited<ReturnType<typeof askClarifyingQuestionsTool>>
   | ReturnType<typeof scorePromptArchiveTool>
   | ReturnType<typeof reviewProjectInstructionsTool>
   | ReturnType<typeof prepareAgentRewriteTool>
@@ -92,7 +106,7 @@ type PromptMemoryToolResult =
 type PromptMemoryToolHandler = (
   args: Record<string, unknown>,
   options: PromptMemoryMcpServerOptions,
-) => PromptMemoryToolResult;
+) => PromptMemoryToolResult | Promise<PromptMemoryToolResult>;
 
 const PROMPT_MEMORY_MCP_TOOL_HANDLERS: Record<string, PromptMemoryToolHandler> =
   {
@@ -110,6 +124,11 @@ const PROMPT_MEMORY_MCP_TOOL_HANDLERS: Record<string, PromptMemoryToolHandler> =
     [APPLY_CLARIFICATIONS_TOOL_DEFINITION.name]: (args, options) =>
       applyClarificationsTool(
         args as ApplyClarificationsToolArguments,
+        options,
+      ),
+    [ASK_CLARIFYING_QUESTIONS_TOOL_DEFINITION.name]: (args, options) =>
+      askClarifyingQuestionsTool(
+        args as AskClarifyingQuestionsToolArguments,
         options,
       ),
     [SCORE_PROMPT_ARCHIVE_TOOL_DEFINITION.name]: (args, options) =>
@@ -147,46 +166,88 @@ export async function runPromptMemoryMcpServer(
     input,
     crlfDelay: Number.POSITIVE_INFINITY,
   });
+  const channel = options.ctx?.channel ?? createRpcChannel(output);
+  const ctx: PromptMemoryMcpServerContext = options.ctx ?? {
+    channel,
+    clientCapabilities: {},
+  };
+  const optionsWithCtx: PromptMemoryMcpServerOptions = { ...options, ctx };
+  const inflight = new Set<Promise<void>>();
 
-  for await (const line of lines) {
-    const trimmed = line.trim();
-    if (!trimmed) {
-      continue;
-    }
+  try {
+    for await (const line of lines) {
+      const trimmed = line.trim();
+      if (!trimmed) continue;
 
-    for (const response of handleMcpLine(trimmed, options)) {
-      output.write(`${JSON.stringify(response)}\n`);
+      let parsed: unknown;
+      try {
+        parsed = JSON.parse(trimmed);
+      } catch {
+        output.write(
+          `${JSON.stringify(
+            jsonRpcError(
+              null,
+              -32700,
+              "Parse error. Expected one JSON-RPC message per line.",
+            ),
+          )}\n`,
+        );
+        continue;
+      }
+
+      const messages = Array.isArray(parsed) ? parsed : [parsed];
+      for (const message of messages) {
+        if (channel.isResponseEnvelope(message)) {
+          channel.fulfillResponse(message);
+          continue;
+        }
+        // Run message handlers concurrently so a tool call that waits on
+        // server-initiated requests (e.g. elicitation/create) does not block
+        // the input loop from delivering the matching response.
+        const tracked = (async () => {
+          const response = await handleMcpMessage(message, optionsWithCtx);
+          if (response) output.write(`${JSON.stringify(response)}\n`);
+        })();
+        inflight.add(tracked);
+        tracked.finally(() => inflight.delete(tracked));
+      }
     }
+    if (inflight.size > 0) {
+      await Promise.allSettled([...inflight]);
+    }
+  } finally {
+    channel.cancelAll("input stream closed");
   }
 }
 
 export function handleMcpLine(
   line: string,
   options: PromptMemoryMcpServerOptions = {},
-): JsonRpcResponse[] {
+): Promise<JsonRpcResponse[]> {
+  let parsed: unknown;
   try {
-    const parsed = JSON.parse(line) as unknown;
-    const messages = Array.isArray(parsed) ? parsed : [parsed];
-
-    return messages.flatMap((message) => {
-      const response = handleMcpMessage(message, options);
-      return response ? [response] : [];
-    });
+    parsed = JSON.parse(line);
   } catch {
-    return [
+    return Promise.resolve([
       jsonRpcError(
         null,
         -32700,
         "Parse error. Expected one JSON-RPC message per line.",
       ),
-    ];
+    ]);
   }
+  const messages = Array.isArray(parsed) ? parsed : [parsed];
+  return Promise.all(
+    messages.map((message) => handleMcpMessage(message, options)),
+  ).then((responses) =>
+    responses.filter((value): value is JsonRpcResponse => value !== undefined),
+  );
 }
 
-export function handleMcpMessage(
+export async function handleMcpMessage(
   message: unknown,
   options: PromptMemoryMcpServerOptions = {},
-): JsonRpcResponse | undefined {
+): Promise<JsonRpcResponse | undefined> {
   if (!isJsonRpcRequest(message)) {
     return jsonRpcError(null, -32600, "Invalid JSON-RPC request.");
   }
@@ -199,6 +260,12 @@ export function handleMcpMessage(
 
   switch (message.method) {
     case "initialize":
+      if (options.ctx) {
+        const params = message.params as
+          | { capabilities?: Record<string, unknown> }
+          | undefined;
+        options.ctx.clientCapabilities = params?.capabilities ?? {};
+      }
       return jsonRpcResult(id, {
         protocolVersion: readRequestedProtocolVersion(message.params),
         capabilities: {
@@ -211,7 +278,7 @@ export function handleMcpMessage(
           version: VERSION,
         },
         instructions:
-          "Use coach_prompt for the default one-call Claude Code/Codex coaching workflow: status, latest prompt score, approval-ready rewrite, habit review, project instruction review, and next request guidance. Use get_prompt_memory_status only for readiness checks, score_prompt for one prompt, improve_prompt for one local deterministic rewrite, apply_clarifications when the user has answered the clarifying_questions returned by improve_prompt or coach_prompt and you need to compose the final draft from the user's verbatim answers, prepare_agent_rewrite and record_agent_rewrite when the user explicitly wants the active agent session to semantically rewrite a stored prompt, score_prompt_archive for habit-only review, review_project_instructions for AGENTS.md/CLAUDE.md-only checks, and prepare_agent_judge_batch plus record_agent_judgments when the active agent should judge accumulated prompts. ASK-FIRST RULE: whenever any tool returns a non-empty clarifying_questions array, ask the user those questions through your native ask UI (Claude Code AskUserQuestion, Codex ask_user_question) before composing or submitting any rewrite, then pass the user's verbatim answers to apply_clarifications with origin set to user. Do not guess answers, do not skip questions, and never auto-submit a rewrite. This server is local-only and does not call external LLMs.",
+          "Use coach_prompt for the default one-call Claude Code/Codex coaching workflow: status, latest prompt score, approval-ready rewrite, habit review, project instruction review, and next request guidance. Use get_prompt_memory_status only for readiness checks, score_prompt for one prompt, improve_prompt for one local deterministic rewrite, ask_clarifying_questions when you want prompt-memory to drive the elicitation flow itself (it asks the user via MCP elicitation/create when the client supports it and composes the final draft, otherwise falls back to clarifying_questions metadata), apply_clarifications when the user has answered the clarifying_questions returned by improve_prompt or coach_prompt and you need to compose the final draft from the user's verbatim answers, prepare_agent_rewrite and record_agent_rewrite when the user explicitly wants the active agent session to semantically rewrite a stored prompt, score_prompt_archive for habit-only review, review_project_instructions for AGENTS.md/CLAUDE.md-only checks, and prepare_agent_judge_batch plus record_agent_judgments when the active agent should judge accumulated prompts. ASK-FIRST RULE: whenever any tool returns a non-empty clarifying_questions array, ask the user those questions through your native ask UI (Claude Code AskUserQuestion, Codex ask_user_question) before composing or submitting any rewrite, then pass the user's verbatim answers to apply_clarifications with origin set to user. Do not guess answers, do not skip questions, and never auto-submit a rewrite. This server is local-only and does not call external LLMs.",
       });
     case "ping":
       return jsonRpcResult(id, {});
@@ -220,17 +287,17 @@ export function handleMcpMessage(
         tools: PROMPT_MEMORY_MCP_TOOL_DEFINITIONS,
       });
     case "tools/call":
-      return handleToolCall(id, message.params, options);
+      return await handleToolCall(id, message.params, options);
     default:
       return jsonRpcError(id, -32601, `Method not found: ${message.method}`);
   }
 }
 
-function handleToolCall(
+async function handleToolCall(
   id: JsonRpcId,
   params: unknown,
   options: PromptMemoryMcpServerOptions,
-): JsonRpcResponse {
+): Promise<JsonRpcResponse> {
   if (!isToolCallParams(params)) {
     return jsonRpcError(
       id,
@@ -240,12 +307,13 @@ function handleToolCall(
   }
 
   const handler = PROMPT_MEMORY_MCP_TOOL_HANDLERS[params.name];
-  const result = handler?.(params.arguments, options);
+  const handlerResult = handler?.(params.arguments, options);
 
-  if (!result) {
+  if (!handlerResult) {
     return jsonRpcError(id, -32602, `Unknown tool: ${params.name}`);
   }
 
+  const result = await handlerResult;
   const isError = "is_error" in result;
 
   return jsonRpcResult(id, {
