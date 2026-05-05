@@ -100,8 +100,13 @@ pre {
 
 .app-shell {
   display: grid;
-  grid-template-columns: 316px minmax(0, 1fr);
+  grid-template-columns: 224px minmax(0, 1fr);
   min-height: 100vh;
+  transition: grid-template-columns 0.18s ease;
+}
+
+.app-shell.sidebar-collapsed {
+  grid-template-columns: 64px minmax(0, 1fr);
 }
 
 .skip-link {
@@ -125,8 +130,16 @@ pre {
 
 .sidebar {
   border-right: 1px solid var(--color-border-soft);
-  padding: 28px 26px;
+  padding: 18px 14px;
   background: var(--pm-rail);
+}
+
+.sidebar-header {
+  align-items: center;
+  display: flex;
+  justify-content: space-between;
+  gap: 8px;
+  margin-bottom: 22px;
 }
 
 .brand,
@@ -134,32 +147,65 @@ pre {
 .capture-status {
   align-items: center;
   display: flex;
-  gap: 14px;
+  gap: 10px;
 }
 
 .brand {
-  font-size: 24px;
-  font-weight: 760;
+  font-size: 15px;
+  font-weight: 660;
   letter-spacing: 0;
-  margin-bottom: 38px;
+  margin-bottom: 0;
+  min-width: 0;
 }
 
 .brand svg {
+  flex: 0 0 auto;
+  height: 18px;
+  width: 18px;
+}
+
+.brand .sidebar-label {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.sidebar-toggle {
+  align-items: center;
+  background: transparent;
+  border: 1px solid transparent;
+  border-radius: 8px;
+  color: var(--pm-text-muted);
+  cursor: pointer;
+  display: flex;
+  flex: 0 0 auto;
   height: 28px;
+  justify-content: center;
+  padding: 0;
   width: 28px;
+}
+
+.sidebar-toggle:hover {
+  background: var(--color-overlay-2);
+  color: var(--pm-text);
+}
+
+.sidebar-toggle:focus-visible {
+  border-color: var(--pm-accent);
+  outline: none;
 }
 
 .nav-button {
   width: 100%;
-  min-height: 58px;
+  min-height: 36px;
   border: 1px solid transparent;
-  border-radius: 12px;
+  border-radius: 8px;
   color: var(--pm-text-muted);
   background: transparent;
-  font-size: 17px;
-  font-weight: 720;
-  margin-bottom: 8px;
-  padding: 0 20px;
+  font-size: 13px;
+  font-weight: 540;
+  margin-bottom: 2px;
+  padding: 0 12px;
   text-align: left;
 }
 
@@ -176,16 +222,44 @@ pre {
 
 .nav-button svg {
   flex: 0 0 auto;
-  height: 23px;
-  width: 23px;
+  height: 16px;
+  width: 16px;
 }
 
 .capture-status {
-  gap: 12px;
-  margin-top: 34px;
+  gap: 10px;
+  margin-top: 18px;
   color: var(--pm-text-muted);
-  font-size: 14px;
-  font-weight: 520;
+  font-size: 12px;
+  font-weight: 500;
+}
+
+.app-shell.sidebar-collapsed .sidebar {
+  padding: 14px 10px;
+}
+
+.app-shell.sidebar-collapsed .sidebar-header {
+  flex-direction: column;
+  gap: 12px;
+  margin-bottom: 14px;
+}
+
+.app-shell.sidebar-collapsed .sidebar-label {
+  display: none;
+}
+
+.app-shell.sidebar-collapsed .nav-button {
+  justify-content: center;
+  padding: 0 8px;
+  gap: 0;
+}
+
+.app-shell.sidebar-collapsed .capture-status {
+  justify-content: center;
+}
+
+.app-shell.sidebar-collapsed .language-switch {
+  display: none;
 }
 
 .language-switch {
