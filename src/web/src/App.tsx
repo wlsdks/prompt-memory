@@ -1496,13 +1496,7 @@ function CoachView({
         onOpenFilteredList={onOpenFilteredList}
         onSelect={onSelect}
       />
-      <section className="dashboard-grid wide">
-        <QualityGapsPanel
-          dashboard={dashboard}
-          onOpenFilteredList={onOpenFilteredList}
-        />
-        <RepeatedPatternsPanel dashboard={dashboard} />
-      </section>
+      <RepeatedPatternsPanel dashboard={dashboard} />
       <InstructionSuggestionsPanel dashboard={dashboard} />
     </div>
   );
@@ -1919,43 +1913,6 @@ function DuplicateCandidatesPanel({
               ))}
             </div>
           </div>
-        ))}
-      </div>
-    </div>
-  );
-}
-
-function QualityGapsPanel({
-  dashboard,
-  onOpenFilteredList,
-}: {
-  dashboard: QualityDashboard;
-  onOpenFilteredList(filters: PromptFilters): void;
-}) {
-  return (
-    <div className="panel">
-      <h2>Frequent quality gaps</h2>
-      <div className="gap-list">
-        {dashboard.missing_items.length === 0 && (
-          <p className="muted">No repeated gaps yet.</p>
-        )}
-        {dashboard.missing_items.map((item) => (
-          <button
-            className="gap-row gap-action"
-            key={item.key}
-            onClick={() =>
-              onOpenFilteredList({
-                focus: "quality-gap",
-                qualityGap: item.key as PromptQualityGap,
-              })
-            }
-          >
-            <div>
-              <strong>{item.label}</strong>
-              <p>{`missing ${item.missing} / weak ${item.weak}`}</p>
-            </div>
-            <span>{Math.round(item.rate * 100)}%</span>
-          </button>
         ))}
       </div>
     </div>
