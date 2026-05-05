@@ -145,6 +145,11 @@ export function App() {
   const [pendingDelete, setPendingDelete] = useState<
     PromptDetail | undefined
   >();
+  const [pendingBulkDelete, setPendingBulkDelete] = useState(false);
+  const [bulkDeleteBusy, setBulkDeleteBusy] = useState(false);
+  const [selectedIds, setSelectedIds] = useState<Set<string>>(
+    () => new Set(),
+  );
   const [copiedPromptId, setCopiedPromptId] = useState<string | undefined>();
   const [copiedImprovementId, setCopiedImprovementId] = useState<
     string | undefined
@@ -316,6 +321,51 @@ export function App() {
       setError("Could not load prompts.");
     } finally {
       setLoading(false);
+    }
+  }
+
+  function toggleSelectId(id: string): void {
+    setSelectedIds((current) => {
+      const next = new Set(current);
+      if (next.has(id)) {
+        next.delete(id);
+      } else {
+        next.add(id);
+      }
+      return next;
+    });
+  }
+
+  function selectAllVisible(): void {
+    setSelectedIds(new Set(prompts.map((prompt) => prompt.id)));
+  }
+
+  function clearSelection(): void {
+    setSelectedIds(new Set());
+  }
+
+  async function confirmBulkDelete(): Promise<void> {
+    const ids = [...selectedIds];
+    if (ids.length === 0) {
+      setPendingBulkDelete(false);
+      return;
+    }
+    setBulkDeleteBusy(true);
+    try {
+      await Promise.all(ids.map((id) => deletePrompt(id)));
+      setPendingBulkDelete(false);
+      setSelectedIds(new Set());
+      await refreshList(filters, { replace: true });
+      void getQualityDashboard()
+        .then(setDashboard)
+        .catch(() => undefined);
+      void getArchiveScoreReport()
+        .then(setArchiveScore)
+        .catch(() => undefined);
+    } catch {
+      setError("Could not bulk delete some prompts.");
+    } finally {
+      setBulkDeleteBusy(false);
     }
   }
 
@@ -858,6 +908,12 @@ export function App() {
               }
               onSelect={(id) => navigate({ name: "detail", id })}
               prompts={prompts}
+              selectedIds={selectedIds}
+              onToggleSelect={toggleSelectId}
+              onSelectAll={selectAllVisible}
+              onClearSelection={clearSelection}
+              onBulkDelete={() => setPendingBulkDelete(true)}
+              bulkDeleteBusy={bulkDeleteBusy}
             />
           </>
         )}
@@ -999,6 +1055,33 @@ export function App() {
           </div>
         </div>
       )}
+      {pendingBulkDelete && (
+        <div className="modal-backdrop" role="presentation">
+          <div aria-modal="true" className="modal" role="dialog">
+            <h2>Bulk delete</h2>
+            <p>
+              <strong>{selectedIds.size}</strong> prompts will be deleted.
+              Markdown files and index rows are removed for each. This cannot
+              be undone.
+            </p>
+            <div className="modal-actions">
+              <button
+                disabled={bulkDeleteBusy}
+                onClick={() => setPendingBulkDelete(false)}
+              >
+                Cancel
+              </button>
+              <button
+                className="danger"
+                disabled={bulkDeleteBusy}
+                onClick={() => void confirmBulkDelete()}
+              >
+                {bulkDeleteBusy ? "Deleting..." : "Delete all"}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </main>
   );
 }
@@ -1011,6 +1094,12 @@ function PromptList({
   onLoadMore,
   onSelect,
   prompts,
+  selectedIds,
+  onToggleSelect,
+  onSelectAll,
+  onClearSelection,
+  onBulkDelete,
+  bulkDeleteBusy,
 }: {
   focus?: PromptFilters["focus"];
   qualityGap?: PromptFilters["qualityGap"];
@@ -1019,6 +1108,12 @@ function PromptList({
   onLoadMore(): void;
   onSelect(id: string): void;
   prompts: PromptSummary[];
+  selectedIds: Set<string>;
+  onToggleSelect(id: string): void;
+  onSelectAll(): void;
+  onClearSelection(): void;
+  onBulkDelete(): void;
+  bulkDeleteBusy: boolean;
 }) {
   if (loading && prompts.length === 0) {
     return <div className="panel empty">Loading prompts.</div>;
@@ -1039,10 +1134,49 @@ function PromptList({
     );
   }
 
+  const allSelected =
+    prompts.length > 0 && prompts.every((prompt) => selectedIds.has(prompt.id));
+  const selectionCount = selectedIds.size;
   return (
     <>
+      {selectionCount > 0 && (
+        <div className="bulk-action-bar" role="region" aria-label="Bulk actions">
+          <span>
+            <strong>{selectionCount}</strong> selected
+          </span>
+          <button
+            className="bulk-action-clear"
+            onClick={onClearSelection}
+            type="button"
+          >
+            Clear
+          </button>
+          <button
+            className="bulk-action-delete danger"
+            disabled={bulkDeleteBusy}
+            onClick={onBulkDelete}
+            type="button"
+          >
+            {bulkDeleteBusy ? "Deleting..." : "Delete selected"}
+          </button>
+        </div>
+      )}
       <div className="prompt-table" role="table">
         <div className="table-row table-head" role="row">
+          <span className="select-cell">
+            <input
+              aria-label="Select all visible prompts"
+              checked={allSelected}
+              onChange={(event) => {
+                if (event.target.checked) {
+                  onSelectAll();
+                } else {
+                  onClearSelection();
+                }
+              }}
+              type="checkbox"
+            />
+          </span>
           <span>Received</span>
           <span>Tool</span>
           <span>Path</span>
@@ -1050,12 +1184,25 @@ function PromptList({
           <span>Length</span>
         </div>
         {prompts.map((prompt) => (
-          <button
-            className="table-row"
+          <div
+            className={`table-row${selectedIds.has(prompt.id) ? " selected" : ""}`}
             key={prompt.id}
-            onClick={() => onSelect(prompt.id)}
             role="row"
+            onClick={(event) => {
+              const target = event.target as HTMLElement;
+              if (target.closest('input[type="checkbox"]')) return;
+              onSelect(prompt.id);
+            }}
           >
+            <span className="select-cell">
+              <input
+                aria-label={`Select prompt ${prompt.id}`}
+                checked={selectedIds.has(prompt.id)}
+                onChange={() => onToggleSelect(prompt.id)}
+                onClick={(event) => event.stopPropagation()}
+                type="checkbox"
+              />
+            </span>
             <span>{formatDate(prompt.received_at)}</span>
             <span>{prompt.tool}</span>
             <span className="path-cell">
@@ -1094,7 +1241,7 @@ function PromptList({
               )}
             </span>
             <span>{prompt.prompt_length}</span>
-          </button>
+          </div>
         ))}
       </div>
       {nextCursor && (
