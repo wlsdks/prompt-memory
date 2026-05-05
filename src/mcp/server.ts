@@ -205,11 +205,26 @@ export async function runPromptMemoryMcpServer(
         // server-initiated requests (e.g. elicitation/create) does not block
         // the input loop from delivering the matching response.
         const tracked = (async () => {
-          const response = await handleMcpMessage(message, optionsWithCtx);
-          if (response) output.write(`${JSON.stringify(response)}\n`);
+          try {
+            const response = await handleMcpMessage(message, optionsWithCtx);
+            if (response) output.write(`${JSON.stringify(response)}\n`);
+          } catch {
+            // Last-resort safety net. handleMcpMessage already returns
+            // jsonRpcError for invalid input or unknown methods, but a tool
+            // handler that throws unexpectedly should not crash the loop or
+            // leak as an unhandled rejection — emit an internal error so the
+            // client sees a response and the server keeps running.
+            const requestId =
+              message && typeof message === "object"
+                ? ((message as { id?: JsonRpcId }).id ?? null)
+                : null;
+            output.write(
+              `${JSON.stringify(jsonRpcError(requestId, -32603, "internal server error"))}\n`,
+            );
+          }
         })();
         inflight.add(tracked);
-        tracked.finally(() => inflight.delete(tracked));
+        void tracked.finally(() => inflight.delete(tracked));
       }
     }
     if (inflight.size > 0) {
