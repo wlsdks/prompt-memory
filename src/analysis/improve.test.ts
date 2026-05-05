@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 
-import { improvePrompt } from "./improve.js";
+import { applyClarifications, improvePrompt } from "./improve.js";
 
 describe("improvePrompt", () => {
   it("turns vague prompts into an approval-ready structured prompt", () => {
@@ -154,5 +154,104 @@ describe("improvePrompt", () => {
     expect(serialized).not.toContain("sk-proj-123abc");
     expect(serialized).not.toContain("/Users/example");
     expect(serialized).not.toContain("foo.ts");
+  });
+});
+
+describe("applyClarifications", () => {
+  it("drops a question whose axis the user just answered", () => {
+    const baseline = improvePrompt({
+      prompt: "Make this better",
+      createdAt: "2026-05-05T00:00:00.000Z",
+      language: "en",
+    });
+    const askedAxis = baseline.clarifying_questions[0]?.axis;
+    expect(askedAxis).toBeDefined();
+
+    const answered = applyClarifications({
+      prompt: "Make this better",
+      createdAt: "2026-05-05T00:00:00.000Z",
+      language: "en",
+      answers: [
+        {
+          question_id: `q_${askedAxis!}`,
+          axis: askedAxis!,
+          answer: "Fix the delete API bug in src/server/routes/prompts.ts.",
+          origin: "user",
+        },
+      ],
+    });
+
+    expect(
+      answered.clarifying_questions.some((q) => q.axis === askedAxis),
+    ).toBe(false);
+    expect(answered.changed_sections).not.toContain(askedAxis!);
+    expect(answered.improved_prompt).toContain("delete API");
+  });
+
+  it("returns the baseline improvement when no valid user answers are present", () => {
+    const baseline = improvePrompt({
+      prompt: "Make this better",
+      createdAt: "2026-05-05T00:00:00.000Z",
+      language: "en",
+    });
+    const noAnswers = applyClarifications({
+      prompt: "Make this better",
+      createdAt: "2026-05-05T00:00:00.000Z",
+      language: "en",
+      answers: [],
+    });
+
+    expect(noAnswers.clarifying_questions).toEqual(
+      baseline.clarifying_questions,
+    );
+    expect(noAnswers.changed_sections).toEqual(baseline.changed_sections);
+  });
+
+  it("ignores answers whose origin is not 'user'", () => {
+    const baseline = improvePrompt({
+      prompt: "Make this better",
+      createdAt: "2026-05-05T00:00:00.000Z",
+      language: "en",
+    });
+    const askedAxis = baseline.clarifying_questions[0]?.axis;
+    expect(askedAxis).toBeDefined();
+
+    const ignored = applyClarifications({
+      prompt: "Make this better",
+      createdAt: "2026-05-05T00:00:00.000Z",
+      language: "en",
+      answers: [
+        {
+          question_id: `q_${askedAxis!}`,
+          axis: askedAxis!,
+          answer: "Fix the delete API bug in src/server/routes/prompts.ts.",
+          origin: "agent" as unknown as "user",
+        },
+      ],
+    });
+
+    expect(ignored.clarifying_questions.some((q) => q.axis === askedAxis)).toBe(
+      true,
+    );
+    expect(ignored.changed_sections).toContain(askedAxis!);
+  });
+
+  it("redacts secrets pasted into a user answer before composing the draft", () => {
+    const result = applyClarifications({
+      prompt: "Make this better",
+      createdAt: "2026-05-05T00:00:00.000Z",
+      language: "en",
+      answers: [
+        {
+          question_id: "q_verification_criteria",
+          axis: "verification_criteria",
+          answer: "Run pnpm test with token sk-proj-1234567890abcdef",
+          origin: "user",
+        },
+      ],
+    });
+    const serialized = JSON.stringify(result);
+
+    expect(serialized).not.toContain("sk-proj-1234567890abcdef");
   });
 });

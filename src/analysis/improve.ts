@@ -124,6 +124,87 @@ const KO_CLARIFYING: Record<PromptQualityCriterion, string> = {
   verification_criteria: "이 변경이 잘 됐는지 어떤 명령으로 확인할까요?",
 };
 
+export type ClarifyingAnswer = {
+  question_id: string;
+  axis: PromptQualityCriterion;
+  answer: string;
+  origin: "user";
+};
+
+export type ApplyClarificationsInput = ImprovePromptInput & {
+  answers: readonly ClarifyingAnswer[];
+};
+
+export function applyClarifications(
+  input: ApplyClarificationsInput,
+): PromptImprovement {
+  const validAnswers = input.answers.filter(
+    (entry) => entry.origin === "user" && entry.answer.trim().length > 0,
+  );
+  const baseImprovement = improvePrompt({
+    prompt: input.prompt,
+    createdAt: input.createdAt,
+    language: input.language,
+    source: input.source,
+  });
+  if (validAnswers.length === 0) {
+    return baseImprovement;
+  }
+
+  const answeredAxes = new Set(validAnswers.map((entry) => entry.axis));
+  const language = input.language ?? detectPromptLanguage(input.prompt);
+  const labels = SECTION_LABELS[language];
+  const redaction = redactPrompt(input.prompt, "mask");
+  const sanitizedPrompt = sanitizePrompt(redaction.stored_text);
+  const source = input.source ?? "direct";
+  const baseChanged = baseImprovement.changed_sections;
+  const remainingChanged = baseChanged.filter(
+    (axis) => !answeredAxes.has(axis),
+  );
+  const sections =
+    source === "stored"
+      ? buildStoredSections(sanitizedPrompt, remainingChanged, language)
+      : buildSections(sanitizedPrompt, remainingChanged, language);
+
+  const sectionsWithAnswers = sections.map<[string, string]>(
+    ([label, body]) => {
+      const axisEntry = (
+        Object.entries(labels) as Array<[PromptQualityCriterion, string]>
+      ).find(([, axisLabel]) => axisLabel === label);
+      if (!axisEntry) return [label, body];
+      const matched = validAnswers.find((entry) => entry.axis === axisEntry[0]);
+      if (!matched) return [label, body];
+      return [label, sanitizeAnswer(matched.answer)];
+    },
+  );
+
+  return {
+    ...baseImprovement,
+    summary: summaryFor(language, remainingChanged.length === 0),
+    improved_prompt: [
+      introFor(language),
+      "",
+      ...sectionsWithAnswers.flatMap(([label, body]) => [
+        `## ${label}`,
+        body,
+        "",
+      ]),
+    ]
+      .join("\n")
+      .trim(),
+    changed_sections: remainingChanged,
+    clarifying_questions: baseImprovement.clarifying_questions.filter(
+      (question) => !answeredAxes.has(question.axis),
+    ),
+  };
+}
+
+function sanitizeAnswer(answer: string): string {
+  const redacted = redactPrompt(answer, "mask");
+  const cleaned = sanitizePrompt(redacted.stored_text);
+  return cleaned;
+}
+
 function buildClarifyingQuestions(
   checklist: PromptQualityChecklistItem[],
   language: "en" | "ko",
