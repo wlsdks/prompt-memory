@@ -205,46 +205,6 @@ try {
     "Average prompt score",
     "Dashboard should show average prompt score.",
   );
-  await assertText(
-    page,
-    "Improve the next prompt",
-    "Dashboard should route users to prompt coaching.",
-  );
-  await assertTextAny(
-    page,
-    ["Agent cockpit", "에이전트 조종석"],
-    "Dashboard should show agent-native command shortcuts.",
-  );
-  await assertText(
-    page,
-    "/prompt-memory:coach",
-    "Dashboard should expose the one-call agent coach command.",
-  );
-  await assertText(
-    page,
-    "prompt-memory:coach_prompt",
-    "Dashboard should expose the MCP coach command for Codex and Claude Code.",
-  );
-  await assertText(
-    page,
-    "Recommended command",
-    "Dashboard should show one recommended agent command.",
-  );
-  await assertText(
-    page,
-    "Draft with live score",
-    "Dashboard should route users to prompt practice.",
-  );
-  await assertText(
-    page,
-    "Review archive quality",
-    "Dashboard should route users to score review.",
-  );
-  await assertText(
-    page,
-    "Find reuse and project patterns",
-    "Dashboard should route users to insights.",
-  );
   await assertChartVisible(page, "dashboard", 1);
   await assertBrowserSafe(page, "dashboard");
 
@@ -302,128 +262,6 @@ try {
   );
   await assertBrowserSafe(page, "coach");
 
-  await page.getByRole("button", { name: "Practice", exact: true }).click();
-  await page.getByRole("heading", { name: "Prompt practice" }).waitFor();
-  await assertTextAny(
-    page,
-    ["Prompt practice workspace", "프롬프트 연습 작업면"],
-    "Practice should expose a prompt drafting workspace.",
-  );
-  await assertTextAny(
-    page,
-    ["Live local score", "실시간 로컬 점수"],
-    "Practice should show local prompt score preview.",
-  );
-  await assertTextAny(
-    page,
-    ["Practice history", "연습 기록"],
-    "Practice should show local score history.",
-  );
-  await page.getByLabel("Practice draft").fill("fix it");
-  await assertTextAny(
-    page,
-    ["One-click builder", "원클릭 빌더"],
-    "Practice should expose one-click missing section fixes.",
-  );
-  await assertTextAny(
-    page,
-    ["Add all missing sections", "부족한 섹션 모두 추가"],
-    "Practice should offer an all-fixes builder action.",
-  );
-  await assertTextAny(
-    page,
-    ["Projected after fixes", "보완 후 예상 점수"],
-    "Practice should show the projected score before applying fixes.",
-  );
-  await assertTextAny(
-    page,
-    ["points if all sections are added", "모든 섹션 추가 시"],
-    "Practice should show the projected score delta.",
-  );
-  await page
-    .getByRole("button", { name: /Copy fixed draft|보완 초안 복사/ })
-    .click();
-  await assertTextAny(
-    page,
-    ["Copied fixed draft", "보완 초안 복사됨"],
-    "Practice should copy the projected fixed draft directly.",
-  );
-  assertIncludes(
-    await page.evaluate(() => navigator.clipboard.readText()),
-    "Verification: name commands or acceptance checks.",
-    "Practice fixed draft copy should include projected quick-fix snippets.",
-  );
-  await page
-    .getByRole("button", { name: /Add Verification|검증 추가/ })
-    .click();
-  assertIncludes(
-    await page.getByLabel("Practice draft").inputValue(),
-    "Verification: name commands or acceptance checks.",
-    "Practice should append selected quick-fix snippets to the draft.",
-  );
-  await page
-    .getByLabel("Practice draft")
-    .fill(
-      [
-        "Goal: improve the archive practice plan UI.",
-        "Context: use src/web/src/App.tsx and src/web/src/styles.css.",
-        "Scope: keep changes limited to the Practice screen.",
-        "Verification: run pnpm test and pnpm e2e:browser.",
-        "Output: concise Markdown summary with risks.",
-      ].join("\n"),
-    );
-  await assertTextAny(
-    page,
-    ["Excellent", "우수"],
-    "Practice should update the score preview while drafting.",
-  );
-  await page
-    .getByRole("button", { name: /Copy practice draft|연습 초안 복사/ })
-    .waitFor();
-  await page
-    .getByRole("button", { name: /Copy practice draft|연습 초안 복사/ })
-    .click();
-  await assertTextAny(
-    page,
-    ["2 copied drafts", "복사한 초안"],
-    "Practice should record copied draft score metadata.",
-  );
-  await page.waitForTimeout(2600);
-  await page
-    .getByRole("button", { name: /Copy practice draft|연습 초안 복사/ })
-    .click();
-  await assertTextAny(
-    page,
-    ["3 copied drafts", "복사한 초안"],
-    "Practice should keep multiple copied draft score points.",
-  );
-  await assertChartVisible(page, "practice", 1);
-  await assertTextAny(
-    page,
-    [
-      "Practice history stores scores and missing labels only",
-      "점수와 부족 항목 라벨만 저장",
-    ],
-    "Practice history should explain that draft text is not stored.",
-  );
-  await assertTextAny(
-    page,
-    ["Did the copied draft work?", "복사한 초안이 실제로 도움이 됐나요?"],
-    "Practice should ask for outcome feedback after copied drafts.",
-  );
-  await page.getByRole("button", { name: /Worked|성공/ }).click();
-  await assertTextAny(
-    page,
-    ["Latest outcome:", "최근 결과:"],
-    "Practice should show the latest copied draft outcome.",
-  );
-  await assertTextAny(
-    page,
-    ["Worked", "성공"],
-    "Practice should record worked outcomes.",
-  );
-  await assertBrowserSafe(page, "practice");
-
   await page.getByRole("button", { name: "Scores", exact: true }).click();
   await page.getByRole("heading", { name: "Prompt scores" }).waitFor();
   await page.getByText("Archive score review").waitFor();
@@ -446,44 +284,6 @@ try {
   await page.getByRole("button", { name: "Copy practice template" }).waitFor();
   await assertChartVisible(page, "scores", 3);
   await assertBrowserSafe(page, "scores");
-
-  await page.getByRole("button", { name: "Benchmark", exact: true }).click();
-  await page.getByRole("heading", { name: "Prompt benchmark" }).waitFor();
-  await page.getByText("Measure your prompt habits").waitFor();
-  await assertText(
-    page,
-    "Measure now",
-    "Benchmark should expose a live measurement action.",
-  );
-  await assertText(
-    page,
-    "Auto-updates every 12s while open",
-    "Benchmark should explain live measurement refresh.",
-  );
-  await page.getByRole("button", { name: "Measure now" }).click();
-  await page.getByText(/^Measured /).waitFor();
-  await assertText(
-    page,
-    "What this measures",
-    "Benchmark should explain the live archive measurement.",
-  );
-  await assertBrowserSafe(page, "benchmark");
-
-  await page.getByRole("button", { name: "Insights", exact: true }).click();
-  await page.getByRole("heading", { name: "Prompt insights" }).waitFor();
-  await page.getByText("Project quality profile").waitFor();
-  await assertText(
-    page,
-    "Project quality profile",
-    "Insights should show project quality profiles.",
-  );
-  await assertText(
-    page,
-    "Reuse candidates",
-    "Insights should show reuse candidates.",
-  );
-  await assertChartVisible(page, "insights", 2);
-  await assertBrowserSafe(page, "insights");
 
   await page.getByRole("button", { name: "Projects", exact: true }).click();
   await page.getByRole("heading", { name: "Projects" }).waitFor();
@@ -541,21 +341,6 @@ try {
     "get_prompt_memory_status",
     "MCP page should expose the preflight status tool.",
   );
-  await assertTextAny(
-    page,
-    ["structured JSON", "구조화 JSON"],
-    "MCP page should explain the structured tool result contract.",
-  );
-  await assertTextAny(
-    page,
-    ["output schema", "출력 스키마"],
-    "MCP page should explain the MCP output schema contract.",
-  );
-  await assertTextAny(
-    page,
-    ["read-only", "읽기 전용"],
-    "MCP page should expose read-only tool behavior.",
-  );
   await assertText(
     page,
     "review_project_instructions",
@@ -578,20 +363,6 @@ try {
     "[REDACTED:path]",
     "Export JSON preview should include anonymized paths.",
   );
-
-  await page.getByRole("button", { name: "Import" }).click();
-  await page
-    .getByRole("heading", {
-      name: "Upload a JSONL transcript for a dry-run",
-    })
-    .waitFor();
-  await page.locator(".import-dropzone").waitFor();
-  await assertText(
-    page,
-    "Click to select a .jsonl file",
-    "Import view should show the dropzone prompt.",
-  );
-  await assertBrowserSafe(page, "import");
 
   await page.getByRole("button", { name: "Settings" }).click();
   await page.getByRole("heading", { name: "Settings" }).waitFor();

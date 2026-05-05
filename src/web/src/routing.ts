@@ -6,17 +6,13 @@ export type View =
   | { name: "detail"; id: string }
   | { name: "dashboard" }
   | { name: "coach" }
-  | { name: "practice" }
   | { name: "scores" }
-  | { name: "benchmark" }
-  | { name: "insights" }
   | { name: "projects" }
   | { name: "mcp" }
   | { name: "exports" }
-  | { name: "import" }
   | { name: "settings" };
 
-export type WorkspaceSection = "coach" | "practice" | "scores" | "insights";
+export type WorkspaceSection = "coach" | "scores";
 
 export function routeFromLocation(): View {
   if (window.location.pathname === "/dashboard") {
@@ -27,20 +23,8 @@ export function routeFromLocation(): View {
     return { name: "coach" };
   }
 
-  if (window.location.pathname === "/practice") {
-    return { name: "practice" };
-  }
-
   if (window.location.pathname === "/scores") {
     return { name: "scores" };
-  }
-
-  if (window.location.pathname === "/benchmark") {
-    return { name: "benchmark" };
-  }
-
-  if (window.location.pathname === "/insights") {
-    return { name: "insights" };
   }
 
   if (window.location.pathname === "/projects") {
@@ -53,10 +37,6 @@ export function routeFromLocation(): View {
 
   if (window.location.pathname === "/exports") {
     return { name: "exports" };
-  }
-
-  if (window.location.pathname === "/import") {
-    return { name: "import" };
   }
 
   if (window.location.pathname === "/settings") {
@@ -75,21 +55,15 @@ export function needsDashboardData(viewName: View["name"]): boolean {
   return [
     "dashboard",
     "coach",
-    "practice",
     "scores",
-    "benchmark",
-    "insights",
     "mcp",
     "exports",
-    "import",
     "settings",
   ].includes(viewName);
 }
 
 export function needsArchiveScoreData(viewName: View["name"]): boolean {
-  return ["dashboard", "coach", "practice", "scores", "benchmark"].includes(
-    viewName,
-  );
+  return ["dashboard", "coach", "scores"].includes(viewName);
 }
 
 export function filtersFromLocation(): PromptFilters {

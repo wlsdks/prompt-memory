@@ -1,15 +1,11 @@
 import {
   AlertTriangle,
   BarChart3,
-  ClipboardCheck,
   Copy,
   Database,
   Download,
   FileText,
-  FileUp,
   FolderCog,
-  Gauge,
-  GitCompare,
   ListChecks,
   PanelLeftClose,
   PanelLeftOpen,
@@ -20,7 +16,7 @@ import {
   ShieldCheck,
   Target,
 } from "lucide-react";
-import { useEffect, useMemo, useState, type ReactNode } from "react";
+import { useEffect, useMemo, useState } from "react";
 
 import type { PromptImprovement } from "../../analysis/improve.js";
 import {
@@ -68,14 +64,11 @@ import {
 } from "./measurement.js";
 import { PromptDetailView } from "./prompt-detail-view.js";
 import {
-  DistributionBarChart,
   GapRateChart,
   QualityTrendChart,
   ScoreDistributionChart,
 } from "./charts.js";
 import { copyTextToClipboard } from "./clipboard.js";
-import { ImportView } from "./import-view.js";
-import { PracticeView } from "./practice-view.js";
 import {
   daysAgoDateInput,
   formatDate,
@@ -267,30 +260,23 @@ export function App() {
   const visibleTitle = useMemo(() => {
     if (view.name === "settings") return "Settings";
     if (view.name === "exports") return "Anonymized export";
-    if (view.name === "import") return "Import transcript";
     if (view.name === "mcp") return "MCP tools";
     if (view.name === "projects") return "Projects";
-    if (view.name === "insights") return "Prompt insights";
-    if (view.name === "benchmark") return "Prompt benchmark";
     if (view.name === "scores") return "Prompt scores";
-    if (view.name === "practice") return "Prompt practice";
     if (view.name === "coach") return "Prompt coach";
     if (view.name === "detail") return "Prompt detail";
     if (view.name === "dashboard") return "Quality dashboard";
     return "Prompt archive";
   }, [view]);
   const visibleEyebrow = useMemo(() => {
-    if (view.name === "coach" || view.name === "practice") {
+    if (view.name === "coach") {
       return "Prompt improvement workspace";
     }
     if (view.name === "mcp") {
       return "Agent-native coach tools";
     }
-    if (view.name === "scores" || view.name === "insights") {
+    if (view.name === "scores") {
       return "Prompt habit analysis";
-    }
-    if (view.name === "benchmark") {
-      return "Prompt quality benchmark";
     }
     return "Local prompt archive";
   }, [view]);
@@ -589,25 +575,17 @@ export function App() {
           ? "/dashboard"
           : next.name === "coach"
             ? "/coach"
-            : next.name === "practice"
-              ? "/practice"
-              : next.name === "scores"
-                ? "/scores"
-                : next.name === "benchmark"
-                  ? "/benchmark"
-                  : next.name === "insights"
-                    ? "/insights"
-                    : next.name === "projects"
-                      ? "/projects"
-                      : next.name === "mcp"
-                        ? "/mcp"
-                        : next.name === "exports"
-                          ? "/exports"
-                          : next.name === "import"
-                            ? "/import"
-                            : next.name === "settings"
-                              ? "/settings"
-                              : "/";
+            : next.name === "scores"
+              ? "/scores"
+              : next.name === "projects"
+                ? "/projects"
+                : next.name === "mcp"
+                  ? "/mcp"
+                  : next.name === "exports"
+                    ? "/exports"
+                    : next.name === "settings"
+                      ? "/settings"
+                      : "/";
     window.history.pushState({}, "", path);
     setView(next);
   }
@@ -675,36 +653,12 @@ export function App() {
           <span className="sidebar-label">Coach</span>
         </button>
         <button
-          aria-label="Practice"
-          className={`nav-button ${view.name === "practice" ? "active" : ""}`}
-          onClick={() => navigate({ name: "practice" })}
-        >
-          <ClipboardCheck size={16} />
-          <span className="sidebar-label">Practice</span>
-        </button>
-        <button
           aria-label="Scores"
           className={`nav-button ${view.name === "scores" ? "active" : ""}`}
           onClick={() => navigate({ name: "scores" })}
         >
           <ListChecks size={16} />
           <span className="sidebar-label">Scores</span>
-        </button>
-        <button
-          aria-label="Benchmark"
-          className={`nav-button ${view.name === "benchmark" ? "active" : ""}`}
-          onClick={() => navigate({ name: "benchmark" })}
-        >
-          <Gauge size={16} />
-          <span className="sidebar-label">Benchmark</span>
-        </button>
-        <button
-          aria-label="Insights"
-          className={`nav-button ${view.name === "insights" ? "active" : ""}`}
-          onClick={() => navigate({ name: "insights" })}
-        >
-          <GitCompare size={16} />
-          <span className="sidebar-label">Insights</span>
         </button>
         <button
           aria-label="Projects"
@@ -729,14 +683,6 @@ export function App() {
         >
           <Download size={16} />
           <span className="sidebar-label">Export</span>
-        </button>
-        <button
-          aria-label="Import"
-          className={`nav-button ${view.name === "import" ? "active" : ""}`}
-          onClick={() => navigate({ name: "import" })}
-        >
-          <FileUp size={16} />
-          <span className="sidebar-label">Import</span>
         </button>
         <button
           aria-label="Settings"
@@ -991,12 +937,6 @@ export function App() {
             onSelect={(id) => navigate({ name: "detail", id })}
           />
         )}
-        {view.name === "practice" && (
-          <PracticeView
-            archiveScore={archiveScore}
-            onMeasure={() => void refreshArchiveScore()}
-          />
-        )}
         {view.name === "scores" && (
           <ScoresView
             archiveScore={archiveScore}
@@ -1013,22 +953,6 @@ export function App() {
               setTrendDays(days);
               setDashboard(undefined);
             }}
-          />
-        )}
-        {view.name === "benchmark" && (
-          <BenchmarkView
-            onNavigateScores={() => navigate({ name: "scores" })}
-          />
-        )}
-        {view.name === "insights" && (
-          <InsightsView
-            dashboard={dashboard}
-            loading={!dashboard}
-            onOpenFilteredList={(nextFilters) => {
-              setFilters({ isSensitive: "all", ...nextFilters });
-              navigate({ name: "list" });
-            }}
-            onSelect={(id) => navigate({ name: "detail", id })}
           />
         )}
         {view.name === "projects" && (
@@ -1067,7 +991,6 @@ export function App() {
             preview={exportPreview}
           />
         )}
-        {view.name === "import" && <ImportView />}
         {view.name === "settings" && (
           <SettingsView
             dashboard={dashboard}
@@ -1280,14 +1203,6 @@ function DashboardView({
     return <div className="panel empty">Loading dashboard.</div>;
   }
 
-  const habitCoach = createPromptHabitCoach(dashboard, archiveScore);
-  const reviewCount =
-    archiveScore?.low_score_prompts.filter(isReviewableScorePrompt).length ?? 0;
-  const insightSignalCount =
-    dashboard.patterns.length +
-    dashboard.duplicate_prompt_groups.length +
-    dashboard.useful_prompts.length;
-
   return (
     <div className="dashboard-layout dashboard-overview">
       <TrendPanel
@@ -1317,90 +1232,7 @@ function DashboardView({
         dashboard={dashboard}
         onOpenFilteredList={onOpenFilteredList}
       />
-      <section className="overview-section-grid" aria-label="Workspace areas">
-        <OverviewSectionCard
-          detail={
-            habitCoach.biggestWeakness
-              ? `${habitCoach.biggestWeakness.label} · ${habitCoach.reviewQueue.length} review`
-              : "No repeated weakness yet"
-          }
-          icon={<Target size={18} />}
-          label="Coach"
-          metric={habitCoach.score.value}
-          metricLabel="habit score"
-          onSelect={() => onNavigateSection("coach")}
-          title="Improve the next prompt"
-        />
-        <OverviewSectionCard
-          detail={
-            archiveScore
-              ? "Practice habits ready"
-              : "Score archive to personalize"
-          }
-          icon={<ClipboardCheck size={18} />}
-          label="Practice"
-          metric={archiveScore?.practice_plan.length ?? "-"}
-          metricLabel="habits"
-          onSelect={() => onNavigateSection("practice")}
-          title="Draft with live score"
-        />
-        <OverviewSectionCard
-          detail={`${reviewCount} prompts need review`}
-          icon={<ListChecks size={18} />}
-          label="Scores"
-          metric={archiveScore?.archive_score.average ?? "-"}
-          metricLabel="archive score"
-          onSelect={() => onNavigateSection("scores")}
-          title="Review archive quality"
-        />
-        <OverviewSectionCard
-          detail={`${dashboard.project_profiles.length} projects · ${dashboard.duplicate_prompt_groups.length} duplicate groups`}
-          icon={<GitCompare size={18} />}
-          label="Insights"
-          metric={insightSignalCount}
-          metricLabel="signals"
-          onSelect={() => onNavigateSection("insights")}
-          title="Find reuse and project patterns"
-        />
-      </section>
       <CoachFeedbackPanel summary={coachFeedback} />
-    </div>
-  );
-}
-
-function BenchmarkView({
-  onNavigateScores,
-}: {
-  onNavigateScores(): void;
-}) {
-  return (
-    <div className="dashboard-layout benchmark-layout">
-      <section className="panel measurement-explainer">
-        <div>
-          <h2>Benchmark CLI gate</h2>
-          <p>
-            The development benchmark lives in the CLI as{" "}
-            <code>pnpm benchmark -- --json</code>. It is a regression gate that
-            scores a fixed set of fixtures, not a replacement for measuring
-            your real prompt archive.
-          </p>
-        </div>
-        <div>
-          <h2>Where to look instead</h2>
-          <p>
-            Your live archive measurement, score distribution, and habit
-            review queue are on the{" "}
-            <button
-              type="button"
-              className="panel-link-button"
-              onClick={onNavigateScores}
-            >
-              Scores
-            </button>{" "}
-            page. The trend chart is on the dashboard.
-          </p>
-        </div>
-      </section>
     </div>
   );
 }
@@ -1478,61 +1310,6 @@ function ScoresView({
         trendDays={trendDays}
         onChangeTrendDays={onChangeTrendDays}
       />
-    </div>
-  );
-}
-
-function InsightsView({
-  dashboard,
-  loading,
-  onOpenFilteredList,
-  onSelect,
-}: {
-  dashboard?: QualityDashboard;
-  loading: boolean;
-  onOpenFilteredList(filters: PromptFilters): void;
-  onSelect(id: string): void;
-}) {
-  if (loading || !dashboard) {
-    return <div className="panel empty">Loading dashboard.</div>;
-  }
-
-  return (
-    <div className="dashboard-layout">
-      <section className="dashboard-grid">
-        <DistributionPanel
-          buckets={dashboard.distribution.by_tool}
-          onBucketSelect={(bucket) =>
-            onOpenFilteredList({
-              tool: bucket.key,
-            })
-          }
-          title="Tool distribution"
-        />
-        <DistributionPanel
-          buckets={dashboard.distribution.by_project}
-          onBucketSelect={(bucket) =>
-            onOpenFilteredList({
-              cwdPrefix: bucket.key,
-            })
-          }
-          title="Project distribution"
-        />
-      </section>
-
-      <ProjectProfilesPanel
-        onOpenFilteredList={onOpenFilteredList}
-        profiles={dashboard.project_profiles}
-      />
-
-      <section className="dashboard-grid wide">
-        <ReuseCandidatesPanel
-          dashboard={dashboard}
-          onOpenFilteredList={onOpenFilteredList}
-          onSelect={onSelect}
-        />
-        <DuplicateCandidatesPanel dashboard={dashboard} onSelect={onSelect} />
-      </section>
     </div>
   );
 }
@@ -1726,131 +1503,6 @@ function DashboardMetricStrip({
         value={dashboard.recent.last_30_days}
       />
     </section>
-  );
-}
-
-function OverviewSectionCard({
-  detail,
-  icon,
-  label,
-  metric,
-  metricLabel,
-  onSelect,
-  title,
-}: {
-  detail: string;
-  icon: ReactNode;
-  label: string;
-  metric: number | string;
-  metricLabel: string;
-  onSelect(): void;
-  title: string;
-}) {
-  return (
-    <button className="overview-section-card" onClick={onSelect} type="button">
-      <span className="overview-section-label">
-        {icon}
-        {label}
-      </span>
-      <strong>{title}</strong>
-      <span>{detail}</span>
-      <em>
-        <strong>{metric}</strong>
-        <span>{metricLabel}</span>
-      </em>
-    </button>
-  );
-}
-
-function ReuseCandidatesPanel({
-  dashboard,
-  onOpenFilteredList,
-  onSelect,
-}: {
-  dashboard: QualityDashboard;
-  onOpenFilteredList(filters: PromptFilters): void;
-  onSelect(id: string): void;
-}) {
-  return (
-    <div className="panel">
-      <div className="panel-heading-row">
-        <h2>Reuse candidates</h2>
-        {dashboard.useful_prompts.length > 0 && (
-          <button
-            className="panel-link-button"
-            onClick={() => onOpenFilteredList({ focus: "reused" })}
-            type="button"
-          >
-            View list
-          </button>
-        )}
-      </div>
-      <div className="useful-list">
-        {dashboard.useful_prompts.length === 0 && (
-          <p className="muted">Prompts you copied or saved will appear here.</p>
-        )}
-        {dashboard.useful_prompts.map((prompt) => (
-          <button
-            className="useful-row"
-            key={prompt.id}
-            onClick={() => onSelect(prompt.id)}
-          >
-            <span>
-              <strong>{projectLabel(prompt.cwd)}</strong>
-              <small>{formatDate(prompt.received_at)}</small>
-            </span>
-            <span className="status-cell">
-              {prompt.bookmarked && (
-                <span className="badge saved-badge">saved</span>
-              )}
-              <span className="badge reuse-badge">
-                copy {prompt.copied_count}
-              </span>
-            </span>
-          </button>
-        ))}
-      </div>
-    </div>
-  );
-}
-
-function DuplicateCandidatesPanel({
-  dashboard,
-  onSelect,
-}: {
-  dashboard: QualityDashboard;
-  onSelect(id: string): void;
-}) {
-  return (
-    <div className="panel">
-      <h2>Duplicate candidates</h2>
-      <div className="duplicate-list">
-        {dashboard.duplicate_prompt_groups.length === 0 && (
-          <p className="muted">No prompts share the same stored body.</p>
-        )}
-        {dashboard.duplicate_prompt_groups.map((group) => (
-          <div className="duplicate-group" key={group.group_id}>
-            <div className="duplicate-group-header">
-              <strong>{group.count} prompts</strong>
-              <span>{formatDate(group.latest_received_at)}</span>
-            </div>
-            <div className="duplicate-projects">
-              {group.projects.slice(0, 2).map((project) => (
-                <span key={project}>{projectLabel(project)}</span>
-              ))}
-            </div>
-            <div className="duplicate-prompts">
-              {group.prompts.slice(0, 3).map((prompt) => (
-                <button key={prompt.id} onClick={() => onSelect(prompt.id)}>
-                  <span>{projectLabel(prompt.cwd)}</span>
-                  <small>{formatDate(prompt.received_at)}</small>
-                </button>
-              ))}
-            </div>
-          </div>
-        ))}
-      </div>
-    </div>
   );
 }
 
@@ -2088,126 +1740,6 @@ function ArchiveScoreReviewPanel({
   );
 }
 
-function ProjectProfilesPanel({
-  onOpenFilteredList,
-  profiles,
-}: {
-  onOpenFilteredList(filters: PromptFilters): void;
-  profiles: QualityDashboard["project_profiles"];
-}) {
-  return (
-    <section className="panel project-profile-panel">
-      <div className="panel-heading-row">
-        <h2>Project quality profile</h2>
-        <span>{profiles.length} projects</span>
-      </div>
-      <div className="project-profile-list">
-        {profiles.length === 0 && (
-          <p className="muted">No project quality signals yet.</p>
-        )}
-        {profiles.map((profile) => (
-          <article className="project-profile-row" key={profile.key}>
-            <div className="project-profile-main">
-              <div>
-                <strong>{profile.label}</strong>
-                {profile.key !== profile.label && <small>{profile.key}</small>}
-              </div>
-              <span>{formatDate(profile.latest_received_at)}</span>
-            </div>
-            <div className="project-profile-metrics">
-              <span>
-                <strong>{profile.prompt_count}</strong>
-                prompts
-              </span>
-              <span>
-                <strong>{profile.average_quality_score}</strong>
-                score
-              </span>
-              <span>
-                <strong>{Math.round(profile.quality_gap_rate * 100)}%</strong>
-                gap
-              </span>
-              <span>
-                <strong>{profile.sensitive_count}</strong>
-                redacted
-              </span>
-              <span>
-                <strong>
-                  {profile.copied_count + profile.bookmarked_count}
-                </strong>
-                reuse
-              </span>
-            </div>
-            {profile.top_gap && (
-              <div className="project-profile-gap">
-                <span className="badge gap-badge">top gap</span>
-                <strong>{profile.top_gap.label}</strong>
-                <small>{profile.top_gap.count}</small>
-              </div>
-            )}
-            <div className="project-profile-actions">
-              <button
-                onClick={() =>
-                  onOpenFilteredList({
-                    cwdPrefix: profile.key,
-                  })
-                }
-                type="button"
-              >
-                View all
-              </button>
-              <button
-                disabled={!profile.top_gap || profile.quality_gap_count === 0}
-                onClick={() => {
-                  if (
-                    !profile.top_gap ||
-                    !isQualityGapKey(profile.top_gap.key)
-                  ) {
-                    return;
-                  }
-
-                  onOpenFilteredList({
-                    cwdPrefix: profile.key,
-                    focus: "quality-gap",
-                    qualityGap: profile.top_gap.key,
-                  });
-                }}
-                type="button"
-              >
-                Quality gaps
-              </button>
-              <button
-                disabled={profile.sensitive_count === 0}
-                onClick={() =>
-                  onOpenFilteredList({
-                    cwdPrefix: profile.key,
-                    isSensitive: "true",
-                  })
-                }
-                type="button"
-              >
-                Sensitive
-              </button>
-              <button
-                disabled={profile.copied_count + profile.bookmarked_count === 0}
-                onClick={() =>
-                  onOpenFilteredList({
-                    cwdPrefix: profile.key,
-                    focus: "reused",
-                  })
-                }
-                type="button"
-              >
-                Reused
-              </button>
-            </div>
-          </article>
-        ))}
-      </div>
-    </section>
-  );
-}
-
 function TrendPanel({
   daily,
   onSelectDay,
@@ -2283,42 +1815,6 @@ function Metric({
       <span>{label}</span>
       <strong>{value}</strong>
     </button>
-  );
-}
-
-function DistributionPanel({
-  buckets,
-  onBucketSelect,
-  title,
-}: {
-  buckets: QualityDashboard["distribution"]["by_tool"];
-  onBucketSelect(
-    bucket: QualityDashboard["distribution"]["by_tool"][number],
-  ): void;
-  title: string;
-}) {
-  return (
-    <div className="panel distribution-panel">
-      <h2>{title}</h2>
-      <DistributionBarChart buckets={buckets} />
-      <div className="distribution-list">
-        {buckets.length === 0 && <p className="muted">No data.</p>}
-        {buckets.map((bucket) => (
-          <button
-            aria-label={`${title}: view ${bucket.count} for ${bucket.label}`}
-            className="distribution-row distribution-action"
-            key={bucket.key}
-            onClick={() => onBucketSelect(bucket)}
-          >
-            <div>
-              <strong>{bucket.label}</strong>
-              <span>{bucket.count}</span>
-            </div>
-            <small>{Math.round(bucket.ratio * 100)}%</small>
-          </button>
-        ))}
-      </div>
-    </div>
   );
 }
 
