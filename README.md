@@ -108,9 +108,18 @@ For local development from this repository:
 ```sh
 git clone https://github.com/wlsdks/prompt-memory.git
 cd prompt-memory
-pnpm install
-pnpm build
+pnpm install   # also builds dist via the prepare lifecycle
+pnpm setup     # installs Claude Code + Codex hooks, MCP, status line, and service
 ```
+
+`pnpm install` runs `pnpm build` automatically through the `prepare` lifecycle,
+so a fresh checkout has a working `dist/` after the install finishes.
+
+`pnpm setup` is an alias for
+`pnpm prompt-memory setup --profile coach --register-mcp --open-web` — one
+command that connects every detected agent (Claude Code and Codex), registers
+the MCP server with absolute paths, installs the Claude Code status line, and
+enables the local server on session start.
 
 ### 2. Add The Claude Code Marketplace
 
