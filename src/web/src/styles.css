@@ -1242,6 +1242,56 @@ dd {
   content: "−";
 }
 
+.admin-fold > summary {
+  cursor: pointer;
+  display: grid;
+  gap: 4px;
+  list-style: none;
+  outline: none;
+  padding-right: 28px;
+  position: relative;
+}
+
+.admin-fold > summary::-webkit-details-marker {
+  display: none;
+}
+
+.admin-fold > summary::after {
+  color: var(--pm-text-subtle);
+  content: "+";
+  font-size: 18px;
+  font-weight: 700;
+  position: absolute;
+  right: 4px;
+  top: 0;
+}
+
+.admin-fold[open] > summary::after {
+  content: "−";
+}
+
+.admin-fold > summary h2 {
+  margin: 0;
+}
+
+.admin-fold > summary span {
+  color: var(--pm-text-subtle);
+  font-size: 12px;
+}
+
+.admin-fold[open] > * + * {
+  margin-top: 12px;
+}
+
+/* Inner views (McpToolsView / ExportView) already have their own panel
+   borders, so unfolded admin-fold should not add a second outline. */
+.admin-fold > .mcp-layout,
+.admin-fold > .export-layout {
+  background: transparent;
+  border: 0;
+  padding: 0;
+}
+
 .archive-score-panel .panel-heading-row > div {
   display: grid;
   gap: 2px;

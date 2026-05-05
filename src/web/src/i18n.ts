@@ -338,7 +338,11 @@ const UI_TRANSLATIONS: Record<string, string> = {
   "Prompt benchmark": "프롬프트 벤치마크",
   "Prompt insights": "프롬프트 인사이트",
   "MCP tools": "MCP 도구",
+  "MCP integration": "MCP 통합",
+  "Setup commands, tool catalog": "설치 명령, 도구 카탈로그",
   "Anonymized export": "익명화 Export",
+  "JSON without raw paths or stable ids":
+    "raw 경로/안정 id 없는 JSON",
   "Prompts Search": "프롬프트 검색",
   "Prompts Search...": "프롬프트 검색...",
   "Prompts Search…": "프롬프트 검색...",
