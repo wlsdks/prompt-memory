@@ -131,6 +131,70 @@ describe("askClarifyingQuestionsTool", () => {
     expect(result.analyzer).toBe("clarifications-v1");
   });
 
+  it("uses the native dialog fallback when allow_native_dialog is true and the client lacks elicitation", async () => {
+    const calls: Array<{ command: string; args: readonly string[] }> = [];
+    const result = await askClarifyingQuestionsTool({
+      prompt: "Make this better",
+      language: "en",
+      allow_native_dialog: true,
+      __nativeRunner: async (command, args) => {
+        calls.push({ command, args });
+        // Simulate the user typing an answer for whichever axis the dialog
+        // is asking about. osascript stdout shape: text:::gaveUp.
+        const axis = args
+          .find((value) => /\[(.*?)\]/.test(value))
+          ?.match(/\[(.*?)\]/)?.[1];
+        const answer =
+          axis === "goal_clarity"
+            ? "Fix the delete API bug in src/server/routes/prompts.ts."
+            : "Run pnpm test and confirm 0 failures.";
+        return { stdout: `${answer}:::false`, exitCode: 0 };
+      },
+    });
+
+    if ("is_error" in result) {
+      throw new Error("expected success");
+    }
+    expect(calls.length).toBeGreaterThan(0);
+    expect(result.interaction_status).toBe("answered");
+    expect(result.analyzer).toBe("clarifications-v1");
+    expect(result.improved_prompt).toContain("delete API");
+  });
+
+  it("returns timeout when the native dialog reports gave up:true", async () => {
+    const result = await askClarifyingQuestionsTool({
+      prompt: "Make this better",
+      allow_native_dialog: true,
+      __nativeRunner: async () => ({
+        stdout: ":::true",
+        exitCode: 0,
+      }),
+    });
+
+    if ("is_error" in result) {
+      throw new Error("expected success");
+    }
+    expect(result.interaction_status).toBe("timeout");
+  });
+
+  it("respects allow_native_dialog=false even when env is set", async () => {
+    const previous = process.env.PROMPT_MEMORY_NATIVE_DIALOG;
+    process.env.PROMPT_MEMORY_NATIVE_DIALOG = "1";
+    try {
+      const result = await askClarifyingQuestionsTool({
+        prompt: "Make this better",
+        allow_native_dialog: false,
+      });
+
+      if ("is_error" in result) {
+        throw new Error("expected success");
+      }
+      expect(result.interaction_status).toBe("unsupported");
+    } finally {
+      process.env.PROMPT_MEMORY_NATIVE_DIALOG = previous;
+    }
+  });
+
   it("preserves the local-rules-v1 analyzer for non-answered fallbacks", async () => {
     const result = await askClarifyingQuestionsTool({
       prompt: "Make this better",

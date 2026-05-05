@@ -6,6 +6,11 @@ import {
   type PromptImprovement,
 } from "../analysis/improve.js";
 import type { PromptQualityCriterion } from "../shared/schema.js";
+import {
+  nativeElicitInput,
+  type NativeElicitInputResult,
+  type NativeRunner,
+} from "./native-elicitation.js";
 import type { PromptMemoryMcpToolDefinition } from "./score-tool-definitions.js";
 import type { PromptMemoryMcpServerOptions } from "./server.js";
 
@@ -20,6 +25,15 @@ export type AskClarifyingQuestionsToolArguments = {
   prompt?: string;
   language?: "en" | "ko";
   timeout_ms?: number;
+  /**
+   * Opt-in: when the MCP client does not advertise capabilities.elicitation,
+   * fall back to a local OS-native dialog (macOS osascript, Linux zenity)
+   * instead of returning metadata-only. Defaults to false. The
+   * PROMPT_MEMORY_NATIVE_DIALOG=1 environment variable opts in implicitly.
+   */
+  allow_native_dialog?: boolean;
+  /** Test-only injection. Hidden from the public input schema. */
+  __nativeRunner?: NativeRunner;
 };
 
 export type AskClarifyingQuestionsInteractionStatus =
@@ -196,32 +210,54 @@ export async function askClarifyingQuestionsTool(
   }
 
   const ctx = options.ctx;
-  if (!ctx || !hasElicitationCapability(ctx.clientCapabilities)) {
-    return packResult(baseImprovement, 0, "unsupported");
-  }
+  const elicitationSupported =
+    !!ctx && hasElicitationCapability(ctx.clientCapabilities);
 
-  let elicitResult: ElicitationResult;
-  try {
-    elicitResult = await ctx.channel.sendRequest<ElicitationResult>(
-      "elicitation/create",
-      buildElicitParams(baseImprovement.clarifying_questions),
-      { timeoutMs: clampTimeout(args.timeout_ms) },
+  let collectedContent: Record<string, string> | undefined;
+  let fallbackStatus: AskClarifyingQuestionsInteractionStatus | undefined;
+
+  if (elicitationSupported && ctx) {
+    let elicitResult: ElicitationResult;
+    try {
+      elicitResult = await ctx.channel.sendRequest<ElicitationResult>(
+        "elicitation/create",
+        buildElicitParams(baseImprovement.clarifying_questions),
+        { timeoutMs: clampTimeout(args.timeout_ms) },
+      );
+    } catch {
+      return packResult(baseImprovement, 0, "timeout");
+    }
+
+    if (
+      !elicitResult ||
+      elicitResult.action !== "accept" ||
+      !isStringRecord(elicitResult.content)
+    ) {
+      return packResult(baseImprovement, 0, "declined");
+    }
+    collectedContent = elicitResult.content;
+  } else if (shouldUseNativeFallback(args)) {
+    const nativeResult = await runNativeFallback(
+      baseImprovement.clarifying_questions,
+      args,
     );
-  } catch {
-    return packResult(baseImprovement, 0, "timeout");
-  }
-
-  if (
-    !elicitResult ||
-    elicitResult.action !== "accept" ||
-    !isStringRecord(elicitResult.content)
-  ) {
-    return packResult(baseImprovement, 0, "declined");
+    if (nativeResult.action === "unsupported") {
+      return packResult(baseImprovement, 0, "unsupported");
+    }
+    if (nativeResult.action === "cancel") {
+      return packResult(baseImprovement, 0, "timeout");
+    }
+    if (nativeResult.action === "decline" || !nativeResult.content) {
+      return packResult(baseImprovement, 0, "declined");
+    }
+    collectedContent = nativeResult.content;
+  } else {
+    return packResult(baseImprovement, 0, "unsupported");
   }
 
   const answers = collectAnswers(
     baseImprovement.clarifying_questions,
-    elicitResult.content,
+    collectedContent,
   );
   if (answers.length === 0) {
     return packResult(baseImprovement, 0, "declined");
@@ -235,6 +271,31 @@ export async function askClarifyingQuestionsTool(
   });
 
   return packResult(finalImprovement, answers.length, "answered");
+}
+
+function shouldUseNativeFallback(
+  args: AskClarifyingQuestionsToolArguments,
+): boolean {
+  if (args.allow_native_dialog === true) return true;
+  if (args.allow_native_dialog === false) return false;
+  return process.env.PROMPT_MEMORY_NATIVE_DIALOG === "1";
+}
+
+async function runNativeFallback(
+  questions: ClarifyingQuestion[],
+  args: AskClarifyingQuestionsToolArguments,
+): Promise<NativeElicitInputResult> {
+  const prompts = questions.map((question) => ({
+    axis: question.axis,
+    ask: question.ask,
+    example: question.answer_schema.examples[0],
+  }));
+  const timeoutMs = clampTimeout(args.timeout_ms);
+  return nativeElicitInput({
+    prompts,
+    timeoutSeconds: Math.max(5, Math.round(timeoutMs / 1000)),
+    runner: args.__nativeRunner,
+  });
 }
 
 type ElicitationResult = {
