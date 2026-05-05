@@ -13,6 +13,14 @@ export type PromptRewriteGuardOptions = {
   language?: "en" | "ko";
   now?: Date;
   copyToClipboard?: (text: string) => boolean;
+  /**
+   * When true, ask the host CLI to keep the hook output (additionalContext or
+   * block reason) hidden from the user-visible chat surface and only feed it
+   * to the model. Codex's UserPromptSubmit honors this `suppressOutput` field
+   * from the shared hook JSON; Claude Code ignores it. Defaults to false to
+   * preserve existing Claude Code behavior.
+   */
+  suppressOutput?: boolean;
 };
 
 export type PromptRewriteGuardOutput =
@@ -22,12 +30,14 @@ export type PromptRewriteGuardOutput =
       hookSpecificOutput: {
         hookEventName: "UserPromptSubmit";
       };
+      suppressOutput?: true;
     }
   | {
       hookSpecificOutput: {
         hookEventName: "UserPromptSubmit";
         additionalContext: string;
       };
+      suppressOutput?: true;
     };
 
 const DEFAULT_MIN_SCORE = 80;
@@ -76,6 +86,7 @@ export function createPromptRewriteGuardOutput(
           improvement.improved_prompt,
         ].join("\n"),
       },
+      ...(options.suppressOutput ? { suppressOutput: true as const } : {}),
     };
   }
 
@@ -102,6 +113,7 @@ export function createPromptRewriteGuardOutput(
     hookSpecificOutput: {
       hookEventName: "UserPromptSubmit",
     },
+    ...(options.suppressOutput ? { suppressOutput: true as const } : {}),
   };
 }
 
