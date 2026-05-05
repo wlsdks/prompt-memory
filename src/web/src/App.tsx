@@ -939,28 +939,43 @@ export function App() {
               health={health}
               settings={settings}
             />
-            <McpToolsView
-              dashboard={dashboard}
-              health={health}
-              settings={settings}
-            />
-            <ExportView
-              busy={exportBusy}
-              copied={exportCopied}
-              dashboard={dashboard}
-              onCopy={() => void copyExportPayload()}
-              onDownload={downloadExportPayload}
-              onExecute={() => void executeExport()}
-              onPresetChange={(preset) => {
-                setExportPreset(preset);
-                setExportPreview(undefined);
-                setExportPayload(undefined);
-              }}
-              onPreview={() => void previewExport()}
-              payload={exportPayload}
-              preset={exportPreset}
-              preview={exportPreview}
-            />
+            <details className="panel admin-fold" open={view.name === "mcp"}>
+              <summary>
+                <h2>MCP integration</h2>
+                <span>Setup commands, tool catalog</span>
+              </summary>
+              <McpToolsView
+                dashboard={dashboard}
+                health={health}
+                settings={settings}
+              />
+            </details>
+            <details
+              className="panel admin-fold"
+              open={view.name === "exports"}
+            >
+              <summary>
+                <h2>Anonymized export</h2>
+                <span>JSON without raw paths or stable ids</span>
+              </summary>
+              <ExportView
+                busy={exportBusy}
+                copied={exportCopied}
+                dashboard={dashboard}
+                onCopy={() => void copyExportPayload()}
+                onDownload={downloadExportPayload}
+                onExecute={() => void executeExport()}
+                onPresetChange={(preset) => {
+                  setExportPreset(preset);
+                  setExportPreview(undefined);
+                  setExportPayload(undefined);
+                }}
+                onPreview={() => void previewExport()}
+                payload={exportPayload}
+                preset={exportPreset}
+                preview={exportPreview}
+              />
+            </details>
           </div>
         )}
       </section>
