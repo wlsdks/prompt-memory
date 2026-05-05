@@ -143,4 +143,79 @@ describe("applyClarificationsTool", () => {
 
     expect(serialized).not.toContain("sk-proj-1234567890abcdef");
   });
+
+  it("rejects whitespace-only answers as invalid input", () => {
+    const result = applyClarificationsTool({
+      prompt: "Make this better",
+      answers: [
+        {
+          question_id: "q_verification_criteria",
+          axis: "verification_criteria",
+          answer: "   \n\t  ",
+          origin: "user",
+        },
+      ],
+    });
+
+    expect("is_error" in result && result.is_error).toBe(true);
+    if (!("is_error" in result)) return;
+    expect(result.error_code).toBe("invalid_input");
+    expect(result.message).toContain("non-empty");
+  });
+
+  it("rejects unknown quality axes as invalid input", () => {
+    const result = applyClarificationsTool({
+      prompt: "Make this better",
+      answers: [
+        {
+          question_id: "q_unknown",
+          axis: "not_a_real_axis",
+          answer: "Some answer",
+          origin: "user",
+        },
+      ],
+    });
+
+    expect("is_error" in result && result.is_error).toBe(true);
+    if (!("is_error" in result)) return;
+    expect(result.error_code).toBe("invalid_input");
+    expect(result.message.toLowerCase()).toContain("axis");
+  });
+
+  it("applies multi-axis answers and reports the remaining axes through next_action", () => {
+    const result = applyClarificationsTool({
+      prompt: "Make this better",
+      language: "en",
+      answers: [
+        {
+          question_id: "q_goal_clarity",
+          axis: "goal_clarity",
+          answer: "Fix the delete API bug in src/server/routes/prompts.ts.",
+          origin: "user",
+        },
+        {
+          question_id: "q_verification_criteria",
+          axis: "verification_criteria",
+          answer: "Run pnpm test and confirm 0 failures.",
+          origin: "user",
+        },
+      ],
+    });
+
+    if ("is_error" in result) {
+      throw new Error("applyClarificationsTool returned an error");
+    }
+
+    expect(result.answers_count).toBe(2);
+    const remaining = new Set(
+      result.clarifying_questions.map((question) => question.axis),
+    );
+    expect(remaining.has("goal_clarity")).toBe(false);
+    expect(remaining.has("verification_criteria")).toBe(false);
+    if (result.clarifying_questions.length > 0) {
+      expect(result.next_action).toContain("Ask the user");
+    } else {
+      expect(result.next_action).toContain("Review the draft");
+    }
+  });
 });

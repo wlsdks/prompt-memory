@@ -155,6 +155,27 @@ describe("improvePrompt", () => {
     expect(serialized).not.toContain("/Users/example");
     expect(serialized).not.toContain("foo.ts");
   });
+
+  it("only emits clarifying questions for axes that are also in changed_sections", () => {
+    const samples = [
+      "Make this better",
+      "Fix the bug",
+      "Refactor src/web/src/App.tsx but keep current behavior",
+      "Run pnpm test and return Markdown summary",
+      "더 잘 만들어주세요",
+    ];
+
+    for (const prompt of samples) {
+      const result = improvePrompt({
+        prompt,
+        createdAt: "2026-05-05T00:00:00.000Z",
+      });
+      const changed = new Set(result.changed_sections);
+      for (const question of result.clarifying_questions) {
+        expect(changed.has(question.axis)).toBe(true);
+      }
+    }
+  });
 });
 
 describe("applyClarifications", () => {
@@ -253,5 +274,58 @@ describe("applyClarifications", () => {
     const serialized = JSON.stringify(result);
 
     expect(serialized).not.toContain("sk-proj-1234567890abcdef");
+  });
+
+  it("drops every axis the user answered and keeps the unanswered axes in the question list", () => {
+    const result = applyClarifications({
+      prompt: "Make this better",
+      createdAt: "2026-05-05T00:00:00.000Z",
+      language: "en",
+      answers: [
+        {
+          question_id: "q_goal_clarity",
+          axis: "goal_clarity",
+          answer: "Fix the delete API bug in src/server/routes/prompts.ts.",
+          origin: "user",
+        },
+        {
+          question_id: "q_background_context",
+          axis: "background_context",
+          answer:
+            "Current delete returns 500 because of a missing FTS sync after delete.",
+          origin: "user",
+        },
+      ],
+    });
+
+    const remainingAxes = new Set(
+      result.clarifying_questions.map((question) => question.axis),
+    );
+    expect(remainingAxes.has("goal_clarity")).toBe(false);
+    expect(remainingAxes.has("background_context")).toBe(false);
+    expect(result.changed_sections).not.toContain("goal_clarity");
+    expect(result.changed_sections).not.toContain("background_context");
+    expect(result.improved_prompt).toContain("delete API");
+    expect(result.improved_prompt).toContain("FTS sync");
+  });
+
+  it("keeps Korean section labels and bodies when language=ko and the answer is Korean", () => {
+    const result = applyClarifications({
+      prompt: "더 잘 만들어주세요",
+      createdAt: "2026-05-05T00:00:00.000Z",
+      language: "ko",
+      answers: [
+        {
+          question_id: "q_goal_clarity",
+          axis: "goal_clarity",
+          answer: "src/server/routes/prompts.ts 의 삭제 API 버그를 고쳐주세요.",
+          origin: "user",
+        },
+      ],
+    });
+
+    expect(result.improved_prompt).toContain("## 목표");
+    expect(result.improved_prompt).not.toContain("## Goal");
+    expect(result.improved_prompt).toContain("삭제 API 버그");
   });
 });
