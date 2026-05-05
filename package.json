@@ -68,7 +68,9 @@
     "lint:types": "tsc -p tsconfig.json --noEmit && tsc -p tsconfig.web.json --noEmit",
     "pack:dry-run": "npm pack --dry-run",
     "prepack": "pnpm build",
+    "prepare": "pnpm build",
     "prompt-memory": "node dist/cli/index.js",
+    "setup": "pnpm prompt-memory setup --profile coach --register-mcp --open-web",
     "smoke:release": "pnpm build && node scripts/release-smoke.mjs",
     "test": "vitest run"
   },
