@@ -646,7 +646,7 @@ Codex, or any MCP client through a stdio MCP server:
 prompt-memory mcp
 ```
 
-The MCP server exposes ten tools:
+The MCP server exposes twelve tools:
 
 - `get_prompt_memory_status`: check whether the local archive is initialized,
   whether prompts have been captured, and which MCP tool to call next.
@@ -656,7 +656,18 @@ The MCP server exposes ten tools:
 - `score_prompt`: score either direct prompt text, a stored `prompt_id`, or the
   latest stored prompt.
 - `improve_prompt`: generate an approval-ready improved prompt draft for direct
-  prompt text, a stored `prompt_id`, or the latest stored prompt.
+  prompt text, a stored `prompt_id`, or the latest stored prompt. The result
+  also includes a `clarifying_questions` array (with JSON-Schema-shaped
+  `answer_schema.examples`) the agent should ask the user via its native ask UI.
+- `apply_clarifications`: take the user's verbatim answers (each must be tagged
+  `origin: "user"`) and compose the final approval-ready draft. Use this after
+  the agent has collected answers through its own ask UI.
+- `ask_clarifying_questions`: prompt-memory drives the entire ask-then-apply
+  flow itself by issuing an MCP `elicitation/create` request to the client
+  when the client advertises elicitation capability (Claude Code 2.1.76+).
+  Falls back to returning `clarifying_questions` metadata
+  (`interaction_status: unsupported|declined|timeout`) when elicitation is not
+  available — never auto-submits a rewrite.
 - `prepare_agent_rewrite`: prepare one locally redacted prompt packet, local
   score metadata, local baseline draft, and rewrite contract so the active
   Claude Code/Codex/Gemini CLI session can semantically improve the prompt.
@@ -695,6 +706,12 @@ my last request.
 
 Use prompt-memory improve_prompt with latest=true and give me an
 approval-ready draft I can copy and resubmit.
+
+Use prompt-memory ask_clarifying_questions with prompt: "<my draft>". If your
+client supports MCP elicitation, prompt-memory will ask me via your native ask
+UI; otherwise return the clarifying_questions metadata so you can ask through
+AskUserQuestion or Codex ask_user_question and pass my answers to
+apply_clarifications.
 
 Use prompt-memory prepare_agent_rewrite with latest=true. Rewrite that redacted
 prompt yourself, ask for my approval, then call record_agent_rewrite if I want
