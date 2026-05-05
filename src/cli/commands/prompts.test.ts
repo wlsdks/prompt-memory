@@ -107,6 +107,42 @@ describe("prompt CLI commands", () => {
     expect(explanation).toContain("Verification criteria");
   });
 
+  it("appends saved drafts with friendly analyzer labels to --explain output", async () => {
+    const dataDir = createTempDir();
+    const ids = await createCliFixture(dataDir);
+    const init = initializePromptMemory({ dataDir });
+    const storage = createSqlitePromptStorage({
+      dataDir,
+      hmacSecret: init.hookAuth.web_session_secret,
+    });
+    try {
+      storage.createPromptImprovementDraft(ids.beta, {
+        draft_text: "## Goal\nFix the delete API.",
+        analyzer: "clarifications-v1",
+        changed_sections: ["goal_clarity"],
+        safety_notes: [],
+        accepted: true,
+      });
+      storage.createPromptImprovementDraft(ids.beta, {
+        draft_text: "## Goal\nGeneric structure",
+        analyzer: "local-rules-v1",
+        changed_sections: ["scope_limits"],
+        safety_notes: [],
+      });
+    } finally {
+      storage.close();
+    }
+
+    const explanation = showPromptForCli(ids.beta, { dataDir, explain: true });
+
+    expect(explanation).toContain("Saved drafts:");
+    expect(explanation).toContain("[From your answers]");
+    expect(explanation).toContain("[Auto rewrite]");
+    expect(explanation).toContain("goal_clarity");
+    // Body must not be echoed in the CLI explanation.
+    expect(explanation).not.toContain("Fix the delete API.");
+  });
+
   it("refuses to print an open URL for an unknown prompt id", () => {
     const dataDir = createTempDir();
     initializePromptMemory({ dataDir });

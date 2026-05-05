@@ -200,7 +200,26 @@ function formatPromptExplanation(
       lines.push(`    Try: ${item.suggestion}`);
     }
   }
+  if (prompt.improvement_drafts.length > 0) {
+    lines.push("");
+    lines.push("Saved drafts:");
+    for (const draft of prompt.improvement_drafts.slice(0, 5)) {
+      const sectionsLabel =
+        draft.changed_sections.length > 0
+          ? draft.changed_sections.join(", ")
+          : "structure-only";
+      lines.push(
+        `- ${draft.created_at} [${cliDraftAnalyzerLabel(draft.analyzer)}] ${sectionsLabel}`,
+      );
+    }
+  }
   return lines.join("\n");
+}
+
+function cliDraftAnalyzerLabel(analyzer: string): string {
+  if (analyzer === "clarifications-v1") return "From your answers";
+  if (analyzer === "local-rules-v1") return "Auto rewrite";
+  return analyzer;
 }
 
 export function deletePromptForCli(
