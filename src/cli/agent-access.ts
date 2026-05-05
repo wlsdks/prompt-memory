@@ -5,7 +5,25 @@ export type AgentCommandSpec = {
   args: string[];
 };
 
-export function mcpRegistrationSpec(tool: AgentTool): AgentCommandSpec {
+export type PromptMemoryEntry = {
+  command: string;
+  args: string[];
+};
+
+const DIST_CLI_PATTERN = /[/\\]dist[/\\]cli[/\\]index\.js$/;
+
+export function defaultPromptMemoryEntry(): PromptMemoryEntry {
+  const cliPath = process.argv[1];
+  if (typeof cliPath === "string" && DIST_CLI_PATTERN.test(cliPath)) {
+    return { command: process.execPath, args: [cliPath] };
+  }
+  return { command: "prompt-memory", args: [] };
+}
+
+export function mcpRegistrationSpec(
+  tool: AgentTool,
+  entry: PromptMemoryEntry = defaultPromptMemoryEntry(),
+): AgentCommandSpec {
   if (tool === "claude-code") {
     return {
       command: "claude",
@@ -16,7 +34,8 @@ export function mcpRegistrationSpec(tool: AgentTool): AgentCommandSpec {
         "stdio",
         "prompt-memory",
         "--",
-        "prompt-memory",
+        entry.command,
+        ...entry.args,
         "mcp",
       ],
     };
@@ -24,7 +43,15 @@ export function mcpRegistrationSpec(tool: AgentTool): AgentCommandSpec {
 
   return {
     command: "codex",
-    args: ["mcp", "add", "prompt-memory", "--", "prompt-memory", "mcp"],
+    args: [
+      "mcp",
+      "add",
+      "prompt-memory",
+      "--",
+      entry.command,
+      ...entry.args,
+      "mcp",
+    ],
   };
 }
 
@@ -36,8 +63,11 @@ export function mcpListSpec(tool: AgentTool): AgentCommandSpec {
   return { command: "codex", args: ["mcp", "list"] };
 }
 
-export function mcpRegistrationCommand(tool: AgentTool): string {
-  const spec = mcpRegistrationSpec(tool);
+export function mcpRegistrationCommand(
+  tool: AgentTool,
+  entry?: PromptMemoryEntry,
+): string {
+  const spec = mcpRegistrationSpec(tool, entry);
   return [spec.command, ...spec.args].join(" ");
 }
 
