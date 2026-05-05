@@ -143,8 +143,9 @@ pressure on them rather than expanding them casually. The line-budget gate in
   bodies. `/api/v1/health` returns only `{ ok, version }` and never the local
   data directory.
 - Direct MCP prompt input is analyzed locally and is not stored.
-- Stored prompt scoring returns metadata, score, checklist, and suggestions,
-  not the stored original body.
+- Stored prompt scoring returns metadata, score, checklist (per-axis status,
+  reason, suggestion, earned/weight), and an optional `redaction_notice`,
+  but never the stored original body.
 - Agent-judge MCP mode is explicit and user-session mediated. `prompt-memory`
   can prepare locally redacted prompt packets and store advisory judgment
   metadata, but it must not launch hidden provider calls, proxy provider
