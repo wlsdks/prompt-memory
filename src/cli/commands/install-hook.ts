@@ -735,7 +735,7 @@ function cliEntryPath(): string {
   return resolveCliEntryPath(import.meta.url, "../index.js");
 }
 
-function readSettings(settingsPath: string): ClaudeSettings {
+export function readClaudeSettings(settingsPath: string): ClaudeSettings {
   if (!existsSync(settingsPath)) {
     return {};
   }
@@ -743,13 +743,18 @@ function readSettings(settingsPath: string): ClaudeSettings {
   return JSON.parse(readFileSync(settingsPath, "utf8")) as ClaudeSettings;
 }
 
-function readHooksSettings(hooksPath: string): CodexHooksSettings {
+export function readCodexHooksSettings(
+  hooksPath: string,
+): CodexHooksSettings {
   if (!existsSync(hooksPath)) {
     return {};
   }
 
   return JSON.parse(readFileSync(hooksPath, "utf8")) as CodexHooksSettings;
 }
+
+const readSettings = readClaudeSettings;
+const readHooksSettings = readCodexHooksSettings;
 
 function readText(path: string): string {
   if (!existsSync(path)) {
@@ -785,11 +790,11 @@ function backupIfExists(path: string): string | undefined {
   return backupPath;
 }
 
-function defaultClaudeSettingsPath(): string {
+export function defaultClaudeSettingsPath(): string {
   return join(homedir(), ".claude", "settings.json");
 }
 
-function defaultCodexHooksPath(): string {
+export function defaultCodexHooksPath(): string {
   return join(homedir(), ".codex", "hooks.json");
 }
 

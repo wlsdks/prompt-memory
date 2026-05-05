@@ -9,14 +9,17 @@ This command flips the `UserPromptSubmit` rewrite guard between four modes
 without making the user remember CLI flags. Each mode controls what the hook
 does when a captured prompt scores below the configured threshold.
 
-## 1. Confirm the CLI is installed
+## 1. Confirm the CLI is installed and show the current state
 
 ```bash
 command -v prompt-memory
+prompt-memory hook status
 ```
 
-If this returns nothing, stop and tell the user to install or rebuild the
-CLI before continuing.
+If `command -v` returns nothing, stop and tell the user to install or
+rebuild the CLI before continuing. Echo the `hook status` output so the
+user sees their current mode for each detected tool before picking a
+new one.
 
 ## 2. Read the user's choice via AskUserQuestion
 
