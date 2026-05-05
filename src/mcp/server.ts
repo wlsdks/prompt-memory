@@ -14,6 +14,11 @@ import {
   type AskClarifyingQuestionsToolArguments,
 } from "./ask-clarifying-questions-tool.js";
 import {
+  RECORD_CLARIFICATIONS_TOOL_DEFINITION,
+  recordClarificationsTool,
+  type RecordClarificationsToolArguments,
+} from "./record-clarifications-tool.js";
+import {
   COACH_PROMPT_TOOL_DEFINITION,
   GET_PROMPT_MEMORY_STATUS_TOOL_DEFINITION,
   IMPROVE_PROMPT_TOOL_DEFINITION,
@@ -96,6 +101,7 @@ type PromptMemoryToolResult =
   | ReturnType<typeof improvePromptTool>
   | ReturnType<typeof applyClarificationsTool>
   | Awaited<ReturnType<typeof askClarifyingQuestionsTool>>
+  | ReturnType<typeof recordClarificationsTool>
   | ReturnType<typeof scorePromptArchiveTool>
   | ReturnType<typeof reviewProjectInstructionsTool>
   | ReturnType<typeof prepareAgentRewriteTool>
@@ -129,6 +135,11 @@ const PROMPT_MEMORY_MCP_TOOL_HANDLERS: Record<string, PromptMemoryToolHandler> =
     [ASK_CLARIFYING_QUESTIONS_TOOL_DEFINITION.name]: (args, options) =>
       askClarifyingQuestionsTool(
         args as AskClarifyingQuestionsToolArguments,
+        options,
+      ),
+    [RECORD_CLARIFICATIONS_TOOL_DEFINITION.name]: (args, options) =>
+      recordClarificationsTool(
+        args as RecordClarificationsToolArguments,
         options,
       ),
     [SCORE_PROMPT_ARCHIVE_TOOL_DEFINITION.name]: (args, options) =>
@@ -293,7 +304,7 @@ export async function handleMcpMessage(
           version: VERSION,
         },
         instructions:
-          "Use coach_prompt for the default one-call Claude Code/Codex coaching workflow: status, latest prompt score, approval-ready rewrite, habit review, project instruction review, and next request guidance. Use get_prompt_memory_status only for readiness checks, score_prompt for one prompt, improve_prompt for one local deterministic rewrite, ask_clarifying_questions when you want prompt-memory to drive the elicitation flow itself (it asks the user via MCP elicitation/create when the client supports it and composes the final draft, otherwise falls back to clarifying_questions metadata), apply_clarifications when the user has answered the clarifying_questions returned by improve_prompt or coach_prompt and you need to compose the final draft from the user's verbatim answers, prepare_agent_rewrite and record_agent_rewrite when the user explicitly wants the active agent session to semantically rewrite a stored prompt, score_prompt_archive for habit-only review, review_project_instructions for AGENTS.md/CLAUDE.md-only checks, and prepare_agent_judge_batch plus record_agent_judgments when the active agent should judge accumulated prompts. ASK-FIRST RULE: whenever any tool returns a non-empty clarifying_questions array, ask the user those questions through your native ask UI (Claude Code AskUserQuestion, Codex ask_user_question) before composing or submitting any rewrite, then pass the user's verbatim answers to apply_clarifications with origin set to user. Do not guess answers, do not skip questions, and never auto-submit a rewrite. This server is local-only and does not call external LLMs.",
+          "Use coach_prompt for the default one-call Claude Code/Codex coaching workflow: status, latest prompt score, approval-ready rewrite, habit review, project instruction review, and next request guidance. Use get_prompt_memory_status only for readiness checks, score_prompt for one prompt, improve_prompt for one local deterministic rewrite, ask_clarifying_questions when you want prompt-memory to drive the elicitation flow itself (it asks the user via MCP elicitation/create when the client supports it and composes the final draft, otherwise falls back to clarifying_questions metadata), apply_clarifications when the user has answered the clarifying_questions returned by improve_prompt or coach_prompt and you need to compose the final draft from the user's verbatim answers, record_clarifications when you also want to save the user's verbatim answers and the resulting draft against a stored prompt in the archive, prepare_agent_rewrite and record_agent_rewrite when the user explicitly wants the active agent session to semantically rewrite a stored prompt, score_prompt_archive for habit-only review, review_project_instructions for AGENTS.md/CLAUDE.md-only checks, and prepare_agent_judge_batch plus record_agent_judgments when the active agent should judge accumulated prompts. ASK-FIRST RULE: whenever any tool returns a non-empty clarifying_questions array, ask the user those questions through your native ask UI (Claude Code AskUserQuestion, Codex ask_user_question) before composing or submitting any rewrite, then pass the user's verbatim answers to apply_clarifications with origin set to user. Do not guess answers, do not skip questions, and never auto-submit a rewrite. This server is local-only and does not call external LLMs.",
       });
     case "ping":
       return jsonRpcResult(id, {});

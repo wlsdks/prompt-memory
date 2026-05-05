@@ -37,6 +37,9 @@ describe("MCP stdio server", () => {
             name: "ask_clarifying_questions",
           }),
           expect.objectContaining({
+            name: "record_clarifications",
+          }),
+          expect.objectContaining({
             name: "score_prompt_archive",
           }),
           expect.objectContaining({
@@ -68,12 +71,14 @@ describe("MCP stdio server", () => {
 
     const tools = (response?.result as { tools: Array<unknown> }).tools;
 
-    expect(tools).toHaveLength(12);
+    expect(tools).toHaveLength(13);
     for (const tool of tools.filter(
       (tool) =>
-        !["record_agent_rewrite", "record_agent_judgments"].includes(
-          (tool as { name?: string }).name ?? "",
-        ),
+        ![
+          "record_agent_rewrite",
+          "record_agent_judgments",
+          "record_clarifications",
+        ].includes((tool as { name?: string }).name ?? ""),
     )) {
       expect(tool).toEqual(
         expect.objectContaining({
@@ -90,6 +95,15 @@ describe("MCP stdio server", () => {
       expect.arrayContaining([
         expect.objectContaining({
           name: "record_agent_rewrite",
+          annotations: expect.objectContaining({
+            destructiveHint: false,
+            idempotentHint: false,
+            openWorldHint: false,
+            readOnlyHint: false,
+          }),
+        }),
+        expect.objectContaining({
+          name: "record_clarifications",
           annotations: expect.objectContaining({
             destructiveHint: false,
             idempotentHint: false,
