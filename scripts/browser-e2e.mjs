@@ -187,6 +187,16 @@ try {
   await page.getByRole("button", { name: "Save draft" }).click();
   await page.getByRole("button", { name: "Saved" }).waitFor();
 
+  // Lock in PR #161 — answering a clarifying-question textarea must flow
+  // through Save into the persisted draft (and pill it as "From your answers").
+  const clarifyInput = page.locator(".clarifying-question-input").first();
+  if ((await clarifyInput.count()) > 0) {
+    await clarifyInput.fill("Run pnpm test and confirm 0 failures end-to-end.");
+    await page.getByRole("button", { name: "Save draft" }).click();
+    await page.getByRole("button", { name: "Saved" }).waitFor();
+    await page.locator(".saved-draft-source-clarifications").first().waitFor();
+  }
+
   await page.getByRole("button", { name: "Dashboard" }).click();
   await page.getByRole("heading", { name: "Quality dashboard" }).waitFor();
   await page.getByText("Average prompt score").waitFor();

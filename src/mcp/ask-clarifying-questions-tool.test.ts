@@ -128,6 +128,20 @@ describe("askClarifyingQuestionsTool", () => {
     expect(result.interaction_status).toBe("answered");
     expect(result.answers_count).toBeGreaterThan(0);
     expect(result.improved_prompt).toContain("delete API");
+    expect(result.analyzer).toBe("clarifications-v1");
+  });
+
+  it("preserves the local-rules-v1 analyzer for non-answered fallbacks", async () => {
+    const result = await askClarifyingQuestionsTool({
+      prompt: "Make this better",
+      language: "en",
+    });
+
+    if ("is_error" in result) {
+      throw new Error("expected success");
+    }
+    expect(result.interaction_status).toBe("unsupported");
+    expect(result.analyzer).toBe("local-rules-v1");
   });
 
   it("returns declined when the user declines the elicitation", async () => {
