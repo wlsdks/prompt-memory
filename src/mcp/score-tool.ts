@@ -539,6 +539,11 @@ function createAgentCoachBrief(input: {
         ? "Ask the user the listed clarifying_questions through the agent's native ask UI before producing or submitting any rewrite. Wait for the user's own answers; do not guess on their behalf."
         : "Use the approval-ready rewrite only after the user explicitly accepts it.",
     );
+    if (improvementHasQuestions) {
+      nextActions.push(
+        "If your client advertises MCP elicitation capability, prefer calling ask_clarifying_questions in a single round trip; it asks the user via your native form and composes the final draft from their verbatim answers. Otherwise stay on the manual ask + apply_clarifications path.",
+      );
+    }
   }
 
   if (input.archive && !isToolError(input.archive)) {
