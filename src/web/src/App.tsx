@@ -11,6 +11,8 @@ import {
   Gauge,
   GitCompare,
   ListChecks,
+  PanelLeftClose,
+  PanelLeftOpen,
   Plug,
   RefreshCw,
   Search,
@@ -107,6 +109,9 @@ const LIVE_MEASUREMENT_REFRESH_MS = 12_000;
 export function App() {
   const [language, setLanguage] = useState<Language>(() =>
     detectInitialLanguage(),
+  );
+  const [sidebarCollapsed, setSidebarCollapsed] = useState<boolean>(() =>
+    readSidebarCollapsed(),
   );
   const [view, setView] = useState<View>({ name: "list" });
   const [filters, setFilters] = useState<PromptFilters>(() =>
@@ -639,91 +644,148 @@ export function App() {
     setView(next);
   }
 
+  const toggleSidebar = (): void => {
+    setSidebarCollapsed((current) => {
+      const next = !current;
+      persistSidebarCollapsed(next);
+      return next;
+    });
+  };
+
   return (
-    <main className="app-shell" key={language}>
+    <main
+      className={`app-shell${sidebarCollapsed ? " sidebar-collapsed" : ""}`}
+      key={language}
+    >
       <a className="skip-link" href="#workspace">
         Skip to content
       </a>
       <aside className="sidebar" aria-label="Primary navigation">
-        <div className="brand">
-          <Database size={18} />
-          <span>prompt-memory</span>
+        <div className="sidebar-header">
+          <div className="brand">
+            <Database size={16} />
+            <span className="sidebar-label">prompt-memory</span>
+          </div>
+          <button
+            aria-expanded={!sidebarCollapsed}
+            aria-label={
+              sidebarCollapsed ? "Expand navigation" : "Collapse navigation"
+            }
+            className="sidebar-toggle"
+            onClick={toggleSidebar}
+            type="button"
+          >
+            {sidebarCollapsed ? (
+              <PanelLeftOpen size={16} />
+            ) : (
+              <PanelLeftClose size={16} />
+            )}
+          </button>
         </div>
         <button
+          aria-label="Prompts"
           className={`nav-button ${view.name === "list" ? "active" : ""}`}
           onClick={() => navigate({ name: "list" })}
         >
-          <FileText size={16} /> Prompts
+          <FileText size={16} />
+          <span className="sidebar-label">Prompts</span>
         </button>
         <button
+          aria-label="Dashboard"
           className={`nav-button ${view.name === "dashboard" ? "active" : ""}`}
           onClick={() => navigate({ name: "dashboard" })}
         >
-          <BarChart3 size={16} /> Dashboard
+          <BarChart3 size={16} />
+          <span className="sidebar-label">Dashboard</span>
         </button>
         <button
+          aria-label="Coach"
           className={`nav-button ${view.name === "coach" ? "active" : ""}`}
           onClick={() => navigate({ name: "coach" })}
         >
-          <Target size={16} /> Coach
+          <Target size={16} />
+          <span className="sidebar-label">Coach</span>
         </button>
         <button
+          aria-label="Practice"
           className={`nav-button ${view.name === "practice" ? "active" : ""}`}
           onClick={() => navigate({ name: "practice" })}
         >
-          <ClipboardCheck size={16} /> Practice
+          <ClipboardCheck size={16} />
+          <span className="sidebar-label">Practice</span>
         </button>
         <button
+          aria-label="Scores"
           className={`nav-button ${view.name === "scores" ? "active" : ""}`}
           onClick={() => navigate({ name: "scores" })}
         >
-          <ListChecks size={16} /> Scores
+          <ListChecks size={16} />
+          <span className="sidebar-label">Scores</span>
         </button>
         <button
+          aria-label="Benchmark"
           className={`nav-button ${view.name === "benchmark" ? "active" : ""}`}
           onClick={() => navigate({ name: "benchmark" })}
         >
-          <Gauge size={16} /> Benchmark
+          <Gauge size={16} />
+          <span className="sidebar-label">Benchmark</span>
         </button>
         <button
+          aria-label="Insights"
           className={`nav-button ${view.name === "insights" ? "active" : ""}`}
           onClick={() => navigate({ name: "insights" })}
         >
-          <GitCompare size={16} /> Insights
+          <GitCompare size={16} />
+          <span className="sidebar-label">Insights</span>
         </button>
         <button
+          aria-label="Projects"
           className={`nav-button ${view.name === "projects" ? "active" : ""}`}
           onClick={() => navigate({ name: "projects" })}
         >
-          <FolderCog size={16} /> Projects
+          <FolderCog size={16} />
+          <span className="sidebar-label">Projects</span>
         </button>
         <button
+          aria-label="MCP"
           className={`nav-button ${view.name === "mcp" ? "active" : ""}`}
           onClick={() => navigate({ name: "mcp" })}
         >
-          <Plug size={16} /> MCP
+          <Plug size={16} />
+          <span className="sidebar-label">MCP</span>
         </button>
         <button
+          aria-label="Export"
           className={`nav-button ${view.name === "exports" ? "active" : ""}`}
           onClick={() => navigate({ name: "exports" })}
         >
-          <Download size={16} /> Export
+          <Download size={16} />
+          <span className="sidebar-label">Export</span>
         </button>
         <button
+          aria-label="Import"
           className={`nav-button ${view.name === "import" ? "active" : ""}`}
           onClick={() => navigate({ name: "import" })}
         >
-          <FileUp size={16} /> Import
+          <FileUp size={16} />
+          <span className="sidebar-label">Import</span>
         </button>
         <button
+          aria-label="Settings"
           className={`nav-button ${view.name === "settings" ? "active" : ""}`}
           onClick={() => navigate({ name: "settings" })}
         >
-          <Settings size={16} /> Settings
+          <Settings size={16} />
+          <span className="sidebar-label">Settings</span>
         </button>
-        <div className="capture-status">
+        <div
+          className="capture-status"
+          aria-label={health?.ok ? "Server OK" : "Checking status"}
+        >
           {health?.ok ? <ShieldCheck size={16} /> : <AlertTriangle size={16} />}
-          <span>{health?.ok ? "Server OK" : "Checking status"}</span>
+          <span className="sidebar-label">
+            {health?.ok ? "Server OK" : "Checking status"}
+          </span>
         </div>
         <div className="language-switch" aria-label="Language">
           <button
@@ -3004,4 +3066,27 @@ function emptyPromptCommands(
     "prompt-memory doctor codex",
     "prompt-memory coach",
   ];
+}
+
+const SIDEBAR_COLLAPSED_STORAGE_KEY = "pm:sidebar-collapsed";
+
+function readSidebarCollapsed(): boolean {
+  if (typeof window === "undefined") return false;
+  try {
+    return window.localStorage.getItem(SIDEBAR_COLLAPSED_STORAGE_KEY) === "1";
+  } catch {
+    return false;
+  }
+}
+
+function persistSidebarCollapsed(collapsed: boolean): void {
+  if (typeof window === "undefined") return;
+  try {
+    window.localStorage.setItem(
+      SIDEBAR_COLLAPSED_STORAGE_KEY,
+      collapsed ? "1" : "0",
+    );
+  } catch {
+    // Storage access can fail in private mode; the in-memory state still works.
+  }
 }
