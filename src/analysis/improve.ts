@@ -1,4 +1,8 @@
-import type { PromptQualityCriterion } from "../shared/schema.js";
+import type {
+  PromptQualityChecklistItem,
+  PromptQualityCriterion,
+  PromptQualityStatus,
+} from "../shared/schema.js";
 import { redactPrompt } from "../redaction/redact.js";
 import { analyzePrompt } from "./analyze.js";
 
@@ -9,16 +13,25 @@ export type ImprovePromptInput = {
   source?: "direct" | "stored";
 };
 
+export type ClarifyingQuestion = {
+  id: string;
+  axis: PromptQualityCriterion;
+  ask: string;
+};
+
 export type PromptImprovement = {
   mode: "copy";
   requires_user_approval: true;
   summary: string;
   improved_prompt: string;
   changed_sections: PromptQualityCriterion[];
+  clarifying_questions: ClarifyingQuestion[];
   safety_notes: string[];
   created_at: string;
   analyzer: "local-rules-v1";
 };
+
+const MAX_CLARIFYING_QUESTIONS = 2;
 
 const SECTION_LABELS: Record<
   "en" | "ko",
@@ -69,6 +82,10 @@ export function improvePrompt(input: ImprovePromptInput): PromptImprovement {
       .join("\n")
       .trim(),
     changed_sections: changedSections,
+    clarifying_questions: buildClarifyingQuestions(
+      analysis.checklist,
+      language,
+    ),
     safety_notes: buildSafetyNotes(
       input.prompt,
       redaction.is_sensitive,
@@ -77,6 +94,56 @@ export function improvePrompt(input: ImprovePromptInput): PromptImprovement {
     created_at: input.createdAt,
     analyzer: "local-rules-v1",
   };
+}
+
+const STATUS_PRIORITY: Record<PromptQualityStatus, number> = {
+  missing: 0,
+  weak: 1,
+  good: 2,
+};
+
+const EN_CLARIFYING: Record<PromptQualityCriterion, string> = {
+  goal_clarity:
+    "Can you state the exact target and expected behavior in one sentence?",
+  background_context:
+    "Why are you making this change now? Share the current state or problem in one line.",
+  scope_limits: "Are there any files or modules that must stay untouched?",
+  output_format:
+    "What format should the result take? (code, diff, Markdown summary, etc.)",
+  verification_criteria:
+    "What command will you run to verify this change works?",
+};
+
+const KO_CLARIFYING: Record<PromptQualityCriterion, string> = {
+  goal_clarity: "이 작업의 정확한 목표를 한 문장으로 적어주실 수 있나요?",
+  background_context:
+    "왜 지금 이걸 바꾸고 있나요? 현재 상태나 문제 상황을 1줄로 알려주세요.",
+  scope_limits: "건드리면 안 되는 파일이나 모듈이 있나요?",
+  output_format:
+    "결과를 어떤 형식으로 받고 싶으세요? (코드/diff/Markdown 요약 등)",
+  verification_criteria: "이 변경이 잘 됐는지 어떤 명령으로 확인할까요?",
+};
+
+function buildClarifyingQuestions(
+  checklist: PromptQualityChecklistItem[],
+  language: "en" | "ko",
+): ClarifyingQuestion[] {
+  const map = language === "ko" ? KO_CLARIFYING : EN_CLARIFYING;
+
+  return checklist
+    .map((item, index) => ({ item, index }))
+    .filter(({ item }) => item.status !== "good")
+    .sort((a, b) => {
+      const priority =
+        STATUS_PRIORITY[a.item.status] - STATUS_PRIORITY[b.item.status];
+      return priority !== 0 ? priority : a.index - b.index;
+    })
+    .slice(0, MAX_CLARIFYING_QUESTIONS)
+    .map(({ item }) => ({
+      id: `q_${item.key}`,
+      axis: item.key,
+      ask: map[item.key],
+    }));
 }
 
 function buildStoredSections(
