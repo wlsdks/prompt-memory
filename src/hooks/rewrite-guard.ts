@@ -5,7 +5,38 @@ import { analyzePrompt } from "../analysis/analyze.js";
 import { detectPromptLanguage, improvePrompt } from "../analysis/improve.js";
 import { HOOK_COPY } from "./rewrite-guard-copy.js";
 
-export type PromptRewriteGuardMode = "off" | "block-and-copy" | "context";
+export type PromptRewriteGuardMode =
+  | "off"
+  | "block-and-copy"
+  | "context"
+  | "ask";
+
+const ASK_MIN_LENGTH = 30;
+const ASK_MAX_SCORE = 60;
+
+// Korean has no ASCII word boundary, so `\b` does not match between Hangul
+// characters. STRICT roots must end the token (followed by space,
+// punctuation, or end-of-string) so "응" reads as ack but "응답" does not.
+// LOOSE roots may carry the usual Korean particle suffixes (으로/에/은/는/도
+// etc.) since they are still acknowledgment intent ("다음으로 가자").
+const STRICT_ACK_TAIL = String.raw`(?:\s|[!?.,]|$)`;
+const ACK_PATTERNS: readonly RegExp[] = [
+  /^[ㅇㅎㄴㅋㅠㅜ]+\s*[!?.]*$/,
+  // Strict: must terminate after the root.
+  new RegExp(`^(응|어|네|아니|아뇨|뭐|왜)${STRICT_ACK_TAIL}`),
+  // Loose: particle suffixes allowed.
+  /^(좋아|좋네|좋습니다|됐어|됐다|괜찮|훌륭)/,
+  /^(고마워|감사|땡큐)/,
+  /^(다음|진행|계속|넘어가)/,
+  /^(그래|그러면|그럼|그렇구나|그렇네|아하|음+|일단)/,
+  /^(그만|멈춰|취소|되돌려)/,
+  // English acknowledgments / meta-control.
+  /^(yes|yeah|yep|nope|no|ok|okay|sure|fine|alright)\b/i,
+  /^(thanks|thx|ty)\b/i,
+  /^(next|continue|proceed|go(?:\s|$)|stop|cancel|undo)\b/i,
+  /^(perfect|great|nice|cool|awesome|got it)\b/i,
+  /^let'?s\b/i,
+];
 
 export type PromptRewriteGuardOptions = {
   mode?: PromptRewriteGuardMode;
@@ -40,6 +71,15 @@ export type PromptRewriteGuardOutput =
       suppressOutput?: true;
     };
 
+export function isAcknowledgment(prompt: string): boolean {
+  const trimmed = prompt.trim();
+  if (trimmed.length === 0) {
+    return true;
+  }
+
+  return ACK_PATTERNS.some((pattern) => pattern.test(trimmed));
+}
+
 const DEFAULT_MIN_SCORE = 80;
 
 export function createPromptRewriteGuardOutput(
@@ -70,6 +110,67 @@ export function createPromptRewriteGuardOutput(
     language,
   });
   const copy = HOOK_COPY[language];
+
+  if (mode === "ask") {
+    // Ask mode is conservative: only fire when the prompt is meaningfully
+    // long, scored low enough to plausibly be a real ambiguous request,
+    // and not a leading acknowledgment / meta-control message. Length and
+    // ack guards keep "ㅇㅇ", "고마워", "다음으로 가자" from triggering
+    // a clarifying-question prompt.
+    if (
+      prompt.trim().length < ASK_MIN_LENGTH ||
+      analysis.quality_score.value >= ASK_MAX_SCORE ||
+      isAcknowledgment(prompt) ||
+      improvement.clarifying_questions.length === 0
+    ) {
+      return undefined;
+    }
+
+    const sectionLabels =
+      language === "ko"
+        ? {
+            goal_clarity: "목표 명확성",
+            background_context: "배경 맥락",
+            scope_limits: "범위 제한",
+            output_format: "출력 형식",
+            verification_criteria: "검증 기준",
+          }
+        : {
+            goal_clarity: "Goal clarity",
+            background_context: "Background context",
+            scope_limits: "Scope limits",
+            output_format: "Output format",
+            verification_criteria: "Verification criteria",
+          };
+    const axesLabel = improvement.clarifying_questions
+      .map((question) => sectionLabels[question.axis])
+      .join(", ");
+    const numberedQuestions = improvement.clarifying_questions
+      .map((question, index) => `${index + 1}. ${question.ask}`)
+      .join("\n");
+
+    return {
+      hookSpecificOutput: {
+        hookEventName: "UserPromptSubmit",
+        additionalContext: [
+          copy.askHeader,
+          copy.askIntro(
+            analysis.quality_score.value,
+            analysis.quality_score.band,
+            axesLabel,
+          ),
+          "",
+          copy.askInstruction,
+          "",
+          copy.askQuestionsHeader,
+          numberedQuestions,
+          "",
+          copy.askFooter,
+        ].join("\n"),
+      },
+      ...(options.suppressOutput ? { suppressOutput: true as const } : {}),
+    };
+  }
 
   if (mode === "context") {
     return {

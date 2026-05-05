@@ -137,7 +137,7 @@ export function registerSetupCommand(program: Command): void {
     )
     .option(
       "--rewrite-guard <mode>",
-      "Prompt rewrite guard for installed hooks: off, context, or block-and-copy.",
+      "Prompt rewrite guard for installed hooks: off, context, ask, or block-and-copy.",
     )
     .option(
       "--rewrite-min-score <score>",
@@ -432,7 +432,12 @@ function resolveRewriteGuardOptions(
 function parseRewriteGuardMode(
   value: string | undefined,
 ): PromptRewriteGuardMode | undefined {
-  if (value === "off" || value === "context" || value === "block-and-copy") {
+  if (
+    value === "off" ||
+    value === "context" ||
+    value === "block-and-copy" ||
+    value === "ask"
+  ) {
     return value;
   }
 

@@ -1,6 +1,9 @@
 import { describe, expect, it } from "vitest";
 
-import { createPromptRewriteGuardOutput } from "./rewrite-guard.js";
+import {
+  createPromptRewriteGuardOutput,
+  isAcknowledgment,
+} from "./rewrite-guard.js";
 
 describe("createPromptRewriteGuardOutput", () => {
   const payload = {
@@ -116,5 +119,111 @@ describe("createPromptRewriteGuardOutput", () => {
         "prompt-memory rewrite guidance",
       );
     }
+  });
+
+  describe("ask mode", () => {
+    it("does nothing for short prompts even when score is weak", () => {
+      const output = createPromptRewriteGuardOutput(
+        { prompt: "fix it" },
+        { mode: "ask" },
+      );
+
+      expect(output).toBeUndefined();
+    });
+
+    it("does nothing for leading acknowledgment patterns", () => {
+      const output = createPromptRewriteGuardOutput(
+        {
+          prompt:
+            "그래! 이 작업을 진행해주고 끝나면 그 다음 단계도 마저 작업해줘",
+        },
+        { mode: "ask" },
+      );
+
+      expect(output).toBeUndefined();
+    });
+
+    it("emits an AskUserQuestion instruction for genuine weak prompts", () => {
+      const output = createPromptRewriteGuardOutput(
+        {
+          prompt: "이 코드 어딘가 이상한데 한번 봐주고 안되면 알아서 고쳐줘",
+        },
+        { mode: "ask" },
+      );
+
+      expect(output).toBeDefined();
+      if (output && "hookSpecificOutput" in output && !("decision" in output)) {
+        const additionalContext = output.hookSpecificOutput.additionalContext;
+        expect(additionalContext).toContain("[prompt-memory coach]");
+        expect(additionalContext).toContain("AskUserQuestion");
+        expect(additionalContext).toContain("1.");
+        expect(additionalContext).not.toContain("decision");
+      } else {
+        throw new Error("expected ask-mode hook output without decision");
+      }
+    });
+
+    it("emits English instruction wording for English prompts", () => {
+      const output = createPromptRewriteGuardOutput(
+        {
+          prompt:
+            "Refactor the auth middleware and add request rate limiting with sensible defaults.",
+        },
+        { mode: "ask", language: "en" },
+      );
+
+      expect(output).toBeDefined();
+      if (output && "hookSpecificOutput" in output && !("decision" in output)) {
+        const additionalContext = output.hookSpecificOutput.additionalContext;
+        expect(additionalContext).toContain("AskUserQuestion");
+        expect(additionalContext).toContain(
+          "Do not answer the prompt directly",
+        );
+      }
+    });
+
+    it("does nothing when score already meets the ask threshold", () => {
+      const output = createPromptRewriteGuardOutput(
+        {
+          prompt:
+            "Goal: update docs. Context: README changed. Scope: docs only. Verification: run pnpm test. Output: summary.",
+        },
+        { mode: "ask" },
+      );
+
+      expect(output).toBeUndefined();
+    });
+  });
+
+  describe("isAcknowledgment", () => {
+    it("flags short Korean acknowledgments", () => {
+      expect(isAcknowledgment("ㅇㅇ")).toBe(true);
+      expect(isAcknowledgment("응")).toBe(true);
+      expect(isAcknowledgment("좋아!")).toBe(true);
+      expect(isAcknowledgment("고마워")).toBe(true);
+      expect(isAcknowledgment("다음으로 가자")).toBe(true);
+      expect(isAcknowledgment("그래 진행해줘")).toBe(true);
+    });
+
+    it("flags short English acknowledgments", () => {
+      expect(isAcknowledgment("ok")).toBe(true);
+      expect(isAcknowledgment("yes please")).toBe(true);
+      expect(isAcknowledgment("thanks")).toBe(true);
+      expect(isAcknowledgment("perfect")).toBe(true);
+      expect(isAcknowledgment("let's go")).toBe(true);
+    });
+
+    it("does not flag a real ambiguous request", () => {
+      expect(
+        isAcknowledgment(
+          "이 컴포넌트 리팩터링하고 폼 검증도 추가해줘 한국어 에러 메시지로",
+        ),
+      ).toBe(false);
+      expect(
+        isAcknowledgment(
+          "Refactor the auth middleware and add request rate limiting.",
+        ),
+      ).toBe(false);
+    });
   });
 });
