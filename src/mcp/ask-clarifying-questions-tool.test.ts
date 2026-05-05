@@ -195,6 +195,28 @@ describe("askClarifyingQuestionsTool", () => {
     }
   });
 
+  it("uses powershell on win32 when allow_native_dialog is true", async () => {
+    const { nativeElicitInput } = await import("./native-elicitation.js");
+    const calls: Array<{ command: string; args: readonly string[] }> = [];
+    const result = await nativeElicitInput({
+      platform: "win32",
+      prompts: [
+        { axis: "goal_clarity", ask: "what to fix?", example: "fix delete" },
+      ],
+      timeoutSeconds: 5,
+      runner: async (command, args) => {
+        calls.push({ command, args });
+        return { stdout: "Fix the delete API\r\n", exitCode: 0 };
+      },
+    });
+    expect(calls[0]?.command).toBe("powershell");
+    expect(calls[0]?.args.join(" ")).toContain("Microsoft.VisualBasic");
+    expect(result).toEqual({
+      action: "accept",
+      content: { goal_clarity: "Fix the delete API" },
+    });
+  });
+
   it("preserves the local-rules-v1 analyzer for non-answered fallbacks", async () => {
     const result = await askClarifyingQuestionsTool({
       prompt: "Make this better",

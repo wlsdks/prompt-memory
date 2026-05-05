@@ -663,11 +663,17 @@ The MCP server exposes thirteen tools:
   `origin: "user"`) and compose the final approval-ready draft. Use this after
   the agent has collected answers through its own ask UI.
 - `ask_clarifying_questions`: prompt-memory drives the entire ask-then-apply
-  flow itself by issuing an MCP `elicitation/create` request to the client
-  when the client advertises elicitation capability (Claude Code 2.1.76+).
-  Falls back to returning `clarifying_questions` metadata
-  (`interaction_status: unsupported|declined|timeout`) when elicitation is not
-  available — never auto-submits a rewrite.
+  flow itself. Three layered paths, in order:
+  1. MCP `elicitation/create` when the client advertises
+     `capabilities.elicitation` (Claude Code 2.1.76+).
+  2. Native OS dialog (macOS `osascript`, Linux `zenity`,
+     Windows PowerShell `Microsoft.VisualBasic.InputBox`) when the caller
+     opts in via `allow_native_dialog: true` or
+     `PROMPT_MEMORY_NATIVE_DIALOG=1`. Useful on Codex today, before
+     `ask_user_question` ships upstream.
+  3. Otherwise returns `clarifying_questions` metadata
+     (`interaction_status: unsupported|declined|timeout`).
+  Never auto-submits a rewrite.
 - `record_clarifications`: persist the user's verbatim answers and the
   resulting draft against a stored prompt in the local archive
   (`prompt_improvement_drafts`). Returns metadata only (`draft_id`,

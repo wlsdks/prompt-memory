@@ -43,6 +43,9 @@ export async function nativeElicitInput(
   if (platform === "linux") {
     return runWithZenity(options);
   }
+  if (platform === "win32") {
+    return runWithPowershell(options);
+  }
   return { action: "unsupported" };
 }
 
@@ -125,8 +128,53 @@ async function runWithZenity(
   return { action: "accept", content: collected };
 }
 
+async function runWithPowershell(
+  options: NativeElicitInputOptions,
+): Promise<NativeElicitInputResult> {
+  const timeoutS = options.timeoutSeconds ?? DEFAULT_TIMEOUT_S;
+  const runner = options.runner ?? defaultRunner;
+  const collected: Record<string, string> = {};
+
+  for (const prompt of options.prompts) {
+    const text = formatDialogText(prompt);
+    const exampleDefault = prompt.example ?? "";
+    // WinForms InputBox: returns empty string when the user clicks Cancel,
+    // so empty input maps to "decline" downstream. Our timer wraps the
+    // process lifetime since PowerShell offers no native dialog timeout.
+    const script =
+      `Add-Type -AssemblyName Microsoft.VisualBasic;` +
+      `[Microsoft.VisualBasic.Interaction]::InputBox(` +
+      `'${quotePowershell(text)}','prompt-memory','${quotePowershell(exampleDefault)}'` +
+      `)`;
+    const result = await runner(
+      "powershell",
+      ["-NoProfile", "-NonInteractive", "-Command", script],
+      { timeoutMs: (timeoutS + 5) * 1000 },
+    );
+    if (result.exitCode === 124) {
+      // Our timer kicked in before the user answered.
+      return { action: "cancel" };
+    }
+    if (result.exitCode !== 0) {
+      return { action: "cancel" };
+    }
+    const answer = result.stdout.replace(/\r?\n+$/, "");
+    if (answer.trim().length === 0) {
+      return { action: "decline" };
+    }
+    collected[prompt.axis] = answer;
+  }
+
+  return { action: "accept", content: collected };
+}
+
 function formatDialogText(prompt: NativeElicitInputPrompt): string {
   return `[${prompt.axis}] ${prompt.ask}`;
+}
+
+function quotePowershell(value: string): string {
+  // PowerShell single-quoted strings escape ' by doubling it.
+  return value.replaceAll("'", "''");
 }
 
 function quoteOsascript(value: string): string {
