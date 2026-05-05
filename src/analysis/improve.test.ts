@@ -102,4 +102,57 @@ describe("improvePrompt", () => {
     expect(result.improved_prompt).toContain("## 목표");
     expect(result.improved_prompt).not.toContain("## Goal");
   });
+
+  it("emits up to two clarifying questions for weak prompts and caps the list", () => {
+    const result = improvePrompt({
+      prompt: "Make this better",
+      createdAt: "2026-05-05T00:00:00.000Z",
+      language: "en",
+    });
+
+    expect(result.clarifying_questions.length).toBeGreaterThanOrEqual(1);
+    expect(result.clarifying_questions.length).toBeLessThanOrEqual(2);
+    for (const question of result.clarifying_questions) {
+      expect(question.id).toBe(`q_${question.axis}`);
+      expect(question.ask.length).toBeGreaterThan(0);
+      expect(question.ask).not.toMatch(/^[A-Z][^?]*$/);
+    }
+    const ids = result.clarifying_questions.map((q) => q.id);
+    expect(new Set(ids).size).toBe(ids.length);
+  });
+
+  it("returns no clarifying questions when every quality axis is satisfied", () => {
+    const result = improvePrompt({
+      prompt:
+        "Because the export review is unclear, inspect src/web/src/App.tsx only, run pnpm test, and return a Markdown summary.",
+      createdAt: "2026-05-05T00:00:00.000Z",
+    });
+
+    expect(result.changed_sections).toEqual([]);
+    expect(result.clarifying_questions).toEqual([]);
+  });
+
+  it("uses Korean question text for Korean prompts", () => {
+    const result = improvePrompt({
+      prompt: "더 잘 만들어주세요",
+      createdAt: "2026-05-05T00:00:00.000Z",
+    });
+
+    expect(result.clarifying_questions.length).toBeGreaterThan(0);
+    for (const question of result.clarifying_questions) {
+      expect(question.ask).toMatch(/[가-힣]/);
+    }
+  });
+
+  it("does not leak raw prompt body or secrets into clarifying_questions", () => {
+    const result = improvePrompt({
+      prompt: "Fix /Users/example/project/src/foo.ts with sk-proj-123abc",
+      createdAt: "2026-05-05T00:00:00.000Z",
+    });
+    const serialized = JSON.stringify(result.clarifying_questions);
+
+    expect(serialized).not.toContain("sk-proj-123abc");
+    expect(serialized).not.toContain("/Users/example");
+    expect(serialized).not.toContain("foo.ts");
+  });
 });
