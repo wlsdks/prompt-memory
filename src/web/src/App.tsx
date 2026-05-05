@@ -1394,15 +1394,6 @@ function DashboardMetricStrip({
         value={dashboard.total_prompts}
       />
       <Metric
-        label="Average prompt score"
-        onSelect={() =>
-          onOpenFilteredList({
-            focus: "quality-gap",
-          })
-        }
-        value={dashboard.quality_score.average}
-      />
-      <Metric
         label="Contains sensitive data"
         onSelect={() =>
           onOpenFilteredList({
@@ -1529,11 +1520,11 @@ function ArchiveScoreReviewPanel({
   }
 
   return (
-    <section
+    <details
       className="panel archive-score-panel"
       aria-label="Archive score review"
     >
-      <div className="panel-heading-row">
+      <summary className="panel-heading-row">
         <div>
           <h2>Archive score review</h2>
           {report && (
@@ -1543,10 +1534,25 @@ function ArchiveScoreReviewPanel({
             </span>
           )}
         </div>
-        <button className="panel-link-button" onClick={onRefresh} type="button">
+        <span
+          className="panel-link-button"
+          role="button"
+          tabIndex={0}
+          onClick={(event) => {
+            event.preventDefault();
+            event.stopPropagation();
+            onRefresh();
+          }}
+          onKeyDown={(event) => {
+            if (event.key === "Enter" || event.key === " ") {
+              event.preventDefault();
+              onRefresh();
+            }
+          }}
+        >
           <RefreshCw size={14} /> Evaluate archive
-        </button>
-      </div>
+        </span>
+      </summary>
       {!report && <p className="muted">No archive score report yet.</p>}
       {report && (
         <div className="archive-score-grid">
@@ -1663,7 +1669,7 @@ function ArchiveScoreReviewPanel({
           </div>
         </div>
       )}
-    </section>
+    </details>
   );
 }
 

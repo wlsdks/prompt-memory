@@ -1216,6 +1216,32 @@ dd {
   gap: 12px;
 }
 
+.archive-score-panel > summary {
+  cursor: pointer;
+  list-style: none;
+  outline: none;
+  position: relative;
+  padding-right: 28px;
+}
+
+.archive-score-panel > summary::-webkit-details-marker {
+  display: none;
+}
+
+.archive-score-panel > summary::after {
+  color: var(--pm-text-subtle);
+  content: "+";
+  font-size: 18px;
+  font-weight: 700;
+  position: absolute;
+  right: 4px;
+  top: 0;
+}
+
+.archive-score-panel[open] > summary::after {
+  content: "−";
+}
+
 .archive-score-panel .panel-heading-row > div {
   display: grid;
   gap: 2px;
