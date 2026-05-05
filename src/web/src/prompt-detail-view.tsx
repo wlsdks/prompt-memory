@@ -345,7 +345,12 @@ function PromptCoachPanel({
             <article className="saved-draft-row" key={draft.id}>
               <div>
                 <strong>{formatDate(draft.created_at)}</strong>
-                <span>{draft.analyzer}</span>
+                <span
+                  className={`saved-draft-source saved-draft-source-${analyzerSourceClass(draft.analyzer)}`}
+                  title={draft.analyzer}
+                >
+                  {draftAnalyzerLabel(draft.analyzer)}
+                </span>
               </div>
               <p>
                 {draft.changed_sections.length > 0
@@ -457,6 +462,18 @@ function AnalysisPreview({
       )}
     </section>
   );
+}
+
+function draftAnalyzerLabel(analyzer: string): string {
+  if (analyzer === "clarifications-v1") return "From your answers";
+  if (analyzer === "local-rules-v1") return "Auto rewrite";
+  return analyzer;
+}
+
+function analyzerSourceClass(analyzer: string): string {
+  if (analyzer === "clarifications-v1") return "clarifications";
+  if (analyzer === "local-rules-v1") return "auto";
+  return "other";
 }
 
 function ClarifyingQuestionsCard({
