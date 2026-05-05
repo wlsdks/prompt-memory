@@ -646,7 +646,7 @@ Codex, or any MCP client through a stdio MCP server:
 prompt-memory mcp
 ```
 
-The MCP server exposes twelve tools:
+The MCP server exposes thirteen tools:
 
 - `get_prompt_memory_status`: check whether the local archive is initialized,
   whether prompts have been captured, and which MCP tool to call next.
@@ -668,6 +668,11 @@ The MCP server exposes twelve tools:
   Falls back to returning `clarifying_questions` metadata
   (`interaction_status: unsupported|declined|timeout`) when elicitation is not
   available — never auto-submits a rewrite.
+- `record_clarifications`: persist the user's verbatim answers and the
+  resulting draft against a stored prompt in the local archive
+  (`prompt_improvement_drafts`). Returns metadata only (`draft_id`,
+  `answers_count`, `changed_sections`, …) — the prompt body and the draft
+  text are never echoed in the response. Local-only write tool.
 - `prepare_agent_rewrite`: prepare one locally redacted prompt packet, local
   score metadata, local baseline draft, and rewrite contract so the active
   Claude Code/Codex/Gemini CLI session can semantically improve the prompt.

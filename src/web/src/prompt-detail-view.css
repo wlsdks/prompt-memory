@@ -394,6 +394,25 @@
   margin: 0;
 }
 
+.saved-draft-source {
+  background: rgba(255, 255, 255, 0.06);
+  border-radius: 999px;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+  padding: 2px 8px;
+  text-transform: uppercase;
+}
+
+.saved-draft-source-clarifications {
+  background: rgba(94, 175, 116, 0.18);
+  color: #6ad28a;
+}
+
+.saved-draft-source-auto {
+  background: rgba(94, 106, 210, 0.18);
+  color: var(--pm-accent);
+}
+
 .checklist-grid {
   display: grid;
   gap: 8px;
