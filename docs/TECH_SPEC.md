@@ -114,6 +114,11 @@ Important rules:
   composer text, or auto-submit prompts.
 - optional `context` mode adds model-visible rewrite guidance and is not a true
   prompt replacement.
+- optional `ask` mode (Claude Code only) instructs the agent to call
+  `AskUserQuestion` with one or two clarifying questions before answering when
+  the trigger gate (length ≥ 30, score < 60, not an acknowledgment) passes.
+  On Codex it falls back to `context` because Codex has no native
+  AskUserQuestion tool.
 
 ### Search Flow
 

@@ -32,7 +32,8 @@ mode does so the user can choose without reading docs.
 - **ask** — Active. When a weak prompt clears the trigger gate
   (length ≥ 30, score < 60, not an acknowledgment), the hook tells
   Claude to call `AskUserQuestion` with one or two clarifying questions
-  before answering.
+  before answering. Claude Code only — on Codex this falls back to
+  `context` until a Codex-specific ask path lands.
 - **block-and-copy** — Hard. Submitted prompts under the score threshold
   are blocked and an improved version is copied to the clipboard.
 
