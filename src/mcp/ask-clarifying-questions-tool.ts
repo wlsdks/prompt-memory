@@ -325,8 +325,15 @@ function packResult(
   answersCount: number,
   status: AskClarifyingQuestionsInteractionStatus,
 ): AskClarifyingQuestionsToolResult {
+  // Tag drafts that consumed user answers so downstream surfaces (web saved-
+  // draft pills, record_clarifications follow-ups) can distinguish a real
+  // user-driven rewrite from the auto rule-based baseline. Matches the same
+  // tag the web onSave path uses.
+  const analyzer: PromptImprovement["analyzer"] =
+    status === "answered" ? "clarifications-v1" : improvement.analyzer;
   return {
     ...improvement,
+    analyzer,
     source: "text",
     rewrite_source: "direct_prompt",
     answers_count: answersCount,
