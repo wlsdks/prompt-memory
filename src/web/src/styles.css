@@ -538,6 +538,60 @@ h2 {
   cursor: pointer;
 }
 
+.ask-mode-summary {
+  display: grid;
+  gap: 12px;
+}
+
+.ask-mode-stats {
+  display: grid;
+  gap: 12px;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+
+.ask-mode-stats > div {
+  align-items: baseline;
+  background: var(--pm-surface-raised);
+  border: 1px solid var(--pm-border);
+  border-radius: 10px;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  min-width: 0;
+  padding: 12px;
+}
+
+.ask-mode-stats strong {
+  color: var(--pm-text);
+  font-size: 22px;
+  font-weight: 660;
+}
+
+.ask-mode-stats small {
+  color: var(--pm-text-subtle);
+  font-size: 12px;
+}
+
+.ask-mode-axes {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.ask-mode-axes li {
+  align-items: center;
+  display: inline-flex;
+  gap: 6px;
+}
+
+.ask-mode-axes small {
+  color: var(--pm-text-subtle);
+  font-size: 11px;
+}
+
 .bulk-action-bar {
   align-items: center;
   background: var(--pm-surface-raised);
