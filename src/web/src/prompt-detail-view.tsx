@@ -374,22 +374,31 @@ function AnalysisPreview({
   analysis: NonNullable<PromptDetail["analysis"]>;
   onOpenQualityGap(gap: PromptQualityGap): void;
 }) {
+  const redactionNotice = analysis.warnings.find((warning) =>
+    /sensitive content was masked/i.test(warning),
+  );
+
   return (
     <section className="analysis-panel" aria-label="Analysis preview">
       <div className="analysis-header">
-        <div>
-          <p className="eyebrow">Local analysis</p>
-          <h2>Analysis preview</h2>
+        <div className="analysis-header-title">
+          <h2>Score</h2>
+          <span className="analysis-analyzer-tag" title={analysis.analyzer}>
+            {analysis.analyzer}
+          </span>
         </div>
         <div className="analysis-score-box">
           <span className={`score-value ${analysis.quality_score.band}`}>
             {analysis.quality_score.value}
           </span>
-          <small>Prompt score</small>
-          <span className="badge">{analysis.analyzer}</span>
+          <small>{analysis.quality_score.band}</small>
         </div>
       </div>
-      <p className="analysis-summary">{analysis.summary}</p>
+      {redactionNotice && (
+        <p className="analysis-redaction-notice" role="note">
+          {redactionNotice}
+        </p>
+      )}
       {analysis.checklist.length > 0 && (
         <div className="checklist-grid" aria-label="Analysis checklist">
           {analysis.checklist.map((item) => {
@@ -438,26 +447,6 @@ function AnalysisPreview({
               {tag}
             </span>
           ))}
-        </div>
-      )}
-      {analysis.warnings.length > 0 && (
-        <div className="analysis-list">
-          <h3>Warnings</h3>
-          <ul>
-            {analysis.warnings.map((warning) => (
-              <li key={warning}>{warning}</li>
-            ))}
-          </ul>
-        </div>
-      )}
-      {analysis.suggestions.length > 0 && (
-        <div className="analysis-list">
-          <h3>Improvement hints</h3>
-          <ul>
-            {analysis.suggestions.map((suggestion) => (
-              <li key={suggestion}>{suggestion}</li>
-            ))}
-          </ul>
         </div>
       )}
     </section>

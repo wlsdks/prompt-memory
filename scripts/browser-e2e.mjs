@@ -133,7 +133,7 @@ try {
   await page
     .getByRole("heading", { name: "Improvement draft for manual resubmission" })
     .waitFor();
-  await assertText(page, "Prompt score", "Detail should show prompt score.");
+  await page.locator(".analysis-score-box .score-value").first().waitFor();
   await page.locator(".quality-points").first().waitFor();
   await assertText(
     page,
