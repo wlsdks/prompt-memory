@@ -22,8 +22,10 @@ const ASK_MAX_SCORE = 60;
 const STRICT_ACK_TAIL = String.raw`(?:\s|[!?.,]|$)`;
 const ACK_PATTERNS: readonly RegExp[] = [
   /^[ㅇㅎㄴㅋㅠㅜ]+\s*[!?.]*$/,
-  // Strict: must terminate after the root.
-  new RegExp(`^(응|어|네|아니|아뇨|뭐|왜)${STRICT_ACK_TAIL}`),
+  // Strict: must terminate after the root. 왜/뭐 are interrogatives that
+  // usually start a real question ("왜 안되지", "뭐가 잘못된 거지"), not
+  // an acknowledgment, so they are not listed here.
+  new RegExp(`^(응|어|네|아니|아뇨)${STRICT_ACK_TAIL}`),
   // Loose: particle suffixes allowed.
   /^(좋아|좋네|좋습니다|됐어|됐다|괜찮|훌륭)/,
   /^(고마워|감사|땡큐)/,

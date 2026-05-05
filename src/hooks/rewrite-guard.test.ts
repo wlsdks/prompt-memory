@@ -259,5 +259,12 @@ describe("createPromptRewriteGuardOutput", () => {
         ),
       ).toBe(false);
     });
+
+    it("does not treat Korean interrogatives as acknowledgments", () => {
+      expect(isAcknowledgment("왜 안되지 한번 봐주고 알아서 고쳐줘")).toBe(
+        false,
+      );
+      expect(isAcknowledgment("뭐가 잘못된 거지 코드 좀 봐줘")).toBe(false);
+    });
   });
 });
