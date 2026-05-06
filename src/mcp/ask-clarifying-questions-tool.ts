@@ -34,6 +34,8 @@ export type AskClarifyingQuestionsToolArguments = {
   allow_native_dialog?: boolean;
   /** Test-only injection. Hidden from the public input schema. */
   __nativeRunner?: NativeRunner;
+  /** Test-only injection. Hidden from the public input schema. */
+  __nativePlatform?: NodeJS.Platform;
 };
 
 export type AskClarifyingQuestionsInteractionStatus =
@@ -295,6 +297,7 @@ async function runNativeFallback(
     prompts,
     timeoutSeconds: Math.max(5, Math.round(timeoutMs / 1000)),
     runner: args.__nativeRunner,
+    platform: args.__nativePlatform,
   });
 }
 
