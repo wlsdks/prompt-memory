@@ -265,28 +265,11 @@ try {
   );
   await assertBrowserSafe(page, "coach");
 
-  await page.getByRole("button", { name: "Scores", exact: true }).click();
-  await page.getByRole("heading", { name: "Prompt scores" }).waitFor();
-  await page.getByText("Archive score review").waitFor();
-  await assertText(
-    page,
-    "Archive score review",
-    "Scores should show archive score review.",
-  );
-  await page.getByRole("button", { name: "Evaluate archive" }).click();
-  await assertText(
-    page,
-    "Prompts to review",
-    "Scores should show prompts that need review.",
-  );
-  await assertText(
-    page,
-    "Practice plan",
-    "Scores should show actionable practice plan.",
-  );
-  await page.getByRole("button", { name: "Copy practice template" }).waitFor();
-  await assertChartVisible(page, "scores", 3);
-  await assertBrowserSafe(page, "scores");
+  // The standalone Scores tab was dropped in PR #174 (dashboard nav-card
+  // cleanup). Archive score review now lives inside the Dashboard panel and
+  // is already exercised above. Practice plan, benchmark, insights, and
+  // import surfaces were removed at the same time, so there is nothing left
+  // to assert on between Coach and Projects.
 
   await page.getByRole("button", { name: "Projects", exact: true }).click();
   await page.getByRole("heading", { name: "Projects" }).waitFor();
@@ -297,8 +280,11 @@ try {
   await page.getByRole("button", { name: "capture on" }).click();
   await page.getByRole("button", { name: "paused" }).waitFor();
 
-  await page.getByRole("button", { name: "MCP", exact: true }).click();
-  await page.getByRole("heading", { name: "MCP tools" }).waitFor();
+  // MCP is now a sub-route of Settings (/mcp); the standalone sidebar
+  // button is gone. Navigate via URL so the admin-fold <details> opens
+  // through its open={view.name === "mcp"} prop.
+  await page.goto(`${serverBaseUrl}/mcp`);
+  await page.getByRole("heading", { name: "MCP tools", level: 1 }).waitFor();
   await assertTextAny(
     page,
     ["Agent-native coach tools", "에이전트 네이티브 코치 도구"],
@@ -351,7 +337,8 @@ try {
   );
   await assertBrowserSafe(page, "mcp");
 
-  await page.getByRole("button", { name: "Export" }).click();
+  // Export is now a sub-route of Settings (/exports); same reason as MCP.
+  await page.goto(`${serverBaseUrl}/exports`);
   await page
     .getByRole("heading", { name: "Anonymized export", level: 1 })
     .waitFor();
