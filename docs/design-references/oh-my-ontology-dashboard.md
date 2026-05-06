@@ -1,12 +1,12 @@
 # oh-my-ontology Dashboard Reference
 
-이 문서는 사용자가 지정한 `/Users/jinan/side-project/oh-my-ontology` 디자인을 `prompt-memory`에 이식하기 위한 기준이다.
+이 문서는 사용자가 지정한 `<workstation>/side-project/oh-my-ontology` 디자인을 `prompt-memory`에 이식하기 위한 기준이다.
 
 ## Source
 
-- `/Users/jinan/side-project/oh-my-ontology/app/globals.css`
-- `/Users/jinan/side-project/oh-my-ontology/docs/DESIGN-SYSTEM.md`
-- `/Users/jinan/side-project/oh-my-ontology/.claude/rules/design.md`
+- `<workstation>/side-project/oh-my-ontology/app/globals.css`
+- `<workstation>/side-project/oh-my-ontology/docs/DESIGN-SYSTEM.md`
+- `<workstation>/side-project/oh-my-ontology/.claude/rules/design.md`
 
 ## Tokens To Port
 

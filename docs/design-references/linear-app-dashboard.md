@@ -1,6 +1,6 @@
 # Linear-Inspired Dashboard Reference
 
-이 문서는 `/Users/jinan/ai/awesome-design-md`와 `getdesign linear.app` reference를 `prompt-memory` Dashboard에 맞게 적용한 내부 기준이다. Linear를 복제하지 않고, prompt-memory의 local-first developer tool 정체성에 맞게 번역해서 쓴다.
+이 문서는 `<workstation>/ai/awesome-design-md`와 `getdesign linear.app` reference를 `prompt-memory` Dashboard에 맞게 적용한 내부 기준이다. Linear를 복제하지 않고, prompt-memory의 local-first developer tool 정체성에 맞게 번역해서 쓴다.
 
 ## 적용할 점
 
