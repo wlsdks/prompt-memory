@@ -80,6 +80,16 @@ tools, benchmark/release validation, and an English/Korean web UI.
 - Agent prompt wrappers, agent-assisted rewrite workflow, and
   agent-mediated judge tools for explicit redacted-packet handoff.
 - Prompt rewrite guard that prevents silent prompt resubmission.
+- Prompt rewrite guard `ask` mode that asks the user one or two clarifying
+  questions before answering. On Claude Code this uses the native
+  `AskUserQuestion` tool; on Codex it calls the `ask_clarifying_questions`
+  MCP tool with a native OS dialog fallback (osascript / zenity / PowerShell
+  InputBox).
+- Local-only telemetry of when the rewrite guard fires `ask`
+  (`tool`, `score`, `band`, `missing_axes`, `language`, `prompt_length`),
+  stored in `prompt_ask_events` and surfaced through a 7-day **Ask mode**
+  panel on the dashboard so the trigger gate (`length ≥ 30`, `score < 60`,
+  not an acknowledgment) can be tuned against real usage.
 
 #### Validation and packaging
 
@@ -95,6 +105,10 @@ tools, benchmark/release validation, and an English/Korean web UI.
   audit.
 - Vitest gate enforcing that `src/shared/version.ts` `VERSION` matches
   `package.json#version`, so a one-sided release bump fails CI.
+- GitHub Actions CI matrix on Node 22 and 24 running `pnpm test`,
+  `pnpm lint`, `pnpm build`, and `pnpm pack:dry-run` on every push to
+  `main` and pull request, matching the `test (22)` / `test (24)` merge
+  gate referenced by `CLAUDE.md` and the project rules.
 
 #### Korean coverage end-to-end
 
