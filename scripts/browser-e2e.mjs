@@ -199,11 +199,14 @@ try {
 
   await page.getByRole("button", { name: "Dashboard" }).click();
   await page.getByRole("heading", { name: "Quality dashboard" }).waitFor();
-  await page.getByText("Average prompt score").waitFor();
+  // Archive score review is rendered inside a <details> panel that is
+  // collapsed by default; open it before asserting on its contents.
+  await page.getByRole("heading", { name: "Archive score review" }).click();
+  await page.getByText("Average archive score").waitFor();
   await assertText(
     page,
-    "Average prompt score",
-    "Dashboard should show average prompt score.",
+    "Average archive score",
+    "Dashboard should show average archive score after opening Archive score review.",
   );
   await assertChartVisible(page, "dashboard", 1);
   await assertBrowserSafe(page, "dashboard");
