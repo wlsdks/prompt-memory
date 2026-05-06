@@ -323,6 +323,22 @@ not type into the terminal, press Enter, replace the composer contents, or
 auto-submit anything. If the local ingest server is unavailable or ingest fails,
 the hook fails open and does not block the prompt.
 
+The `--rewrite-guard` flag accepts four modes:
+
+- `off` — capture only; no coaching or blocking
+- `context` — soft. Injects an improved draft as `additionalContext` alongside
+  the user's submission. Claude sees both
+- `ask` — instructs the agent to ask one or two clarifying questions before
+  answering. On Claude Code this uses the native `AskUserQuestion` tool; on
+  Codex it calls the `ask_clarifying_questions` MCP tool with a native OS
+  dialog fallback
+- `block-and-copy` — described above
+
+When `ask` mode triggers, prompt-memory records the event (tool, score, band,
+missing axes, language, prompt length) and surfaces a 7-day **Ask mode** panel
+on the dashboard so you can see whether the trigger gate (`length ≥ 30`,
+`score < 60`, not an acknowledgment) is firing on the right cases.
+
 Preview the settings change without writing:
 
 ```sh
