@@ -165,6 +165,7 @@ describe("askClarifyingQuestionsTool", () => {
     const result = await askClarifyingQuestionsTool({
       prompt: "Make this better",
       allow_native_dialog: true,
+      __nativePlatform: "darwin",
       __nativeRunner: async () => ({
         stdout: ":::true",
         exitCode: 0,
