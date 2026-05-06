@@ -1,4 +1,4 @@
-import { ZodError } from "zod";
+import { z, ZodError } from "zod";
 import type { FastifyInstance } from "fastify";
 
 import { normalizeClaudeCodePayload } from "../../adapters/claude-code.js";
@@ -9,6 +9,7 @@ import type {
   RedactionPolicy,
 } from "../../shared/schema.js";
 import type {
+  AskEventStoragePort,
   ProjectPolicyStoragePort,
   PromptStoragePort,
 } from "../../storage/ports.js";
@@ -17,11 +18,23 @@ import { problem } from "../errors.js";
 
 export type IngestRouteOptions = {
   auth: ServerAuthConfig;
-  storage: PromptStoragePort & Partial<ProjectPolicyStoragePort>;
+  storage: PromptStoragePort &
+    Partial<ProjectPolicyStoragePort> &
+    Partial<AskEventStoragePort>;
   redactionMode: RedactionPolicy;
   excludedProjectRoots: string[];
   maxPromptLength: number;
 };
+
+const AskEventBodySchema = z.object({
+  tool: z.enum(["claude-code", "codex"]),
+  score: z.number().int().min(0).max(100),
+  band: z.enum(["weak", "needs_work", "good", "excellent"]),
+  missing_axes: z.array(z.string().min(1).max(40)).max(10).default([]),
+  language: z.enum(["en", "ko"]).optional(),
+  prompt_length: z.number().int().min(0).max(1_000_000),
+  triggered_at: z.string().datetime().optional(),
+});
 
 export function registerIngestRoutes(
   server: FastifyInstance,
@@ -41,6 +54,45 @@ export function registerIngestRoutes(
     return handlePromptIngest(request.body, request.url, options, (payload) =>
       normalizeCodexPayload(payload, new Date()),
     );
+  });
+
+  server.post("/api/v1/ingest/ask-event", async (request) => {
+    requireBearerToken(request, options.auth.ingestToken);
+    if (!options.storage.recordAskEvent) {
+      throw problem(
+        503,
+        "Service Unavailable",
+        "Storage backend does not support ask events.",
+        request.url,
+      );
+    }
+
+    let body;
+    try {
+      body = AskEventBodySchema.parse(request.body);
+    } catch (error) {
+      if (error instanceof ZodError) {
+        throw problem(
+          422,
+          "Validation Error",
+          error.issues.map((issue) => issue.message).join("; "),
+          request.url,
+        );
+      }
+      throw error;
+    }
+
+    options.storage.recordAskEvent({
+      tool: body.tool,
+      score: body.score,
+      band: body.band,
+      missing_axes: body.missing_axes as never,
+      language: body.language,
+      prompt_length: body.prompt_length,
+      triggered_at: body.triggered_at ?? new Date().toISOString(),
+    });
+
+    return { data: { recorded: true } };
   });
 }
 

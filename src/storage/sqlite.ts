@@ -31,6 +31,7 @@ import type {
 } from "../shared/schema.js";
 import { getPromptMemoryPaths } from "./paths.js";
 import type {
+  AskEventStoragePort,
   CreateImportJobInput,
   CreateImportRecordInput,
   CreateExportJobInput,
@@ -146,7 +147,8 @@ export type SqlitePromptStorage = PromptStoragePort &
   ExportJobStoragePort &
   AgentPromptJudgmentStoragePort &
   CoachFeedbackStoragePort &
-  JudgeScoreStoragePort & {
+  JudgeScoreStoragePort &
+  AskEventStoragePort & {
     close(): void;
     getAppliedMigrations(): AppliedMigration[];
     listPromptRows(): PromptRow[];
@@ -354,6 +356,73 @@ export function createSqlitePromptStorage(
     reconcileStorage() {
       return reconcileStorage(db);
     },
+    recordAskEvent(input) {
+      db.prepare(
+        `INSERT INTO prompt_ask_events
+          (tool, score, band, missing_axes_json, language, prompt_length, triggered_at)
+         VALUES (?, ?, ?, ?, ?, ?, ?)`,
+      ).run(
+        input.tool,
+        input.score,
+        input.band,
+        JSON.stringify(input.missing_axes),
+        input.language ?? null,
+        input.prompt_length,
+        input.triggered_at,
+      );
+    },
+    getAskEventSummary(summaryOptions = {}) {
+      const days = Math.max(1, Math.min(90, summaryOptions.days ?? 7));
+      const cutoff = new Date(
+        Date.now() - days * 24 * 60 * 60 * 1000,
+      ).toISOString();
+
+      const totals = db
+        .prepare<
+          []
+        >("SELECT COUNT(*) AS n, MAX(triggered_at) AS last FROM prompt_ask_events")
+        .get() as { n: number; last: string | null };
+
+      const recentRows = db
+        .prepare<[string]>(
+          `SELECT score, missing_axes_json
+             FROM prompt_ask_events
+             WHERE triggered_at >= ?`,
+        )
+        .all(cutoff) as Array<{
+        score: number;
+        missing_axes_json: string;
+      }>;
+
+      const axisCounts: Record<string, number> = {};
+      let scoreSum = 0;
+      for (const row of recentRows) {
+        scoreSum += row.score;
+        try {
+          const axes = JSON.parse(row.missing_axes_json) as unknown;
+          if (Array.isArray(axes)) {
+            for (const axis of axes) {
+              if (typeof axis === "string") {
+                axisCounts[axis] = (axisCounts[axis] ?? 0) + 1;
+              }
+            }
+          }
+        } catch {
+          // ignore malformed legacy rows
+        }
+      }
+
+      return {
+        total_count: totals.n,
+        recent_count: recentRows.length,
+        axis_counts: axisCounts,
+        average_score:
+          recentRows.length === 0
+            ? 0
+            : Math.round(scoreSum / recentRows.length),
+        ...(totals.last ? { last_triggered_at: totals.last } : {}),
+      };
+    },
   };
 }
 
@@ -383,6 +452,33 @@ function applyMigrations(db: Database.Database): void {
   applyCoachFeedbackMigration(db);
   applyJudgeScoreMigration(db);
   applyDropDeadAnalysisColumnsMigration(db);
+  applyAskEventMigration(db);
+}
+
+function applyAskEventMigration(db: Database.Database): void {
+  const applied = db
+    .prepare("SELECT 1 FROM schema_migrations WHERE version = ?")
+    .get(15);
+  if (applied) return;
+
+  db.exec(`
+    CREATE TABLE IF NOT EXISTS prompt_ask_events (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      tool TEXT NOT NULL,
+      score INTEGER NOT NULL,
+      band TEXT NOT NULL,
+      missing_axes_json TEXT NOT NULL,
+      language TEXT,
+      prompt_length INTEGER NOT NULL,
+      triggered_at TEXT NOT NULL
+    );
+    CREATE INDEX IF NOT EXISTS idx_prompt_ask_events_triggered_at
+      ON prompt_ask_events(triggered_at DESC);
+  `);
+
+  db.prepare(
+    "INSERT INTO schema_migrations(version, name, applied_at) VALUES (?, ?, ?)",
+  ).run(15, "015_prompt_ask_events", new Date().toISOString());
 }
 
 function applyDropDeadAnalysisColumnsMigration(db: Database.Database): void {
@@ -922,9 +1018,9 @@ function findSimilarPrompts(
   limit: number,
 ): PromptSummary[] {
   const seedRow = db
-    .prepare<[string]>(
-      "SELECT snippet, body, tags FROM prompt_fts WHERE prompt_id = ? LIMIT 1",
-    )
+    .prepare<
+      [string]
+    >("SELECT snippet, body, tags FROM prompt_fts WHERE prompt_id = ? LIMIT 1")
     .get(promptId) as
     | { snippet?: string; body?: string; tags?: string }
     | undefined;

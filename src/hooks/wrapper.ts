@@ -71,6 +71,7 @@ async function runPromptMemoryHook(
     });
 
     if (result.ok) {
+      const askEventUrl = `http://${config.server.host}:${config.server.port}/api/v1/ingest/ask-event`;
       const rewriteOutput = createPromptRewriteGuardOutput(payload, {
         ...options.rewriteGuard,
         now: new Date(),
@@ -81,6 +82,16 @@ async function runPromptMemoryHook(
         // is the same effective behavior Claude Code already gives by default.
         suppressOutput:
           options.rewriteGuard?.suppressOutput ?? tool === "codex",
+        onAskTriggered: (report) => {
+          // Fire-and-forget so a slow / unhealthy server never blocks the
+          // hook returning to Claude Code or Codex.
+          void postPayload({
+            url: askEventUrl,
+            ingestToken: hookAuth.ingest_token,
+            payload: report,
+            timeoutMs: options.timeoutMs ?? 750,
+          }).catch(() => undefined);
+        },
       });
       stdout = rewriteOutput ? `${JSON.stringify(rewriteOutput)}\n` : "";
     }

@@ -25,6 +25,7 @@ import {
   deletePrompt,
   executeExportJob,
   getArchiveScoreReport,
+  getAskEventSummary,
   getCoachFeedbackSummary,
   getHealth,
   getPrompt,
@@ -38,6 +39,7 @@ import {
   updateProjectPolicy,
   type AnonymizedExportPayload,
   type ArchiveScoreReport,
+  type AskEventSummary,
   type CoachFeedbackSummary,
   type ExportJob,
   type ExportPreset,
@@ -147,9 +149,7 @@ export function App() {
   >();
   const [pendingBulkDelete, setPendingBulkDelete] = useState(false);
   const [bulkDeleteBusy, setBulkDeleteBusy] = useState(false);
-  const [selectedIds, setSelectedIds] = useState<Set<string>>(
-    () => new Set(),
-  );
+  const [selectedIds, setSelectedIds] = useState<Set<string>>(() => new Set());
   const [copiedPromptId, setCopiedPromptId] = useState<string | undefined>();
   const [copiedImprovementId, setCopiedImprovementId] = useState<
     string | undefined
@@ -1061,8 +1061,8 @@ export function App() {
             <h2>Bulk delete</h2>
             <p>
               <strong>{selectedIds.size}</strong> prompts will be deleted.
-              Markdown files and index rows are removed for each. This cannot
-              be undone.
+              Markdown files and index rows are removed for each. This cannot be
+              undone.
             </p>
             <div className="modal-actions">
               <button
@@ -1140,7 +1140,11 @@ function PromptList({
   return (
     <>
       {selectionCount > 0 && (
-        <div className="bulk-action-bar" role="region" aria-label="Bulk actions">
+        <div
+          className="bulk-action-bar"
+          role="region"
+          aria-label="Bulk actions"
+        >
           <span>
             <strong>{selectionCount}</strong> selected
           </span>
@@ -1361,6 +1365,7 @@ function DashboardView({
         dashboard={dashboard}
         onOpenFilteredList={onOpenFilteredList}
       />
+      <AskModeSummaryPanel />
       <ArchiveScoreReviewPanel
         report={archiveScore}
         onRefresh={onRefreshArchiveScore}
@@ -1832,6 +1837,74 @@ function ArchiveScoreReviewPanel({
         </div>
       )}
     </details>
+  );
+}
+
+function AskModeSummaryPanel() {
+  const [summary, setSummary] = useState<AskEventSummary | undefined>();
+  const [error, setError] = useState<string | undefined>();
+
+  useEffect(() => {
+    let cancelled = false;
+    void getAskEventSummary(7)
+      .then((data) => {
+        if (!cancelled) setSummary(data);
+      })
+      .catch(() => {
+        if (!cancelled) setError("Could not load ask events.");
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
+  if (error || !summary) {
+    return null;
+  }
+
+  if (summary.total_count === 0) {
+    return null;
+  }
+
+  const topAxes = Object.entries(summary.axis_counts)
+    .sort(([, a], [, b]) => b - a)
+    .slice(0, 3)
+    .map(([axis, count]) => ({ axis, count }));
+
+  return (
+    <section className="panel ask-mode-summary" aria-label="Ask mode summary">
+      <div className="panel-heading-row">
+        <div>
+          <p className="eyebrow">Ask mode</p>
+          <h2>Recent ask triggers</h2>
+        </div>
+        <span>{summary.recent_count} in last 7 days</span>
+      </div>
+      <div className="ask-mode-stats">
+        <div>
+          <strong>{summary.recent_count}</strong>
+          <small>triggers (7d)</small>
+        </div>
+        <div>
+          <strong>{summary.total_count}</strong>
+          <small>total triggers</small>
+        </div>
+        <div>
+          <strong>{summary.average_score || "—"}</strong>
+          <small>avg score (7d)</small>
+        </div>
+      </div>
+      {topAxes.length > 0 && (
+        <ul className="ask-mode-axes">
+          {topAxes.map(({ axis, count }) => (
+            <li key={axis}>
+              <span className="badge gap-badge">{axis}</span>
+              <small>{count}</small>
+            </li>
+          ))}
+        </ul>
+      )}
+    </section>
   );
 }
 

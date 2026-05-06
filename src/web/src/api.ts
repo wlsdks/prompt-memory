@@ -742,6 +742,29 @@ export async function getPrompt(id: string): Promise<PromptDetail> {
   return body.data;
 }
 
+export type AskEventSummary = {
+  total_count: number;
+  recent_count: number;
+  axis_counts: Record<string, number>;
+  average_score: number;
+  last_triggered_at?: string;
+};
+
+export async function getAskEventSummary(days = 7): Promise<AskEventSummary> {
+  await ensureSession();
+  const params = new URLSearchParams({ days: String(days) });
+  const response = await fetch(`/api/v1/ask-events/summary?${params}`, {
+    credentials: "same-origin",
+  });
+
+  if (!response.ok) {
+    await failApi(response, "Ask event summary unavailable");
+  }
+
+  const body = (await response.json()) as { data: AskEventSummary };
+  return body.data;
+}
+
 export async function getSimilarPrompts(
   id: string,
   limit = 5,

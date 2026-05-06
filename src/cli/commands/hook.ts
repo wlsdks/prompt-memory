@@ -111,7 +111,9 @@ export function registerHookCommand(program: Command): void {
           hooksPath: options.hooksPath,
         });
         if (options.json) {
-          process.stdout.write(`${JSON.stringify({ tools: reports }, null, 2)}\n`);
+          process.stdout.write(
+            `${JSON.stringify({ tools: reports }, null, 2)}\n`,
+          );
           return;
         }
         process.stdout.write(`${formatHookStatusReports(reports)}\n`);
@@ -231,9 +233,7 @@ export function formatHookStatusReports(
   const lines = ["prompt-memory hook status", ""];
   for (const report of reports) {
     if (!report.installed) {
-      lines.push(
-        `- ${report.tool}: not installed (${report.configPath})`,
-      );
+      lines.push(`- ${report.tool}: not installed (${report.configPath})`);
       continue;
     }
     const extras: string[] = [];
