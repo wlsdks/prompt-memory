@@ -187,6 +187,21 @@ describe("prompt CLI commands", () => {
     );
   });
 
+  it("hints at a runnable list command in Prompt not found errors", () => {
+    const dataDir = createTempDir();
+    initializePromptMemory({ dataDir });
+
+    expect(() => showPromptForCli("prmt_missing", { dataDir })).toThrow(
+      /prompt-memory prompts list/,
+    );
+    expect(() => deletePromptForCli("prmt_missing", { dataDir })).toThrow(
+      /prompt-memory prompts list/,
+    );
+    expect(() => openPromptForCli("prmt_missing", { dataDir })).toThrow(
+      /prompt-memory prompts list/,
+    );
+  });
+
   it("prefixes list results with a count and a more-available hint", async () => {
     const dataDir = createTempDir();
     await createCliFixture(dataDir);
