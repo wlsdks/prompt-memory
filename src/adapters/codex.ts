@@ -1,11 +1,10 @@
-import { createHash } from "node:crypto";
-
 import type { CodexUserPromptSubmitPayload } from "./types.js";
 import {
   canonicalizePath,
   normalizeField,
   normalizePrompt,
 } from "./claude-code.js";
+import { buildIdempotencyKey } from "./idempotency.js";
 import { CodexUserPromptSubmitPayloadSchema } from "../shared/schema.js";
 import type { NormalizedPromptEvent } from "../shared/schema.js";
 
@@ -46,15 +45,10 @@ export function normalizeCodexPayload(
 
 function createIdempotencyKey(payload: CodexUserPromptSubmitPayload): string {
   const sessionId = normalizeField(payload.session_id);
-  const basis = [
-    "codex",
-    sessionId,
+  return buildIdempotencyKey("codex", sessionId, [
     payload.turn_id ? normalizeField(payload.turn_id) : "",
     payload.transcript_path ?? payload.cwd,
     payload.hook_event_name,
     payload.prompt.length.toString(),
-  ].join(":");
-  const digest = createHash("sha256").update(basis).digest("hex").slice(0, 16);
-
-  return `codex:${sessionId}:${digest}`;
+  ]);
 }
