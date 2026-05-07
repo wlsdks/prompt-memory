@@ -190,7 +190,9 @@ export function parseImportSourceType(value: string): ImportSourceType {
     return value as ImportSourceType;
   }
 
-  throw new Error(`Unsupported import source: ${value}`);
+  throw new Error(
+    `Unsupported import source: ${value}. Valid sources: ${IMPORT_SOURCE_TYPES.join(", ")}.`,
+  );
 }
 
 function parseJsonLine(

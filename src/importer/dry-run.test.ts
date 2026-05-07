@@ -4,7 +4,11 @@ import { join } from "node:path";
 import { randomUUID } from "node:crypto";
 import { afterEach, describe, expect, it } from "vitest";
 
-import { runImportDryRun } from "./dry-run.js";
+import {
+  IMPORT_SOURCE_TYPES,
+  parseImportSourceType,
+  runImportDryRun,
+} from "./dry-run.js";
 
 const tempDirs: string[] = [];
 
@@ -171,6 +175,17 @@ describe("import dry-run", () => {
     );
     expect(captured?.message).not.toContain(missing);
     expect(captured?.message).not.toContain("ENOENT");
+  });
+
+  it("lists valid sources when parseImportSourceType rejects an unknown value", () => {
+    expect(() => parseImportSourceType("not-a-real-source")).toThrow(
+      /Unsupported import source: not-a-real-source/,
+    );
+    for (const known of IMPORT_SOURCE_TYPES) {
+      expect(() => parseImportSourceType("not-a-real-source")).toThrow(
+        new RegExp(known.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")),
+      );
+    }
   });
 });
 
