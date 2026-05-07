@@ -1630,6 +1630,7 @@ describe("SQLite prompt storage", () => {
     const dataDir = createTempDir();
     const storage = createSqlitePromptStorage({
       dataDir,
+      hmacSecret: "test-secret",
       now: () => new Date("2026-05-05T00:00:00.000Z"),
     });
 
@@ -1670,6 +1671,7 @@ describe("SQLite prompt storage", () => {
     const dataDir = createTempDir();
     const storage = createSqlitePromptStorage({
       dataDir,
+      hmacSecret: "test-secret",
       now: () => new Date("2024-01-15T00:00:00.000Z"),
     });
 
