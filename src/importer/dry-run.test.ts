@@ -125,6 +125,7 @@ describe("import dry-run", () => {
     expect(result.samples[0]).toMatchObject({
       session_id: "manual-session",
       prompt_preview: "Manual hook payload import candidate.",
+      cwd_label: "project",
     });
   });
 
