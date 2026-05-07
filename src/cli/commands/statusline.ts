@@ -417,6 +417,12 @@ function runStatusLineCommand(
   command: string,
   input: string | undefined,
 ): { stdout: string } {
+  // Statuslines are rendered on every Claude Code prompt, so a missing or
+  // empty chained command must fail open rather than throw and pollute the
+  // user's status bar with a Node stack trace.
+  if (!command || command.trim().length === 0) {
+    return { stdout: "" };
+  }
   const result = spawnSync(command, {
     shell: true,
     encoding: "utf8",

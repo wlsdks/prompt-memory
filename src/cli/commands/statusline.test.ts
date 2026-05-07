@@ -269,6 +269,24 @@ describe("renderChainedClaudeCodeStatusLine", () => {
     );
   });
 
+  it("treats an empty chained command as a fail-open no-op rather than throwing", () => {
+    // Uses the default runStatusLineCommand path. An empty command would
+    // otherwise reach spawnSync and crash with ERR_INVALID_ARG_VALUE,
+    // which would surface as a stack trace in the Claude Code statusline.
+    expect(() =>
+      renderChainedClaudeCodeStatusLine({
+        previousCommand: "",
+        promptMemoryCommand: "",
+      }),
+    ).not.toThrow();
+    expect(
+      renderChainedClaudeCodeStatusLine({
+        previousCommand: "",
+        promptMemoryCommand: "",
+      }),
+    ).toBe("");
+  });
+
   it("keeps prompt-memory output when the previous status line fails", () => {
     const line = renderChainedClaudeCodeStatusLine({
       previousCommand: "previous",
