@@ -124,6 +124,7 @@ import {
 } from "./judge-score.js";
 import { applyMigrations } from "./sqlite-migrations.js";
 import { createProjectKey } from "./project-id.js";
+import { projectLabel } from "./project-label.js";
 
 export type { PromptRow } from "./sqlite-rows.js";
 
@@ -2623,11 +2624,6 @@ function lastDayKeys(now: Date, days: number): string[] {
 
 function ratio(count: number, total: number): number {
   return total > 0 ? Number((count / total).toFixed(4)) : 0;
-}
-
-function projectLabel(value: string): string {
-  const trimmed = value.replace(/\/+$/, "");
-  return trimmed.split("/").at(-1) || trimmed || "unknown";
 }
 
 function listProjectsForPolicy(
