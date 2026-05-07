@@ -158,8 +158,8 @@ export function readHookStatusReports(options: {
 }): HookStatusReport[] {
   const claudePath = options.settingsPath ?? defaultClaudeSettingsPath();
   const codexPath = options.hooksPath ?? defaultCodexHooksPath();
-  const claudeSettings = readClaudeSettings(claudePath);
-  const codexSettings = readCodexHooksSettings(codexPath);
+  const claudeSettings = tryRead(() => readClaudeSettings(claudePath));
+  const codexSettings = tryRead(() => readCodexHooksSettings(codexPath));
 
   return [
     parseHookEntries(
@@ -173,6 +173,16 @@ export function readHookStatusReports(options: {
       codexPath,
     ),
   ];
+}
+
+function tryRead<T extends { hooks?: { UserPromptSubmit?: unknown } }>(
+  read: () => T,
+): T | { hooks?: undefined } {
+  try {
+    return read();
+  } catch {
+    return {};
+  }
 }
 
 function parseHookEntries(
