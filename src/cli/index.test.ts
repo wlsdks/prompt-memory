@@ -41,6 +41,22 @@ describe("CLI command surface", () => {
     expect(commands).toContain("mcp");
     expect(commands).toContain("start");
   });
+
+  it("gives every top-level command a non-empty description", () => {
+    const program = createProgram();
+    const missing: string[] = [];
+    for (const command of program.commands) {
+      // The implicit `help` subcommand commander auto-generates does not need
+      // a description from us — Commander labels it as "display help for
+      // command" itself. Every other command must have one so
+      // `prompt-memory --help` is self-explanatory.
+      if (command.name() === "help") continue;
+      if (!command.description() || command.description().trim() === "") {
+        missing.push(command.name());
+      }
+    }
+    expect(missing).toEqual([]);
+  });
 });
 
 function createTempDir(): string {

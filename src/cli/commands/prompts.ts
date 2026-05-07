@@ -24,6 +24,7 @@ type ShowPromptCliOptions = PromptIdOptions & {
 export function registerPromptCommands(program: Command): void {
   program
     .command("list")
+    .description("List captured prompts in the local archive.")
     .option("--data-dir <path>", "Override the prompt-memory data directory.")
     .option("--import-job <id>", "Only show prompts produced by an import job.")
     .option("--limit <count>", "Maximum number of prompts to show.")
@@ -34,6 +35,7 @@ export function registerPromptCommands(program: Command): void {
 
   program
     .command("search")
+    .description("Full-text search the local prompt archive.")
     .argument("<query>", "FTS query.")
     .option("--data-dir <path>", "Override the prompt-memory data directory.")
     .option(
@@ -48,6 +50,7 @@ export function registerPromptCommands(program: Command): void {
 
   program
     .command("show")
+    .description("Show a captured prompt by id.")
     .argument("<id>", "Prompt id.")
     .option("--data-dir <path>", "Override the prompt-memory data directory.")
     .option("--json", "Print JSON.")
@@ -61,6 +64,9 @@ export function registerPromptCommands(program: Command): void {
 
   program
     .command("delete")
+    .description(
+      "Delete a captured prompt and its analyses, drafts, and FTS row.",
+    )
     .argument("<id>", "Prompt id.")
     .option("--data-dir <path>", "Override the prompt-memory data directory.")
     .option("--json", "Print JSON.")
@@ -70,6 +76,7 @@ export function registerPromptCommands(program: Command): void {
 
   program
     .command("open")
+    .description("Print a local web URL for a captured prompt.")
     .argument("<id>", "Prompt id.")
     .option("--data-dir <path>", "Override the prompt-memory data directory.")
     .action((id: string, options: PromptIdOptions) => {
@@ -78,6 +85,7 @@ export function registerPromptCommands(program: Command): void {
 
   program
     .command("rebuild-index")
+    .description("Rebuild the SQLite index from the Markdown archive.")
     .option("--data-dir <path>", "Override the prompt-memory data directory.")
     .option("--json", "Print JSON.")
     .action((options: PromptIdOptions) => {
