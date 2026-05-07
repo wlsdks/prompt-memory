@@ -15,6 +15,7 @@ export type WebSession = {
   expiresAt: number;
 };
 
+const SESSION_COOKIE_NAME = "prompt_memory_session";
 const SESSION_DURATION_MS = 12 * HOUR_MS;
 const SESSION_DURATION_SECONDS = SESSION_DURATION_MS / 1000;
 
@@ -80,7 +81,7 @@ export function createWebSession(secret: string): {
   const token = `${payload}.${signature}`;
 
   return {
-    cookie: `prompt_memory_session=${token}; Path=/; HttpOnly; SameSite=Strict; Max-Age=${SESSION_DURATION_SECONDS}`,
+    cookie: `${SESSION_COOKIE_NAME}=${token}; Path=/; HttpOnly; SameSite=Strict; Max-Age=${SESSION_DURATION_SECONDS}`,
     csrfToken,
   };
 }
@@ -96,7 +97,7 @@ function readWebSession(
   request: FastifyRequest,
   secret: string,
 ): WebSession | undefined {
-  const token = parseCookies(request.headers.cookie).prompt_memory_session;
+  const token = parseCookies(request.headers.cookie)[SESSION_COOKIE_NAME];
   if (!token) {
     return undefined;
   }
