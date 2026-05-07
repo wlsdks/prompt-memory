@@ -2,6 +2,7 @@ import { spawnSync } from "node:child_process";
 import type { Command } from "commander";
 
 import { initializePromptMemory } from "../../config/config.js";
+import { clampScore } from "../../shared/clamp-score.js";
 import {
   installClaudeCodeHook,
   installCodexHook,
@@ -450,9 +451,7 @@ function parseMinScore(value: string | undefined): number | undefined {
   }
 
   const parsed = Number(value);
-  return Number.isFinite(parsed)
-    ? Math.max(0, Math.min(100, Math.round(parsed)))
-    : undefined;
+  return Number.isFinite(parsed) ? clampScore(parsed) : undefined;
 }
 
 function detectTools(options: SetupOptions): SetupTool[] {

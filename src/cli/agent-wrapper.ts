@@ -5,6 +5,7 @@ import { stdin as defaultStdin, stdout as defaultStdout } from "node:process";
 
 import { analyzePrompt } from "../analysis/analyze.js";
 import { improvePrompt } from "../analysis/improve.js";
+import { clampScore } from "../shared/clamp-score.js";
 
 export type AgentWrapperTool = "claude" | "codex";
 export type AgentWrapperMode = "ask" | "auto" | "off";
@@ -362,9 +363,7 @@ function parseLanguage(value: string | undefined): "en" | "ko" | undefined {
 
 function parseMinScore(value: string | undefined): number {
   const parsed = value === undefined ? DEFAULT_MIN_SCORE : Number(value);
-  return Number.isFinite(parsed)
-    ? Math.max(0, Math.min(100, Math.round(parsed)))
-    : DEFAULT_MIN_SCORE;
+  return Number.isFinite(parsed) ? clampScore(parsed) : DEFAULT_MIN_SCORE;
 }
 
 function findPromptIndex(
