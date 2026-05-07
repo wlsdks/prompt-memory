@@ -82,7 +82,9 @@ function registerRenderStatusLineCommand(program: Command): void {
     .option("--settings-path <path>", "Override Claude Code settings path.")
     .action(async (tool: string, options: StatusLineOptions) => {
       if (tool !== "claude-code") {
-        throw new Error(`Unsupported statusline target: ${tool}`);
+        throw new Error(
+          `Unsupported statusline target: ${tool}. Use claude-code.`,
+        );
       }
 
       console.log(await renderClaudeCodeStatusLine(options));
@@ -100,7 +102,9 @@ function registerChainedStatusLineCommand(program: Command): void {
     )
     .action((tool: string, options: ChainedStatusLineOptions) => {
       if (tool !== "claude-code") {
-        throw new Error(`Unsupported statusline target: ${tool}`);
+        throw new Error(
+          `Unsupported statusline target: ${tool}. Use claude-code.`,
+        );
       }
 
       console.log(
@@ -122,7 +126,9 @@ function registerInstallStatusLineCommand(program: Command): void {
     .option("--dry-run", "Preview settings change without writing.")
     .action((tool: string, options: StatusLineInstallOptions) => {
       if (tool !== "claude-code") {
-        throw new Error(`Unsupported statusline target: ${tool}`);
+        throw new Error(
+          `Unsupported statusline target: ${tool}. Use claude-code.`,
+        );
       }
 
       const result = installClaudeCodeStatusLine(options);
@@ -148,7 +154,9 @@ function registerUninstallStatusLineCommand(program: Command): void {
     .option("--settings-path <path>", "Override Claude Code settings path.")
     .action((tool: string, options: StatusLineInstallOptions) => {
       if (tool !== "claude-code") {
-        throw new Error(`Unsupported statusline target: ${tool}`);
+        throw new Error(
+          `Unsupported statusline target: ${tool}. Use claude-code.`,
+        );
       }
 
       const result = uninstallClaudeCodeStatusLine(options);

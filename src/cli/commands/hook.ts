@@ -47,7 +47,9 @@ export function registerHookCommand(program: Command): void {
     .option("--open-web", "Open the local web UI for this session.")
     .action(async (tool: string, options: HookCliOptions) => {
       if (tool !== "claude-code" && tool !== "codex") {
-        throw new Error(`Unsupported SessionStart hook target: ${tool}`);
+        throw new Error(
+          `Unsupported SessionStart hook target: ${tool}. Use claude-code or codex.`,
+        );
       }
       const result = await runSessionStartHook({
         stdin: await readStdin(),
