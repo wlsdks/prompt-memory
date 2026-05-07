@@ -52,6 +52,12 @@ describe("improve CLI", () => {
     );
   });
 
+  it("includes a runnable example in the missing-input error", () => {
+    expect(() => improvePromptForCli({ json: true })).toThrow(
+      /prompt-memory improve --text/,
+    );
+  });
+
   it("prints a privacy-safe improvement for the latest stored prompt", async () => {
     const dataDir = createTempDir();
     const init = initializePromptMemory({ dataDir });
