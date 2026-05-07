@@ -21,6 +21,13 @@ export const ServerConfigSchema = z.object({
   port: z.number().int().positive().max(65535).default(17373),
 });
 
+export type ServerConfig = z.infer<typeof ServerConfigSchema>;
+
+export const DEFAULT_SERVER_CONFIG: ServerConfig = {
+  host: "127.0.0.1",
+  port: 17373,
+};
+
 export const AutoJudgeSettingsSchema = z.object({
   enabled: z.boolean().default(false),
   tool: z.enum(["claude", "codex"]).default("claude"),
@@ -29,6 +36,13 @@ export const AutoJudgeSettingsSchema = z.object({
 });
 
 export type AutoJudgeSettings = z.infer<typeof AutoJudgeSettingsSchema>;
+
+export const DEFAULT_AUTO_JUDGE_SETTINGS: AutoJudgeSettings = {
+  enabled: false,
+  tool: "claude",
+  daily_limit: 50,
+  per_minute_limit: 5,
+};
 
 export const ExperimentalRulesSchema = z
   .array(z.enum(["verification_v2"]))
@@ -47,12 +61,7 @@ export const PromptMemoryConfigSchema = z.object({
   quarantine_dir: z.string().min(1),
   redaction_mode: z.enum(["mask", "raw", "reject"]).default("mask"),
   server: ServerConfigSchema,
-  auto_judge: AutoJudgeSettingsSchema.default({
-    enabled: false,
-    tool: "claude",
-    daily_limit: 50,
-    per_minute_limit: 5,
-  }),
+  auto_judge: AutoJudgeSettingsSchema.default(DEFAULT_AUTO_JUDGE_SETTINGS),
   experimental_rules: ExperimentalRulesSchema,
 });
 
@@ -109,10 +118,7 @@ export function initializePromptMemory(options: InitOptions = {}): InitResult {
       spool_dir: paths.spoolDir,
       quarantine_dir: paths.quarantineDir,
       redaction_mode: "mask",
-      server: {
-        host: "127.0.0.1",
-        port: 17373,
-      },
+      server: DEFAULT_SERVER_CONFIG,
     });
 
   const existingHookAuth = readJsonIfExists(paths.hookAuthPath, HookAuthSchema);

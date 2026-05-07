@@ -2,7 +2,11 @@ import Fastify from "fastify";
 import type { FastifyInstance, FastifyReply, FastifyRequest } from "fastify";
 import { ZodError } from "zod";
 
-import type { AutoJudgeSettings } from "../config/config.js";
+import {
+  DEFAULT_AUTO_JUDGE_SETTINGS,
+  DEFAULT_SERVER_CONFIG,
+  type AutoJudgeSettings,
+} from "../config/config.js";
 import type { RedactionPolicy } from "../shared/schema.js";
 import type {
   CoachFeedbackStoragePort,
@@ -151,16 +155,8 @@ export function createServer(options: CreateServerOptions): FastifyInstance {
     dataDir: options.dataDir,
     excludedProjectRoots: options.excludedProjectRoots ?? [],
     redactionMode: options.redactionMode,
-    server: options.serverConfig ?? {
-      host: "127.0.0.1",
-      port: 17373,
-    },
-    autoJudge: options.autoJudge ?? {
-      enabled: false,
-      tool: "claude",
-      daily_limit: 50,
-      per_minute_limit: 5,
-    },
+    server: options.serverConfig ?? DEFAULT_SERVER_CONFIG,
+    autoJudge: options.autoJudge ?? DEFAULT_AUTO_JUDGE_SETTINGS,
   });
   registerStaticRoutes(server, {
     webRoot: options.webRoot,
