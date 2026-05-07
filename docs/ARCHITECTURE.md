@@ -105,9 +105,13 @@ Current known large modules:
   request shaping here; render and copy logic stay in components.
 - `src/web/src/i18n.ts`: web UI translation table. Korean strings stay grouped
   by screen so a single localization change touches one section.
-- `src/storage/sqlite.ts`: SQLite implementation boundary for migrations,
-  queries, transactions, and storage-port assembly. Keep row contracts and JSON
-  decoding out of this file.
+- `src/storage/sqlite.ts`: SQLite implementation boundary for queries,
+  transactions, and storage-port assembly. Keep migrations, row contracts, and
+  JSON decoding out of this file.
+- `src/storage/sqlite-migrations.ts`: schema/DDL and the `applyMigrations`
+  orchestrator plus the in-file `apply*Migration` helpers. Per-domain
+  migrations (`agent-judgments.ts`, `coach-feedback.ts`, `judge-score.ts`)
+  keep their migrations next to their domain code and are imported here.
 - `src/storage/sqlite-rows.ts`: SQLite result-row contracts only. Do not add
   queries or mappers here.
 - `src/storage/sqlite-json.ts`: defensive JSON decoding for SQLite JSON
