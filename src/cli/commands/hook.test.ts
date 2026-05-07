@@ -110,6 +110,28 @@ describe("readHookStatusReports", () => {
 
     expect(reports[0]?.mode).toBe("off");
   });
+
+  it("treats a malformed settings file as not-installed instead of throwing", () => {
+    const settingsPath = join(sandbox, "claude.json");
+    const hooksPath = join(sandbox, "codex-hooks.json");
+    writeFileSync(settingsPath, "{not valid json");
+    writeFileSync(hooksPath, "[[[oops");
+
+    expect(() =>
+      readHookStatusReports({ settingsPath, hooksPath }),
+    ).not.toThrow();
+    const reports = readHookStatusReports({ settingsPath, hooksPath });
+    expect(reports[0]).toMatchObject({
+      tool: "claude-code",
+      installed: false,
+      mode: "unknown",
+    });
+    expect(reports[1]).toMatchObject({
+      tool: "codex",
+      installed: false,
+      mode: "unknown",
+    });
+  });
 });
 
 describe("formatHookStatusReports", () => {
