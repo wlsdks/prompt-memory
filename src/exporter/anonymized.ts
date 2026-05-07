@@ -126,7 +126,9 @@ export function executeAnonymizedExport(
   const job = storage.getExportJob(jobId);
 
   if (!job) {
-    throw new Error(`Export job not found: ${jobId}`);
+    throw new Error(
+      `Export job not found: ${jobId}. Run prompt-memory export --anonymized --preview to create a new one.`,
+    );
   }
 
   if (

@@ -40,6 +40,28 @@ describe("export CLI", () => {
     );
   });
 
+  it("hints at the preview command when --job points at a missing id", () => {
+    const dataDir = createTempDir();
+    initializePromptMemory({ dataDir });
+
+    expect(() =>
+      exportForCli({
+        anonymized: true,
+        dataDir,
+        job: "exp_does_not_exist",
+        json: true,
+      }),
+    ).toThrow(/Export job not found: exp_does_not_exist/);
+    expect(() =>
+      exportForCli({
+        anonymized: true,
+        dataDir,
+        job: "exp_does_not_exist",
+        json: true,
+      }),
+    ).toThrow(/prompt-memory export --anonymized --preview/);
+  });
+
   it("previews and executes anonymized exports without raw ids, paths, or secrets", async () => {
     const rawSecret = "sk-proj-1234567890abcdef";
     const dataDir = createTempDir();
