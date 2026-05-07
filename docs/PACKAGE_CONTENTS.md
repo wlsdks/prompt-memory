@@ -28,7 +28,8 @@ The npm package intentionally includes:
   `integrations/claude-code`
 - Codex plugin artifacts under `plugins/prompt-memory`
 - local verification scripts: `scripts/benchmark.mjs`,
-  `scripts/browser-e2e.mjs`, and `scripts/release-smoke.mjs`
+  `scripts/browser-e2e.mjs`, `scripts/quality-gate.mjs`, and
+  `scripts/release-smoke.mjs`
 
 ## Excluded
 
