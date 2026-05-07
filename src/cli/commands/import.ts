@@ -165,7 +165,9 @@ export function showImportJobForCli(
     const job = storage.getImportJob(id);
 
     if (!job) {
-      throw new Error(`Import job not found: ${id}`);
+      throw new Error(
+        `Import job not found: ${id}. Run prompt-memory import --dry-run --save-job to create a new one.`,
+      );
     }
 
     return options.json ? JSON.stringify(job, null, 2) : formatImportJob(job);
