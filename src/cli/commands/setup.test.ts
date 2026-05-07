@@ -258,6 +258,25 @@ describe("runSetup", () => {
     );
   });
 
+  it("rejects unknown rewrite-guard mode values with a hint at valid options", () => {
+    expect(() =>
+      runSetup({
+        profile: "coach",
+        rewriteGuard: "asking",
+        noService: true,
+        detectedTools: ["claude-code"],
+      }),
+    ).toThrow(/Unsupported rewrite-guard mode: asking/);
+    expect(() =>
+      runSetup({
+        profile: "coach",
+        rewriteGuard: "asking",
+        noService: true,
+        detectedTools: ["claude-code"],
+      }),
+    ).toThrow(/Valid modes: off, context, ask, block-and-copy/);
+  });
+
   it("rejects unknown setup profile values with a hint at valid options", () => {
     expect(() =>
       runSetup({

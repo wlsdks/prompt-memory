@@ -441,19 +441,23 @@ function resolveRewriteGuardOptions(
   };
 }
 
+const REWRITE_GUARD_MODES = [
+  "off",
+  "context",
+  "ask",
+  "block-and-copy",
+] as const satisfies readonly PromptRewriteGuardMode[];
+
 function parseRewriteGuardMode(
   value: string | undefined,
 ): PromptRewriteGuardMode | undefined {
-  if (
-    value === "off" ||
-    value === "context" ||
-    value === "block-and-copy" ||
-    value === "ask"
-  ) {
-    return value;
+  if (value === undefined) return undefined;
+  if ((REWRITE_GUARD_MODES as readonly string[]).includes(value)) {
+    return value as PromptRewriteGuardMode;
   }
-
-  return undefined;
+  throw new Error(
+    `Unsupported rewrite-guard mode: ${value}. Valid modes: ${REWRITE_GUARD_MODES.join(", ")}.`,
+  );
 }
 
 function parseMinScore(value: string | undefined): number | undefined {
