@@ -1,6 +1,7 @@
 import { createHmac } from "node:crypto";
 
 import { detectSensitiveValues } from "../redaction/detectors.js";
+import { DAY_MS } from "../shared/time.js";
 import type {
   ExportJob,
   ExportJobStoragePort,
@@ -110,7 +111,7 @@ export function createAnonymizedExportPreview(
       residual_identifier_counts: residualIdentifierCounts,
       small_set_warning: promptDetails.length > 0 && promptDetails.length < 5,
     },
-    expires_at: new Date(now.getTime() + 24 * 60 * 60 * 1000).toISOString(),
+    expires_at: new Date(now.getTime() + DAY_MS).toISOString(),
   });
 }
 

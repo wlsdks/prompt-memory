@@ -29,6 +29,7 @@ import type {
   PromptTag,
   RedactionPolicy,
 } from "../shared/schema.js";
+import { DAY_MS } from "../shared/time.js";
 import { getPromptMemoryPaths } from "./paths.js";
 import type {
   AskEventStoragePort,
@@ -373,7 +374,7 @@ export function createSqlitePromptStorage(
       const days = Math.max(1, Math.min(90, summaryOptions.days ?? 7));
       const reference = options.now?.() ?? new Date();
       const cutoff = new Date(
-        reference.getTime() - days * 24 * 60 * 60 * 1000,
+        reference.getTime() - days * DAY_MS,
       ).toISOString();
 
       const totals = db
@@ -2599,7 +2600,7 @@ function patternMessage(
 }
 
 function daysAgo(now: Date, days: number): string {
-  return new Date(now.getTime() - days * 24 * 60 * 60 * 1000).toISOString();
+  return new Date(now.getTime() - days * DAY_MS).toISOString();
 }
 
 function clampTrendDays(value: number | undefined): number {
