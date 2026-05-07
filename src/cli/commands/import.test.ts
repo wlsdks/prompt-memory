@@ -177,6 +177,18 @@ describe("import CLI", () => {
     expect(shown).not.toContain("/Users/example/project");
   });
 
+  it("hints at the dry-run save command when import-job points at a missing id", () => {
+    const dataDir = createTempDir("prompt-memory-import-job-missing-");
+    initializePromptMemory({ dataDir });
+
+    expect(() =>
+      showImportJobForCli("imp_does_not_exist", { dataDir }),
+    ).toThrow(/Import job not found: imp_does_not_exist/);
+    expect(() =>
+      showImportJobForCli("imp_does_not_exist", { dataDir }),
+    ).toThrow(/prompt-memory import --dry-run --save-job/);
+  });
+
   it("resumes a saved dry-run job, imports prompts, and filters imported prompts", async () => {
     const rawSecret = "sk-proj-1234567890abcdef";
     const dataDir = createTempDir("prompt-memory-import-execute-");
