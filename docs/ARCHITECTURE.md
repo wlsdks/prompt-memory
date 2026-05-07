@@ -150,8 +150,13 @@ formatter:
   generic-friendly fallback.
 - `src/adapters/idempotency.ts`: `buildIdempotencyKey(tool, sessionId, parts)`
   — the `tool:sessionId:sha256-16` format shared by every prompt adapter.
-- `src/shared/time.ts`: `MINUTE_MS`, `HOUR_MS`, `DAY_MS`, plus ISO/compact
-  timestamp helpers. Use these instead of repeating `60 * 60 * 1000`.
+- `src/shared/clamp-score.ts`: `clampScore(score)` — round and clamp a
+  raw score into the `[0, 100]` integer band. Used by judge persistence,
+  the auto-judge worker, the rewrite-guard hook, and CLI flag parsers
+  that accept a `--rewrite-min-score` value.
+- `src/shared/time.ts`: `MINUTE_MS`, `HOUR_MS`, `DAY_MS`, plus
+  `compactTimestamp` for the `prmt_…` id format. Use the constants
+  instead of repeating `60 * 60 * 1000`.
 
 These are not release blockers by themselves, but new work should reduce
 pressure on them rather than expanding them casually. The line-budget gate in
