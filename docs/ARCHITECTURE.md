@@ -131,6 +131,28 @@ Current known large modules:
   rewriting, and child-process spawning. New domain logic should land in a
   helper module rather than expanding the wrapper.
 
+### Shared helpers
+
+Small focused modules that exist so the same primitive isn't redefined in
+multiple places. Check these before adding a new derivation, hash, or
+formatter:
+
+- `src/storage/project-id.ts`: `createProjectKey(sourcePath, hmacSecret)` —
+  the canonical `proj_…` derivation used by storage policy lookups and
+  anonymized export.
+- `src/storage/project-label.ts`: storage-style human label for a project
+  path (strip trailing slashes, take last `/`-segment, fall back to
+  `unknown`). Used by storage and exporter.
+- `src/mcp/project-label.ts`: MCP-side variant of the label helper
+  (`[\\/]` separator handling, fall back to `project`). Used by all three
+  MCP scoring/agent tools. Intentionally distinct from the storage variant
+  because the agent-facing surface needs Windows-aware paths and a
+  generic-friendly fallback.
+- `src/adapters/idempotency.ts`: `buildIdempotencyKey(tool, sessionId, parts)`
+  — the `tool:sessionId:sha256-16` format shared by every prompt adapter.
+- `src/shared/time.ts`: `MINUTE_MS`, `HOUR_MS`, `DAY_MS`, plus ISO/compact
+  timestamp helpers. Use these instead of repeating `60 * 60 * 1000`.
+
 These are not release blockers by themselves, but new work should reduce
 pressure on them rather than expanding them casually. The line-budget gate in
 `scripts/quality-gate.mjs` is the enforcing rail.
