@@ -384,8 +384,19 @@ export function runSetup(options: SetupOptions = {}): SetupResult {
   };
 }
 
+const SETUP_PROFILES = [
+  "capture",
+  "coach",
+] as const satisfies readonly SetupProfile[];
+
 function parseSetupProfile(value: string | undefined): SetupProfile {
-  return value === "coach" ? "coach" : "capture";
+  if (value === undefined) return "capture";
+  if ((SETUP_PROFILES as readonly string[]).includes(value)) {
+    return value as SetupProfile;
+  }
+  throw new Error(
+    `Unsupported setup profile: ${value}. Valid profiles: ${SETUP_PROFILES.join(", ")}.`,
+  );
 }
 
 function resolveRewriteGuardOptions(

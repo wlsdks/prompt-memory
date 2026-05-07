@@ -258,6 +258,23 @@ describe("runSetup", () => {
     );
   });
 
+  it("rejects unknown setup profile values with a hint at valid options", () => {
+    expect(() =>
+      runSetup({
+        profile: "cooach",
+        noService: true,
+        detectedTools: ["claude-code"],
+      }),
+    ).toThrow(/Unsupported setup profile: cooach/);
+    expect(() =>
+      runSetup({
+        profile: "cooach",
+        noService: true,
+        detectedTools: ["claude-code"],
+      }),
+    ).toThrow(/Valid profiles: capture, coach/);
+  });
+
   it("coach profile can opt into stricter block-and-copy guard", () => {
     const dir = createTempDir();
     const dataDir = join(dir, "data");
