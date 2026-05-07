@@ -123,6 +123,7 @@ import {
   type JudgeTool,
 } from "./judge-score.js";
 import { applyMigrations } from "./sqlite-migrations.js";
+import { createProjectKey } from "./project-id.js";
 
 export type { PromptRow } from "./sqlite-rows.js";
 
@@ -3022,13 +3023,6 @@ function projectDescriptor(
     sourcePath,
     pathKind: row.project_root ? "project_root" : "cwd",
   };
-}
-
-function createProjectKey(sourcePath: string, hmacSecret: string): string {
-  return `proj_${createHmac("sha256", hmacSecret)
-    .update(sourcePath)
-    .digest("hex")
-    .slice(0, 24)}`;
 }
 
 function readProjectPolicy(

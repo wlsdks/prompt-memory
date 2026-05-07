@@ -2,6 +2,7 @@ import { createHmac } from "node:crypto";
 
 import { detectSensitiveValues } from "../redaction/detectors.js";
 import { DAY_MS } from "../shared/time.js";
+import { createProjectKey } from "../storage/project-id.js";
 import type {
   ExportJob,
   ExportJobStoragePort,
@@ -325,13 +326,6 @@ function createPromptHash(promptId: string, hmacSecret: string): string {
     .update(promptId)
     .digest("hex")
     .slice(0, 32)}`;
-}
-
-function createProjectKey(sourcePath: string, hmacSecret: string): string {
-  return `proj_${createHmac("sha256", hmacSecret)
-    .update(sourcePath)
-    .digest("hex")
-    .slice(0, 24)}`;
 }
 
 function projectAlias(
