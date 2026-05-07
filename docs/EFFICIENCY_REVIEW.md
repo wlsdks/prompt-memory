@@ -42,7 +42,11 @@ The implementation is still compact enough for a single TypeScript package. CLI,
 
 Risk areas:
 
-- `src/storage/sqlite.ts` is large and may need splitting when more reconciliation or job logic is added.
+- `src/storage/sqlite.ts` is still the largest single module after schema/DDL
+  and migrations were lifted into `src/storage/sqlite-migrations.ts`. The
+  remaining bulk is queries, transactions, the storage-port assembly, and
+  two coherent blocks — quality dashboard and project policy — that stay
+  candidates for further extraction if either keeps growing.
 - project policy, import jobs, and export jobs have different lifecycles from prompt rows and should remain clearly separated.
 - hidden or provider-routed external LLM analysis would require security,
   consent, audit, cost, preview, and provider UI; it should not be treated as a
