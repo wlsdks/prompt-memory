@@ -67,7 +67,7 @@ For contributors coming from Spring:
 | ------------------------ | ------------------------------------------------------------------------------- |
 | Controller               | Fastify route module in `src/server/routes/*`                                   |
 | Service                  | Pure function module in `src/analysis/*`, `src/exporter/*`, or `src/importer/*` |
-| Repository               | `src/storage/ports.ts` plus `src/storage/sqlite.ts`                             |
+| Repository               | `src/storage/ports.ts` plus `src/storage/sqlite.ts` (and `sqlite-migrations.ts` for schema/DDL) |
 | DTO / validation         | Zod schemas and exported TypeScript types in `src/shared/schema.ts`             |
 | Configuration bean       | Explicit functions in `src/config/*`                                            |
 | Scheduled/background job | CLI script or command with explicit input/output                                |
