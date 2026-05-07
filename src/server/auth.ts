@@ -14,6 +14,9 @@ export type WebSession = {
   expiresAt: number;
 };
 
+const SESSION_DURATION_MS = 12 * 60 * 60 * 1000;
+const SESSION_DURATION_SECONDS = SESSION_DURATION_MS / 1000;
+
 export function requireBearerToken(
   request: FastifyRequest,
   expectedToken: string,
@@ -68,7 +71,7 @@ export function createWebSession(secret: string): {
   const payload = Buffer.from(
     JSON.stringify({
       csrfToken,
-      expiresAt: Date.now() + 12 * 60 * 60 * 1000,
+      expiresAt: Date.now() + SESSION_DURATION_MS,
     }),
     "utf8",
   ).toString("base64url");
@@ -76,7 +79,7 @@ export function createWebSession(secret: string): {
   const token = `${payload}.${signature}`;
 
   return {
-    cookie: `prompt_memory_session=${token}; Path=/; HttpOnly; SameSite=Strict; Max-Age=43200`,
+    cookie: `prompt_memory_session=${token}; Path=/; HttpOnly; SameSite=Strict; Max-Age=${SESSION_DURATION_SECONDS}`,
     csrfToken,
   };
 }
