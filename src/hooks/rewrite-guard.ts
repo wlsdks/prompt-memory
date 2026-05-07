@@ -3,6 +3,7 @@ import { platform } from "node:os";
 
 import { analyzePrompt } from "../analysis/analyze.js";
 import { detectPromptLanguage, improvePrompt } from "../analysis/improve.js";
+import { clampScore } from "../shared/clamp-score.js";
 import { HOOK_COPY } from "./rewrite-guard-copy.js";
 
 export type PromptRewriteGuardMode =
@@ -294,7 +295,7 @@ function normalizeMinScore(value: number | undefined): number {
     return DEFAULT_MIN_SCORE;
   }
 
-  return Math.max(0, Math.min(100, Math.round(value)));
+  return clampScore(value);
 }
 
 function copyTextToClipboard(text: string): boolean {

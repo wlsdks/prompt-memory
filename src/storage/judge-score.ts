@@ -1,6 +1,8 @@
 import { randomUUID } from "node:crypto";
 import type Database from "better-sqlite3";
 
+import { clampScore } from "../shared/clamp-score.js";
+
 export type JudgeTool = "claude" | "codex";
 
 export type JudgeScoreEntry = {
@@ -147,12 +149,6 @@ export function listPromptIdsNeedingJudge(
 
 function createJudgeScoreId(): string {
   return `jdg_${randomUUID().replaceAll("-", "").slice(0, 24)}`;
-}
-
-export function clampScore(score: number): number {
-  if (score < 0) return 0;
-  if (score > 100) return 100;
-  return Math.round(score);
 }
 
 function isJudgeTool(value: string): value is JudgeTool {

@@ -1,6 +1,6 @@
 import { spawnSync, type SpawnSyncReturns } from "node:child_process";
 
-import { clampScore } from "../storage/judge-score.js";
+import { clampScore } from "../shared/clamp-score.js";
 
 export type JudgeTool = "claude" | "codex";
 
