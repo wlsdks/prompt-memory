@@ -115,7 +115,9 @@ export function registerDoctorCommand(program: Command): void {
         }
 
         if (tool !== "claude-code") {
-          throw new Error(`Unsupported doctor target: ${tool}`);
+          throw new Error(
+            `Unsupported doctor target: ${tool}. Use claude-code or codex.`,
+          );
         }
 
         const result = await doctorClaudeCode(options);

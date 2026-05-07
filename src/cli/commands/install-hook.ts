@@ -121,7 +121,9 @@ export function registerInstallHookCommands(program: Command): void {
       }
 
       if (tool !== "claude-code") {
-        throw new Error(`Unsupported hook target: ${tool}`);
+        throw new Error(
+          `Unsupported hook target: ${tool}. Use claude-code or codex.`,
+        );
       }
 
       const result = installClaudeCodeHook(options);
@@ -166,7 +168,9 @@ export function registerInstallHookCommands(program: Command): void {
       }
 
       if (tool !== "claude-code") {
-        throw new Error(`Unsupported hook target: ${tool}`);
+        throw new Error(
+          `Unsupported hook target: ${tool}. Use claude-code or codex.`,
+        );
       }
 
       const result = uninstallClaudeCodeHook(options);
