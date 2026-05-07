@@ -1,5 +1,6 @@
 import { runAutoJudge, type JudgeOutcome } from "./auto-judge.js";
 import { redactPrompt } from "../redaction/redact.js";
+import { DAY_MS, MINUTE_MS } from "../shared/time.js";
 import type {
   JudgeScoreStoragePort,
   JudgeTool,
@@ -42,8 +43,6 @@ export type JudgeWorker = {
 };
 
 const DEFAULT_INTERVAL_MS = 30_000;
-const MINUTE_MS = 60_000;
-const DAY_MS = 24 * 60 * 60 * 1000;
 
 export function createJudgeWorker(options: JudgeWorkerOptions): JudgeWorker {
   const minuteWindow: number[] = [];

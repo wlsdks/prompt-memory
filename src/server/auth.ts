@@ -1,6 +1,7 @@
 import { createHmac, randomBytes, timingSafeEqual } from "node:crypto";
 import type { FastifyRequest } from "fastify";
 
+import { HOUR_MS } from "../shared/time.js";
 import { problem } from "./errors.js";
 
 export type ServerAuthConfig = {
@@ -14,7 +15,7 @@ export type WebSession = {
   expiresAt: number;
 };
 
-const SESSION_DURATION_MS = 12 * 60 * 60 * 1000;
+const SESSION_DURATION_MS = 12 * HOUR_MS;
 const SESSION_DURATION_SECONDS = SESSION_DURATION_MS / 1000;
 
 export function requireBearerToken(
