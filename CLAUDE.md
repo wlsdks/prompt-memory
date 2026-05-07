@@ -60,7 +60,7 @@ git diff --check
 - CLI command는 명령 등록과 출력 formatting에 집중한다. 도메인 규칙이 커지면 별도 pure module로 뺀다.
 - Fastify route는 HTTP boundary이고, SQLite 구현 세부사항을 route 안에 새로 만들지 않는다.
 - 큰 파일인 `src/web/src/App.tsx`, `src/storage/sqlite.ts`, `src/mcp/score-tool.ts`에 새 기능을 추가하기 전에 작은 모델/formatter/helper로 분리할 수 있는지 먼저 판단한다.
-- SQLite 변경은 query/transaction, row contract, defensive JSON decoding을 한 파일에 섞지 않는다.
+- SQLite 변경은 query/transaction, schema/migration, row contract, defensive JSON decoding을 한 파일에 섞지 않는다.
 - MCP 변경은 tool/schema definition, TypeScript contract, handler orchestration, JSON-RPC routing을 한 파일에 섞지 않는다.
 - 새 runtime/public 표면을 추가하면 테스트, 문서, package contents 검증을 함께 갱신한다.
 

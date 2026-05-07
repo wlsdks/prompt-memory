@@ -43,7 +43,8 @@ Claude Code must follow these repository rules in addition to `CLAUDE.md` and
   - `src/redaction`
   - `src/storage`
   - `src/shared`
-- In `src/storage`, keep SQLite query/transaction assembly in `sqlite.ts`, row
+- In `src/storage`, keep SQLite query/transaction assembly in `sqlite.ts`,
+  schema/DDL and the migration orchestrator in `sqlite-migrations.ts`, row
   contracts in `sqlite-rows.ts`, and defensive JSON decoding in
   `sqlite-json.ts`.
 - Use ESM-compatible imports. For type-only dependencies, use `import type`.
