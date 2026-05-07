@@ -187,6 +187,24 @@ describe("prompt CLI commands", () => {
     );
   });
 
+  it("does not leak raw absolute cwd paths in list/search plain output", async () => {
+    const dataDir = createTempDir();
+    await createCliFixture(dataDir);
+
+    const listing = listPromptsForCli({ dataDir, limit: 10 });
+    const search = searchPromptsForCli("dashboard", { dataDir, limit: 10 });
+
+    expect(listing).not.toContain("/Users/example");
+    expect(listing).toContain("project");
+    expect(search).not.toContain("/Users/example");
+
+    // JSON mode keeps the raw cwd for automation/restore.
+    const json = JSON.parse(
+      listPromptsForCli({ dataDir, limit: 10, json: true }),
+    ) as { items: Array<{ cwd: string }> };
+    expect(json.items[0]?.cwd).toMatch(/^\//);
+  });
+
   it("hints at a runnable list command in Prompt not found errors", () => {
     const dataDir = createTempDir();
     initializePromptMemory({ dataDir });

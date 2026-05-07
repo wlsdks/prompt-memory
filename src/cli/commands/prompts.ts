@@ -1,6 +1,7 @@
 import type { Command } from "commander";
 
 import { loadHookAuth, loadPromptMemoryConfig } from "../../config/config.js";
+import { projectLabel } from "../../storage/project-label.js";
 import { createSqlitePromptStorage } from "../../storage/sqlite.js";
 
 type PromptCliOptions = {
@@ -301,7 +302,7 @@ function formatPromptRows(
     .map((row) => {
       const drafts = draftCounts.get(row.id) ?? 0;
       const draftsLabel = drafts > 0 ? `\tdrafts:${drafts}` : "";
-      return `${row.received_at}\t${row.id}\t${row.tool}\t${row.cwd}\t${row.prompt_length}${draftsLabel}`;
+      return `${row.received_at}\t${row.id}\t${row.tool}\t${projectLabel(row.cwd)}\t${row.prompt_length}${draftsLabel}`;
     })
     .join("\n");
 }
