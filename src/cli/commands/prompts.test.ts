@@ -192,13 +192,13 @@ describe("prompt CLI commands", () => {
     initializePromptMemory({ dataDir });
 
     expect(() => showPromptForCli("prmt_missing", { dataDir })).toThrow(
-      /prompt-memory prompts list/,
+      /prompt-memory list/,
     );
     expect(() => deletePromptForCli("prmt_missing", { dataDir })).toThrow(
-      /prompt-memory prompts list/,
+      /prompt-memory list/,
     );
     expect(() => openPromptForCli("prmt_missing", { dataDir })).toThrow(
-      /prompt-memory prompts list/,
+      /prompt-memory list/,
     );
   });
 
