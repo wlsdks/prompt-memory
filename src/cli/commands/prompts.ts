@@ -168,7 +168,9 @@ export function showPromptForCli(
     const prompt = storage.getPrompt(id);
 
     if (!prompt) {
-      throw new Error(`Prompt not found: ${id}`);
+      throw new Error(
+        `Prompt not found: ${id}. Try: prompt-memory prompts list`,
+      );
     }
 
     if (options.json) {
@@ -236,7 +238,9 @@ export function deletePromptForCli(
     const result = storage.deletePrompt(id);
 
     if (!result.deleted) {
-      throw new Error(`Prompt not found: ${id}`);
+      throw new Error(
+        `Prompt not found: ${id}. Try: prompt-memory prompts list`,
+      );
     }
 
     return options.json ? JSON.stringify(result, null, 2) : `deleted ${id}`;
@@ -249,7 +253,9 @@ export function openPromptForCli(
 ): string {
   return withStorage(options.dataDir, (storage) => {
     if (!storage.getPrompt(id)) {
-      throw new Error(`Prompt not found: ${id}`);
+      throw new Error(
+        `Prompt not found: ${id}. Try: prompt-memory prompts list`,
+      );
     }
     const config = loadPromptMemoryConfig(options.dataDir);
     return `http://${config.server.host}:${config.server.port}/prompts/${encodeURIComponent(id)}`;
