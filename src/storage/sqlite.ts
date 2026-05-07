@@ -371,8 +371,9 @@ export function createSqlitePromptStorage(
     },
     getAskEventSummary(summaryOptions = {}) {
       const days = Math.max(1, Math.min(90, summaryOptions.days ?? 7));
+      const reference = options.now?.() ?? new Date();
       const cutoff = new Date(
-        Date.now() - days * 24 * 60 * 60 * 1000,
+        reference.getTime() - days * 24 * 60 * 60 * 1000,
       ).toISOString();
 
       const totals = db
