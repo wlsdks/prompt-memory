@@ -3,6 +3,7 @@ import { createHmac } from "node:crypto";
 import { detectSensitiveValues } from "../redaction/detectors.js";
 import { DAY_MS } from "../shared/time.js";
 import { createProjectKey } from "../storage/project-id.js";
+import { projectLabel } from "../storage/project-label.js";
 import type {
   ExportJob,
   ExportJobStoragePort,
@@ -339,9 +340,4 @@ function projectAlias(
     .items.find((item) => item.project_id === projectId);
 
   return project?.label ?? projectLabel(cwd);
-}
-
-function projectLabel(value: string): string {
-  const trimmed = value.replace(/\/+$/, "");
-  return trimmed.split("/").at(-1) || trimmed || "unknown";
 }
