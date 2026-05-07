@@ -66,6 +66,20 @@ describe("score CLI command", () => {
     expect(text).not.toContain("/Users/example");
   });
 
+  it("hints at the start command when the archive is empty", () => {
+    const dataDir = createTempDir();
+    initializePromptMemory({ dataDir });
+
+    const text = scoreArchiveForCli({ dataDir });
+
+    expect(text).toContain("scored 0 prompts");
+    expect(text).toContain("No prompts captured yet. Run prompt-memory start");
+    // Privacy line still trails the report.
+    expect(text.lastIndexOf("Privacy:")).toBeGreaterThan(
+      text.indexOf("No prompts captured yet."),
+    );
+  });
+
   it("prints a privacy-safe latest prompt score without returning the prompt body", async () => {
     const dataDir = createTempDir();
     await createScoreFixture(dataDir);

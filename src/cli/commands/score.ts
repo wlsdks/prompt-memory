@@ -151,7 +151,7 @@ function formatArchiveScoreReport(report: ArchiveScoreReport): string {
         )
       : ["- none"];
 
-  return [
+  const lines = [
     "Prompt archive score",
     `average ${report.archive_score.average}/${report.archive_score.max} (${report.archive_score.band})`,
     `scored ${report.archive_score.scored_prompts} prompts${report.has_more ? " (more available)" : ""}`,
@@ -168,9 +168,21 @@ function formatArchiveScoreReport(report: ArchiveScoreReport): string {
     "",
     "Lowest scoring prompts",
     ...lowScoreRows,
+  ];
+
+  if (report.archive_score.scored_prompts === 0) {
+    lines.push(
+      "",
+      "No prompts captured yet. Run prompt-memory start to see the shortest setup -> real prompt -> score path.",
+    );
+  }
+
+  lines.push(
     "",
     "Privacy: local-only, no external calls, no prompt bodies, no raw paths.",
-  ].join("\n");
+  );
+
+  return lines.join("\n");
 }
 
 function parseCount(value: string | number | undefined): number | undefined {
