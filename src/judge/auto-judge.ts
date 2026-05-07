@@ -2,7 +2,7 @@ import { spawnSync, type SpawnSyncReturns } from "node:child_process";
 
 import { clampScore } from "../shared/clamp-score.js";
 
-export type JudgeTool = "claude" | "codex";
+type JudgeTool = "claude" | "codex";
 
 export type JudgeOutcome =
   | { kind: "ok"; score: number; reason: string }
