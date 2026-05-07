@@ -1,5 +1,7 @@
 import { spawnSync, type SpawnSyncReturns } from "node:child_process";
 
+import { clampScore } from "../storage/judge-score.js";
+
 export type JudgeTool = "claude" | "codex";
 
 export type JudgeOutcome =
@@ -152,10 +154,4 @@ function locateJsonObject(text: string): string | undefined {
     return undefined;
   }
   return text.slice(start, end + 1);
-}
-
-function clampScore(score: number): number {
-  if (score < 0) return 0;
-  if (score > 100) return 100;
-  return Math.round(score);
 }
