@@ -96,7 +96,9 @@ function readPromptInput(options: ImproveCliOptions): string {
     return readFileSync(0, "utf8");
   }
 
-  throw new Error("--text or --stdin is required for prompt improvement.");
+  throw new Error(
+    '--text or --stdin is required for prompt improvement. Try: prompt-memory improve --text "add caching to fetchUser"',
+  );
 }
 
 function formatImprovement(result: PromptImprovement): string {

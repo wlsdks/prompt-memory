@@ -38,7 +38,9 @@ export function registerExportCommand(program: Command): void {
 
 export function exportForCli(options: ExportCliOptions): string {
   if (!options.anonymized) {
-    throw new Error("--anonymized is required.");
+    throw new Error(
+      "--anonymized is required. Try: prompt-memory export --anonymized --preview",
+    );
   }
 
   if (options.preview === Boolean(options.job)) {

@@ -31,6 +31,15 @@ describe("export CLI", () => {
     );
   });
 
+  it("requires --anonymized and shows a runnable example", () => {
+    expect(() => exportForCli({ preview: true })).toThrow(
+      /--anonymized is required/,
+    );
+    expect(() => exportForCli({ preview: true })).toThrow(
+      /prompt-memory export --anonymized/,
+    );
+  });
+
   it("previews and executes anonymized exports without raw ids, paths, or secrets", async () => {
     const rawSecret = "sk-proj-1234567890abcdef";
     const dataDir = createTempDir();
