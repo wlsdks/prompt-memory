@@ -6,6 +6,7 @@ import {
   type PromptImprovement,
 } from "../analysis/improve.js";
 import type { PromptQualityCriterion } from "../shared/schema.js";
+import { MINUTE_MS } from "../shared/time.js";
 import {
   nativeElicitInput,
   type NativeElicitInputResult,
@@ -380,8 +381,8 @@ function isStringRecord(value: unknown): value is Record<string, string> {
 }
 
 function clampTimeout(value: number | undefined): number {
-  if (value === undefined || !Number.isFinite(value)) return 60_000;
-  return Math.max(1_000, Math.min(600_000, Math.round(value)));
+  if (value === undefined || !Number.isFinite(value)) return MINUTE_MS;
+  return Math.max(1_000, Math.min(10 * MINUTE_MS, Math.round(value)));
 }
 
 function packResult(

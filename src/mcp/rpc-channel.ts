@@ -1,5 +1,7 @@
 import type { Writable } from "node:stream";
 
+import { MINUTE_MS } from "../shared/time.js";
+
 export type RpcId = string;
 
 export type RpcResponseEnvelope =
@@ -22,7 +24,7 @@ export type RpcChannel = {
   cancelAll(reason?: string): void;
 };
 
-const DEFAULT_TIMEOUT_MS = 60_000;
+const DEFAULT_TIMEOUT_MS = MINUTE_MS;
 
 type PendingEntry = {
   resolve: (value: unknown) => void;
