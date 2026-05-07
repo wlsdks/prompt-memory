@@ -9,6 +9,7 @@ import type {
   RecordAgentRewriteToolArguments,
   RecordAgentRewriteToolResult,
 } from "./agent-rewrite-tool-types.js";
+import { projectLabel } from "./project-label.js";
 import type { ScorePromptToolOptions } from "./score-tool-types.js";
 
 const PROVIDERS = ["claude-code", "codex", "gemini-cli", "other"] as const;
@@ -293,10 +294,6 @@ function removeOriginalPromptSection(draft: string): string {
 
 function redactMetadataText(value: string): string {
   return redactPrompt(value, "mask").stored_text;
-}
-
-function projectLabel(cwd: string): string {
-  return cwd.split(/[\\/]/).filter(Boolean).at(-1) ?? "project";
 }
 
 function storageUnavailableMessage(error: unknown): string {

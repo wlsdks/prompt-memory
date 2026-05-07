@@ -7,6 +7,7 @@ import type {
   RecordAgentJudgmentsToolArguments,
   RecordAgentJudgmentsToolResult,
 } from "./agent-judge-tool-types.js";
+import { projectLabel } from "./project-label.js";
 import type { ScorePromptToolOptions } from "./score-tool-types.js";
 
 const AGENT_JUDGE_RUBRIC = {
@@ -281,10 +282,6 @@ function validateAgentJudgmentInput(
   }
 
   return undefined;
-}
-
-function projectLabel(cwd: string): string {
-  return cwd.split(/[\\/]/).filter(Boolean).at(-1) ?? "project";
 }
 
 function storageUnavailableMessage(error: unknown): string {

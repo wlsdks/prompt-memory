@@ -5,6 +5,7 @@ import { loadHookAuth, loadPromptMemoryConfig } from "../config/config.js";
 import type { PromptAnalysisPreview } from "../shared/schema.js";
 import { createSqlitePromptStorage } from "../storage/sqlite.js";
 import type { PromptSummary } from "../storage/ports.js";
+import { projectLabel } from "./project-label.js";
 export {
   prepareAgentJudgeBatchTool,
   recordAgentJudgmentsTool,
@@ -485,10 +486,6 @@ function toSafeLatestPrompt(prompt: PromptSummary) {
     quality_score_band: prompt.quality_score_band,
     is_sensitive: prompt.is_sensitive,
   };
-}
-
-function projectLabel(cwd: string): string {
-  return cwd.split(/[\\/]/).filter(Boolean).at(-1) ?? "project";
 }
 
 function availableMcpToolNames(): string[] {
