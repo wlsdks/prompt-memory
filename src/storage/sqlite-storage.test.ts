@@ -1665,6 +1665,40 @@ describe("SQLite prompt storage", () => {
     expect(summary.average_score).toBe(27);
     expect(summary.last_triggered_at).toBe("2026-05-04T11:00:00.000Z");
   });
+
+  it("uses the injected clock for the ask-event summary cutoff", () => {
+    const dataDir = createTempDir();
+    const storage = createSqlitePromptStorage({
+      dataDir,
+      now: () => new Date("2024-01-15T00:00:00.000Z"),
+    });
+
+    storage.recordAskEvent({
+      tool: "claude-code",
+      score: 30,
+      band: "weak",
+      missing_axes: ["scope_limits"],
+      language: "ko",
+      prompt_length: 50,
+      triggered_at: "2024-01-10T00:00:00.000Z",
+    });
+    storage.recordAskEvent({
+      tool: "claude-code",
+      score: 20,
+      band: "weak",
+      missing_axes: ["verification_criteria"],
+      language: "ko",
+      prompt_length: 40,
+      triggered_at: "2023-12-01T00:00:00.000Z",
+    });
+
+    const summary = storage.getAskEventSummary({ days: 7 });
+    expect(summary.total_count).toBe(2);
+    expect(summary.recent_count).toBe(1);
+    expect(summary.axis_counts.scope_limits).toBe(1);
+    expect(summary.axis_counts.verification_criteria).toBeUndefined();
+    expect(summary.average_score).toBe(30);
+  });
 });
 
 type StoredPrompt = Awaited<ReturnType<typeof storeClaudePrompt>>;
