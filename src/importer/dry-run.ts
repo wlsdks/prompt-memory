@@ -2,6 +2,7 @@ import { realpathSync, readFileSync, statSync } from "node:fs";
 
 import { redactPrompt } from "../redaction/redact.js";
 import type { RedactionPolicy } from "../shared/schema.js";
+import { projectLabel } from "../storage/project-label.js";
 
 export const IMPORT_SOURCE_TYPES = [
   "official-hook",
@@ -174,7 +175,7 @@ export function scanImportSource(
         record_offset: index,
         session_id: candidate.sessionId,
         turn_id: candidate.turnId,
-        cwd_label: candidate.cwd ? basenameLabel(candidate.cwd) : undefined,
+        cwd_label: candidate.cwd ? projectLabel(candidate.cwd) : undefined,
         prompt_preview: redaction.stored_text.slice(0, 160),
         is_sensitive: redaction.is_sensitive,
       });
@@ -308,11 +309,6 @@ function isRecord(value: unknown): value is Record<string, unknown> {
 
 function readString(value: unknown): string | undefined {
   return typeof value === "string" ? value : undefined;
-}
-
-function basenameLabel(path: string): string {
-  const trimmed = path.replace(/\/+$/, "");
-  return trimmed.split("/").at(-1) || "unknown";
 }
 
 function hashPathForPreview(path: string): string {
