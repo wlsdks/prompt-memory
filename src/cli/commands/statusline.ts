@@ -77,6 +77,7 @@ export function registerStatusLineCommand(program: Command): void {
 function registerRenderStatusLineCommand(program: Command): void {
   program
     .command("statusline")
+    .description("Render the prompt-memory status line for Claude Code.")
     .argument("<tool>", "Tool to render a status line for.")
     .option("--data-dir <path>", "Override the prompt-memory data directory.")
     .option("--settings-path <path>", "Override Claude Code settings path.")
@@ -94,6 +95,9 @@ function registerRenderStatusLineCommand(program: Command): void {
 function registerChainedStatusLineCommand(program: Command): void {
   program
     .command("statusline-chain")
+    .description(
+      "Render a chained status line that combines prompt-memory with another tool's existing status line.",
+    )
     .argument("<tool>", "Tool to render a chained status line for.")
     .requiredOption("--previous <base64url>", "Previous status line command.")
     .requiredOption(
@@ -120,6 +124,7 @@ function registerChainedStatusLineCommand(program: Command): void {
 function registerInstallStatusLineCommand(program: Command): void {
   program
     .command("install-statusline")
+    .description("Install the prompt-memory status line for Claude Code.")
     .argument("<tool>", "Tool to install status line for.")
     .option("--settings-path <path>", "Override Claude Code settings path.")
     .option("--data-dir <path>", "Override the prompt-memory data directory.")
@@ -150,6 +155,7 @@ function registerInstallStatusLineCommand(program: Command): void {
 function registerUninstallStatusLineCommand(program: Command): void {
   program
     .command("uninstall-statusline")
+    .description("Uninstall the prompt-memory status line for Claude Code.")
     .argument("<tool>", "Tool to uninstall status line for.")
     .option("--settings-path <path>", "Override Claude Code settings path.")
     .action((tool: string, options: StatusLineInstallOptions) => {

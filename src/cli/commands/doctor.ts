@@ -83,6 +83,9 @@ export type DoctorCodexResult = {
 export function registerDoctorCommand(program: Command): void {
   program
     .command("doctor")
+    .description(
+      "Diagnose Claude Code or Codex setup (server, ingest token, hook, MCP).",
+    )
     .argument("<tool>", "Tool to inspect.")
     .option("--data-dir <path>", "Override the prompt-memory data directory.")
     .option("--settings-path <path>", "Override Claude Code settings path.")

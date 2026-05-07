@@ -78,6 +78,9 @@ const CODEX_PROMPT_MEMORY_SESSION_MARKER =
 export function registerInstallHookCommands(program: Command): void {
   program
     .command("install-hook")
+    .description(
+      "Install the prompt-memory capture hook for Claude Code or Codex.",
+    )
     .argument("<tool>", "Tool to install hook for.")
     .option("--data-dir <path>", "Override the prompt-memory data directory.")
     .option("--settings-path <path>", "Override Claude Code settings path.")
@@ -143,6 +146,9 @@ export function registerInstallHookCommands(program: Command): void {
 
   program
     .command("uninstall-hook")
+    .description(
+      "Uninstall the prompt-memory capture hook for Claude Code or Codex.",
+    )
     .argument("<tool>", "Tool to uninstall hook for.")
     .option("--data-dir <path>", "Override the prompt-memory data directory.")
     .option("--settings-path <path>", "Override Claude Code settings path.")

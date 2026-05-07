@@ -24,6 +24,9 @@ export type StartedServer = {
 export function registerServerCommand(program: Command): void {
   program
     .command("server")
+    .description(
+      "Run the local prompt-memory HTTP server (web UI, capture, MCP routes).",
+    )
     .option("--data-dir <path>", "Override the prompt-memory data directory.")
     .action(async (options: ServerCommandOptions) => {
       const started = await startPromptMemoryServer(options);
