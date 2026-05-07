@@ -396,17 +396,8 @@ export function createSqlitePromptStorage(
       let scoreSum = 0;
       for (const row of recentRows) {
         scoreSum += row.score;
-        try {
-          const axes = JSON.parse(row.missing_axes_json) as unknown;
-          if (Array.isArray(axes)) {
-            for (const axis of axes) {
-              if (typeof axis === "string") {
-                axisCounts[axis] = (axisCounts[axis] ?? 0) + 1;
-              }
-            }
-          }
-        } catch {
-          // ignore malformed legacy rows
+        for (const axis of readStringArray(row.missing_axes_json)) {
+          axisCounts[axis] = (axisCounts[axis] ?? 0) + 1;
         }
       }
 
