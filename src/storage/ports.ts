@@ -5,6 +5,19 @@ import type {
   PromptQualityScoreBand,
   RedactionResult,
 } from "../shared/schema.js";
+import type {
+  CoachFeedbackEntry,
+  CoachFeedbackRating,
+  CoachFeedbackSummary,
+} from "./coach-feedback.js";
+import type { JudgeScoreEntry, JudgeTool } from "./judge-score.js";
+
+export type {
+  CoachFeedbackEntry,
+  CoachFeedbackRating,
+  CoachFeedbackSummary,
+} from "./coach-feedback.js";
+export type { JudgeScoreEntry, JudgeTool } from "./judge-score.js";
 
 export type StorePromptInput = {
   event: NormalizedPromptEvent;
@@ -493,40 +506,12 @@ export type AgentPromptJudgmentStoragePort = {
   listAgentPromptJudgments(promptId: string): AgentPromptJudgment[];
 };
 
-export type CoachFeedbackRating = "helpful" | "not_helpful" | "wrong";
-
-export type CoachFeedbackEntry = {
-  id: string;
-  prompt_id: string;
-  rating: CoachFeedbackRating;
-  created_at: string;
-};
-
-export type CoachFeedbackSummary = {
-  total: number;
-  helpful: number;
-  not_helpful: number;
-  wrong: number;
-  helpful_ratio: number;
-};
-
 export type CoachFeedbackStoragePort = {
   recordCoachFeedback(
     promptId: string,
     rating: CoachFeedbackRating,
   ): CoachFeedbackEntry | undefined;
   getCoachFeedbackSummary(): CoachFeedbackSummary;
-};
-
-export type JudgeTool = "claude" | "codex";
-
-export type JudgeScoreEntry = {
-  id: string;
-  prompt_id: string;
-  judge_tool: JudgeTool;
-  score: number;
-  reason: string;
-  created_at: string;
 };
 
 export type RecordJudgeScoreInput = {
