@@ -358,7 +358,7 @@ function buildSections(
     {
       axis: "goal_clarity",
       label: labels.goal_clarity,
-      body: changed.has("goal_clarity") ? copy.goal : prompt,
+      body: changed.has("goal_clarity") ? copy.goal : copy.keepGoal,
     },
     {
       axis: "background_context",
@@ -567,37 +567,40 @@ function buildSafetyNotes(
 
 const EN_COPY = {
   goal: "Confirm the original intent, then state the exact target and expected behavior.",
+  keepGoal:
+    "Stay aligned with the goal the original request describes; do not redefine it.",
   context:
     "Review the current state and the problem background using the code and test results.",
   keepContext:
     "Preserve the background and constraints from the original request.",
   scope:
     "Change only the minimum area needed for the request and avoid unrelated refactors or behavior changes.",
-  keepScope: "Keep the scope and constraints stated in the original request.",
+  keepScope: "Stay within the scope the original request describes.",
   verification:
     "Run the narrowest relevant tests first, then lint/build checks if needed.",
   keepVerification:
-    "Use the verification commands and expected results from the original request.",
+    "Do not skip verification; run the relevant tests or checks the original request implies and report the result.",
   output:
     "Return a concise Markdown summary with changes, verification results, and remaining risks.",
-  keepOutput: "Keep the output format requested in the original prompt.",
+  keepOutput: "Follow the output format the original request describes.",
 };
 
 const KO_COPY = {
   goal: "원문의 의도를 먼저 확인하고, 실제로 수정해야 할 대상과 기대 동작을 명확히 정리해주세요.",
+  keepGoal: "원문에서 설명한 목표를 그대로 따라주세요. 새로 정의하지 마세요.",
   context:
     "현재 상태와 문제가 발생한 배경을 코드와 테스트 결과를 기준으로 확인한 뒤 진행해주세요.",
-  keepContext: "원문에 포함된 배경과 제약을 유지해주세요.",
+  keepContext: "원문에 적힌 배경과 제약을 그대로 유지해주세요.",
   scope:
     "요청 해결에 필요한 최소 범위만 수정하고, 관련 없는 리팩터링이나 동작 변경은 피해주세요.",
-  keepScope: "원문에 명시된 범위와 제약을 지켜주세요.",
+  keepScope: "원문에서 다룬 범위 안에서만 진행해주세요.",
   verification:
     "가능한 가장 좁은 관련 테스트부터 실행하고, 필요하면 lint/build 같은 기본 검증까지 확인해주세요.",
   keepVerification:
-    "원문에 명시된 검증 명령과 기대 결과를 기준으로 완료 여부를 판단해주세요.",
+    "검증 단계를 빼먹지 말고, 관련 테스트나 검증 명령을 실행한 뒤 결과를 짧게 알려주세요.",
   output:
     "변경 내용, 검증 결과, 남은 리스크를 짧은 Markdown 요약으로 알려주세요.",
-  keepOutput: "원문에서 요청한 출력 형식을 유지해주세요.",
+  keepOutput: "원문에 적힌 출력 형식을 따라주세요.",
 };
 
 export function detectPromptLanguage(prompt: string): "en" | "ko" {
