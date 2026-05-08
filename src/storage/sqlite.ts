@@ -1,6 +1,7 @@
 import Database from "better-sqlite3";
 import { createHmac, randomUUID } from "node:crypto";
 import {
+  chmodSync,
   existsSync,
   mkdirSync,
   readFileSync,
@@ -30,7 +31,7 @@ import type {
   RedactionPolicy,
 } from "../shared/schema.js";
 import { DAY_MS } from "../shared/time.js";
-import { getPromptMemoryPaths } from "./paths.js";
+import { getPromptMemoryPaths, supportsPosixMode } from "./paths.js";
 import type {
   AskEventStoragePort,
   CreateImportJobInput,
@@ -174,6 +175,7 @@ export function createSqlitePromptStorage(
   db.pragma("journal_mode = WAL");
   db.pragma("foreign_keys = ON");
   applyMigrations(db);
+  restrictDatabaseFileMode(paths.databasePath);
 
   return {
     async storePrompt(input) {
@@ -880,6 +882,21 @@ function normalizeDateUpperBound(value: string): string {
 
 function isDateOnly(value: string): boolean {
   return /^\d{4}-\d{2}-\d{2}$/.test(value);
+}
+
+function restrictDatabaseFileMode(databasePath: string): void {
+  if (!supportsPosixMode()) {
+    return;
+  }
+  for (const path of [
+    databasePath,
+    `${databasePath}-wal`,
+    `${databasePath}-shm`,
+  ]) {
+    if (existsSync(path)) {
+      chmodSync(path, 0o600);
+    }
+  }
 }
 
 function escapeLike(value: string): string {

@@ -1712,6 +1712,27 @@ describe("SQLite prompt storage", () => {
     expect(summary.axis_counts.verification_criteria).toBeUndefined();
     expect(summary.average_score).toBe(30);
   });
+
+  it("creates the SQLite database file with owner-only POSIX permissions", async () => {
+    if (process.platform === "win32") {
+      return;
+    }
+    const dataDir = createTempDir();
+    initializePromptMemory({ dataDir });
+    const storage = createSqlitePromptStorage({
+      dataDir,
+      hmacSecret: "test-secret",
+    });
+    await storeClaudePrompt(storage, {
+      prompt: "Add caching",
+      receivedAt: "2026-05-01T10:00:00.000Z",
+    });
+    storage.close();
+
+    const { statSync } = await import("node:fs");
+    const dbMode = statSync(join(dataDir, "prompt-memory.sqlite")).mode & 0o777;
+    expect(dbMode).toBe(0o600);
+  });
 });
 
 type StoredPrompt = Awaited<ReturnType<typeof storeClaudePrompt>>;
