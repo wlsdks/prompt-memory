@@ -3,7 +3,7 @@ import type { FastifyInstance } from "fastify";
 
 import { normalizeClaudeCodePayload } from "../../adapters/claude-code.js";
 import { normalizeCodexPayload } from "../../adapters/codex.js";
-import { redactPrompt } from "../../redaction/redact.js";
+import { ingestPrompt } from "../../storage/ingest-flow.js";
 import type {
   NormalizedPromptEvent,
   RedactionPolicy,
@@ -134,32 +134,31 @@ async function handlePromptIngest(
     };
   }
 
-  const projectPolicy = readProjectPolicyForEvent(options.storage, event);
-  if (projectPolicy === "lookup_failed") {
-    return {
-      data: {
-        stored: false,
-        excluded: true,
-        redacted: false,
-        reason: "policy_lookup_failed",
-      },
-    };
-  }
+  const result = await ingestPrompt(options.storage, event, {
+    redactionMode: options.redactionMode,
+  });
 
-  if (projectPolicy?.capture_disabled) {
-    return {
-      data: {
-        stored: false,
-        excluded: true,
-        redacted: false,
-        reason: "project_policy",
-      },
-    };
-  }
-
-  const redaction = redactPrompt(event.prompt, options.redactionMode);
-
-  if (options.redactionMode === "reject" && redaction.is_sensitive) {
+  if (!result.stored) {
+    if (result.reason === "policy_lookup_failed") {
+      return {
+        data: {
+          stored: false,
+          excluded: true,
+          redacted: false,
+          reason: "policy_lookup_failed",
+        },
+      };
+    }
+    if (result.reason === "project_policy") {
+      return {
+        data: {
+          stored: false,
+          excluded: true,
+          redacted: false,
+          reason: "project_policy",
+        },
+      };
+    }
     return {
       data: {
         stored: false,
@@ -169,14 +168,12 @@ async function handlePromptIngest(
     };
   }
 
-  const stored = await options.storage.storePrompt({ event, redaction });
-
   return {
     data: {
-      id: stored.id,
+      id: result.id,
       stored: true,
-      duplicate: stored.duplicate,
-      redacted: redaction.is_sensitive,
+      duplicate: result.duplicate,
+      redacted: result.sensitive,
     },
   };
 }
@@ -216,24 +213,4 @@ function isExcluded(cwd: string, excludedRoots: string[]): boolean {
     const normalized = root.replace(/\/+$/, "");
     return cwd === normalized || cwd.startsWith(`${normalized}/`);
   });
-}
-
-function readProjectPolicyForEvent(
-  storage: IngestRouteOptions["storage"],
-  event: NormalizedPromptEvent,
-):
-  | ReturnType<ProjectPolicyStoragePort["getProjectPolicyForEvent"]>
-  | "lookup_failed" {
-  if (!storage.getProjectPolicyForEvent) {
-    return undefined;
-  }
-
-  try {
-    return storage.getProjectPolicyForEvent({
-      cwd: event.cwd,
-      project_root: event.project_root,
-    });
-  } catch {
-    return "lookup_failed";
-  }
 }

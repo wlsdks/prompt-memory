@@ -1,6 +1,6 @@
 import { createHash } from "node:crypto";
 
-import { redactPrompt } from "../redaction/redact.js";
+import { ingestPrompt } from "../storage/ingest-flow.js";
 import type {
   NormalizedPromptEvent,
   RedactionPolicy,
@@ -107,34 +107,31 @@ export async function executeImport(
 
     try {
       const event = toImportedPromptEvent(candidate, options, job);
-      if (
-        storage.getProjectPolicyForEvent?.({
-          cwd: event.cwd,
-          project_root: event.project_root,
-        })?.capture_disabled
-      ) {
+      const ingest = await ingestPrompt(storage, event, {
+        redactionMode: options.redactionMode,
+      });
+
+      if (!ingest.stored) {
         result.skipped_count += 1;
         storage.createImportRecord({
           job_id: job.id,
           record_key: candidate.record_key,
           record_offset: candidate.record_offset,
           status: "skipped",
-          error_code: "project_capture_disabled",
+          error_code: importSkipCode(ingest.reason),
         });
         continue;
       }
 
-      const redaction = redactPrompt(event.prompt, options.redactionMode);
-      const stored = await storage.storePrompt({ event, redaction });
       storage.createImportRecord({
         job_id: job.id,
         record_key: candidate.record_key,
         record_offset: candidate.record_offset,
-        status: stored.duplicate ? "duplicate" : "imported",
-        prompt_id: stored.id,
+        status: ingest.duplicate ? "duplicate" : "imported",
+        prompt_id: ingest.id,
       });
 
-      if (stored.duplicate) {
+      if (ingest.duplicate) {
         result.duplicate_count += 1;
       } else {
         result.imported_count += 1;
@@ -153,6 +150,14 @@ export async function executeImport(
 
   const completed = storage.completeImportJob(job.id, "completed", result);
   return completed ? toExecuteResult(completed) : result;
+}
+
+function importSkipCode(
+  reason: "project_policy" | "policy_lookup_failed" | "redaction_rejected",
+): string {
+  if (reason === "project_policy") return "project_capture_disabled";
+  if (reason === "policy_lookup_failed") return "policy_lookup_failed";
+  return "redaction_rejected";
 }
 
 function toImportedPromptEvent(
