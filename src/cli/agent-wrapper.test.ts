@@ -159,6 +159,25 @@ describe("agent wrapper", () => {
     expect(payload.prompt.changed).toBe(true);
     expect(payload.prompt.selected_prompt).toContain("Please work from");
   });
+
+  it("rejects an unsupported --pm-mode value instead of silently keeping the default", () => {
+    expect(() =>
+      parseWrapperArgs("claude", ["--pm-mode", "madeup", "fix"]),
+    ).toThrow(/Unsupported --pm-mode: madeup\. Use ask, auto, or off\./);
+    expect(() =>
+      parseWrapperArgs("claude", ["--pm-mode", "asks", "fix"]),
+    ).toThrow(/Unsupported --pm-mode: asks/);
+    // Valid modes still parse.
+    expect(
+      parseWrapperArgs("claude", ["--pm-mode", "ask", "fix"]).wrapper.mode,
+    ).toBe("ask");
+    expect(
+      parseWrapperArgs("claude", ["--pm-mode", "auto", "fix"]).wrapper.mode,
+    ).toBe("auto");
+    expect(
+      parseWrapperArgs("claude", ["--pm-mode", "off", "fix"]).wrapper.mode,
+    ).toBe("off");
+  });
 });
 
 class MemoryWritable extends Writable {

@@ -337,7 +337,13 @@ function applyWrapperOption(
   value: string,
 ): void {
   if (key === "--pm-mode") {
-    wrapper.mode = parseWrapperMode(value) ?? wrapper.mode;
+    const parsedMode = parseWrapperMode(value);
+    if (parsedMode === undefined) {
+      throw new Error(
+        `Unsupported --pm-mode: ${value}. Use ask, auto, or off.`,
+      );
+    }
+    wrapper.mode = parsedMode;
   } else if (key === "--pm-min-score") {
     wrapper.minScore = parseMinScore(value);
   } else if (key === "--pm-language") {
