@@ -11,6 +11,12 @@ import { spawnSync } from "node:child_process";
 import type { Command } from "commander";
 
 import { resolveCliEntryPath } from "../entry-path.js";
+import {
+  formatServiceCommandJson,
+  formatServiceCommandPlain,
+  formatServiceInstallJson,
+  formatServiceInstallPlain,
+} from "./service-format.js";
 
 export type ServiceActionOptions = {
   dataDir?: string;
@@ -49,24 +55,36 @@ export function registerServiceCommand(program: Command): void {
     .option("--plist-path <path>", "Override macOS LaunchAgent plist path.")
     .option("--dry-run", "Print intended service change without writing.")
     .option("--no-start", "Install service without starting it now.")
-    .action((options: ServiceActionOptions & { start?: boolean }) => {
-      const result = installService({
-        ...options,
-        start: options.start ?? true,
-      });
-      console.log(formatServiceInstallResult(result));
-      if (!result.supported || result.startError) {
-        process.exitCode = 1;
-      }
-    });
+    .option("--json", "Print machine-readable JSON instead of plain text.")
+    .action(
+      (options: ServiceActionOptions & { start?: boolean; json?: boolean }) => {
+        const result = installService({
+          ...options,
+          start: options.start ?? true,
+        });
+        console.log(
+          options.json
+            ? formatServiceInstallJson(result)
+            : formatServiceInstallPlain(result),
+        );
+        if (!result.supported || result.startError) {
+          process.exitCode = 1;
+        }
+      },
+    );
 
   service
     .command("start")
     .description("Start the prompt-memory service on supported platforms.")
     .option("--plist-path <path>", "Override macOS LaunchAgent plist path.")
-    .action((options: ServiceActionOptions) => {
+    .option("--json", "Print machine-readable JSON instead of plain text.")
+    .action((options: ServiceActionOptions & { json?: boolean }) => {
       const result = startService(options);
-      console.log(JSON.stringify(result, null, 2));
+      console.log(
+        options.json
+          ? formatServiceCommandJson(result)
+          : formatServiceCommandPlain("start", result),
+      );
       if (!result.ok) {
         process.exitCode = 1;
       }
@@ -76,9 +94,14 @@ export function registerServiceCommand(program: Command): void {
     .command("stop")
     .description("Stop the prompt-memory service on supported platforms.")
     .option("--plist-path <path>", "Override macOS LaunchAgent plist path.")
-    .action((options: ServiceActionOptions) => {
+    .option("--json", "Print machine-readable JSON instead of plain text.")
+    .action((options: ServiceActionOptions & { json?: boolean }) => {
       const result = stopService(options);
-      console.log(JSON.stringify(result, null, 2));
+      console.log(
+        options.json
+          ? formatServiceCommandJson(result)
+          : formatServiceCommandPlain("stop", result),
+      );
       if (!result.ok) {
         process.exitCode = 1;
       }
@@ -87,9 +110,14 @@ export function registerServiceCommand(program: Command): void {
   service
     .command("status")
     .description("Check the prompt-memory service status.")
-    .action((options: ServiceActionOptions) => {
+    .option("--json", "Print machine-readable JSON instead of plain text.")
+    .action((options: ServiceActionOptions & { json?: boolean }) => {
       const result = serviceStatus(options);
-      console.log(JSON.stringify(result, null, 2));
+      console.log(
+        options.json
+          ? formatServiceCommandJson(result)
+          : formatServiceCommandPlain("status", result),
+      );
       if (!result.ok) {
         process.exitCode = 1;
       }
@@ -273,22 +301,6 @@ ${args.map((arg) => `    <string>${escapeXml(arg)}</string>`).join("\n")}
 </dict>
 </plist>
 `;
-}
-
-function formatServiceInstallResult(result: ServiceInstallResult): string {
-  return JSON.stringify(
-    {
-      supported: result.supported,
-      changed: result.changed,
-      dry_run: result.dryRun,
-      plist_path: result.plistPath,
-      backup_path: result.backupPath,
-      started: result.started,
-      start_error: result.startError,
-    },
-    null,
-    2,
-  );
 }
 
 function cliEntryPath(): string {
