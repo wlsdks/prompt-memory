@@ -49,6 +49,6 @@ function createIdempotencyKey(payload: CodexUserPromptSubmitPayload): string {
     payload.turn_id ? normalizeField(payload.turn_id) : "",
     payload.transcript_path ?? payload.cwd,
     payload.hook_event_name,
-    payload.prompt.length.toString(),
+    payload.prompt,
   ]);
 }
