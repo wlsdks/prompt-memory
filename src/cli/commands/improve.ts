@@ -103,12 +103,51 @@ function readPromptInput(options: ImproveCliOptions): string {
 }
 
 function formatImprovement(result: PromptImprovement): string {
-  return [
-    result.summary,
-    "",
-    result.improved_prompt,
-    "",
-    "Safety",
-    ...result.safety_notes.map((note) => `- ${note}`),
-  ].join("\n");
+  const language = inferLanguageFromQuestions(result);
+  const lines: string[] = [result.summary, "", result.improved_prompt];
+
+  if (result.clarifying_questions.length > 0) {
+    lines.push(
+      "",
+      language === "ko" ? "확인 질문" : "Clarifying questions",
+      ...result.clarifying_questions.map(
+        (question, index) =>
+          `${index + 1}. [${SECTION_HEADERS[language][question.axis]}] ${question.ask}`,
+      ),
+    );
+  }
+
+  lines.push("", language === "ko" ? "안전 메모" : "Safety");
+  for (const note of result.safety_notes) {
+    lines.push(`- ${note}`);
+  }
+
+  return lines.join("\n");
+}
+
+const SECTION_HEADERS: Record<
+  "en" | "ko",
+  Record<PromptImprovement["clarifying_questions"][number]["axis"], string>
+> = {
+  en: {
+    goal_clarity: "Goal",
+    background_context: "Context",
+    scope_limits: "Scope",
+    output_format: "Output",
+    verification_criteria: "Verification",
+  },
+  ko: {
+    goal_clarity: "목표",
+    background_context: "맥락",
+    scope_limits: "범위",
+    output_format: "출력",
+    verification_criteria: "검증",
+  },
+};
+
+function inferLanguageFromQuestions(result: PromptImprovement): "en" | "ko" {
+  for (const question of result.clarifying_questions) {
+    if (/[가-힣]/.test(question.ask)) return "ko";
+  }
+  return /[가-힣]/.test(result.improved_prompt) ? "ko" : "en";
 }

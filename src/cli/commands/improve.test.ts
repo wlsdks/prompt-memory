@@ -58,6 +58,33 @@ describe("improve CLI", () => {
     );
   });
 
+  it("renders clarifying questions in the human output for weak prompts (ASK-FIRST)", () => {
+    const output = improvePromptForCli({ text: "Make this better" });
+
+    // Without this, ASK-FIRST is invisible to terminal users — the JSON
+    // path always carried clarifying_questions, but the human formatter
+    // dropped them.
+    expect(output).toMatch(/Clarifying questions/i);
+    expect(output).toMatch(/^\s*1\./m);
+  });
+
+  it("renders Korean clarifying questions for Korean prompts in human output", () => {
+    const output = improvePromptForCli({ text: "더 잘 만들어주세요" });
+
+    expect(output).toContain("확인");
+    expect(output).toMatch(/[가-힣]/);
+    expect(output).toMatch(/^\s*1\./m);
+  });
+
+  it("omits the clarifying-questions section when none are needed", () => {
+    const output = improvePromptForCli({
+      text: "Because the export review is unclear, inspect src/web/src/App.tsx only, run pnpm test, and return a Markdown summary.",
+    });
+
+    expect(output).not.toMatch(/Clarifying questions/i);
+    expect(output).not.toMatch(/명확화 질문|확인 질문/);
+  });
+
   it("prints a privacy-safe improvement for the latest stored prompt", async () => {
     const dataDir = createTempDir();
     const init = initializePromptMemory({ dataDir });
