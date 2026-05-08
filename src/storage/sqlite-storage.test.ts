@@ -1061,6 +1061,17 @@ describe("SQLite prompt storage", () => {
         .searchPrompts("Refactor", { qualityGap: "verification_criteria" })
         .items.map((item) => item.id),
     ).toEqual([]);
+
+    // Regression: a quality-gap filter must check key + status inside the
+    // same checklist object. The previous LIKE pattern could match the key
+    // from one entry against the status from another, so a prompt scoring
+    // good on goal_clarity but missing on output_format would still appear
+    // when filtered by goal_clarity.
+    const goalClarityIds = storage
+      .listPrompts({ qualityGap: "goal_clarity" })
+      .items.map((item) => item.id);
+    expect(goalClarityIds).not.toContain(saved.id);
+    expect(goalClarityIds).not.toContain(copied.id);
   });
 
   it("stores project policies with raw-free audit events and browser-safe project summaries", async () => {
