@@ -7,6 +7,7 @@ import {
   parseExportPreset,
 } from "../../exporter/anonymized.js";
 import { createSqlitePromptStorage } from "../../storage/sqlite.js";
+import { UserError } from "../user-error.js";
 
 type ExportCliOptions = {
   anonymized?: boolean;
@@ -38,13 +39,13 @@ export function registerExportCommand(program: Command): void {
 
 export function exportForCli(options: ExportCliOptions): string {
   if (!options.anonymized) {
-    throw new Error(
+    throw new UserError(
       "--anonymized is required. Try: prompt-memory export --anonymized --preview",
     );
   }
 
   if (options.preview === Boolean(options.job)) {
-    throw new Error("Use exactly one of --preview or --job <id>.");
+    throw new UserError("Use exactly one of --preview or --job <id>.");
   }
 
   return withExportStorage(options.dataDir, (storage, hmacSecret) => {

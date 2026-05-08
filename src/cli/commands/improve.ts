@@ -9,6 +9,7 @@ import {
   improvePromptTool,
   type ImprovePromptToolResult,
 } from "../../mcp/score-tool.js";
+import { UserError } from "../user-error.js";
 
 type ImproveCliOptions = {
   dataDir?: string;
@@ -96,7 +97,7 @@ function readPromptInput(options: ImproveCliOptions): string {
     return readFileSync(0, "utf8");
   }
 
-  throw new Error(
+  throw new UserError(
     '--text or --stdin is required for prompt improvement. Try: prompt-memory improve --text "add caching to fetchUser"',
   );
 }

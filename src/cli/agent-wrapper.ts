@@ -6,6 +6,7 @@ import { stdin as defaultStdin, stdout as defaultStdout } from "node:process";
 import { analyzePrompt } from "../analysis/analyze.js";
 import { improvePrompt } from "../analysis/improve.js";
 import { clampScore } from "../shared/clamp-score.js";
+import { UserError } from "./user-error.js";
 
 export type AgentWrapperTool = "claude" | "codex";
 export type AgentWrapperMode = "ask" | "auto" | "off";
@@ -339,7 +340,7 @@ function applyWrapperOption(
   if (key === "--pm-mode") {
     const parsedMode = parseWrapperMode(value);
     if (parsedMode === undefined) {
-      throw new Error(
+      throw new UserError(
         `Unsupported --pm-mode: ${value}. Use ask, auto, or off.`,
       );
     }

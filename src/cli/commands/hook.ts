@@ -10,6 +10,7 @@ import {
   parsePromptRewriteGuardMode,
   type PromptRewriteGuardMode,
 } from "../../hooks/rewrite-guard.js";
+import { UserError } from "../user-error.js";
 import {
   defaultClaudeSettingsPath,
   defaultCodexHooksPath,
@@ -47,7 +48,7 @@ export function registerHookCommand(program: Command): void {
     .option("--open-web", "Open the local web UI for this session.")
     .action(async (tool: string, options: HookCliOptions) => {
       if (tool !== "claude-code" && tool !== "codex") {
-        throw new Error(
+        throw new UserError(
           `Unsupported SessionStart hook target: ${tool}. Use claude-code or codex.`,
         );
       }

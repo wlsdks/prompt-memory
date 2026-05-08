@@ -5,6 +5,7 @@ import {
   mcpRegistrationCommand,
   type AgentTool,
 } from "../agent-access.js";
+import { UserError } from "../user-error.js";
 
 export type StartOptions = {
   tool?: string;
@@ -132,5 +133,5 @@ function resolveTools(value: string | undefined): AgentTool[] {
   if (value === "claude-code" || value === "codex") {
     return [value];
   }
-  throw new Error(`Unsupported tool: ${value}. Use claude-code or codex.`);
+  throw new UserError(`Unsupported tool: ${value}. Use claude-code or codex.`);
 }
