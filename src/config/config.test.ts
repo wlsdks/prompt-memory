@@ -1,4 +1,10 @@
-import { mkdirSync, rmSync, statSync } from "node:fs";
+import {
+  mkdirSync,
+  readFileSync,
+  rmSync,
+  statSync,
+  writeFileSync,
+} from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { randomUUID } from "node:crypto";
@@ -100,6 +106,27 @@ describe("initializePromptMemory", () => {
 
     expect(result.config.experimental_rules).toEqual([]);
     expect(loadPromptMemoryConfig(dataDir).experimental_rules).toEqual([]);
+  });
+
+  it("loads excluded_project_roots from config.json so server enforces them", () => {
+    const dataDir = createTempDir();
+    initializePromptMemory({ dataDir });
+
+    // Default
+    expect(loadPromptMemoryConfig(dataDir).excluded_project_roots).toEqual([]);
+
+    // User edits config.json directly to add a global opt-out
+    const configPath = join(dataDir, "config.json");
+    const config = JSON.parse(readFileSync(configPath, "utf8")) as Record<
+      string,
+      unknown
+    >;
+    config.excluded_project_roots = ["/Users/example/private-project"];
+    writeFileSync(configPath, JSON.stringify(config, null, 2));
+
+    expect(loadPromptMemoryConfig(dataDir).excluded_project_roots).toEqual([
+      "/Users/example/private-project",
+    ]);
   });
 
   it("uses owner-only permissions on POSIX systems", () => {

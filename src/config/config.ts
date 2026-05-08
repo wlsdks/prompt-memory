@@ -63,6 +63,7 @@ export const PromptMemoryConfigSchema = z.object({
   server: ServerConfigSchema,
   auto_judge: AutoJudgeSettingsSchema.default(DEFAULT_AUTO_JUDGE_SETTINGS),
   experimental_rules: ExperimentalRulesSchema,
+  excluded_project_roots: z.array(z.string()).default([]),
 });
 
 export const HookAuthSchema = z.object({
