@@ -4,6 +4,7 @@ import { createInterface } from "node:readline/promises";
 import { stdin as defaultStdin, stdout as defaultStdout } from "node:process";
 
 import { analyzePrompt } from "../analysis/analyze.js";
+import { DEFAULT_MIN_SCORE } from "../analysis/coaching-thresholds.js";
 import { improvePrompt } from "../analysis/improve.js";
 import { clampScore } from "../shared/clamp-score.js";
 
@@ -53,7 +54,6 @@ type ParsedWrapperArgs = {
   agentArgs: string[];
 };
 
-const DEFAULT_MIN_SCORE = 80;
 const CLAUDE_COMMANDS = new Set([
   "agents",
   "auth",

@@ -1,8 +1,10 @@
 import { spawnSync } from "node:child_process";
 import { platform } from "node:os";
 
-import { analyzePrompt } from "../analysis/analyze.js";
-import { detectPromptLanguage, improvePrompt } from "../analysis/improve.js";
+import {
+  DEFAULT_MIN_SCORE,
+  evaluatePromptCoaching,
+} from "../analysis/coaching-thresholds.js";
 import { clampScore } from "../shared/clamp-score.js";
 import { HOOK_COPY } from "./rewrite-guard-copy.js";
 
@@ -106,8 +108,6 @@ export function isAcknowledgment(prompt: string): boolean {
   return ACK_PATTERNS.some((pattern) => pattern.test(trimmed));
 }
 
-const DEFAULT_MIN_SCORE = 80;
-
 export function createPromptRewriteGuardOutput(
   payload: unknown,
   options: PromptRewriteGuardOptions = {},
@@ -118,23 +118,19 @@ export function createPromptRewriteGuardOutput(
   }
 
   const prompt = readSubmittedPrompt(payload);
-  if (!prompt.trim()) {
-    return undefined;
-  }
-
-  const createdAt = (options.now ?? new Date()).toISOString();
-  const analysis = analyzePrompt({ prompt, createdAt });
   const minScore = normalizeMinScore(options.minScore);
-  if (analysis.quality_score.value >= minScore) {
+  const evaluation = evaluatePromptCoaching(prompt, {
+    minScore,
+    language: options.language,
+    now: options.now,
+  });
+
+  if (!evaluation.needed) {
     return undefined;
   }
 
-  const language = options.language ?? detectPromptLanguage(prompt);
-  const improvement = improvePrompt({
-    prompt,
-    createdAt,
-    language,
-  });
+  const { analysis, improvement, language } = evaluation;
+  const createdAt = (options.now ?? new Date()).toISOString();
   const copy = HOOK_COPY[language];
 
   if (mode === "ask") {
