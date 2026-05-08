@@ -106,6 +106,19 @@ export function createServer(options: CreateServerOptions): FastifyInstance {
       return;
     }
 
+    if (hasStatusCode(error, 400)) {
+      sendProblem(
+        reply,
+        problem(
+          400,
+          "Bad Request",
+          "The request body could not be parsed.",
+          request.url,
+        ).problem,
+      );
+      return;
+    }
+
     sendProblem(
       reply,
       problem(

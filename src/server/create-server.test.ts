@@ -613,6 +613,30 @@ describe("createServer P2 ingest boundary", () => {
     expect(response.statusCode).toBe(401);
   });
 
+  it("returns 400 (not 500) when the JSON body is malformed", async () => {
+    const server = createTestServer();
+
+    const response = await server.inject({
+      method: "POST",
+      url: "/api/v1/ingest/claude-code",
+      headers: {
+        host: "127.0.0.1:17373",
+        authorization: "Bearer ingest-token",
+        "content-type": "application/json",
+      },
+      payload: "this is not json",
+    });
+
+    expect(response.statusCode).toBe(400);
+    expect(response.headers["content-type"]).toContain(
+      "application/problem+json",
+    );
+    expect(response.json()).toMatchObject({
+      status: 400,
+      title: "Bad Request",
+    });
+  });
+
   it("normalizes, redacts, and stores a valid Claude Code fixture", async () => {
     const storage = createMemoryStorage();
     const server = createTestServer({ storage });
