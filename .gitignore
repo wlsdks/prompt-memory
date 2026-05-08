@@ -43,6 +43,9 @@ playwright-report/
 test-results/
 prompt-memory-*.png
 
+# Claude Code session-only state (cron lock, scratch)
+.claude/scheduled_tasks*
+
 # OS and editor files
 .DS_Store
 Thumbs.db
