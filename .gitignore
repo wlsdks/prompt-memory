@@ -46,6 +46,10 @@ prompt-memory-*.png
 # Claude Code session-only state (cron lock, scratch)
 .claude/scheduled_tasks*
 
+# Audit screenshots (the markdown reports under .improvements/ stay tracked,
+# but per-run screenshots are binary scratch and should not bloat history)
+.improvements/**/*.png
+
 # OS and editor files
 .DS_Store
 Thumbs.db
