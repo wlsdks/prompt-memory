@@ -132,6 +132,67 @@ describe("coach CLI", () => {
     expect(() => coachPromptForCli({ dataDir, language: "fr" })).not.toThrow();
   });
 
+  it("honors --no-archive --no-improvement --no-latest-score --no-project-rules", async () => {
+    const dataDir = createTempDir();
+    const init = initializePromptMemory({ dataDir });
+    const storage = createSqlitePromptStorage({
+      dataDir,
+      hmacSecret: init.hookAuth.web_session_secret,
+      now: () => new Date("2026-05-08T00:00:00.000Z"),
+    });
+    const event = normalizeClaudeCodePayload(
+      {
+        session_id: "no-flags",
+        transcript_path: "/Users/example/.claude/session.jsonl",
+        cwd: "/Users/example/proj",
+        permission_mode: "default",
+        hook_event_name: "UserPromptSubmit",
+        prompt: "Add caching layer to fetchUser",
+      },
+      new Date("2026-05-08T00:00:00.000Z"),
+    );
+    await storage.storePrompt({
+      event,
+      redaction: redactPrompt(event.prompt, "mask"),
+    });
+    storage.close();
+
+    const program = createProgram();
+    program.exitOverride();
+    let captured = "";
+    const origLog = console.log;
+    console.log = (...args: unknown[]) => {
+      captured += args.join(" ") + "\n";
+    };
+    try {
+      await program.parseAsync(
+        [
+          "coach",
+          "--data-dir",
+          dataDir,
+          "--json",
+          "--no-archive",
+          "--no-improvement",
+          "--no-latest-score",
+          "--no-project-rules",
+        ],
+        { from: "user" },
+      );
+    } finally {
+      console.log = origLog;
+    }
+    const parsed = JSON.parse(captured) as {
+      archive?: unknown;
+      improvement?: unknown;
+      latest_score?: unknown;
+      project_rules?: unknown;
+    };
+    expect(parsed.archive).toBeUndefined();
+    expect(parsed.improvement).toBeUndefined();
+    expect(parsed.latest_score).toBeUndefined();
+    expect(parsed.project_rules).toBeUndefined();
+  });
+
   it("keeps empty archive guidance aligned with the coach-first activation path", () => {
     const dataDir = join(tmpdir(), `prompt-memory-empty-coach-${randomUUID()}`);
     tempDirs.push(dataDir);

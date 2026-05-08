@@ -8,10 +8,10 @@ import {
 type CoachCliOptions = {
   dataDir?: string;
   json?: boolean;
-  noArchive?: boolean;
-  noImprovement?: boolean;
-  noProjectRules?: boolean;
-  noLatestScore?: boolean;
+  archive?: boolean;
+  improvement?: boolean;
+  projectRules?: boolean;
+  latestScore?: boolean;
   limit?: string | number;
   lowScoreLimit?: string | number;
   language?: string;
@@ -44,10 +44,10 @@ export function registerCoachCommand(program: Command): void {
 export function coachPromptForCli(options: CoachCliOptions = {}): string {
   const result = coachPromptTool(
     {
-      include_latest_score: options.noLatestScore !== true,
-      include_improvement: options.noImprovement !== true,
-      include_archive: options.noArchive !== true,
-      include_project_rules: options.noProjectRules !== true,
+      include_latest_score: options.latestScore !== false,
+      include_improvement: options.improvement !== false,
+      include_archive: options.archive !== false,
+      include_project_rules: options.projectRules !== false,
       max_prompts: parseCount(options.limit),
       low_score_limit: parseCount(options.lowScoreLimit),
       language: parseLanguage(options.language),
