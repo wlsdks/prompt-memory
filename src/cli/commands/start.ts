@@ -123,10 +123,14 @@ export function formatStartGuide(guide: StartGuide): string {
   return lines.join("\n");
 }
 
+const SUPPORTED_TOOLS: AgentTool[] = ["claude-code", "codex"];
+
 function resolveTools(value: string | undefined): AgentTool[] {
+  if (value === undefined) {
+    return [...SUPPORTED_TOOLS];
+  }
   if (value === "claude-code" || value === "codex") {
     return [value];
   }
-
-  return ["claude-code", "codex"];
+  throw new Error(`Unsupported tool: ${value}. Use claude-code or codex.`);
 }

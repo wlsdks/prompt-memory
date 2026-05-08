@@ -38,6 +38,20 @@ describe("start guide", () => {
     expect(output).not.toContain("claude mcp add");
   });
 
+  it("rejects an unsupported --tool value instead of silently falling back", () => {
+    expect(() => buildStartGuide({ tool: "madeup" })).toThrow(
+      /Unsupported tool: madeup\. Use claude-code or codex\./,
+    );
+    expect(() => buildStartGuide({ tool: "calude-code" })).toThrow(
+      /Unsupported tool: calude-code/,
+    );
+    expect(buildStartGuide({}).tools).toEqual(["claude-code", "codex"]);
+    expect(buildStartGuide({ tool: "claude-code" }).tools).toEqual([
+      "claude-code",
+    ]);
+    expect(buildStartGuide({ tool: "codex" }).tools).toEqual(["codex"]);
+  });
+
   it("can include the opt-in web opener in the first setup command", () => {
     const guide = buildStartGuide({ openWeb: true });
     const output = formatStartGuide(guide);
