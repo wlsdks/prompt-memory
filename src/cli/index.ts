@@ -22,6 +22,7 @@ import { registerSetupCommand } from "./commands/setup.js";
 import { registerStartCommand } from "./commands/start.js";
 import { registerStatusLineCommand } from "./commands/statusline.js";
 import { VERSION } from "../shared/version.js";
+import { isUserError } from "./user-error.js";
 
 export function createProgram(): Command {
   const program = new Command();
@@ -52,14 +53,33 @@ export function createProgram(): Command {
   return program;
 }
 
-function runCli(argv: string[]): void {
-  const program = createProgram();
+export type RunCliOptions = {
+  stderr?: NodeJS.WritableStream;
+  program?: Command;
+};
+
+export async function runCli(
+  argv: string[],
+  options: RunCliOptions = {},
+): Promise<number> {
+  const program = options.program ?? createProgram();
+  const stderr = options.stderr ?? process.stderr;
 
   if (argv.length <= 2) {
     program.help();
+    return 0;
   }
 
-  program.parse(argv);
+  try {
+    await program.parseAsync(argv);
+    return 0;
+  } catch (error) {
+    if (isUserError(error)) {
+      stderr.write(`Error: ${error.message}\n`);
+      return 1;
+    }
+    throw error;
+  }
 }
 
 export function isCliEntryPoint(
@@ -80,5 +100,13 @@ export function isCliEntryPoint(
 }
 
 if (isCliEntryPoint(import.meta.url)) {
-  runCli(process.argv);
+  runCli(process.argv).then(
+    (code) => {
+      process.exitCode = code;
+    },
+    (error) => {
+      console.error(error);
+      process.exitCode = 1;
+    },
+  );
 }

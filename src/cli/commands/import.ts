@@ -10,6 +10,7 @@ import {
 import { executeImport } from "../../importer/execute.js";
 import { createSqlitePromptStorage } from "../../storage/sqlite.js";
 import type { ImportJob } from "../../storage/ports.js";
+import { UserError } from "../user-error.js";
 
 type ImportCliOptions = {
   dataDir?: string;
@@ -74,12 +75,12 @@ export function importForCli(
 
 function importForCliSync(options: ImportCliOptions): string {
   if (!options.dryRun) {
-    throw new Error(
+    throw new UserError(
       "--dry-run is required for import preview. Try: prompt-memory import --dry-run --file <transcript.jsonl> --source <manual-jsonl|claude-transcript-best-effort|codex-transcript-best-effort>",
     );
   }
   if (!options.file) {
-    throw new Error(
+    throw new UserError(
       "--file is required for import dry-run. Pass the JSONL transcript path with --file <path>.",
     );
   }
@@ -118,7 +119,7 @@ function importForCliSync(options: ImportCliOptions): string {
 
 async function importExecuteForCli(options: ImportCliOptions): Promise<string> {
   if (!options.file) {
-    throw new Error(
+    throw new UserError(
       "--file is required for import execution. Pass the same transcript path used for the dry-run.",
     );
   }
@@ -165,7 +166,7 @@ export function showImportJobForCli(
     const job = storage.getImportJob(id);
 
     if (!job) {
-      throw new Error(
+      throw new UserError(
         `Import job not found: ${id}. Run prompt-memory import --dry-run --save-job to create a new one.`,
       );
     }

@@ -1,11 +1,13 @@
 import { mkdirSync, rmSync, symlinkSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
+import { Writable } from "node:stream";
 import { pathToFileURL } from "node:url";
 import { randomUUID } from "node:crypto";
 import { afterEach, describe, expect, it } from "vitest";
 
-import { createProgram, isCliEntryPoint } from "./index.js";
+import { createProgram, isCliEntryPoint, runCli } from "./index.js";
+import { UserError } from "./user-error.js";
 
 const tempDirs: string[] = [];
 
@@ -59,9 +61,76 @@ describe("CLI command surface", () => {
   });
 });
 
+describe("runCli error handling", () => {
+  it("renders UserError as a friendly stderr message and exits with code 1", async () => {
+    const stderr = createCaptureStream();
+
+    const exitCode = await runCli(
+      ["node", "prompt-memory", "start", "--tool", "made-up-tool"],
+      { stderr: stderr.stream },
+    );
+
+    expect(exitCode).toBe(1);
+    expect(stderr.text).toContain("Unsupported tool: made-up-tool");
+    expect(stderr.text).not.toMatch(/\n\s+at\s/);
+  });
+
+  it("rethrows non-UserError so programmer bugs keep their stack trace", async () => {
+    const stderr = createCaptureStream();
+    const program = createProgram();
+    program.command("__throws-plain").action(() => {
+      throw new Error("plain bug");
+    });
+
+    await expect(
+      runCli(["node", "prompt-memory", "__throws-plain"], {
+        stderr: stderr.stream,
+        program,
+      }),
+    ).rejects.toThrow("plain bug");
+    expect(stderr.text).toBe("");
+  });
+
+  it("does not redact UserError thrown from a custom command", async () => {
+    const stderr = createCaptureStream();
+    const program = createProgram();
+    program.command("__throws-user").action(() => {
+      throw new UserError(
+        "missing --target. Try: prompt-memory __throws-user --target X",
+      );
+    });
+
+    const exitCode = await runCli(["node", "prompt-memory", "__throws-user"], {
+      stderr: stderr.stream,
+      program,
+    });
+
+    expect(exitCode).toBe(1);
+    expect(stderr.text).toContain(
+      "missing --target. Try: prompt-memory __throws-user --target X",
+    );
+  });
+});
+
 function createTempDir(): string {
   const dir = join(tmpdir(), `prompt-memory-cli-entry-${randomUUID()}`);
   mkdirSync(dir, { recursive: true });
   tempDirs.push(dir);
   return dir;
+}
+
+function createCaptureStream(): { stream: Writable; readonly text: string } {
+  let captured = "";
+  const stream = new Writable({
+    write(chunk, _encoding, callback) {
+      captured += chunk.toString();
+      callback();
+    },
+  });
+  return {
+    stream,
+    get text() {
+      return captured;
+    },
+  };
 }

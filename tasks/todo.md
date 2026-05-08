@@ -2292,3 +2292,64 @@
 - 직접 전달된 prompt text는 저장하지 않고, 결과에도 prompt body를 반환하지 않는다.
 - 저장 prompt scoring은 기존 SQLite analysis를 읽고 score/checklist metadata만 반환한다.
 - Claude Code는 `claude mcp add --transport stdio prompt-memory -- prompt-memory mcp`, Codex는 `codex mcp add prompt-memory -- prompt-memory mcp`로 연결하도록 문서화했다.
+
+## 2026-05-08 Multi-Track Improvement Pass
+
+목적: 한 세션 안에서 메모/도큐먼트에 누적된 PR 후보 + 아키텍처 deepening 후보 + 신규 기능 brainstorming + UI 패트롤 셋업을 순차 진행한다.
+
+### Track A — 아키텍처 Deepening 탐색 (read-only) ✅
+
+- [x] `improve-codebase-architecture` 스킬로 후보 8개 도출, 5개 1차 통과, 4개 사용자 선택, depth-check로 우선순위 정리.
+- 채택된 후보: A2 ingest pipeline 추출, A3 coaching decision 모듈, A1 MCP per-tool ADR, A4 capability registry ADR.
+- 보류: 후보 5(App.tsx) — Track D 후보. 후보 6(hook design doc) — 문서 작업으로 분리. 후보 7(project-label) — ARCHITECTURE.md에 의도된 분리 명시, 보류. 후보 8(rebuild+migration) — 검증 부족, Track D 검증 후보.
+
+### Track B — CLI UserError + program-level catch (PR 후보)
+
+- [ ] 실패 테스트: 잘못된 옵션/입력 시 raw stack trace가 stderr에 노출되지 않는다 + non-zero exit.
+- [ ] `src/shared/errors.ts` (또는 `src/cli/user-error.ts`) — `UserError` 클래스 + 표준 메시지 포맷.
+- [ ] CLI commands에서 invalid 입력은 `throw new UserError(...)`로 통일.
+- [ ] `src/cli/index.ts`에 program-level catch — UserError는 friendly + exit 1, 그 외는 기존 동작.
+- [ ] 영향받는 명령 회귀 테스트.
+- [ ] 검증 게이트(`pnpm test/lint/format/build/pack:dry-run`).
+- [ ] 별도 브랜치 + PR.
+
+### Track C — service CLI UX 개선 (PR 후보)
+
+- [ ] launchctl 실패 시 raw stderr 노출 → friendly mapping (no permission, already loaded, no plist).
+- [ ] JSON-only 출력 → plain text formatter + `--json` 플래그로 자동화 옵션 보존.
+- [ ] 회귀 테스트.
+- [ ] 검증 게이트, 별도 브랜치 + PR.
+
+### Track A2 — Ingest pipeline 순수 함수 추출 (PR 후보)
+
+- [ ] 실패 테스트: importer 경로에서도 max prompt length 초과 시 store 차단.
+- [ ] `src/storage/ingest-flow.ts` — `ingestPrompt(event, options) → result` 순수 함수 추출.
+- [ ] `server/routes/ingest.ts` + `importer/execute.ts` 모두 동일 함수 호출.
+- [ ] 회귀 테스트, 검증 게이트, 별도 브랜치 + PR.
+
+### Track A3 — Coaching decision 모듈 (PR 후보)
+
+- [ ] 실패 테스트: rewrite-guard와 agent-wrapper가 같은 입력에 같은 (action, copy, score) 반환.
+- [ ] `src/analysis/coaching-decision.ts` — `decideCoachingAction(prompt, context) → CoachingAction`.
+- [ ] DEFAULT_MIN_SCORE, ask-mode trigger 조건, language detection을 한 곳에 모은다.
+- [ ] rewrite-guard, agent-wrapper, MCP coach handler 모두 본 모듈 호출.
+- [ ] 회귀 테스트, 검증 게이트, 별도 브랜치 + PR.
+
+### Track A1 — MCP per-tool 마이그레이션 ADR
+
+- [ ] `docs/adr/0001-mcp-per-tool-modules.md` — 현재 split 양식과 신규 per-tool 양식 공존, 통일 vs 유지 결정.
+- [ ] 실제 마이그레이션은 ADR 합의 후 별도 PR.
+
+### Track A4 — Storage capability registry ADR
+
+- [ ] `docs/adr/0002-storage-capability-registry.md` — optional 메서드 가드 분산 문제, registry vs 현행 유지 결정.
+
+### Track D — 신규 기능 brainstorming
+
+- [ ] PRD_PHASE2 + Track A 결과 + Phase 2 backlog를 input으로 다음 우선순위 토론.
+- [ ] 결과는 PRD 갱신 또는 후속 PR 후보로.
+
+### Track E — UI 패트롤 셋업
+
+- [ ] `ui-patrol` 스킬로 cron 기반 디자인 자동 점검 셋업.
+- [ ] 운영 후 결과 확인.

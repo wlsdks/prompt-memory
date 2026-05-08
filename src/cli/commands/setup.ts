@@ -20,6 +20,7 @@ import {
   mcpRegistrationCommand,
   mcpRegistrationSpec,
 } from "../agent-access.js";
+import { UserError } from "../user-error.js";
 
 export type SetupTool = "claude-code" | "codex";
 export type SetupProfile = "capture" | "coach";
@@ -394,7 +395,7 @@ function parseSetupProfile(value: string | undefined): SetupProfile {
   if ((SETUP_PROFILES as readonly string[]).includes(value)) {
     return value as SetupProfile;
   }
-  throw new Error(
+  throw new UserError(
     `Unsupported setup profile: ${value}. Valid profiles: ${SETUP_PROFILES.join(", ")}.`,
   );
 }
@@ -455,7 +456,7 @@ function parseRewriteGuardMode(
   if ((REWRITE_GUARD_MODES as readonly string[]).includes(value)) {
     return value as PromptRewriteGuardMode;
   }
-  throw new Error(
+  throw new UserError(
     `Unsupported rewrite-guard mode: ${value}. Valid modes: ${REWRITE_GUARD_MODES.join(", ")}.`,
   );
 }

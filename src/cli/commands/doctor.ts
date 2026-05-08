@@ -21,6 +21,7 @@ import {
   mcpRegistrationCommand,
   type AgentTool,
 } from "../agent-access.js";
+import { UserError } from "../user-error.js";
 
 export type DoctorCommandRunner = (
   command: string,
@@ -118,7 +119,7 @@ export function registerDoctorCommand(program: Command): void {
         }
 
         if (tool !== "claude-code") {
-          throw new Error(
+          throw new UserError(
             `Unsupported doctor target: ${tool}. Use claude-code or codex.`,
           );
         }

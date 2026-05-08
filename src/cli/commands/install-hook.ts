@@ -14,6 +14,7 @@ import {
   initializePromptMemory,
   revokeIngestToken,
 } from "../../config/config.js";
+import { UserError } from "../user-error.js";
 
 export type ClaudeSettings = {
   hooks?: Record<string, Array<ClaudeHookGroup>>;
@@ -124,7 +125,7 @@ export function registerInstallHookCommands(program: Command): void {
       }
 
       if (tool !== "claude-code") {
-        throw new Error(
+        throw new UserError(
           `Unsupported hook target: ${tool}. Use claude-code or codex.`,
         );
       }
@@ -174,7 +175,7 @@ export function registerInstallHookCommands(program: Command): void {
       }
 
       if (tool !== "claude-code") {
-        throw new Error(
+        throw new UserError(
           `Unsupported hook target: ${tool}. Use claude-code or codex.`,
         );
       }
