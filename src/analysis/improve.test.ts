@@ -360,3 +360,37 @@ describe("applyClarifications", () => {
     expect(result.improved_prompt).toContain("삭제 API 버그");
   });
 });
+
+describe("improvePrompt — Korean template doesn't fabricate certainty about axes that just happen to score well", () => {
+  it("does not echo the raw prompt under ## 목표 when goal_clarity is judged OK (the prompt is already shown under ## 원문)", () => {
+    const prompt =
+      "Refactor authentication module: goal=migrate to OAuth 2.0. Background: legacy session-based. Scope: only auth dir. Output: PR with tests. Verify: pnpm test green.";
+
+    const result = improvePrompt({
+      prompt,
+      createdAt: "2026-05-08T00:00:00.000Z",
+      language: "ko",
+    });
+
+    expect(result.changed_sections).toEqual([]);
+
+    const goalSection = result.improved_prompt
+      .split("\n## ")
+      .find((part) => part.startsWith("목표"));
+    expect(goalSection).toBeDefined();
+    expect(goalSection ?? "").not.toContain("Refactor authentication module");
+  });
+
+  it("does not claim '원문에 명시된 검증 명령' when the original prompt provides no concrete command", () => {
+    const prompt =
+      "Refactor authentication module: goal=migrate to OAuth 2.0. Background: legacy session-based. Scope: only auth dir. Output: PR with tests. Verify: pnpm test green.";
+
+    const result = improvePrompt({
+      prompt,
+      createdAt: "2026-05-08T00:00:00.000Z",
+      language: "ko",
+    });
+
+    expect(result.improved_prompt).not.toContain("원문에 명시된");
+  });
+});
