@@ -637,6 +637,24 @@ describe("createServer P2 ingest boundary", () => {
     });
   });
 
+  it("accepts case-insensitive loopback Host header (RFC 3986 §3.2.2)", async () => {
+    const server = createTestServer();
+
+    for (const host of [
+      "127.0.0.1:17373",
+      "localhost:17373",
+      "LOCALHOST:17373",
+      "Localhost:17373",
+    ]) {
+      const response = await server.inject({
+        method: "GET",
+        url: "/api/v1/health",
+        headers: { host },
+      });
+      expect(response.statusCode, `host="${host}"`).toBe(200);
+    }
+  });
+
   it("returns RFC 7807 404 for unknown routes", async () => {
     const server = createTestServer();
 
