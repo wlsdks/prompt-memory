@@ -254,10 +254,10 @@ describe("prompt CLI commands", () => {
 });
 
 async function createCliFixture(dataDir: string) {
-  initializePromptMemory({ dataDir });
+  const init = initializePromptMemory({ dataDir });
   const storage = createSqlitePromptStorage({
     dataDir,
-    hmacSecret: "test-secret",
+    hmacSecret: init.hookAuth.web_session_secret,
     now: nextDate([
       "2026-05-01T10:00:00.000Z",
       "2026-05-01T10:01:00.000Z",

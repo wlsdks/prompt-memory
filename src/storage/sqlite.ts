@@ -354,6 +354,7 @@ export function createSqlitePromptStorage(
         paths.promptsDir,
         rebuildOptions.redactionMode,
         options.experimentalRules,
+        options.hmacSecret,
       );
     },
     reconcileStorage() {
@@ -1583,6 +1584,7 @@ function rebuildIndex(
   promptsDir: string,
   redactionMode: RedactionPolicy,
   experimentalRules: readonly ExperimentalRuleId[] | undefined,
+  hmacSecret: string,
 ): { rebuilt: string[]; hashMismatches: string[] } {
   const rebuilt: string[] = [];
   const hashMismatches: string[] = [];
@@ -1593,7 +1595,7 @@ function rebuildIndex(
 
     const rows = db
       .prepare(
-        "SELECT id, markdown_path, received_at FROM prompts WHERE deleted_at IS NULL",
+        "SELECT id, markdown_path, received_at, stored_content_hash FROM prompts WHERE deleted_at IS NULL",
       )
       .all() as RebuildPromptRow[];
 
@@ -1613,6 +1615,19 @@ function rebuildIndex(
       const redaction = redactPrompt(body, redactionMode);
 
       if (redaction.is_sensitive) {
+        db.prepare("UPDATE prompts SET index_status = ? WHERE id = ?").run(
+          "hash_mismatch",
+          row.id,
+        );
+        hashMismatches.push(row.id);
+        continue;
+      }
+
+      const recomputedHash = createStoredContentHash(
+        redaction.stored_text,
+        hmacSecret,
+      );
+      if (recomputedHash !== row.stored_content_hash) {
         db.prepare("UPDATE prompts SET index_status = ? WHERE id = ?").run(
           "hash_mismatch",
           row.id,
@@ -1816,7 +1831,13 @@ function extractMarkdownBody(markdown: string): string {
     return markdown;
   }
 
-  return markdown.slice(delimiter + "\n---\n".length).trimStart();
+  // writePromptMarkdown appends a single trailing "\n" after the body. Strip
+  // that so the body string round-trips byte-for-byte through the archive
+  // and stored_content_hash stays comparable on rebuild.
+  return markdown
+    .slice(delimiter + "\n---\n".length)
+    .trimStart()
+    .replace(/\n$/, "");
 }
 
 function upsertPromptAnalysis(

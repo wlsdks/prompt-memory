@@ -14,7 +14,7 @@ const LINE_BUDGETS = new Map([
   ["src/storage/sqlite-json.ts", 160],
   ["src/storage/sqlite-migrations.ts", 600],
   ["src/storage/sqlite-rows.ts", 180],
-  ["src/storage/sqlite.ts", 3120],
+  ["src/storage/sqlite.ts", 3125],
   ["src/hooks/rewrite-guard.ts", 340],
   ["src/mcp/score-tool-definitions.ts", 880],
   ["src/mcp/score-tool-types.ts", 220],
