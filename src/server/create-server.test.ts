@@ -613,6 +613,49 @@ describe("createServer P2 ingest boundary", () => {
     expect(response.statusCode).toBe(401);
   });
 
+  it("returns 415 (not 500) when the request content-type is unsupported", async () => {
+    const server = createTestServer();
+
+    const response = await server.inject({
+      method: "POST",
+      url: "/api/v1/ingest/claude-code",
+      headers: {
+        host: "127.0.0.1:17373",
+        authorization: "Bearer ingest-token",
+        "content-type": "application/xml",
+      },
+      payload: "<xml/>",
+    });
+
+    expect(response.statusCode).toBe(415);
+    expect(response.headers["content-type"]).toContain(
+      "application/problem+json",
+    );
+    expect(response.json()).toMatchObject({
+      status: 415,
+      title: "Unsupported Media Type",
+    });
+  });
+
+  it("returns RFC 7807 404 for unknown routes", async () => {
+    const server = createTestServer();
+
+    const response = await server.inject({
+      method: "GET",
+      url: "/api/v1/this-route-does-not-exist",
+      headers: { host: "127.0.0.1:17373" },
+    });
+
+    expect(response.statusCode).toBe(404);
+    expect(response.headers["content-type"]).toContain(
+      "application/problem+json",
+    );
+    expect(response.json()).toMatchObject({
+      status: 404,
+      title: "Not Found",
+    });
+  });
+
   it("returns 400 (not 500) when the JSON body is malformed", async () => {
     const server = createTestServer();
 
