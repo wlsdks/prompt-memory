@@ -301,7 +301,7 @@ function validateBrowserOrigin(request: FastifyRequest): void {
 }
 
 function isLoopbackHost(host: string): boolean {
-  const hostname = host.replace(/:\d+$/, "");
+  const hostname = host.replace(/:\d+$/, "").toLowerCase();
   return (
     hostname === "127.0.0.1" || hostname === "localhost" || hostname === "[::1]"
   );
