@@ -212,9 +212,10 @@ function normalizePayload(
 }
 
 function isExcluded(cwd: string, excludedRoots: string[]): boolean {
-  return excludedRoots.some(
-    (root) => cwd === root || cwd.startsWith(`${root}/`),
-  );
+  return excludedRoots.some((root) => {
+    const normalized = root.replace(/\/+$/, "");
+    return cwd === normalized || cwd.startsWith(`${normalized}/`);
+  });
 }
 
 function readProjectPolicyForEvent(

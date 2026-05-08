@@ -845,6 +845,32 @@ describe("createServer P2 ingest boundary", () => {
     expect(storage.events).toHaveLength(0);
   });
 
+  it("excludes capture paths even when the configured root has a trailing slash", async () => {
+    const storage = createMemoryStorage();
+    const server = createTestServer({
+      storage,
+      // User added a path with a trailing slash — natural copy/paste from a
+      // shell prompt. Without normalization the matcher would silently fail.
+      excludedProjectRoots: ["/Users/example/side-project/"],
+    });
+
+    const response = await server.inject({
+      method: "POST",
+      url: "/api/v1/ingest/claude-code",
+      headers: {
+        host: "127.0.0.1:17373",
+        authorization: "Bearer ingest-token",
+      },
+      payload: claudeFixture,
+    });
+
+    expect(response.statusCode).toBe(200);
+    expect(response.json()).toMatchObject({
+      data: { stored: false, excluded: true },
+    });
+    expect(storage.events).toHaveLength(0);
+  });
+
   it("does not call storage when project policy disables capture", async () => {
     const storage = createMemoryStorage();
     storage.policyForIngest = {
