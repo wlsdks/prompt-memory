@@ -858,18 +858,13 @@ function buildPromptFilters(
     clauses.push(
       `EXISTS (
         SELECT 1
-        FROM prompt_analyses pa
+        FROM prompt_analyses pa, json_each(pa.checklist_json) je
         WHERE pa.prompt_id = ${idExpression}
-          AND (
-            pa.checklist_json LIKE ?
-            OR pa.checklist_json LIKE ?
-          )
+          AND json_extract(je.value, '$.key') = ?
+          AND json_extract(je.value, '$.status') IN ('missing', 'weak')
       )`,
     );
-    values.push(
-      qualityGapLikePattern(options.qualityGap, "missing"),
-      qualityGapLikePattern(options.qualityGap, "weak"),
-    );
+    values.push(options.qualityGap);
   }
 
   return { clauses, values };
@@ -885,13 +880,6 @@ function normalizeDateUpperBound(value: string): string {
 
 function isDateOnly(value: string): boolean {
   return /^\d{4}-\d{2}-\d{2}$/.test(value);
-}
-
-function qualityGapLikePattern(
-  key: string,
-  status: "missing" | "weak",
-): string {
-  return `%"key":"${key}","label":%,"status":"${status}"%`;
 }
 
 function escapeLike(value: string): string {
