@@ -64,4 +64,32 @@ describe("start guide", () => {
       output.indexOf("Troubleshooting"),
     );
   });
+
+  it("never leaks the local node binary or dist path even when invoked from a built CLI", () => {
+    // Simulate running `node /Users/<who>/.../dist/cli/index.js start`. With
+    // the previous behavior `defaultPromptMemoryEntry` would echo the
+    // absolute interpreter and dist path into the guidance, leaking the
+    // maintainer's home directory in the copy-paste-friendly command.
+    const originalArgv = process.argv;
+    process.argv = [
+      "/Users/secret-dev/.nvm/versions/node/v20.20.0/bin/node",
+      "/Users/secret-dev/side-project/prompt-memory/dist/cli/index.js",
+      "start",
+    ];
+    try {
+      const guide = buildStartGuide();
+      const output = formatStartGuide(guide);
+
+      expect(output).toContain(
+        "claude mcp add --transport stdio prompt-memory -- prompt-memory mcp",
+      );
+      expect(output).toContain(
+        "codex mcp add prompt-memory -- prompt-memory mcp",
+      );
+      expect(output).not.toContain("/Users/secret-dev/");
+      expect(output).not.toMatch(/\bdist\/cli\/index\.js\b/);
+    } finally {
+      process.argv = originalArgv;
+    }
+  });
 });

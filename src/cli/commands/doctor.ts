@@ -17,6 +17,7 @@ import {
   type CodexHooksSettings,
 } from "./install-hook.js";
 import {
+  PUBLISHED_PROMPT_MEMORY_ENTRY,
   mcpListSpec,
   mcpRegistrationCommand,
   type AgentTool,
@@ -212,7 +213,9 @@ function doctorNextSteps(
     steps.push(`Run prompt-memory install-hook ${tool}.`);
   }
   if (!result.mcp.registered) {
-    steps.push(`Register MCP: ${mcpRegistrationCommand(tool)}.`);
+    steps.push(
+      `Register MCP: ${mcpRegistrationCommand(tool, PUBLISHED_PROMPT_MEMORY_ENTRY)}.`,
+    );
   } else {
     steps.push(
       "Note: ask_clarifying_questions drives MCP elicitation only when the client advertises capabilities.elicitation (Claude Code 2.1.76+). Older clients fall back to clarifying_questions metadata that the agent must route through its own ask UI before calling apply_clarifications.",
