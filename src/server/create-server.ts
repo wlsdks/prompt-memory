@@ -106,6 +106,19 @@ export function createServer(options: CreateServerOptions): FastifyInstance {
       return;
     }
 
+    if (hasStatusCode(error, 415)) {
+      sendProblem(
+        reply,
+        problem(
+          415,
+          "Unsupported Media Type",
+          "The request content-type is not supported.",
+          request.url,
+        ).problem,
+      );
+      return;
+    }
+
     if (hasStatusCode(error, 400)) {
       sendProblem(
         reply,
@@ -125,6 +138,18 @@ export function createServer(options: CreateServerOptions): FastifyInstance {
         500,
         "Internal Server Error",
         "An unexpected error occurred.",
+        request.url,
+      ).problem,
+    );
+  });
+
+  server.setNotFoundHandler((request, reply) => {
+    sendProblem(
+      reply,
+      problem(
+        404,
+        "Not Found",
+        "The requested route does not exist.",
         request.url,
       ).problem,
     );
