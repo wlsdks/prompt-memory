@@ -68,6 +68,6 @@ function createIdempotencyKey(
   return buildIdempotencyKey("claude-code", sessionId, [
     payload.transcript_path ?? payload.cwd,
     payload.hook_event_name,
-    payload.prompt.length.toString(),
+    payload.prompt,
   ]);
 }
