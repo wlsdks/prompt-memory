@@ -642,6 +642,45 @@ describe("SQLite prompt storage", () => {
     expect(storage.getPrompt(stored.id)?.markdown).not.toContain(rawSecret);
   });
 
+  it("flags hash mismatches even when the tampered body has no detectable secret", async () => {
+    const dataDir = createTempDir();
+    initializePromptMemory({ dataDir });
+    const storage = createSqlitePromptStorage({
+      dataDir,
+      hmacSecret: "test-secret",
+      now: () => new Date("2026-05-01T10:30:00.000Z"),
+    });
+
+    const event = normalizeClaudeCodePayload(
+      {
+        session_id: "session-tamper",
+        transcript_path: "/Users/example/.claude/session.jsonl",
+        cwd: "/Users/example/project",
+        permission_mode: "default",
+        hook_event_name: "UserPromptSubmit",
+        prompt: "Add caching",
+      },
+      new Date("2026-05-01T10:29:59.000Z"),
+    );
+    const stored = await storage.storePrompt({
+      event,
+      redaction: redactPrompt(event.prompt, "mask"),
+    });
+    const row = storage.listPromptRows()[0]!;
+
+    // Replace the body with totally different (non-sensitive) content while
+    // the frontmatter's stored_content_hash still points at the original.
+    const original = readFileSync(row.markdown_path, "utf8");
+    const tampered = original.replace("Add caching", "TAMPERED CONTENT");
+    writeFileSync(row.markdown_path, tampered);
+
+    const result = storage.rebuildIndex({ redactionMode: "mask" });
+
+    expect(result.hashMismatches).toEqual([stored.id]);
+    expect(storage.listPromptRows()[0]?.index_status).toBe("hash_mismatch");
+    expect(storage.searchPromptIds("TAMPERED")).toEqual([]);
+  });
+
   it("marks missing markdown files during reconciliation", async () => {
     const dataDir = createTempDir();
     initializePromptMemory({ dataDir });

@@ -152,4 +152,5 @@ export type RebuildPromptRow = {
   id: string;
   markdown_path: string;
   received_at: string;
+  stored_content_hash: string;
 };
