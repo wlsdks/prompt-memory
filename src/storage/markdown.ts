@@ -46,14 +46,20 @@ export function parsePromptMarkdown(path: string): {
     return { frontmatter: {}, body: markdown };
   }
 
-  const frontmatter = YAML.parse(markdown.slice(4, delimiter)) as unknown;
   const body = markdown.slice(delimiter + "\n---\n".length).trimStart();
+  const frontmatter = parseFrontmatter(markdown.slice(4, delimiter));
 
-  return {
-    frontmatter:
-      typeof frontmatter === "object" && frontmatter !== null
-        ? (frontmatter as Record<string, unknown>)
-        : {},
-    body,
-  };
+  return { frontmatter, body };
+}
+
+function parseFrontmatter(yaml: string): Record<string, unknown> {
+  let value: unknown;
+  try {
+    value = YAML.parse(yaml);
+  } catch {
+    return {};
+  }
+  return typeof value === "object" && value !== null
+    ? (value as Record<string, unknown>)
+    : {};
 }
