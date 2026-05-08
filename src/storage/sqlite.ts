@@ -746,11 +746,12 @@ function buildPromptFilters(
   }
 
   if (options.cwdPrefix) {
-    const escapedPrefix = escapeLike(options.cwdPrefix);
+    const normalizedPrefix = options.cwdPrefix.replace(/\/+$/, "");
+    const escapedPrefix = escapeLike(normalizedPrefix);
     const pathMatches = [`${prefix}cwd = ?`, `${prefix}cwd LIKE ? ESCAPE '\\'`];
-    values.push(options.cwdPrefix, `${escapedPrefix}/%`);
+    values.push(normalizedPrefix, `${escapedPrefix}/%`);
 
-    if (!options.cwdPrefix.startsWith("/")) {
+    if (!normalizedPrefix.startsWith("/")) {
       pathMatches.push(`${prefix}cwd LIKE ? ESCAPE '\\'`);
       values.push(`%/${escapedPrefix}`);
     }

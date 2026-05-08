@@ -947,6 +947,13 @@ describe("SQLite prompt storage", () => {
         .listPrompts({ cwdPrefix: "/Users/example/project-a" })
         .items.map((item) => item.cwd),
     ).toEqual(["/Users/example/project-a", "/Users/example/project-a"]);
+    // Trailing slashes: a user pasting a path from a shell prompt should
+    // get the same matches as without the slash.
+    expect(
+      storage
+        .listPrompts({ cwdPrefix: "/Users/example/project-a/" })
+        .items.map((item) => item.cwd),
+    ).toEqual(["/Users/example/project-a", "/Users/example/project-a"]);
     expect(
       storage.listPrompts({ isSensitive: true }).items.map((item) => item.id),
     ).toEqual([sensitive.id]);
