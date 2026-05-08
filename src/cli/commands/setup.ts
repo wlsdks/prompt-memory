@@ -16,6 +16,7 @@ import {
 } from "./statusline.js";
 import type { PromptRewriteGuardMode } from "../../hooks/rewrite-guard.js";
 import {
+  PUBLISHED_PROMPT_MEMORY_ENTRY,
   doctorCommand,
   mcpRegistrationCommand,
   mcpRegistrationSpec,
@@ -570,7 +571,7 @@ function buildNextSteps(options: {
     if (!options.mcpResult.registerRequested) {
       for (const tool of options.detectedTools) {
         steps.push(
-          `Register MCP for agent commands: ${mcpRegistrationCommand(tool)}.`,
+          `Register MCP for agent commands: ${mcpRegistrationCommand(tool, PUBLISHED_PROMPT_MEMORY_ENTRY)}.`,
         );
       }
     } else {
@@ -581,7 +582,7 @@ function buildNextSteps(options: {
             : options.mcpResult.codex;
         if (result && !result.dryRun && !result.ok) {
           steps.push(
-            `Retry MCP registration: ${mcpRegistrationCommand(tool)}.`,
+            `Retry MCP registration: ${mcpRegistrationCommand(tool, PUBLISHED_PROMPT_MEMORY_ENTRY)}.`,
           );
         }
       }

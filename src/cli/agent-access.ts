@@ -12,12 +12,17 @@ export type PromptMemoryEntry = {
 
 const DIST_CLI_PATTERN = /[/\\]dist[/\\]cli[/\\]index\.js$/;
 
+export const PUBLISHED_PROMPT_MEMORY_ENTRY: PromptMemoryEntry = {
+  command: "prompt-memory",
+  args: [],
+};
+
 export function defaultPromptMemoryEntry(): PromptMemoryEntry {
   const cliPath = process.argv[1];
   if (typeof cliPath === "string" && DIST_CLI_PATTERN.test(cliPath)) {
     return { command: process.execPath, args: [cliPath] };
   }
-  return { command: "prompt-memory", args: [] };
+  return { ...PUBLISHED_PROMPT_MEMORY_ENTRY };
 }
 
 export function mcpRegistrationSpec(

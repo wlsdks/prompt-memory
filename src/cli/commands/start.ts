@@ -1,6 +1,7 @@
 import type { Command } from "commander";
 
 import {
+  PUBLISHED_PROMPT_MEMORY_ENTRY,
   doctorCommand,
   mcpRegistrationCommand,
   type AgentTool,
@@ -85,7 +86,9 @@ export function buildStartGuide(options: StartOptions = {}): StartGuide {
         title: "If MCP registration needs attention",
         detail:
           "Use these only if setup reports MCP registration failed or you skipped --register-mcp.",
-        commands: tools.map((tool) => mcpRegistrationCommand(tool)),
+        commands: tools.map((tool) =>
+          mcpRegistrationCommand(tool, PUBLISHED_PROMPT_MEMORY_ENTRY),
+        ),
       },
       {
         title: "Optional archive review",
