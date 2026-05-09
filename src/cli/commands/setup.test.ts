@@ -343,6 +343,10 @@ describe("runSetup", () => {
     );
     expect(output).toContain("Register MCP for agent commands");
     expect(output).toContain("prompt-memory coach");
+    expect(output).toContain("/prompt-memory:improve-last");
+    expect(output.indexOf("Send one real coding prompt")).toBeLessThan(
+      output.indexOf("/prompt-memory:improve-last"),
+    );
     expect(output).toContain("Use --json for automation.");
   });
 });

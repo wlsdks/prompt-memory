@@ -67,7 +67,7 @@ export function buildStartGuide(options: StartOptions = {}): StartGuide {
       {
         title: "Send one real coding prompt",
         detail:
-          "Use Claude Code or Codex normally. The prompt should be a real coding request, not a test string.",
+          "Use Claude Code or Codex normally. The prompt should be a real coding request, not a test string. Inside Claude Code, follow it with /prompt-memory:improve-last to see prompt-memory rewrite that prompt.",
         commands: [],
       },
       {
