@@ -273,7 +273,8 @@ function isFirstScoreStep(step: string): boolean {
   return (
     step.startsWith("Run prompt-memory server") ||
     step.startsWith("Run prompt-memory service start") ||
-    step.startsWith("Send one real coding prompt")
+    step.startsWith("Send one real coding prompt") ||
+    step.startsWith("Then run /prompt-memory:improve-last")
   );
 }
 
@@ -564,6 +565,11 @@ function buildNextSteps(options: {
     steps.push(
       "Send one real coding prompt in Claude Code or Codex, then run prompt-memory coach.",
     );
+    if (options.detectedTools.includes("claude-code")) {
+      steps.push(
+        "Then run /prompt-memory:improve-last inside Claude Code to see prompt-memory rewrite that prompt.",
+      );
+    }
     steps.push(
       "Coach profile enabled: prompt-memory will add low-friction rewrite guidance inside supported hooks.",
     );

@@ -25,6 +25,12 @@ describe("start guide", () => {
     );
     expect(output).toContain("prompt-memory server");
     expect(output).not.toContain("prompt-memory open");
+
+    const sendStep = guide.steps.find(
+      (step) => step.title === "Send one real coding prompt",
+    );
+    expect(sendStep?.detail).toContain("/prompt-memory:improve-last");
+    expect(output).toContain("/prompt-memory:improve-last");
   });
 
   it("can focus on one tool without hiding the coach flow", () => {
