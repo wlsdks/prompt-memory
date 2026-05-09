@@ -18,18 +18,18 @@ installation. Users who want active prompt coaching should still run:
 
 ```sh
 prompt-memory start
-prompt-memory setup --profile coach --register-mcp
-# If MCP registration fails or you skip --register-mcp:
-# claude mcp add --transport stdio prompt-memory -- prompt-memory mcp
-# or: codex mcp add prompt-memory -- prompt-memory mcp
+prompt-memory setup --profile coach --register-mcp --open-web
 ```
 
 The coach profile installs capture hooks, low-friction rewrite guidance through
 hook context, local server startup where supported, and the Claude Code status
 line when Claude Code is detected. `--register-mcp` is explicit consent to run
-the detected agent CLI registration commands for `prompt-memory mcp`, which
-gives the active agent session access to coach/rewrite/judge tools. Plain
-`prompt-memory setup` remains available for passive capture only.
+the detected agent CLI registration commands for the prompt-memory MCP server,
+which gives the active agent session access to coach/rewrite/judge tools. From a
+development checkout, run `pnpm setup`; it registers MCP with absolute Node +
+`dist/cli/index.js` paths so Codex does not require a global `prompt-memory`
+binary in `PATH`. Plain `prompt-memory setup` remains available for passive
+capture only.
 
 Users who want the web workspace to open automatically when Claude Code or Codex
 starts can explicitly add `--open-web`:
@@ -109,7 +109,7 @@ Prompt capture still uses Claude Code hook configuration in settings files. The
 supported install paths are:
 
 ```sh
-prompt-memory setup --profile coach --register-mcp
+prompt-memory setup --profile coach --register-mcp --open-web
 prompt-memory install-hook claude-code
 ```
 
@@ -289,6 +289,11 @@ Codex registration:
 ```sh
 codex mcp add prompt-memory -- prompt-memory mcp
 ```
+
+The manual commands above assume `prompt-memory` is globally available in
+`PATH`. In a cloned checkout, use `pnpm setup` or
+`pnpm prompt-memory setup --profile coach --register-mcp --open-web` so the MCP
+registration uses absolute paths.
 
 After registration, `prompt-memory doctor claude-code` and
 `prompt-memory doctor codex` report MCP command access. The doctor command first

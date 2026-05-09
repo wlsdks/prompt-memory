@@ -1,3 +1,4 @@
+import { readFileSync } from "node:fs";
 import type { Command } from "commander";
 
 import {
@@ -11,6 +12,7 @@ import {
   type ScorePromptToolResult,
 } from "../../mcp/score-tool.js";
 import { createSqlitePromptStorage } from "../../storage/sqlite.js";
+import { UserError } from "../user-error.js";
 
 type ScoreCliOptions = {
   dataDir?: string;
@@ -22,6 +24,8 @@ type ScoreCliOptions = {
   to?: string;
   cwdPrefix?: string;
   latest?: boolean;
+  text?: string;
+  stdin?: boolean;
 };
 
 export function registerScoreCommand(program: Command): void {
@@ -32,6 +36,11 @@ export function registerScoreCommand(program: Command): void {
     )
     .option("--data-dir <path>", "Override the prompt-memory data directory.")
     .option("--json", "Print JSON.")
+    .option(
+      "--text <prompt>",
+      "Score this prompt text directly without storing it.",
+    )
+    .option("--stdin", "Read prompt text from stdin and score it directly.")
     .option("--latest", "Score the latest stored prompt without printing it.")
     .option("--limit <count>", "Maximum number of recent prompts to score.")
     .option(
@@ -51,6 +60,18 @@ export function registerScoreCommand(program: Command): void {
 }
 
 export function scoreArchiveForCli(options: ScoreCliOptions = {}): string {
+  if (options.text !== undefined || options.stdin) {
+    const prompt = readScorePromptInput(options);
+    const result = scorePromptTool(
+      { prompt, include_suggestions: true },
+      { dataDir: options.dataDir },
+    );
+
+    return options.json
+      ? JSON.stringify(result, null, 2)
+      : formatPromptScore(result, "Prompt score");
+  }
+
   if (options.latest) {
     const result = scorePromptTool(
       { latest: true, include_suggestions: true },
@@ -59,7 +80,7 @@ export function scoreArchiveForCli(options: ScoreCliOptions = {}): string {
 
     return options.json
       ? JSON.stringify(result, null, 2)
-      : formatLatestPromptScore(result);
+      : formatPromptScore(result, "Latest prompt score");
   }
 
   return withStorage(options.dataDir, (storage) => {
@@ -71,11 +92,39 @@ export function scoreArchiveForCli(options: ScoreCliOptions = {}): string {
   });
 }
 
-function formatLatestPromptScore(result: ScorePromptToolResult): string {
+function readScorePromptInput(options: ScoreCliOptions): string {
+  const raw =
+    options.text !== undefined
+      ? options.text
+      : options.stdin
+        ? readFileSync(0, "utf8")
+        : undefined;
+
+  if (raw === undefined) {
+    throw new UserError(
+      '--text or --stdin is required to score text directly. Try: prompt-memory score --text "add caching to fetchUser"',
+    );
+  }
+
+  if (!raw.trim()) {
+    throw new UserError(
+      'Prompt must not be empty. Try: prompt-memory score --text "add caching to fetchUser"',
+    );
+  }
+
+  return raw;
+}
+
+function formatPromptScore(
+  result: ScorePromptToolResult,
+  heading: string,
+): string {
   if ("is_error" in result) {
     return [
-      "Latest prompt score",
+      heading,
       `error ${result.error_code}: ${result.message}`,
+      "",
+      "Tip: pass --text or --stdin to score text directly without storing it.",
       "",
       "Privacy: local-only, no external calls, no prompt body.",
     ].join("\n");
@@ -88,7 +137,7 @@ function formatLatestPromptScore(result: ScorePromptToolResult): string {
   });
 
   return [
-    "Latest prompt score",
+    heading,
     `${result.quality_score.value}/${result.quality_score.max} (${result.quality_score.band})`,
     ...(result.redaction_notice ? [`Notice: ${result.redaction_notice}`] : []),
     "",

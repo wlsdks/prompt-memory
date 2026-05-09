@@ -338,7 +338,7 @@ describe("doctorCodex", () => {
 
     expect(output).toContain("prompt-memory doctor: codex");
     expect(output).toContain("Codex hook: missing");
-    expect(output).toContain("codex_hooks disabled");
+    expect(output).toContain("hooks disabled");
     expect(output).toContain("MCP command access: not detected");
     expect(output).toContain("Register MCP: codex mcp add prompt-memory");
     expect(output).toContain("Run prompt-memory install-hook codex");

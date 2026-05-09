@@ -28,10 +28,11 @@ pnpm setup     # alias for prompt-memory setup --profile coach --register-mcp --
 `pnpm setup` is the same one-command path the README recommends — it
 installs the Claude Code and Codex hooks, registers the MCP server with
 absolute paths so PATH ordering does not matter, installs the Claude
-Code status line, and enables the local-server SessionStart hook. Use
-`pnpm setup` when the user just wants "make it work"; only fall back to
-the explicit `prompt-memory setup ...` invocations below when the user
-wants a different profile or a dry-run preview.
+Code status line, and enables the local-server SessionStart hook. For Codex,
+this is the preferred path because it avoids relying on a global
+`prompt-memory` binary in PATH. Use `pnpm setup` when the user just wants
+"make it work"; only fall back to the explicit `prompt-memory setup ...`
+invocations below when the user wants a different profile or a dry-run preview.
 
 For the lowest-friction setup with the explicit invocation, preview the
 coach profile first:
@@ -81,10 +82,12 @@ prompt-memory doctor codex
 ```
 
 If MCP registration fails or the user chooses not to use `--register-mcp`,
-provide the manual command:
+first recommend rerunning the setup command. Provide manual commands only for a
+published/global install where `command -v prompt-memory` succeeds:
 
 ```bash
 claude mcp add --transport stdio prompt-memory -- prompt-memory mcp
+codex mcp add prompt-memory -- prompt-memory mcp
 ```
 
 Use the default capture-only profile only when the user wants passive recording

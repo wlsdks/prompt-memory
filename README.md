@@ -46,10 +46,18 @@ Only troubleshoot after that path fails:
 ```sh
 prompt-memory doctor claude-code
 prompt-memory doctor codex
-# if MCP registration failed:
-# claude mcp add --transport stdio prompt-memory -- prompt-memory mcp
-# codex mcp add prompt-memory -- prompt-memory mcp
 ```
+
+If MCP registration failed, rerun the one-command setup first:
+
+```sh
+prompt-memory setup --profile coach --register-mcp --open-web
+```
+
+Manual `claude mcp add` / `codex mcp add` commands are only for advanced
+troubleshooting. `setup --register-mcp` is preferred because it uses the current
+CLI entrypoint; from a cloned checkout that means absolute Node + `dist/` paths,
+so Codex does not depend on `prompt-memory` being globally available in `PATH`.
 
 Open the local archive only when you want dashboard, search, history review, or
 export.
@@ -147,10 +155,10 @@ codex plugin marketplace add wlsdks/prompt-memory
 Then run the local coach setup:
 
 ```sh
-prompt-memory setup --profile coach --register-mcp
+prompt-memory setup --profile coach --register-mcp --open-web
 ```
 
-Codex currently exposes marketplace management through `codex plugin marketplace add/upgrade/remove`. The prompt capture hook is installed by `prompt-memory setup`, which writes the Codex hook config and enables Codex hooks.
+Codex currently exposes marketplace management through `codex plugin marketplace add/upgrade/remove`. The prompt capture hook is installed by `prompt-memory setup`, which writes the Codex hook config, enables `[features].hooks`, and registers the MCP server. In a development checkout, run the same flow as `pnpm setup`; it registers MCP with absolute paths to this repo's built CLI.
 
 ### 4. Check Capture
 
@@ -212,11 +220,11 @@ The setup command:
 - with `--profile coach`, installs the Claude Code status line when Claude Code
   is detected. Existing Claude Code status line commands are chained and
   restored on uninstall where possible.
-- with `--register-mcp`, registers `prompt-memory mcp` with detected Claude
-  Code and/or Codex CLIs
+- with `--register-mcp`, registers the MCP server with detected Claude Code
+  and/or Codex CLIs using the current CLI entrypoint
 - with `--open-web`, installs a `SessionStart` hook that ensures the local
   server is running and opens `http://127.0.0.1:17373` once per agent session
-- enables Codex hooks when Codex is detected
+- enables `[features].hooks` when Codex is detected
 - installs and starts a macOS LaunchAgent for the local server when supported
 - prints next steps and paths that were changed
 
@@ -424,7 +432,7 @@ It enables:
 
 ```toml
 [features]
-codex_hooks = true
+hooks = true
 ```
 
 Uninstall removes the prompt-memory hook entry but leaves the Codex feature flag in place.
@@ -787,6 +795,22 @@ Example Codex registration:
 ```sh
 codex mcp add prompt-memory -- prompt-memory mcp
 ```
+
+Those manual examples assume the published `prompt-memory` binary is available
+in `PATH`. For local development, prefer:
+
+```sh
+pnpm setup
+```
+
+or rerun:
+
+```sh
+pnpm prompt-memory setup --profile coach --register-mcp --open-web
+```
+
+The setup command registers MCP with absolute Node + `dist/cli/index.js` paths,
+which is the safer Codex configuration for a cloned checkout.
 
 If you use a custom data directory:
 

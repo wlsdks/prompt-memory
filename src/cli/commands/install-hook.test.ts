@@ -155,7 +155,7 @@ describe("Codex hook install/uninstall", () => {
     expect(result.dryRun).toBe(true);
     expect(result.nextHooks.hooks.UserPromptSubmit).toHaveLength(1);
     expect(result.nextConfig).toContain("[features]");
-    expect(result.nextConfig).toContain("codex_hooks = true");
+    expect(result.nextConfig).toContain("hooks = true");
     expect(() => readFileSync(hooksPath, "utf8")).toThrow();
     expect(() => readFileSync(configPath, "utf8")).toThrow();
   });
@@ -202,7 +202,8 @@ describe("Codex hook install/uninstall", () => {
       loadHookAuth(dataDir).ingest_token,
     );
     expect(config).toContain('model = "gpt-5.5"');
-    expect(config).toContain("codex_hooks = true");
+    expect(config).toContain("hooks = true");
+    expect(config).not.toContain("codex_hooks");
   });
 
   it("can install Codex hook with opt-in rewrite guard flags", () => {
@@ -268,7 +269,7 @@ describe("Codex hook install/uninstall", () => {
     expect(result.changed).toBe(true);
     expect(hooks.hooks.UserPromptSubmit).toEqual([]);
     expect(hooks.hooks.SessionStart).toEqual([]);
-    expect(config).toContain("codex_hooks = true");
+    expect(config).toContain("hooks = true");
     expect(loadHookAuth(dataDir).ingest_token).not.toBe(oldToken);
   });
 });
