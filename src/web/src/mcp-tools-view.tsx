@@ -34,7 +34,7 @@ export function McpToolsView({
       <section className="mcp-hero panel">
         <div>
           <p className="eyebrow">Agent tool surface</p>
-          <h2>Use prompt-memory from Claude Code or Codex</h2>
+          <h2>Use prompt-coach from Claude Code or Codex</h2>
           <p>
             Start with status, then choose the scoring or project-rule review
             tool that matches the user request.
@@ -44,8 +44,8 @@ export function McpToolsView({
           <CopyableCommand
             copied={copiedKey === "mcp-command"}
             label="Server command"
-            onCopy={() => void copySnippet("mcp-command", "prompt-memory mcp")}
-            value="prompt-memory mcp"
+            onCopy={() => void copySnippet("mcp-command", "prompt-coach mcp")}
+            value="prompt-coach mcp"
           />
           <CopyableCommand
             copied={copiedKey === "claude-command"}
@@ -53,10 +53,10 @@ export function McpToolsView({
             onCopy={() =>
               void copySnippet(
                 "claude-command",
-                "claude mcp add --transport stdio prompt-memory -- prompt-memory mcp",
+                "claude mcp add --transport stdio prompt-coach -- prompt-coach mcp",
               )
             }
-            value="claude mcp add --transport stdio prompt-memory -- prompt-memory mcp"
+            value="claude mcp add --transport stdio prompt-coach -- prompt-coach mcp"
           />
           <CopyableCommand
             copied={copiedKey === "codex-command"}
@@ -64,10 +64,10 @@ export function McpToolsView({
             onCopy={() =>
               void copySnippet(
                 "codex-command",
-                "codex mcp add prompt-memory -- prompt-memory mcp",
+                "codex mcp add prompt-coach -- prompt-coach mcp",
               )
             }
-            value="codex mcp add prompt-memory -- prompt-memory mcp"
+            value="codex mcp add prompt-coach -- prompt-coach mcp"
           />
         </div>
       </section>

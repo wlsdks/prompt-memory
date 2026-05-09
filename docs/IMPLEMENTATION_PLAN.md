@@ -1,4 +1,4 @@
-# prompt-memory Implementation Plan
+# prompt-coach Implementation Plan
 
 Date: 2026-05-01
 
@@ -13,7 +13,7 @@ Related docs:
 
 ## 1. Purpose
 
-This plan breaks `prompt-memory` into implementation phases and release gates.
+This plan breaks `prompt-coach` into implementation phases and release gates.
 
 The product identity is:
 
@@ -99,8 +99,8 @@ Package smoke:
 
 ```sh
 npm pack
-npm install -g ./prompt-memory-<version>.tgz
-prompt-memory --help
+npm install -g ./prompt-coach-<version>.tgz
+prompt-coach --help
 ```
 
 ## 6. Current Implemented Surface

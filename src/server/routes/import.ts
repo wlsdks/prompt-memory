@@ -44,7 +44,7 @@ export function registerImportRoutes(
       );
     }
 
-    const dir = mkdtempSync(join(tmpdir(), "prompt-memory-import-upload-"));
+    const dir = mkdtempSync(join(tmpdir(), "prompt-coach-import-upload-"));
     const file = join(dir, "upload.jsonl");
     try {
       writeFileSync(file, body.content, { mode: 0o600 });

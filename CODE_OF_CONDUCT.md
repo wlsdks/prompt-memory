@@ -1,6 +1,6 @@
 # Code Of Conduct
 
-prompt-memory uses a simple contribution standard:
+prompt-coach uses a simple contribution standard:
 
 - Be respectful and direct.
 - Keep discussion focused on the project and the technical tradeoffs.

@@ -6,13 +6,13 @@
 
 ## Context
 
-`prompt-memory` ships two surfaces whose usage today is effectively zero
+`prompt-coach` ships two surfaces whose usage today is effectively zero
 because there is no second user:
 
-- **`prompt-memory export`** (and the `/api/v1/exports` HTTP route) produces
+- **`prompt-coach export`** (and the `/api/v1/exports` HTTP route) produces
   anonymized prompt bundles intended for sharing with another developer or
   archiving outside the local archive.
-- **`prompt-memory import`** (and the `/api/v1/import/dry-run` HTTP route)
+- **`prompt-coach import`** (and the `/api/v1/import/dry-run` HTTP route)
   ingests prompt transcripts from another archive — for migration or restore.
 
 The maintainer is the only user, runs no second machine, and exports nothing
@@ -21,7 +21,7 @@ use this?" and put both of these in the **動力 의심** column: the code path
 is intact, but no situation has triggered it, and there is no road on which
 it will be triggered without an external collaborator.
 
-`.claude/rules/prompt-memory.md` already states that the project is in a
+`.claude/rules/prompt-coach.md` already states that the project is in a
 **pre-release, solo-maintainer phase** and that backward-compatibility for
 archived data, settings, and external API consumers is not a constraint.
 This ADR extends that stance to feature _prioritization_, not just

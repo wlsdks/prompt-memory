@@ -4,7 +4,7 @@ Date: 2026-05-02
 
 ## Purpose
 
-Benchmark v1 is the local regression benchmark for `prompt-memory`. It checks whether the product is still delivering its core value to Claude Code and Codex users:
+Benchmark v1 is the local regression benchmark for `prompt-coach`. It checks whether the product is still delivering its core value to Claude Code and Codex users:
 
 - finding previously useful prompts again
 - surfacing weak prompting habits
@@ -152,7 +152,7 @@ Output:
 
 This is reported only — there is no pass threshold on lift today, since the synthetic corpus does not exercise spec-style language. Once real user fixtures land (P2-1), the average lift becomes a meaningful trend signal.
 
-To enable a rule for live ingest, edit `~/.prompt-memory/config.json`:
+To enable a rule for live ingest, edit `~/.prompt-coach/config.json`:
 
 ```json
 {

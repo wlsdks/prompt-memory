@@ -11,7 +11,7 @@ import {
   importDryRunForCli,
   showImportJobForCli,
 } from "../cli/commands/import.js";
-import { initializePromptMemory } from "../config/config.js";
+import { initializePromptCoach } from "../config/config.js";
 import { runClaudeCodeHook } from "../hooks/wrapper.js";
 import { redactPrompt } from "../redaction/redact.js";
 import { createServer } from "../server/create-server.js";
@@ -158,7 +158,7 @@ describe("privacy regression fixture", () => {
 
   it("keeps hook failure output empty for raw prompt fixtures", async () => {
     const dataDir = createTempDir();
-    initializePromptMemory({ dataDir });
+    initializePromptCoach({ dataDir });
 
     const result = await runClaudeCodeHook({
       dataDir,
@@ -184,7 +184,7 @@ async function createStoredPrivacyFixture(): Promise<{
   id: string;
 }> {
   const dataDir = createTempDir();
-  initializePromptMemory({ dataDir });
+  initializePromptCoach({ dataDir });
   const storage = createSqlitePromptStorage({
     dataDir,
     hmacSecret: "test-secret",
@@ -210,7 +210,7 @@ async function createStoredPrivacyFixture(): Promise<{
 }
 
 function readSqlitePrivacySnapshot(dataDir: string): string {
-  const db = new Database(join(dataDir, "prompt-memory.sqlite"));
+  const db = new Database(join(dataDir, "prompt-coach.sqlite"));
 
   try {
     return JSON.stringify({
@@ -247,7 +247,7 @@ function authedHeaders(): Record<string, string> {
 }
 
 function createTempDir(): string {
-  const dir = join(tmpdir(), `prompt-memory-privacy-${randomUUID()}`);
+  const dir = join(tmpdir(), `prompt-coach-privacy-${randomUUID()}`);
   mkdirSync(dir, { recursive: true });
   tempDirs.push(dir);
   return dir;

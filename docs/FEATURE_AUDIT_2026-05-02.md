@@ -10,7 +10,7 @@ The product identity is:
 
 > AI coding prompt memory and improvement workspace, local-first.
 
-In practical terms, `prompt-memory` is a developer tool that records prompts entered into AI coding tools such as Claude Code and Codex, stores them locally, helps users find them again, analyzes weak prompting patterns, and helps users rewrite the next request more clearly.
+In practical terms, `prompt-coach` is a developer tool that records prompts entered into AI coding tools such as Claude Code and Codex, stores them locally, helps users find them again, analyzes weak prompting patterns, and helps users rewrite the next request more clearly.
 
 ## Verification Gates
 
@@ -41,16 +41,16 @@ Benchmark v1 result from the audit run:
 
 Available:
 
-- `prompt-memory setup`
-- `prompt-memory init`
-- `prompt-memory doctor`
-- `prompt-memory hook`
-- `prompt-memory install-hook`
-- `prompt-memory uninstall-hook`
-- `prompt-memory statusline`
-- `prompt-memory install-statusline`
-- `prompt-memory uninstall-statusline`
-- `prompt-memory service`
+- `prompt-coach setup`
+- `prompt-coach init`
+- `prompt-coach doctor`
+- `prompt-coach hook`
+- `prompt-coach install-hook`
+- `prompt-coach uninstall-hook`
+- `prompt-coach statusline`
+- `prompt-coach install-statusline`
+- `prompt-coach uninstall-statusline`
+- `prompt-coach service`
 - Claude Code hook support
 - Codex beta hook support
 - fail-open hook wrapper
@@ -75,7 +75,7 @@ Available:
 - SQLite index
 - SQLite FTS search index
 - hard delete across Markdown, DB rows, FTS, events, and drafts
-- `prompt-memory rebuild-index`
+- `prompt-coach rebuild-index`
 
 Storage model:
 
@@ -90,10 +90,10 @@ Verdict:
 
 Available:
 
-- `prompt-memory list`
-- `prompt-memory search`
-- `prompt-memory show`
-- `prompt-memory open`
+- `prompt-coach list`
+- `prompt-coach search`
+- `prompt-coach show`
+- `prompt-coach open`
 - web archive list
 - web prompt detail
 - tool, project, tag, quality-gap, and imported-only filters
@@ -113,7 +113,7 @@ Verdict:
 
 Available:
 
-- `prompt-memory improve`
+- `prompt-coach improve`
 - local rule-based prompt improvement
 - analysis preview and improvement draft in the prompt detail UI
 - copy improvement draft
@@ -180,11 +180,11 @@ Verdict:
 
 Available:
 
-- `prompt-memory import --dry-run`
-- `prompt-memory import --save-job`
-- `prompt-memory import --execute`
-- `prompt-memory import --resume`
-- `prompt-memory import-job`
+- `prompt-coach import --dry-run`
+- `prompt-coach import --save-job`
+- `prompt-coach import --execute`
+- `prompt-coach import --resume`
+- `prompt-coach import-job`
 - malformed line tolerance
 - assistant/tool/unsupported role skip
 - large line skip
@@ -207,8 +207,8 @@ Verdict:
 
 Available:
 
-- `prompt-memory export --anonymized --preview`
-- `prompt-memory export --anonymized --job`
+- `prompt-coach export --anonymized --preview`
+- `prompt-coach export --anonymized --job`
 - web export preview
 - web export execution
 - included/excluded field summary

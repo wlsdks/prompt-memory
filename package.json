@@ -1,21 +1,21 @@
 {
-  "name": "prompt-memory",
+  "name": "prompt-coach",
   "version": "0.1.0-beta.0",
   "description": "Local-first prompt archive for AI coding tools.",
   "type": "module",
   "license": "MIT",
   "repository": {
     "type": "git",
-    "url": "https://github.com/wlsdks/prompt-memory.git"
+    "url": "https://github.com/wlsdks/prompt-coach.git"
   },
   "packageManager": "pnpm@10.18.0",
   "engines": {
     "node": ">=22 <25"
   },
   "bin": {
-    "prompt-memory": "./dist/cli/index.js",
-    "pm-claude": "./dist/cli/pm-claude.js",
-    "pm-codex": "./dist/cli/pm-codex.js"
+    "prompt-coach": "./dist/cli/index.js",
+    "pc-claude": "./dist/cli/pc-claude.js",
+    "pc-codex": "./dist/cli/pc-codex.js"
   },
   "files": [
     "dist",
@@ -69,8 +69,8 @@
     "pack:dry-run": "npm pack --dry-run",
     "prepack": "pnpm build",
     "prepare": "pnpm build",
-    "prompt-memory": "node dist/cli/index.js",
-    "setup": "pnpm prompt-memory setup --profile coach --register-mcp --open-web",
+    "prompt-coach": "node dist/cli/index.js",
+    "setup": "pnpm prompt-coach setup --profile coach --register-mcp --open-web",
     "smoke:release": "pnpm build && node scripts/release-smoke.mjs",
     "test": "vitest run"
   },

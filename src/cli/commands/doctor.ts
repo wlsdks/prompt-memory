@@ -4,15 +4,15 @@ import { homedir } from "node:os";
 import { join } from "node:path";
 import type { Command } from "commander";
 
-import { loadHookAuth, loadPromptMemoryConfig } from "../../config/config.js";
+import { loadHookAuth, loadPromptCoachConfig } from "../../config/config.js";
 import { diagnoseIngestFailure } from "./doctor-diagnose-ingest.js";
 import {
   readLastHookStatus,
   type LastHookStatus,
 } from "../../hooks/hook-status.js";
 import {
-  hasPromptMemoryCodexHook,
-  hasPromptMemoryHook,
+  hasPromptCoachCodexHook,
+  hasPromptCoachHook,
   isCodexHooksFeatureEnabled,
   type ClaudeSettings,
   type CodexHooksSettings,
@@ -89,7 +89,7 @@ export function registerDoctorCommand(program: Command): void {
       "Diagnose Claude Code or Codex setup (server, ingest token, hook, MCP).",
     )
     .argument("<tool>", "Tool to inspect.")
-    .option("--data-dir <path>", "Override the prompt-memory data directory.")
+    .option("--data-dir <path>", "Override the prompt-coach data directory.")
     .option("--settings-path <path>", "Override Claude Code settings path.")
     .option("--hooks-path <path>", "Override Codex hooks.json path.")
     .option("--config-path <path>", "Override Codex config.toml path.")
@@ -150,7 +150,7 @@ export function formatDoctorResult(
       : formatClaudeSettings(result as DoctorClaudeCodeResult);
   const ok = result.server.ok && result.token.ok && result.settings.ok;
   const lines = [
-    `prompt-memory doctor: ${tool}`,
+    `prompt-coach doctor: ${tool}`,
     `Status: ${ok ? "ready" : "needs attention"}`,
     "",
     "Checks:",
@@ -203,16 +203,14 @@ function doctorNextSteps(
   const steps: string[] = [];
   if (!result.server.ok) {
     steps.push(
-      "Run prompt-memory server or prompt-memory setup --profile coach.",
+      "Run prompt-coach server or prompt-coach setup --profile coach.",
     );
   }
   if (!result.token.ok) {
-    steps.push(
-      "Run prompt-memory init or prompt-memory setup --profile coach.",
-    );
+    steps.push("Run prompt-coach init or prompt-coach setup --profile coach.");
   }
   if (!result.settings.ok) {
-    steps.push(`Run prompt-memory install-hook ${tool}.`);
+    steps.push(`Run prompt-coach install-hook ${tool}.`);
   }
   if (!result.mcp.registered) {
     steps.push(`Register MCP: ${mcpRegistrationCommand(tool)}.`);
@@ -252,7 +250,7 @@ function configuredDataDirFor(
   options: DoctorClaudeCodeOptions | DoctorCodexOptions | undefined,
 ): string {
   try {
-    return loadPromptMemoryConfig(options?.dataDir).data_dir;
+    return loadPromptCoachConfig(options?.dataDir).data_dir;
   } catch {
     return options?.dataDir ?? "";
   }
@@ -326,7 +324,7 @@ function inspectSettings(
     const settings = JSON.parse(
       readFileSync(settingsPath, "utf8"),
     ) as ClaudeSettings;
-    const hookInstalled = hasPromptMemoryHook(settings);
+    const hookInstalled = hasPromptCoachHook(settings);
     return { ok: hookInstalled, invalid: false, hookInstalled };
   } catch {
     return { ok: false, invalid: true, hookInstalled: false };
@@ -361,7 +359,7 @@ function inspectCodexSettings(
       if (
         source.hooksPath &&
         existsSync(source.hooksPath) &&
-        hasPromptMemoryCodexHook(
+        hasPromptCoachCodexHook(
           JSON.parse(
             readFileSync(source.hooksPath, "utf8"),
           ) as CodexHooksSettings,
@@ -409,7 +407,7 @@ function inspectMcpRegistration(options: {
     try {
       if (
         existsSync(path) &&
-        looksLikePromptMemoryMcpConfig(readFileSync(path, "utf8"))
+        looksLikePromptCoachMcpConfig(readFileSync(path, "utf8"))
       ) {
         return true;
       }
@@ -423,10 +421,10 @@ function inspectMcpRegistration(options: {
     : false;
 }
 
-function looksLikePromptMemoryMcpConfig(text: string): boolean {
+function looksLikePromptCoachMcpConfig(text: string): boolean {
   const normalized = text.toLowerCase();
   return (
-    normalized.includes("prompt-memory") &&
+    normalized.includes("prompt-coach") &&
     /(^|[\s"'[\],=:.-])mcp($|[\s"'[\],=:.-])/.test(normalized)
   );
 }
@@ -442,7 +440,7 @@ function inspectMcpRegistrationFromCli(
       return false;
     }
 
-    return String(result.stdout).toLowerCase().includes("prompt-memory");
+    return String(result.stdout).toLowerCase().includes("prompt-coach");
   } catch {
     return false;
   }
@@ -468,7 +466,7 @@ async function inspectServer(
   }
 
   try {
-    const config = loadPromptMemoryConfig(options.dataDir);
+    const config = loadPromptCoachConfig(options.dataDir);
     const controller = new AbortController();
     const timeout = setTimeout(() => controller.abort(), 500);
 

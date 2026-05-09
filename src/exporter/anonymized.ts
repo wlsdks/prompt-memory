@@ -127,7 +127,7 @@ export function executeAnonymizedExport(
 
   if (!job) {
     throw new Error(
-      `Export job not found: ${jobId}. Run prompt-memory export --anonymized --preview to create a new one.`,
+      `Export job not found: ${jobId}. Run prompt-coach export --anonymized --preview to create a new one.`,
     );
   }
 

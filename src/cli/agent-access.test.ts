@@ -1,15 +1,15 @@
 import { describe, expect, it } from "vitest";
 
 import {
-  defaultPromptMemoryEntry,
+  defaultPromptCoachEntry,
   mcpRegistrationCommand,
   mcpRegistrationSpec,
 } from "./agent-access.js";
 
-describe("defaultPromptMemoryEntry", () => {
-  it("falls back to a PATH-based prompt-memory binary when argv[1] is not a dist entrypoint", () => {
-    const entry = defaultPromptMemoryEntry();
-    expect(entry).toEqual({ command: "prompt-memory", args: [] });
+describe("defaultPromptCoachEntry", () => {
+  it("falls back to a PATH-based prompt-coach binary when argv[1] is not a dist entrypoint", () => {
+    const entry = defaultPromptCoachEntry();
+    expect(entry).toEqual({ command: "prompt-coach", args: [] });
   });
 });
 
@@ -25,7 +25,7 @@ describe("mcpRegistrationSpec with an explicit entry", () => {
       args: [
         "mcp",
         "add",
-        "prompt-memory",
+        "prompt-coach",
         "--",
         "/usr/local/bin/node",
         "/Users/example/repo/dist/cli/index.js",
@@ -47,7 +47,7 @@ describe("mcpRegistrationSpec with an explicit entry", () => {
         "add",
         "--transport",
         "stdio",
-        "prompt-memory",
+        "prompt-coach",
         "--",
         "/usr/local/bin/node",
         "/Users/example/repo/dist/cli/index.js",
@@ -56,17 +56,15 @@ describe("mcpRegistrationSpec with an explicit entry", () => {
     });
   });
 
-  it("preserves the existing PATH-based phrasing when entry uses prompt-memory directly", () => {
+  it("preserves the existing PATH-based phrasing when entry uses prompt-coach directly", () => {
     expect(
-      mcpRegistrationCommand("codex", { command: "prompt-memory", args: [] }),
-    ).toBe("codex mcp add prompt-memory -- prompt-memory mcp");
+      mcpRegistrationCommand("codex", { command: "prompt-coach", args: [] }),
+    ).toBe("codex mcp add prompt-coach -- prompt-coach mcp");
     expect(
       mcpRegistrationCommand("claude-code", {
-        command: "prompt-memory",
+        command: "prompt-coach",
         args: [],
       }),
-    ).toBe(
-      "claude mcp add --transport stdio prompt-memory -- prompt-memory mcp",
-    );
+    ).toBe("claude mcp add --transport stdio prompt-coach -- prompt-coach mcp");
   });
 });

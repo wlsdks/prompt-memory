@@ -33,7 +33,7 @@ function findPackageRoot(startDir: string): string | undefined {
 
   while (current !== root) {
     const packageJsonPath = join(current, "package.json");
-    if (isPromptMemoryPackage(packageJsonPath)) {
+    if (isPromptCoachPackage(packageJsonPath)) {
       return current;
     }
 
@@ -43,7 +43,7 @@ function findPackageRoot(startDir: string): string | undefined {
   return undefined;
 }
 
-function isPromptMemoryPackage(packageJsonPath: string): boolean {
+function isPromptCoachPackage(packageJsonPath: string): boolean {
   if (!existsSync(packageJsonPath)) {
     return false;
   }
@@ -52,7 +52,7 @@ function isPromptMemoryPackage(packageJsonPath: string): boolean {
     const packageJson = JSON.parse(readFileSync(packageJsonPath, "utf8")) as {
       name?: string;
     };
-    return packageJson.name === "prompt-memory";
+    return packageJson.name === "prompt-coach";
   } catch {
     return false;
   }

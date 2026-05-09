@@ -1,6 +1,6 @@
 # Architecture Decision Records
 
-Lightweight ADRs for `prompt-memory`. Each file captures the context behind a
+Lightweight ADRs for `prompt-coach`. Each file captures the context behind a
 structural decision so a future architecture review does not have to
 re-discover the same friction signals.
 

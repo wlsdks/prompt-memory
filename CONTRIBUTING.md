@@ -1,6 +1,6 @@
 # Contributing
 
-Thanks for helping improve prompt-memory.
+Thanks for helping improve prompt-coach.
 
 This project is a local-first developer tool for AI coding prompt memory,
 search, analysis, and prompt improvement. Contributions should preserve the
@@ -50,7 +50,7 @@ pnpm smoke:release
 ## Privacy Requirements
 
 - Do not commit real prompts, API keys, OAuth tokens, session tokens, private
-  file paths, SQLite archives, or local prompt-memory data.
+  file paths, SQLite archives, or local prompt-coach data.
 - Use synthetic fixtures only.
 - Redact paths, secrets, and stable prompt identifiers in screenshots, logs,
   issue comments, and test output.
@@ -59,7 +59,7 @@ pnpm smoke:release
 
 ## Design Requirements
 
-prompt-memory is an operational developer tool. UI contributions should favor
+prompt-coach is an operational developer tool. UI contributions should favor
 dense, quiet workflows for search, review, deletion, settings, diagnostics, and
 prompt improvement. Avoid marketing-style landing pages in the app shell.
 

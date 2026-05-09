@@ -1,10 +1,10 @@
 {
-  "name": "prompt-memory",
+  "name": "prompt-coach",
   "description": "Local-first prompt archive for Claude Code and Codex prompts.",
   "version": "0.1.0-beta.0",
   "author": {
-    "name": "prompt-memory contributors",
-    "url": "https://github.com/wlsdks/prompt-memory"
+    "name": "prompt-coach contributors",
+    "url": "https://github.com/wlsdks/prompt-coach"
   },
   "commands": [
     "./commands/setup.md",
@@ -18,11 +18,11 @@
     "./commands/habits.md",
     "./commands/open.md"
   ],
-  "homepage": "https://github.com/wlsdks/prompt-memory",
-  "repository": "https://github.com/wlsdks/prompt-memory",
+  "homepage": "https://github.com/wlsdks/prompt-coach",
+  "repository": "https://github.com/wlsdks/prompt-coach",
   "license": "MIT",
   "keywords": [
-    "prompt-memory",
+    "prompt-coach",
     "memory",
     "hooks",
     "statusline",

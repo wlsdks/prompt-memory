@@ -48,7 +48,7 @@ Smallest concrete refactor in the queue. Options are recorded in
   tools default to the per-tool layout
   (`src/mcp/<tool-name>-tool.ts`).
 - Optionally introduce `src/mcp/registry.ts` (Option C) to remove the
-  manual `PROMPT_MEMORY_MCP_TOOL_HANDLERS` literal in `server.ts`. Keep the
+  manual `PROMPT_COACH_MCP_TOOL_HANDLERS` literal in `server.ts`. Keep the
   legacy `score-tool-*.ts` files in place.
 
 ### 3. ADR-0002 implementation — capability negotiation

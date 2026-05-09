@@ -1,4 +1,4 @@
-# prompt-memory Phase 2 PRD
+# prompt-coach Phase 2 PRD
 
 Date: 2026-05-02
 
@@ -13,7 +13,7 @@ Related docs:
 
 ## 1. Purpose
 
-Phase 2 expands `prompt-memory` from a safe local prompt archive into a local-first prompt memory and improvement workspace.
+Phase 2 expands `prompt-coach` from a safe local prompt archive into a local-first prompt memory and improvement workspace.
 
 The product should help users:
 
@@ -118,11 +118,11 @@ Goal:
 
 Implemented capabilities:
 
-- `prompt-memory import --dry-run`
-- `prompt-memory import --save-job`
-- `prompt-memory import --execute`
-- `prompt-memory import --resume`
-- `prompt-memory import-job`
+- `prompt-coach import --dry-run`
+- `prompt-coach import --save-job`
+- `prompt-coach import --execute`
+- `prompt-coach import --resume`
+- `prompt-coach import-job`
 - raw-free import job summaries
 - malformed record tolerance
 - assistant/tool/unsupported role skip
@@ -153,7 +153,7 @@ Goal:
 
 Implemented capabilities:
 
-- `prompt-memory improve`
+- `prompt-coach improve`
 - `local-rules-v1` improvement generation
 - prompt detail improvement panel
 - copy improvement draft
@@ -210,7 +210,7 @@ Public beta boundary:
 
 External LLM analysis is excluded from Phase 2 core.
 
-After Phase 2, `prompt-memory` may expose explicit MCP handoff tools that return
+After Phase 2, `prompt-coach` may expose explicit MCP handoff tools that return
 bounded redacted packets to the active user-controlled Claude Code/Codex session
 for advisory judgment. That is not a hidden provider integration, and it must
 not extract provider tokens, proxy credentials, or replace local deterministic

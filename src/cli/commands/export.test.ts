@@ -5,7 +5,7 @@ import { join } from "node:path";
 import { afterEach, describe, expect, it } from "vitest";
 
 import { normalizeClaudeCodePayload } from "../../adapters/claude-code.js";
-import { initializePromptMemory } from "../../config/config.js";
+import { initializePromptCoach } from "../../config/config.js";
 import { redactPrompt } from "../../redaction/redact.js";
 import { createSqlitePromptStorage } from "../../storage/sqlite.js";
 import { createProgram } from "../index.js";
@@ -36,13 +36,13 @@ describe("export CLI", () => {
       /--anonymized is required/,
     );
     expect(() => exportForCli({ preview: true })).toThrow(
-      /prompt-memory export --anonymized/,
+      /prompt-coach export --anonymized/,
     );
   });
 
   it("hints at the preview command when --job points at a missing id", () => {
     const dataDir = createTempDir();
-    initializePromptMemory({ dataDir });
+    initializePromptCoach({ dataDir });
 
     expect(() =>
       exportForCli({
@@ -59,13 +59,13 @@ describe("export CLI", () => {
         job: "exp_does_not_exist",
         json: true,
       }),
-    ).toThrow(/prompt-memory export --anonymized --preview/);
+    ).toThrow(/prompt-coach export --anonymized --preview/);
   });
 
   it("previews and executes anonymized exports without raw ids, paths, or secrets", async () => {
     const rawSecret = "sk-proj-1234567890abcdef";
     const dataDir = createTempDir();
-    initializePromptMemory({ dataDir });
+    initializePromptCoach({ dataDir });
     const storage = createSqlitePromptStorage({
       dataDir,
       hmacSecret: "test-secret",
@@ -134,7 +134,7 @@ async function storeClaudePrompt(
 }
 
 function createTempDir(): string {
-  const dir = join(tmpdir(), `prompt-memory-export-cli-${randomUUID()}`);
+  const dir = join(tmpdir(), `prompt-coach-export-cli-${randomUUID()}`);
   mkdirSync(dir, { recursive: true });
   tempDirs.push(dir);
   return dir;

@@ -13,6 +13,9 @@ tmp/
 .temp/
 
 # Runtime data
+.prompt-coach/
+.prompt-coach-*/
+prompt-coach-data/
 .prompt-memory/
 .prompt-memory-*/
 prompt-memory-data/
@@ -41,6 +44,7 @@ pnpm-debug.log*
 output/playwright/
 playwright-report/
 test-results/
+prompt-coach-*.png
 prompt-memory-*.png
 
 # Claude Code session-only state (cron lock, scratch)

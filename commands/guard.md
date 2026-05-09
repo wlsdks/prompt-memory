@@ -1,5 +1,5 @@
 ---
-description: Toggle the prompt-memory rewrite guard mode (off / context / ask / block-and-copy)
+description: Toggle the prompt-coach rewrite guard mode (off / context / ask / block-and-copy)
 allowed-tools: Bash, AskUserQuestion
 ---
 
@@ -12,8 +12,8 @@ does when a captured prompt scores below the configured threshold.
 ## 1. Confirm the CLI is installed and show the current state
 
 ```bash
-command -v prompt-memory
-prompt-memory hook status
+command -v prompt-coach
+prompt-coach hook status
 ```
 
 If `command -v` returns nothing, stop and tell the user to install or
@@ -36,7 +36,7 @@ mode does so the user can choose without reading docs.
   (length ≥ 30, score < 60, not an acknowledgment), the hook tells the
   agent to ask one or two clarifying questions before answering. On
   Claude Code that means calling the native `AskUserQuestion` tool;
-  on Codex it means calling the prompt-memory
+  on Codex it means calling the prompt-coach
   `ask_clarifying_questions` MCP tool, which uses elicitation/create
   with a native dialog fallback.
 - **block-and-copy** — Hard. Submitted prompts under the score threshold
@@ -50,7 +50,7 @@ local server and status-line untouched so the picker stays scoped to the
 guard mode only:
 
 ```bash
-prompt-memory setup --profile coach --rewrite-guard <chosen> --no-service --skip-statusline
+prompt-coach setup --profile coach --rewrite-guard <chosen> --no-service --skip-statusline
 ```
 
 `<chosen>` is the literal value returned by `AskUserQuestion` (`off`,

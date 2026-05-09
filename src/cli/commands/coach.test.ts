@@ -5,7 +5,7 @@ import { join } from "node:path";
 import { afterEach, describe, expect, it } from "vitest";
 
 import { normalizeClaudeCodePayload } from "../../adapters/claude-code.js";
-import { initializePromptMemory } from "../../config/config.js";
+import { initializePromptCoach } from "../../config/config.js";
 import { redactPrompt } from "../../redaction/redact.js";
 import { createSqlitePromptStorage } from "../../storage/sqlite.js";
 import { createProgram } from "../index.js";
@@ -33,7 +33,7 @@ describe("coach CLI", () => {
 
   it("prints a privacy-safe one-call coach report as JSON and text", async () => {
     const dataDir = createTempDir();
-    const init = initializePromptMemory({ dataDir });
+    const init = initializePromptCoach({ dataDir });
     const storage = createSqlitePromptStorage({
       dataDir,
       hmacSecret: init.hookAuth.web_session_secret,
@@ -82,18 +82,18 @@ describe("coach CLI", () => {
     expect(text).toContain("Latest prompt");
     expect(text).toContain("Next actions");
     expect(text).toContain("Agent commands");
-    expect(text).toContain("/prompt-memory:coach");
-    expect(text).toContain("/prompt-memory:score");
-    expect(text).toContain("/prompt-memory:improve-last");
-    expect(text).toContain("prompt-memory:coach_prompt");
-    expect(text).toContain("prompt-memory buddy");
+    expect(text).toContain("/prompt-coach:coach");
+    expect(text).toContain("/prompt-coach:score");
+    expect(text).toContain("/prompt-coach:improve-last");
+    expect(text).toContain("prompt-coach:coach_prompt");
+    expect(text).toContain("prompt-coach buddy");
     expect(text).not.toContain("sk-proj-1234567890abcdef");
     expect(text).not.toContain("/Users/example");
   });
 
   it("forwards --language ko to the coach so archive output is Korean", async () => {
     const dataDir = createTempDir();
-    const init = initializePromptMemory({ dataDir });
+    const init = initializePromptCoach({ dataDir });
     const storage = createSqlitePromptStorage({
       dataDir,
       hmacSecret: init.hookAuth.web_session_secret,
@@ -127,14 +127,14 @@ describe("coach CLI", () => {
 
   it("ignores invalid --language values rather than throwing", async () => {
     const dataDir = createTempDir();
-    initializePromptMemory({ dataDir });
+    initializePromptCoach({ dataDir });
 
     expect(() => coachPromptForCli({ dataDir, language: "fr" })).not.toThrow();
   });
 
   it("honors --no-archive --no-improvement --no-latest-score --no-project-rules", async () => {
     const dataDir = createTempDir();
-    const init = initializePromptMemory({ dataDir });
+    const init = initializePromptCoach({ dataDir });
     const storage = createSqlitePromptStorage({
       dataDir,
       hmacSecret: init.hookAuth.web_session_secret,
@@ -194,25 +194,23 @@ describe("coach CLI", () => {
   });
 
   it("keeps empty archive guidance aligned with the coach-first activation path", () => {
-    const dataDir = join(tmpdir(), `prompt-memory-empty-coach-${randomUUID()}`);
+    const dataDir = join(tmpdir(), `prompt-coach-empty-coach-${randomUUID()}`);
     tempDirs.push(dataDir);
 
     const text = coachPromptForCli({ dataDir });
 
     expect(text).toContain("Prompt-memory is not ready yet.");
-    expect(text).toContain("prompt-memory start");
-    expect(text).toContain(
-      "prompt-memory setup --profile coach --register-mcp",
-    );
-    expect(text).toContain("prompt-memory server");
+    expect(text).toContain("prompt-coach start");
+    expect(text).toContain("prompt-coach setup --profile coach --register-mcp");
+    expect(text).toContain("prompt-coach server");
     expect(text).toContain("Agent commands");
-    expect(text).toContain("prompt-memory start --open-web");
+    expect(text).toContain("prompt-coach start --open-web");
     expect(text).not.toContain(dataDir);
   });
 });
 
 function createTempDir(): string {
-  const dir = join(tmpdir(), `prompt-memory-coach-cli-${randomUUID()}`);
+  const dir = join(tmpdir(), `prompt-coach-coach-cli-${randomUUID()}`);
   mkdirSync(dir, { recursive: true });
   tempDirs.push(dir);
   return dir;

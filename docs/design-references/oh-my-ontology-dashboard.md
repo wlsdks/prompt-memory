@@ -1,6 +1,6 @@
 # oh-my-ontology Dashboard Reference
 
-이 문서는 사용자가 지정한 `<workstation>/side-project/oh-my-ontology` 디자인을 `prompt-memory`에 이식하기 위한 기준이다.
+이 문서는 사용자가 지정한 `<workstation>/side-project/oh-my-ontology` 디자인을 `prompt-coach`에 이식하기 위한 기준이다.
 
 ## Source
 
@@ -28,4 +28,4 @@
 - gradient, glassmorphism, glow, neon, aurora, scale hover를 사용하지 않는다.
 - panel은 dark surface + hairline border + compact row로 만든다.
 - caption은 mono, 9-11px, uppercase, 높은 tracking으로 둔다.
-- `prompt-memory` Dashboard는 ontology map 대신 prompt habit data를 주인공으로 보여준다.
+- `prompt-coach` Dashboard는 ontology map 대신 prompt habit data를 주인공으로 보여준다.

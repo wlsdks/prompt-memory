@@ -1,5 +1,5 @@
 ---
-description: Check prompt-memory capture health
+description: Check prompt-coach capture health
 allowed-tools: Bash
 ---
 
@@ -8,23 +8,23 @@ allowed-tools: Bash
 First check that the CLI is installed:
 
 ```bash
-command -v prompt-memory
+command -v prompt-coach
 ```
 
 If this returns nothing, report that the plugin is installed but the
-`prompt-memory` CLI is not on `PATH` yet.
+`prompt-coach` CLI is not on `PATH` yet.
 
 Run:
 
 ```bash
-prompt-memory doctor claude-code
-prompt-memory statusline claude-code
+prompt-coach doctor claude-code
+prompt-coach statusline claude-code
 ```
 
 If Codex is installed, also run:
 
 ```bash
-prompt-memory doctor codex
+prompt-coach doctor codex
 ```
 
 Report whether the local server is reachable, the hook is installed, and the

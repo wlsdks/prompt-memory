@@ -603,7 +603,7 @@ export function App() {
     const url = URL.createObjectURL(blob);
     const anchor = document.createElement("a");
     anchor.href = url;
-    anchor.download = `prompt-memory-${exportPayload.job_id}.json`;
+    anchor.download = `prompt-coach-${exportPayload.job_id}.json`;
     anchor.click();
     URL.revokeObjectURL(url);
   }
@@ -665,7 +665,7 @@ export function App() {
         <div className="sidebar-header">
           <div className="brand">
             <Database size={16} />
-            <span className="sidebar-label">prompt-memory</span>
+            <span className="sidebar-label">prompt-coach</span>
           </div>
           <button
             aria-expanded={!sidebarCollapsed}
@@ -2067,7 +2067,7 @@ function SettingsView({
         <p className="muted">
           Use the CLI doctor command for detailed diagnostics.
         </p>
-        <code>prompt-memory doctor claude-code</code>
+        <code>prompt-coach doctor claude-code</code>
       </section>
     </div>
   );
@@ -2088,7 +2088,7 @@ function ProjectsView({
     return (
       <div className="panel empty">
         <h2>No project records yet.</h2>
-        <code>prompt-memory setup</code>
+        <code>prompt-coach setup</code>
       </div>
     );
   }
@@ -2317,7 +2317,7 @@ function ExportView({
       ) : (
         <section className="panel empty">
           <h2>No preview yet.</h2>
-          <code>prompt-memory export --anonymized --preview</code>
+          <code>prompt-coach export --anonymized --preview</code>
         </section>
       )}
 
@@ -2630,11 +2630,11 @@ function emptyPromptCommands(
   }
 
   return [
-    "prompt-memory start",
-    "prompt-memory setup --profile coach",
-    "prompt-memory doctor claude-code",
-    "prompt-memory doctor codex",
-    "prompt-memory coach",
+    "prompt-coach start",
+    "prompt-coach setup --profile coach",
+    "prompt-coach doctor claude-code",
+    "prompt-coach doctor codex",
+    "prompt-coach coach",
   ];
 }
 

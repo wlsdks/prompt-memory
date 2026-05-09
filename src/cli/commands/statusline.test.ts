@@ -4,7 +4,7 @@ import { join } from "node:path";
 import { randomUUID } from "node:crypto";
 import { afterEach, describe, expect, it } from "vitest";
 
-import { initializePromptMemory } from "../../config/config.js";
+import { initializePromptCoach } from "../../config/config.js";
 import { writeLastHookStatus } from "../../hooks/hook-status.js";
 import { normalizeClaudeCodePayload } from "../../adapters/claude-code.js";
 import { redactPrompt } from "../../redaction/redact.js";
@@ -33,7 +33,7 @@ describe("renderClaudeCodeStatusLine", () => {
     const dir = createTempDir();
     const dataDir = join(dir, "data");
     const settingsPath = join(dir, "settings.json");
-    const init = initializePromptMemory({ dataDir });
+    const init = initializePromptCoach({ dataDir });
     installClaudeCodeHook({ dataDir, settingsPath });
     const storage = createSqlitePromptStorage({
       dataDir,
@@ -73,7 +73,7 @@ describe("renderClaudeCodeStatusLine", () => {
     expect(line).toMatch(/^prompt: score \d+\/\d+ /);
     expect(line).toContain("needs_work");
     expect(line).toContain("weakest:");
-    expect(line).toContain("run: /prompt-memory:improve-last");
+    expect(line).toContain("run: /prompt-coach:improve-last");
     expect(line).not.toContain("archiving");
     expect(line).not.toContain("server ok");
     expect(line).not.toContain("save ok");
@@ -86,7 +86,7 @@ describe("renderClaudeCodeStatusLine", () => {
     const dir = createTempDir();
     const dataDir = join(dir, "data");
     const settingsPath = join(dir, "settings.json");
-    const init = initializePromptMemory({ dataDir });
+    const init = initializePromptCoach({ dataDir });
     installClaudeCodeHook({ dataDir, settingsPath });
     const storage = createSqlitePromptStorage({
       dataDir,
@@ -132,7 +132,7 @@ describe("renderClaudeCodeStatusLine", () => {
     const dir = createTempDir();
     const dataDir = join(dir, "data");
     const settingsPath = join(dir, "settings.json");
-    const init = initializePromptMemory({ dataDir });
+    const init = initializePromptCoach({ dataDir });
     installClaudeCodeHook({ dataDir, settingsPath });
     const now = new Date("2026-05-09T08:00:00.000Z");
     const storage = createSqlitePromptStorage({
@@ -199,7 +199,7 @@ describe("renderClaudeCodeStatusLine", () => {
     const dir = createTempDir();
     const dataDir = join(dir, "data");
     const settingsPath = join(dir, "settings.json");
-    const init = initializePromptMemory({ dataDir });
+    const init = initializePromptCoach({ dataDir });
     installClaudeCodeHook({ dataDir, settingsPath });
     const storage = createSqlitePromptStorage({
       dataDir,
@@ -267,7 +267,7 @@ describe("installClaudeCodeStatusLine", () => {
     expect(settings.theme).toBe("dark");
     expect(settings.statusLine.type).toBe("command");
     expect(settings.statusLine.command).toContain(
-      "prompt-memory statusline claude-code",
+      "prompt-coach statusline claude-code",
     );
   });
 
@@ -282,7 +282,7 @@ describe("installClaudeCodeStatusLine", () => {
 
     expect(result.changed).toBe(true);
     expect(result.nextSettings.statusLine.command).toContain(
-      "prompt-memory statusline claude-code",
+      "prompt-coach statusline claude-code",
     );
     expect(() => readFileSync(settingsPath, "utf8")).toThrow();
   });
@@ -307,7 +307,7 @@ describe("installClaudeCodeStatusLine", () => {
       statusLine: { command: string };
     };
     expect(settings.statusLine.command).toContain(
-      "prompt-memory statusline claude-code",
+      "prompt-coach statusline claude-code",
     );
     expect(settings.statusLine.command).toContain("statusline-chain");
     expect(settings.statusLine.command).toContain("--previous");
@@ -365,7 +365,7 @@ describe("installClaudeCodeStatusLine", () => {
     });
   });
 
-  it("uninstalls only prompt-memory statusLine entries", () => {
+  it("uninstalls only prompt-coach statusLine entries", () => {
     const dir = createTempDir();
     const settingsPath = join(dir, "settings.json");
     installClaudeCodeStatusLine({ settingsPath });
@@ -381,10 +381,10 @@ describe("installClaudeCodeStatusLine", () => {
 });
 
 describe("renderChainedClaudeCodeStatusLine", () => {
-  it("prints prompt-memory on a separate line after an existing status line", () => {
+  it("prints prompt-coach on a separate line after an existing status line", () => {
     const line = renderChainedClaudeCodeStatusLine({
       previousCommand: "previous",
-      promptMemoryCommand: "prompt-memory",
+      promptCoachCommand: "prompt-coach",
       runCommand: (command) => ({
         stdout:
           command === "previous"
@@ -399,7 +399,7 @@ describe("renderChainedClaudeCodeStatusLine", () => {
   it("preserves multiline output from an existing Claude Code status line", () => {
     const line = renderChainedClaudeCodeStatusLine({
       previousCommand: "previous",
-      promptMemoryCommand: "prompt-memory",
+      promptCoachCommand: "prompt-coach",
       runCommand: (command) => ({
         stdout:
           command === "previous"
@@ -413,10 +413,10 @@ describe("renderChainedClaudeCodeStatusLine", () => {
     );
   });
 
-  it("preserves multiline prompt-memory output after an existing status line", () => {
+  it("preserves multiline prompt-coach output after an existing status line", () => {
     const line = renderChainedClaudeCodeStatusLine({
       previousCommand: "previous",
-      promptMemoryCommand: "prompt-memory",
+      promptCoachCommand: "prompt-coach",
       runCommand: (command) => ({
         stdout:
           command === "previous"
@@ -437,21 +437,21 @@ describe("renderChainedClaudeCodeStatusLine", () => {
     expect(() =>
       renderChainedClaudeCodeStatusLine({
         previousCommand: "",
-        promptMemoryCommand: "",
+        promptCoachCommand: "",
       }),
     ).not.toThrow();
     expect(
       renderChainedClaudeCodeStatusLine({
         previousCommand: "",
-        promptMemoryCommand: "",
+        promptCoachCommand: "",
       }),
     ).toBe("");
   });
 
-  it("keeps prompt-memory output when the previous status line fails", () => {
+  it("keeps prompt-coach output when the previous status line fails", () => {
     const line = renderChainedClaudeCodeStatusLine({
       previousCommand: "previous",
-      promptMemoryCommand: "prompt-memory",
+      promptCoachCommand: "prompt-coach",
       runCommand: (command) => ({
         stdout: command === "previous" ? "" : "prompt: score 23/100 weak\n",
       }),
@@ -465,7 +465,7 @@ describe("renderChainedClaudeCodeStatusLine", () => {
 
     renderChainedClaudeCodeStatusLine({
       previousCommand: "previous",
-      promptMemoryCommand: "prompt-memory",
+      promptCoachCommand: "prompt-coach",
       stdin: '{"cwd":"/Users/example/project"}',
       runCommand: (command, input) => {
         calls.push({ command, input });
@@ -475,13 +475,13 @@ describe("renderChainedClaudeCodeStatusLine", () => {
 
     expect(calls).toEqual([
       { command: "previous", input: '{"cwd":"/Users/example/project"}' },
-      { command: "prompt-memory", input: '{"cwd":"/Users/example/project"}' },
+      { command: "prompt-coach", input: '{"cwd":"/Users/example/project"}' },
     ]);
   });
 });
 
 function createTempDir(): string {
-  const dir = join(tmpdir(), `prompt-memory-statusline-${randomUUID()}`);
+  const dir = join(tmpdir(), `prompt-coach-statusline-${randomUUID()}`);
   mkdirSync(dir, { recursive: true });
   tempDirs.push(dir);
   return dir;

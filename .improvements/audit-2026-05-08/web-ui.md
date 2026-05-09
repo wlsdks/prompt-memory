@@ -2,7 +2,7 @@
 
 ## 환경 메모
 
-- 17373 서버는 `/var/folders/.../pm-session-start-u0uk8B/data` 임시 디렉토리를 보고 있어 list/dashboard 모두 0 prompts. 사용자의 실제 `~/.prompt-memory/prompt-memory.sqlite`(active 467개)와 분리됨. 본 감사는 코드 수정 금지/read-only 환경이므로 detail 페이지, 점수별 정렬, fork affordance 등 데이터-필요 동작은 직접 확인하지 못함. 그 사실 자체가 Major 발견점 1.
+- 17373 서버는 `/var/folders/.../pm-session-start-u0uk8B/data` 임시 디렉토리를 보고 있어 list/dashboard 모두 0 prompts. 사용자의 실제 `~/.prompt-coach/prompt-coach.sqlite`(active 467개)와 분리됨. 본 감사는 코드 수정 금지/read-only 환경이므로 detail 페이지, 점수별 정렬, fork affordance 등 데이터-필요 동작은 직접 확인하지 못함. 그 사실 자체가 Major 발견점 1.
 - desktop 1280x900 + mobile 390x844 두 viewport 확인. 한국어 locale 기준.
 
 ## Flow 1: Reuse loop
@@ -47,6 +47,6 @@
 
 ### 다음 세션 추천
 
-- 데이터가 있는 환경(server를 `~/.prompt-memory` data_dir로 띄우거나 fixture seed)에서 detail 페이지 reuse affordance, raw markdown 복사 버튼, score band별 정렬, "이 프롬프트로 새 draft" CTA 유무를 직접 확인.
+- 데이터가 있는 환경(server를 `~/.prompt-coach` data_dir로 띄우거나 fixture seed)에서 detail 페이지 reuse affordance, raw markdown 복사 버튼, score band별 정렬, "이 프롬프트로 새 draft" CTA 유무를 직접 확인.
 - coach/projects/settings 페이지의 정보 hierarchy와 dangerous action(삭제 등) 확인.
 - keyboard navigation, focus ring, skip-link 동작 정밀 확인(skip-link 자체는 존재 확인됨).

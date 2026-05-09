@@ -51,7 +51,7 @@ export type PracticeHistorySummary = {
 };
 
 const HISTORY_LIMIT = 20;
-const STORAGE_KEY = "prompt-memory.practice-history.v1";
+const STORAGE_KEY = "prompt-coach.practice-history.v1";
 
 type PracticeHistoryStorage = {
   getItem(key: string): string | null;

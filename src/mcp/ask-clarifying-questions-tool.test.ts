@@ -2,7 +2,7 @@ import { describe, expect, it } from "vitest";
 
 import { askClarifyingQuestionsTool } from "./ask-clarifying-questions-tool.js";
 import type { RpcChannel } from "./rpc-channel.js";
-import type { PromptMemoryMcpServerContext } from "./server.js";
+import type { PromptCoachMcpServerContext } from "./server.js";
 
 function makeChannel(handler: {
   onSendRequest: (method: string, params: unknown) => Promise<unknown>;
@@ -25,7 +25,7 @@ function makeContext(
   channelHandler: {
     onSendRequest: (method: string, params: unknown) => Promise<unknown>;
   },
-): PromptMemoryMcpServerContext {
+): PromptCoachMcpServerContext {
   return {
     channel: makeChannel(channelHandler),
     clientCapabilities: capabilities,
@@ -179,8 +179,8 @@ describe("askClarifyingQuestionsTool", () => {
   });
 
   it("respects allow_native_dialog=false even when env is set", async () => {
-    const previous = process.env.PROMPT_MEMORY_NATIVE_DIALOG;
-    process.env.PROMPT_MEMORY_NATIVE_DIALOG = "1";
+    const previous = process.env.PROMPT_COACH_NATIVE_DIALOG;
+    process.env.PROMPT_COACH_NATIVE_DIALOG = "1";
     try {
       const result = await askClarifyingQuestionsTool({
         prompt: "Make this better",
@@ -192,7 +192,7 @@ describe("askClarifyingQuestionsTool", () => {
       }
       expect(result.interaction_status).toBe("unsupported");
     } finally {
-      process.env.PROMPT_MEMORY_NATIVE_DIALOG = previous;
+      process.env.PROMPT_COACH_NATIVE_DIALOG = previous;
     }
   });
 

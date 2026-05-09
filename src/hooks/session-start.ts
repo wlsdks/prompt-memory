@@ -2,7 +2,7 @@ import { spawn } from "node:child_process";
 import { existsSync, mkdirSync, readFileSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
 
-import { loadPromptMemoryConfig } from "../config/config.js";
+import { loadPromptCoachConfig } from "../config/config.js";
 import type { HookRunResult } from "./wrapper.js";
 
 type SessionStartPayload = {
@@ -35,7 +35,7 @@ export async function runSessionStartHook(
       return emptyResult();
     }
 
-    const config = loadPromptMemoryConfig(options.dataDir);
+    const config = loadPromptCoachConfig(options.dataDir);
     if (!claimSessionOpen(config.data_dir, payload.session_id ?? "unknown")) {
       return emptyResult();
     }
@@ -45,7 +45,7 @@ export async function runSessionStartHook(
     const isReachable = options.isServerReachable ?? defaultIsServerReachable;
     if (!(await isReachable(healthUrl))) {
       // Do not spawn a server here. Server lifecycle is owned by
-      // `prompt-memory service`; spawning from a SessionStart hook risks a
+      // `prompt-coach service`; spawning from a SessionStart hook risks a
       // detached child binding 17373 with the wrong data dir and is what
       // produced the 2026-05-09 401 incident. Fail-open silently — the user
       // will see no web pop-up, which matches the spirit of an opt-in hook.

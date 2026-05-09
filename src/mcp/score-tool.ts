@@ -1,7 +1,7 @@
 import { analyzePrompt } from "../analysis/analyze.js";
 import { createArchiveScoreReport } from "../analysis/archive-score.js";
 import { improvePrompt, type PromptImprovement } from "../analysis/improve.js";
-import { loadHookAuth, loadPromptMemoryConfig } from "../config/config.js";
+import { loadHookAuth, loadPromptCoachConfig } from "../config/config.js";
 import type { PromptAnalysisPreview } from "../shared/schema.js";
 import { createSqlitePromptStorage } from "../storage/sqlite.js";
 import type { PromptSummary } from "../storage/ports.js";
@@ -26,12 +26,12 @@ export type {
   RecordAgentRewriteToolArguments,
   RecordAgentRewriteToolResult,
 } from "./agent-rewrite-tool-types.js";
-import { listPromptMemoryMcpToolNames } from "./score-tool-definitions.js";
+import { listPromptCoachMcpToolNames } from "./score-tool-definitions.js";
 import type {
   CoachPromptToolArguments,
   CoachPromptToolResult,
-  GetPromptMemoryStatusToolArguments,
-  GetPromptMemoryStatusToolResult,
+  GetPromptCoachStatusToolArguments,
+  GetPromptCoachStatusToolResult,
   ImprovePromptToolArguments,
   ImprovePromptToolResult,
   ReviewProjectInstructionsToolArguments,
@@ -45,24 +45,24 @@ import type {
 
 export {
   COACH_PROMPT_TOOL_DEFINITION,
-  GET_PROMPT_MEMORY_STATUS_TOOL_DEFINITION,
+  GET_PROMPT_COACH_STATUS_TOOL_DEFINITION,
   IMPROVE_PROMPT_TOOL_DEFINITION,
   PREPARE_AGENT_REWRITE_TOOL_DEFINITION,
   PREPARE_AGENT_JUDGE_BATCH_TOOL_DEFINITION,
-  PROMPT_MEMORY_MCP_TOOL_DEFINITIONS,
+  PROMPT_COACH_MCP_TOOL_DEFINITIONS,
   RECORD_AGENT_REWRITE_TOOL_DEFINITION,
   RECORD_AGENT_JUDGMENTS_TOOL_DEFINITION,
   REVIEW_PROJECT_INSTRUCTIONS_TOOL_DEFINITION,
   SCORE_PROMPT_ARCHIVE_TOOL_DEFINITION,
   SCORE_PROMPT_TOOL_DEFINITION,
-  listPromptMemoryMcpToolNames,
+  listPromptCoachMcpToolNames,
 } from "./score-tool-definitions.js";
 
 export type {
   CoachPromptToolArguments,
   CoachPromptToolResult,
-  GetPromptMemoryStatusToolArguments,
-  GetPromptMemoryStatusToolResult,
+  GetPromptCoachStatusToolArguments,
+  GetPromptCoachStatusToolResult,
   ImprovePromptToolArguments,
   ImprovePromptToolResult,
   ReviewProjectInstructionsToolArguments,
@@ -79,7 +79,7 @@ export function coachPromptTool(
   options: ScorePromptToolOptions = {},
 ): CoachPromptToolResult {
   const generatedAt = (options.now ?? new Date()).toISOString();
-  const status = getPromptMemoryStatusTool({}, options);
+  const status = getPromptCoachStatusTool({}, options);
   const includeLatestScore = args.include_latest_score !== false;
   const includeImprovement = args.include_improvement !== false;
   const includeArchive = args.include_archive !== false;
@@ -213,7 +213,7 @@ export function scorePromptArchiveTool(
   options: ScorePromptToolOptions = {},
 ): ScorePromptArchiveToolResult {
   try {
-    const config = loadPromptMemoryConfig(options.dataDir);
+    const config = loadPromptCoachConfig(options.dataDir);
     const auth = loadHookAuth(options.dataDir);
     const storage = createSqlitePromptStorage({
       dataDir: config.data_dir,
@@ -246,10 +246,10 @@ export function scorePromptArchiveTool(
   }
 }
 
-export function getPromptMemoryStatusTool(
-  args: GetPromptMemoryStatusToolArguments,
+export function getPromptCoachStatusTool(
+  args: GetPromptCoachStatusToolArguments,
   options: ScorePromptToolOptions = {},
-): GetPromptMemoryStatusToolResult {
+): GetPromptCoachStatusToolResult {
   const privacy = {
     local_only: true,
     external_calls: false,
@@ -258,7 +258,7 @@ export function getPromptMemoryStatusTool(
   } as const;
 
   try {
-    const config = loadPromptMemoryConfig(options.dataDir);
+    const config = loadPromptCoachConfig(options.dataDir);
     const auth = loadHookAuth(options.dataDir);
     const storage = createSqlitePromptStorage({
       dataDir: config.data_dir,
@@ -292,8 +292,8 @@ export function getPromptMemoryStatusTool(
                 "Use review_project_instructions to check AGENTS.md/CLAUDE.md quality for a captured project.",
               ]
             : [
-                "Capture at least one Claude Code or Codex prompt, then rerun get_prompt_memory_status.",
-                "Run prompt-memory setup if hooks are not installed yet.",
+                "Capture at least one Claude Code or Codex prompt, then rerun get_prompt_coach_status.",
+                "Run prompt-coach setup if hooks are not installed yet.",
               ],
         privacy,
       };
@@ -309,8 +309,8 @@ export function getPromptMemoryStatusTool(
       project_count: 0,
       available_tools: availableMcpToolNames(),
       next_actions: [
-        "Run prompt-memory init or prompt-memory setup before using archive-backed MCP tools.",
-        "After setup, capture a Claude Code or Codex prompt and rerun get_prompt_memory_status.",
+        "Run prompt-coach init or prompt-coach setup before using archive-backed MCP tools.",
+        "After setup, capture a Claude Code or Codex prompt and rerun get_prompt_coach_status.",
       ],
       privacy,
     };
@@ -329,7 +329,7 @@ export function reviewProjectInstructionsTool(
   }
 
   try {
-    const config = loadPromptMemoryConfig(options.dataDir);
+    const config = loadPromptCoachConfig(options.dataDir);
     const auth = loadHookAuth(options.dataDir);
     const storage = createSqlitePromptStorage({
       dataDir: config.data_dir,
@@ -398,7 +398,7 @@ function withStoredPrompt(
   options: ScorePromptToolOptions,
 ): ScorePromptToolResult {
   try {
-    const config = loadPromptMemoryConfig(options.dataDir);
+    const config = loadPromptCoachConfig(options.dataDir);
     const auth = loadHookAuth(options.dataDir);
     const storage = createSqlitePromptStorage({
       dataDir: config.data_dir,
@@ -423,7 +423,7 @@ function withStoredPrompt(
       if (!prompt?.analysis) {
         return toolError(
           "not_found",
-          `Prompt not found or not analyzed: ${id}. Run get_prompt_memory_status to confirm the archive state, or pass a \`prompt\` text argument instead.`,
+          `Prompt not found or not analyzed: ${id}. Run get_prompt_coach_status to confirm the archive state, or pass a \`prompt\` text argument instead.`,
         );
       }
 
@@ -489,11 +489,11 @@ function toSafeLatestPrompt(prompt: PromptSummary) {
 }
 
 function availableMcpToolNames(): string[] {
-  return listPromptMemoryMcpToolNames();
+  return listPromptCoachMcpToolNames();
 }
 
 function createAgentCoachBrief(input: {
-  status: GetPromptMemoryStatusToolResult;
+  status: GetPromptCoachStatusToolResult;
   latestScore?: ScorePromptToolResult;
   improvement?: ImprovePromptToolResult;
   archive?: ScorePromptArchiveToolResult;
@@ -505,13 +505,13 @@ function createAgentCoachBrief(input: {
       summary:
         "No captured prompt archive is available for coaching in this data directory.",
       next_actions: [
-        "Run prompt-memory start to see the shortest setup -> real prompt -> coach path.",
-        "Run prompt-memory setup --profile coach --register-mcp, then submit one real Claude Code or Codex prompt.",
-        "Run prompt-memory server if connected tools cannot reach the local service.",
-        "Run prompt-memory doctor claude-code or prompt-memory doctor codex if capture still does not work.",
+        "Run prompt-coach start to see the shortest setup -> real prompt -> coach path.",
+        "Run prompt-coach setup --profile coach --register-mcp, then submit one real Claude Code or Codex prompt.",
+        "Run prompt-coach server if connected tools cannot reach the local service.",
+        "Run prompt-coach doctor claude-code or prompt-coach doctor codex if capture still does not work.",
       ],
       suggested_user_response:
-        "I cannot coach the latest prompt yet because prompt-memory has no ready archive. Run prompt-memory start, finish the coach setup, then capture one real request first.",
+        "I cannot coach the latest prompt yet because prompt-coach has no ready archive. Run prompt-coach start, finish the coach setup, then capture one real request first.",
     };
   }
 
@@ -614,7 +614,7 @@ function withStoredPromptImprovement(
   options: ScorePromptToolOptions,
 ): ImprovePromptToolResult {
   try {
-    const config = loadPromptMemoryConfig(options.dataDir);
+    const config = loadPromptCoachConfig(options.dataDir);
     const auth = loadHookAuth(options.dataDir);
     const storage = createSqlitePromptStorage({
       dataDir: config.data_dir,
@@ -639,7 +639,7 @@ function withStoredPromptImprovement(
       if (!prompt?.analysis) {
         return improvementToolError(
           "not_found",
-          `Prompt not found or not analyzed: ${id}. Run get_prompt_memory_status to confirm the archive state, or pass a \`prompt\` text argument instead.`,
+          `Prompt not found or not analyzed: ${id}. Run get_prompt_coach_status to confirm the archive state, or pass a \`prompt\` text argument instead.`,
         );
       }
 
@@ -671,7 +671,7 @@ function storageUnavailableMessage(error: unknown): string {
       ? ` Reason: ${error.code}.`
       : "";
 
-  return `Local prompt-memory archive is not available. Run \`prompt-memory init\` first or pass --data-dir.${reason}`;
+  return `Local prompt-coach archive is not available. Run \`prompt-coach init\` first or pass --data-dir.${reason}`;
 }
 
 function toImprovementToolResult(input: {

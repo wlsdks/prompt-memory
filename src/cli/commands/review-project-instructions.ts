@@ -20,7 +20,7 @@ export function registerReviewProjectInstructionsCommand(
     .description(
       "Review the captured project's AGENTS.md / CLAUDE.md instructions and surface gaps.",
     )
-    .option("--data-dir <path>", "Override the prompt-memory data directory.")
+    .option("--data-dir <path>", "Override the prompt-coach data directory.")
     .option(
       "--project-id <id>",
       "Review the project with this proj_<hash> id. Defaults to the latest captured project.",

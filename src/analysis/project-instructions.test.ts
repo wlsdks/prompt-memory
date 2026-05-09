@@ -10,7 +10,7 @@ describe("project instruction analysis", () => {
           file_name: "AGENTS.md",
           content: [
             "# Project",
-            "prompt-memory is a local-first developer tool built with TypeScript and SQLite.",
+            "prompt-coach is a local-first developer tool built with TypeScript and SQLite.",
             "Agents must plan in tasks/todo.md, avoid reverting user changes, commit, and push.",
             "Run pnpm test, pnpm lint, pnpm build, and Playwright E2E after UI changes.",
             "Never log secrets, prompt bodies, raw paths, tokens, stdout, or stderr leaks.",

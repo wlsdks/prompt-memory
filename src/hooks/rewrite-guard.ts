@@ -63,7 +63,7 @@ export type PromptRewriteGuardOptions = {
    * Tool that triggered the hook. Ask mode emits a Claude-Code-specific
    * AskUserQuestion instruction by default; on Codex it switches to an
    * MCP-tool-call instruction since Codex has no native AskUserQuestion
-   * but can call the prompt-memory `ask_clarifying_questions` MCP tool.
+   * but can call the prompt-coach `ask_clarifying_questions` MCP tool.
    */
   tool?: "claude-code" | "codex";
   /**

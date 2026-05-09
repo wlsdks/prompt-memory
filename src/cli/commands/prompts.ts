@@ -1,6 +1,6 @@
 import type { Command } from "commander";
 
-import { loadHookAuth, loadPromptMemoryConfig } from "../../config/config.js";
+import { loadHookAuth, loadPromptCoachConfig } from "../../config/config.js";
 import { projectLabel } from "../../storage/project-label.js";
 import { createSqlitePromptStorage } from "../../storage/sqlite.js";
 import { UserError } from "../user-error.js";
@@ -26,7 +26,7 @@ export function registerPromptCommands(program: Command): void {
   program
     .command("list")
     .description("List captured prompts in the local archive.")
-    .option("--data-dir <path>", "Override the prompt-memory data directory.")
+    .option("--data-dir <path>", "Override the prompt-coach data directory.")
     .option("--import-job <id>", "Only show prompts produced by an import job.")
     .option("--limit <count>", "Maximum number of prompts to show.")
     .option("--json", "Print JSON.")
@@ -38,7 +38,7 @@ export function registerPromptCommands(program: Command): void {
     .command("search")
     .description("Full-text search the local prompt archive.")
     .argument("<query>", "FTS query.")
-    .option("--data-dir <path>", "Override the prompt-memory data directory.")
+    .option("--data-dir <path>", "Override the prompt-coach data directory.")
     .option(
       "--import-job <id>",
       "Only search prompts produced by an import job.",
@@ -53,7 +53,7 @@ export function registerPromptCommands(program: Command): void {
     .command("show")
     .description("Show a captured prompt by id.")
     .argument("<id>", "Prompt id.")
-    .option("--data-dir <path>", "Override the prompt-memory data directory.")
+    .option("--data-dir <path>", "Override the prompt-coach data directory.")
     .option("--json", "Print JSON.")
     .option(
       "--explain",
@@ -69,7 +69,7 @@ export function registerPromptCommands(program: Command): void {
       "Delete a captured prompt and its analyses, drafts, and FTS row.",
     )
     .argument("<id>", "Prompt id.")
-    .option("--data-dir <path>", "Override the prompt-memory data directory.")
+    .option("--data-dir <path>", "Override the prompt-coach data directory.")
     .option("--json", "Print JSON.")
     .action((id: string, options: PromptIdOptions) => {
       console.log(deletePromptForCli(id, options));
@@ -79,7 +79,7 @@ export function registerPromptCommands(program: Command): void {
     .command("open")
     .description("Print a local web URL for a captured prompt.")
     .argument("<id>", "Prompt id.")
-    .option("--data-dir <path>", "Override the prompt-memory data directory.")
+    .option("--data-dir <path>", "Override the prompt-coach data directory.")
     .action((id: string, options: PromptIdOptions) => {
       console.log(openPromptForCli(id, options));
     });
@@ -87,7 +87,7 @@ export function registerPromptCommands(program: Command): void {
   program
     .command("rebuild-index")
     .description("Rebuild the SQLite index from the Markdown archive.")
-    .option("--data-dir <path>", "Override the prompt-memory data directory.")
+    .option("--data-dir <path>", "Override the prompt-coach data directory.")
     .option("--json", "Print JSON.")
     .action((options: PromptIdOptions) => {
       console.log(rebuildIndexForCli(options));
@@ -178,7 +178,7 @@ export function showPromptForCli(
     const prompt = storage.getPrompt(id);
 
     if (!prompt) {
-      throw new UserError(`Prompt not found: ${id}. Try: prompt-memory list`);
+      throw new UserError(`Prompt not found: ${id}. Try: prompt-coach list`);
     }
 
     if (options.json) {
@@ -199,7 +199,7 @@ function formatPromptExplanation(
   }
   const analysis = prompt.analysis;
   if (!analysis) {
-    return `${prompt.markdown}\n\n(no analysis available — run pnpm prompt-memory rebuild-index to refresh.)`;
+    return `${prompt.markdown}\n\n(no analysis available — run pnpm prompt-coach rebuild-index to refresh.)`;
   }
   const score = analysis.quality_score;
   const lines = [`Score: ${score.value}/${score.max} (${score.band})`];
@@ -246,7 +246,7 @@ export function deletePromptForCli(
     const result = storage.deletePrompt(id);
 
     if (!result.deleted) {
-      throw new UserError(`Prompt not found: ${id}. Try: prompt-memory list`);
+      throw new UserError(`Prompt not found: ${id}. Try: prompt-coach list`);
     }
 
     return options.json ? JSON.stringify(result, null, 2) : `deleted ${id}`;
@@ -259,15 +259,15 @@ export function openPromptForCli(
 ): string {
   return withStorage(options.dataDir, (storage) => {
     if (!storage.getPrompt(id)) {
-      throw new UserError(`Prompt not found: ${id}. Try: prompt-memory list`);
+      throw new UserError(`Prompt not found: ${id}. Try: prompt-coach list`);
     }
-    const config = loadPromptMemoryConfig(options.dataDir);
+    const config = loadPromptCoachConfig(options.dataDir);
     return `http://${config.server.host}:${config.server.port}/prompts/${encodeURIComponent(id)}`;
   });
 }
 
 export function rebuildIndexForCli(options: PromptIdOptions = {}): string {
-  const config = loadPromptMemoryConfig(options.dataDir);
+  const config = loadPromptCoachConfig(options.dataDir);
   return withStorage(options.dataDir, (storage) => {
     const result = storage.rebuildIndex({
       redactionMode: config.redaction_mode,
@@ -283,7 +283,7 @@ function withStorage<T>(
   dataDir: string | undefined,
   callback: (storage: ReturnType<typeof createSqlitePromptStorage>) => T,
 ): T {
-  const config = loadPromptMemoryConfig(dataDir);
+  const config = loadPromptCoachConfig(dataDir);
   const hookAuth = loadHookAuth(dataDir);
   const storage = createSqlitePromptStorage({
     dataDir: config.data_dir,

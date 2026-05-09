@@ -14,23 +14,23 @@ describe("start guide", () => {
       "Send one real coding prompt",
       "See the first score",
     ]);
-    expect(output.indexOf("prompt-memory coach")).toBeLessThan(
+    expect(output.indexOf("prompt-coach coach")).toBeLessThan(
       output.indexOf("Troubleshooting"),
     );
-    expect(output.indexOf("prompt-memory doctor claude-code")).toBeGreaterThan(
+    expect(output.indexOf("prompt-coach doctor claude-code")).toBeGreaterThan(
       output.indexOf("Troubleshooting"),
     );
     expect(output.indexOf("claude mcp add")).toBeGreaterThan(
       output.indexOf("Troubleshooting"),
     );
-    expect(output).toContain("prompt-memory server");
-    expect(output).not.toContain("prompt-memory open");
+    expect(output).toContain("prompt-coach server");
+    expect(output).not.toContain("prompt-coach open");
 
     const sendStep = guide.steps.find(
       (step) => step.title === "Send one real coding prompt",
     );
-    expect(sendStep?.detail).toContain("/prompt-memory:improve-last");
-    expect(output).toContain("/prompt-memory:improve-last");
+    expect(sendStep?.detail).toContain("/prompt-coach:improve-last");
+    expect(output).toContain("/prompt-coach:improve-last");
   });
 
   it("can focus on one tool without hiding the coach flow", () => {
@@ -38,9 +38,9 @@ describe("start guide", () => {
     const output = formatStartGuide(guide);
 
     expect(guide.tools).toEqual(["codex"]);
-    expect(output).toContain("codex mcp add prompt-memory");
-    expect(output).toContain("prompt-memory doctor codex");
-    expect(output).toContain("prompt-memory coach");
+    expect(output).toContain("codex mcp add prompt-coach");
+    expect(output).toContain("prompt-coach doctor codex");
+    expect(output).toContain("prompt-coach coach");
     expect(output).not.toContain("claude mcp add");
   });
 
@@ -63,7 +63,7 @@ describe("start guide", () => {
     const output = formatStartGuide(guide);
 
     expect(guide.steps[0].commands).toEqual([
-      "prompt-memory setup --profile coach --register-mcp --open-web",
+      "prompt-coach setup --profile coach --register-mcp --open-web",
     ]);
     expect(output).toContain("opens the web workspace automatically");
     expect(output.indexOf("--open-web")).toBeLessThan(
@@ -73,13 +73,13 @@ describe("start guide", () => {
 
   it("never leaks the local node binary or dist path even when invoked from a built CLI", () => {
     // Simulate running `node /Users/<who>/.../dist/cli/index.js start`. With
-    // the previous behavior `defaultPromptMemoryEntry` would echo the
+    // the previous behavior `defaultPromptCoachEntry` would echo the
     // absolute interpreter and dist path into the guidance, leaking the
     // maintainer's home directory in the copy-paste-friendly command.
     const originalArgv = process.argv;
     process.argv = [
       "/Users/secret-dev/.nvm/versions/node/v20.20.0/bin/node",
-      "/Users/secret-dev/side-project/prompt-memory/dist/cli/index.js",
+      "/Users/secret-dev/side-project/prompt-coach/dist/cli/index.js",
       "start",
     ];
     try {
@@ -87,10 +87,10 @@ describe("start guide", () => {
       const output = formatStartGuide(guide);
 
       expect(output).toContain(
-        "claude mcp add --transport stdio prompt-memory -- prompt-memory mcp",
+        "claude mcp add --transport stdio prompt-coach -- prompt-coach mcp",
       );
       expect(output).toContain(
-        "codex mcp add prompt-memory -- prompt-memory mcp",
+        "codex mcp add prompt-coach -- prompt-coach mcp",
       );
       expect(output).not.toContain("/Users/secret-dev/");
       expect(output).not.toMatch(/\bdist\/cli\/index\.js\b/);

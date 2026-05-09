@@ -1,6 +1,6 @@
 ---
 name: Bug report
-about: Report a reproducible problem in prompt-memory
+about: Report a reproducible problem in prompt-coach
 title: "bug: "
 labels: bug
 assignees: ""
@@ -12,7 +12,7 @@ assignees: ""
 
 - OS:
 - Node version:
-- prompt-memory version or commit:
+- prompt-coach version or commit:
 - Tool: Claude Code / Codex / other
 
 ## Steps To Reproduce

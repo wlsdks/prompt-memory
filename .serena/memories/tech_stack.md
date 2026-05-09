@@ -26,7 +26,7 @@
 
 ## Storage
 - Markdown archive (source of truth) + SQLite (index) with FTS5 search.
-- Defaults under `~/.prompt-memory/`. POSIX permissions: `0700` for sensitive dirs, `0600` for token/config files.
+- Defaults under `~/.prompt-coach/`. POSIX permissions: `0700` for sensitive dirs, `0600` for token/config files.
 
 ## Quality gates
 - `vitest` test suite (~58 test files)

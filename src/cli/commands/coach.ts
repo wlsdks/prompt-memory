@@ -21,7 +21,7 @@ export function registerCoachCommand(program: Command): void {
   program
     .command("coach")
     .description("Run the one-call agent prompt coach workflow.")
-    .option("--data-dir <path>", "Override the prompt-memory data directory.")
+    .option("--data-dir <path>", "Override the prompt-coach data directory.")
     .option("--json", "Print JSON.")
     .option("--no-latest-score", "Skip latest prompt scoring.")
     .option("--no-improvement", "Skip latest prompt rewrite.")
@@ -114,23 +114,23 @@ function formatCoach(result: CoachPromptToolResult): string {
 function formatAgentFollowUpCommands(result: CoachPromptToolResult): string[] {
   if (result.status.status !== "ready") {
     return [
-      "- Setup: prompt-memory setup --profile coach --register-mcp",
-      "- Start web review: prompt-memory start --open-web",
+      "- Setup: prompt-coach setup --profile coach --register-mcp",
+      "- Start web review: prompt-coach start --open-web",
     ];
   }
 
   const rows = [
-    "- Claude Code coach: /prompt-memory:coach",
-    "- MCP coach: prompt-memory:coach_prompt include_latest_score=true include_archive=true",
-    "- Side buddy: prompt-memory buddy",
+    "- Claude Code coach: /prompt-coach:coach",
+    "- MCP coach: prompt-coach:coach_prompt include_latest_score=true include_archive=true",
+    "- Side buddy: prompt-coach buddy",
   ];
 
   if (result.latest_score && !("is_error" in result.latest_score)) {
-    rows.splice(1, 0, "- Claude Code score: /prompt-memory:score");
+    rows.splice(1, 0, "- Claude Code score: /prompt-coach:score");
   }
 
   if (result.improvement && !("is_error" in result.improvement)) {
-    rows.splice(2, 0, "- Claude Code improve: /prompt-memory:improve-last");
+    rows.splice(2, 0, "- Claude Code improve: /prompt-coach:improve-last");
   }
 
   return rows;

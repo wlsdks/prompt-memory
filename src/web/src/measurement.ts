@@ -175,7 +175,7 @@ function nextMeasurementAction({
   if (sampleSize === 0) {
     return {
       label: "Capture prompts first",
-      detail: "Run prompt-memory setup, then send a few real coding requests.",
+      detail: "Run prompt-coach setup, then send a few real coding requests.",
       target: "capture",
     };
   }

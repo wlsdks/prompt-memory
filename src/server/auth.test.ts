@@ -12,7 +12,7 @@ describe("createWebSession", () => {
     expect(maxAgeMatch).not.toBeNull();
     const maxAgeSeconds = Number(maxAgeMatch?.[1] ?? "");
 
-    const tokenMatch = /prompt_memory_session=([^.;]+)\./.exec(cookie);
+    const tokenMatch = /prompt_coach_session=([^.;]+)\./.exec(cookie);
     expect(tokenMatch).not.toBeNull();
     const payload = JSON.parse(
       Buffer.from(tokenMatch?.[1] ?? "", "base64url").toString("utf8"),

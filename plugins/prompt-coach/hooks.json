@@ -5,7 +5,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "PROMPT_MEMORY_HOOK=\"prompt-memory hook codex\" /bin/sh -lc 'command -v prompt-memory >/dev/null 2>&1 && prompt-memory hook codex || true'",
+            "command": "PROMPT_COACH_HOOK=\"prompt-coach hook codex\" /bin/sh -lc 'command -v prompt-coach >/dev/null 2>&1 && prompt-coach hook codex || true'",
             "timeout": 2
           }
         ]

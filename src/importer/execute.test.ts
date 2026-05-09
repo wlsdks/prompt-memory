@@ -18,7 +18,7 @@ afterEach(() => {
 });
 
 function writeManualJsonl(prompts: string[]): string {
-  const dir = join(tmpdir(), `prompt-memory-import-exec-${randomUUID()}`);
+  const dir = join(tmpdir(), `prompt-coach-import-exec-${randomUUID()}`);
   mkdirSync(dir, { recursive: true });
   tempDirs.push(dir);
   const file = join(dir, "transcript.jsonl");

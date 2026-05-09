@@ -5,7 +5,7 @@ import { join } from "node:path";
 import { afterEach, describe, expect, it } from "vitest";
 
 import { normalizeClaudeCodePayload } from "../adapters/claude-code.js";
-import { initializePromptMemory } from "../config/config.js";
+import { initializePromptCoach } from "../config/config.js";
 import { redactPrompt } from "../redaction/redact.js";
 import { createSqlitePromptStorage } from "../storage/sqlite.js";
 import { SCORE_PROMPT_ARCHIVE_TOOL_DEFINITION } from "./score-tool-definitions.js";
@@ -13,7 +13,7 @@ import {
   coachPromptTool,
   prepareAgentRewriteTool,
   prepareAgentJudgeBatchTool,
-  getPromptMemoryStatusTool,
+  getPromptCoachStatusTool,
   improvePromptTool,
   recordAgentRewriteTool,
   recordAgentJudgmentsTool,
@@ -88,7 +88,7 @@ describe("scorePromptTool", () => {
 
   it("scores the latest stored prompt by id without returning the prompt body", async () => {
     const dataDir = createTempDir();
-    const init = initializePromptMemory({ dataDir });
+    const init = initializePromptCoach({ dataDir });
     const storage = createSqlitePromptStorage({
       dataDir,
       hmacSecret: init.hookAuth.web_session_secret,
@@ -122,7 +122,7 @@ describe("scorePromptTool", () => {
 
   it("scores the stored prompt archive without returning bodies or raw paths", async () => {
     const dataDir = createTempDir();
-    const init = initializePromptMemory({ dataDir });
+    const init = initializePromptCoach({ dataDir });
     const storage = createSqlitePromptStorage({
       dataDir,
       hmacSecret: init.hookAuth.web_session_secret,
@@ -183,7 +183,7 @@ describe("scorePromptTool", () => {
 
   it("renders archive practice plan in Korean when language=ko is passed", async () => {
     const dataDir = createTempDir();
-    const init = initializePromptMemory({ dataDir });
+    const init = initializePromptCoach({ dataDir });
     const storage = createSqlitePromptStorage({
       dataDir,
       hmacSecret: init.hookAuth.web_session_secret,
@@ -215,7 +215,7 @@ describe("scorePromptTool", () => {
   });
 
   it("does not include raw data directory paths in storage errors", () => {
-    const dataDir = join(tmpdir(), `prompt-memory-missing-${randomUUID()}`);
+    const dataDir = join(tmpdir(), `prompt-coach-missing-${randomUUID()}`);
     const result = scorePromptTool({ latest: true }, { dataDir });
     const serialized = JSON.stringify(result);
 
@@ -227,7 +227,7 @@ describe("scorePromptTool", () => {
 
   it("hints next actions when latest=true on an empty archive", () => {
     const dataDir = createTempDir();
-    initializePromptMemory({ dataDir });
+    initializePromptCoach({ dataDir });
 
     const result = scorePromptTool({ latest: true }, { dataDir });
 
@@ -259,7 +259,7 @@ describe("improvePromptTool", () => {
 
   it("improves the latest stored prompt without returning the stored prompt body", async () => {
     const dataDir = createTempDir();
-    const init = initializePromptMemory({ dataDir });
+    const init = initializePromptCoach({ dataDir });
     const storage = createSqlitePromptStorage({
       dataDir,
       hmacSecret: init.hookAuth.web_session_secret,
@@ -290,7 +290,7 @@ describe("improvePromptTool", () => {
 
   it("improves stored prompts from the redacted archive body instead of the generic analysis summary", async () => {
     const dataDir = createTempDir();
-    const init = initializePromptMemory({ dataDir });
+    const init = initializePromptCoach({ dataDir });
     const storage = createSqlitePromptStorage({
       dataDir,
       hmacSecret: init.hookAuth.web_session_secret,
@@ -371,7 +371,7 @@ describe("reviewProjectInstructionsTool", () => {
       ].join("\n"),
       "utf8",
     );
-    const init = initializePromptMemory({ dataDir });
+    const init = initializePromptCoach({ dataDir });
     const storage = createSqlitePromptStorage({
       dataDir,
       hmacSecret: init.hookAuth.web_session_secret,
@@ -408,7 +408,7 @@ describe("reviewProjectInstructionsTool", () => {
 
   it("returns an actionable tool error when no project exists", () => {
     const dataDir = createTempDir();
-    initializePromptMemory({ dataDir });
+    initializePromptCoach({ dataDir });
 
     const result = reviewProjectInstructionsTool({ latest: true }, { dataDir });
 
@@ -418,10 +418,10 @@ describe("reviewProjectInstructionsTool", () => {
   });
 });
 
-describe("getPromptMemoryStatusTool", () => {
+describe("getPromptCoachStatusTool", () => {
   it("returns local archive readiness without prompt bodies or raw paths", async () => {
     const dataDir = createTempDir();
-    const init = initializePromptMemory({ dataDir });
+    const init = initializePromptCoach({ dataDir });
     const storage = createSqlitePromptStorage({
       dataDir,
       hmacSecret: init.hookAuth.web_session_secret,
@@ -434,7 +434,7 @@ describe("getPromptMemoryStatusTool", () => {
     );
     storage.close();
 
-    const result = getPromptMemoryStatusTool({}, { dataDir });
+    const result = getPromptCoachStatusTool({}, { dataDir });
     const serialized = JSON.stringify(result);
 
     expect(result.status).toBe("ready");
@@ -445,7 +445,7 @@ describe("getPromptMemoryStatusTool", () => {
       project: "project",
     });
     expect(result.available_tools).toContain("score_prompt");
-    expect(result.available_tools).toContain("get_prompt_memory_status");
+    expect(result.available_tools).toContain("get_prompt_coach_status");
     expect(result.privacy).toEqual({
       local_only: true,
       external_calls: false,
@@ -457,20 +457,20 @@ describe("getPromptMemoryStatusTool", () => {
   });
 
   it("returns a setup-needed status when storage is unavailable", () => {
-    const result = getPromptMemoryStatusTool(
+    const result = getPromptCoachStatusTool(
       {},
-      { dataDir: join(tmpdir(), `prompt-memory-missing-${randomUUID()}`) },
+      { dataDir: join(tmpdir(), `prompt-coach-missing-${randomUUID()}`) },
     );
 
     expect(result.status).toBe("setup_needed");
-    expect(result.next_actions[0]).toContain("prompt-memory init");
+    expect(result.next_actions[0]).toContain("prompt-coach init");
   });
 });
 
 describe("agent judge MCP tools", () => {
   it("prepares a redacted agent rewrite packet for the latest stored prompt", async () => {
     const dataDir = createTempDir();
-    const init = initializePromptMemory({ dataDir });
+    const init = initializePromptCoach({ dataDir });
     const storage = createSqlitePromptStorage({
       dataDir,
       hmacSecret: init.hookAuth.web_session_secret,
@@ -510,7 +510,7 @@ describe("agent judge MCP tools", () => {
     expect(result.agent_instructions).toContain("record_agent_rewrite");
     expect(result.privacy).toEqual({
       local_only: true,
-      external_calls_by_prompt_memory: false,
+      external_calls_by_prompt_coach: false,
       intended_external_rewriter: "current_agent_session",
       returns_redacted_prompt_body: true,
       returns_raw_prompt_body: false,
@@ -524,7 +524,7 @@ describe("agent judge MCP tools", () => {
 
   it("records an agent rewrite as a redacted improvement draft without returning the draft body", async () => {
     const dataDir = createTempDir();
-    const init = initializePromptMemory({ dataDir });
+    const init = initializePromptCoach({ dataDir });
     const storage = createSqlitePromptStorage({
       dataDir,
       hmacSecret: init.hookAuth.web_session_secret,
@@ -574,7 +574,7 @@ describe("agent judge MCP tools", () => {
     );
     expect(result.privacy).toEqual({
       local_only: true,
-      external_calls_by_prompt_memory: false,
+      external_calls_by_prompt_coach: false,
       stores_original_prompt_body: false,
       stores_rewrite_draft: true,
       returns_rewrite_draft: false,
@@ -599,7 +599,7 @@ describe("agent judge MCP tools", () => {
 
   it("hints next actions when prepare_agent_rewrite latest=true on an empty archive", () => {
     const dataDir = createTempDir();
-    initializePromptMemory({ dataDir });
+    initializePromptCoach({ dataDir });
 
     const result = prepareAgentRewriteTool({ latest: true }, { dataDir });
 
@@ -611,7 +611,7 @@ describe("agent judge MCP tools", () => {
 
   it("prepares a redacted LLM judge packet for the current agent session", async () => {
     const dataDir = createTempDir();
-    const init = initializePromptMemory({ dataDir });
+    const init = initializePromptCoach({ dataDir });
     const storage = createSqlitePromptStorage({
       dataDir,
       hmacSecret: init.hookAuth.web_session_secret,
@@ -651,7 +651,7 @@ describe("agent judge MCP tools", () => {
     expect(result.agent_instructions).toContain("record_agent_judgments");
     expect(result.privacy).toEqual({
       local_only: true,
-      external_calls_by_prompt_memory: false,
+      external_calls_by_prompt_coach: false,
       intended_external_evaluator: "current_agent_session",
       returns_redacted_prompt_bodies: true,
       returns_raw_prompt_bodies: false,
@@ -665,7 +665,7 @@ describe("agent judge MCP tools", () => {
 
   it("records current-agent judgments without storing prompt bodies", async () => {
     const dataDir = createTempDir();
-    const init = initializePromptMemory({ dataDir });
+    const init = initializePromptCoach({ dataDir });
     const storage = createSqlitePromptStorage({
       dataDir,
       hmacSecret: init.hookAuth.web_session_secret,
@@ -710,7 +710,7 @@ describe("agent judge MCP tools", () => {
     );
     expect(result.privacy).toEqual({
       local_only: true,
-      external_calls_by_prompt_memory: false,
+      external_calls_by_prompt_coach: false,
       stores_prompt_bodies: false,
       stores_raw_paths: false,
       stores_judgment_results: true,
@@ -741,7 +741,7 @@ describe("agent judge MCP tools", () => {
 
   it("hints next actions when prepare_agent_judge_batch finds no prompts", () => {
     const dataDir = createTempDir();
-    initializePromptMemory({ dataDir });
+    initializePromptCoach({ dataDir });
 
     const result = prepareAgentJudgeBatchTool(
       { selection: "low_score", max_prompts: 5 },
@@ -751,7 +751,7 @@ describe("agent judge MCP tools", () => {
     expect(result.is_error).toBe(true);
     expect(result.error_code).toBe("not_found");
     expect(result.message).toContain("Capture Claude Code or Codex prompts");
-    expect(result.message).toContain("get_prompt_memory_status");
+    expect(result.message).toContain("get_prompt_coach_status");
   });
 });
 
@@ -769,7 +769,7 @@ describe("coachPromptTool", () => {
       ].join("\n"),
       "utf8",
     );
-    const init = initializePromptMemory({ dataDir });
+    const init = initializePromptCoach({ dataDir });
     const storage = createSqlitePromptStorage({
       dataDir,
       hmacSecret: init.hookAuth.web_session_secret,
@@ -853,7 +853,7 @@ describe("coachPromptTool", () => {
   });
 
   it("returns setup guidance instead of a hard error when storage is unavailable", () => {
-    const dataDir = join(tmpdir(), `prompt-memory-missing-${randomUUID()}`);
+    const dataDir = join(tmpdir(), `prompt-coach-missing-${randomUUID()}`);
     const result = coachPromptTool({}, { dataDir });
     const serialized = JSON.stringify(result);
 
@@ -861,9 +861,9 @@ describe("coachPromptTool", () => {
     expect(result.status.status).toBe("setup_needed");
     expect(result.agent_brief.next_actions).toEqual(
       expect.arrayContaining([
-        "Run prompt-memory start to see the shortest setup -> real prompt -> coach path.",
-        "Run prompt-memory setup --profile coach --register-mcp, then submit one real Claude Code or Codex prompt.",
-        "Run prompt-memory server if connected tools cannot reach the local service.",
+        "Run prompt-coach start to see the shortest setup -> real prompt -> coach path.",
+        "Run prompt-coach setup --profile coach --register-mcp, then submit one real Claude Code or Codex prompt.",
+        "Run prompt-coach server if connected tools cannot reach the local service.",
       ]),
     );
     expect(serialized).not.toContain(dataDir);
@@ -872,7 +872,7 @@ describe("coachPromptTool", () => {
 
   it("routes the agent to ask the user when the latest prompt has clarifying_questions", async () => {
     const dataDir = createTempDir();
-    const init = initializePromptMemory({ dataDir });
+    const init = initializePromptCoach({ dataDir });
     const storage = createSqlitePromptStorage({
       dataDir,
       hmacSecret: init.hookAuth.web_session_secret,
@@ -914,7 +914,7 @@ describe("coachPromptTool", () => {
 });
 
 function createTempDir(): string {
-  const dir = join(tmpdir(), `prompt-memory-mcp-${randomUUID()}`);
+  const dir = join(tmpdir(), `prompt-coach-mcp-${randomUUID()}`);
   mkdirSync(dir, { recursive: true });
   tempDirs.push(dir);
   return dir;

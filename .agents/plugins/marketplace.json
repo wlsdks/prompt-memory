@@ -1,14 +1,14 @@
 {
-  "name": "prompt-memory-local",
+  "name": "prompt-coach-local",
   "interface": {
     "displayName": "Prompt Memory Local"
   },
   "plugins": [
     {
-      "name": "prompt-memory",
+      "name": "prompt-coach",
       "source": {
         "source": "local",
-        "path": "./plugins/prompt-memory"
+        "path": "./plugins/prompt-coach"
       },
       "policy": {
         "installation": "AVAILABLE",

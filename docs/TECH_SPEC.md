@@ -1,4 +1,4 @@
-# prompt-memory Technical Spec
+# prompt-coach Technical Spec
 
 Date: 2026-05-01
 
@@ -12,7 +12,7 @@ Related docs:
 
 ## 1. Purpose
 
-This document defines the technical design for `prompt-memory`, an AI coding prompt memory and improvement workspace, local-first.
+This document defines the technical design for `prompt-coach`, an AI coding prompt memory and improvement workspace, local-first.
 
 The implementation records prompts from supported AI coding tools, redacts sensitive values, stores a Markdown archive, indexes prompts in SQLite/FTS, serves a local web UI, and provides CLI workflows for setup, search, review, import, export, and prompt improvement.
 
@@ -92,7 +92,7 @@ Permissions:
 
 ### Capture Flow
 
-1. User installs hooks through `prompt-memory setup` or `install-hook`.
+1. User installs hooks through `prompt-coach setup` or `install-hook`.
 2. Claude Code/Codex sends a hook payload.
 3. The hook wrapper normalizes the payload.
 4. The wrapper posts to the local ingest API with a bearer token.
@@ -145,16 +145,16 @@ Hard delete removes:
 
 ### MCP Prompt Scoring Flow
 
-1. User registers `prompt-memory mcp` with a local MCP client such as Claude Code
+1. User registers `prompt-coach mcp` with a local MCP client such as Claude Code
    or Codex.
 2. The client launches the command as a stdio subprocess.
-3. The MCP server exposes `get_prompt_memory_status`, `coach_prompt`,
+3. The MCP server exposes `get_prompt_coach_status`, `coach_prompt`,
    `score_prompt`, `improve_prompt`, `apply_clarifications`,
    `ask_clarifying_questions`, `record_clarifications`,
    `prepare_agent_rewrite`, `record_agent_rewrite`, `score_prompt_archive`,
    `review_project_instructions`, `prepare_agent_judge_batch`, and
    `record_agent_judgments`.
-4. `get_prompt_memory_status` checks whether local storage is initialized,
+4. `get_prompt_coach_status` checks whether local storage is initialized,
    whether prompts have been captured, and which MCP tool to call next.
 5. `score_prompt` accepts exactly one of direct prompt text, a stored prompt id,
    or `latest: true`.
@@ -166,7 +166,7 @@ Hard delete removes:
    approval before resubmission.
 9. `prepare_agent_rewrite` returns one locally redacted prompt body, local score
    metadata, a local baseline draft, and a rewrite contract for the active
-   Claude Code, Codex, or Gemini CLI session. `prompt-memory` does not call a
+   Claude Code, Codex, or Gemini CLI session. `prompt-coach` does not call a
    provider or route credentials for this workflow.
 10. `record_agent_rewrite` stores the active agent session's approved rewrite as
     a redacted improvement draft without returning the rewrite body or storing
@@ -179,7 +179,7 @@ Hard delete removes:
     instruction file bodies or raw paths.
 13. `prepare_agent_judge_batch` returns a bounded set of locally redacted
     prompt bodies plus a rubric for the active Claude Code, Codex, or Gemini CLI
-    session to judge. `prompt-memory` does not call a provider or route
+    session to judge. `prompt-coach` does not call a provider or route
     credentials for this workflow.
 14. `record_agent_judgments` stores advisory scores, confidence, risks, and
     suggestions from the active agent session without prompt bodies or raw
@@ -193,7 +193,7 @@ Hard delete removes:
 Important rules:
 
 - stdout is reserved for newline-delimited JSON-RPC MCP messages
-- no hidden external LLM calls are made by `prompt-memory`
+- no hidden external LLM calls are made by `prompt-coach`
 - agent rewrite/judge mode is explicit: the active user-controlled agent
   session rewrites or judges redacted packets and then records approved metadata
 - MCP read tool definitions include read-only/local-only risk hints

@@ -108,7 +108,7 @@
 ## 2026-05-04 Coach Follow-Up Commands Polish
 
 - [x] 기능/코드/UI 관점에서 다음 고효과 개선 후보 재점검
-- [x] `prompt-memory coach` 텍스트 출력에 agent-native follow-up 명령 추가
+- [x] `prompt-coach coach` 텍스트 출력에 agent-native follow-up 명령 추가
 - [x] privacy-safe CLI 회귀 테스트 추가
 - [x] 브라우저/릴리스 게이트로 실제 동작 검증
 - [x] PR 생성, CI 확인, main merge, branch cleanup
@@ -135,8 +135,8 @@
 
 ## 2026-05-04 Vertical StatusLine And Agent UX Polish
 
-- [x] statusLine chain이 `claude-hud`와 prompt-memory multiline 출력을 모두 보존하는지 재점검
-- [x] prompt-memory 상태줄을 score/action 중심의 세로 분리 출력으로 개선
+- [x] statusLine chain이 `claude-hud`와 prompt-coach multiline 출력을 모두 보존하는지 재점검
+- [x] prompt-coach 상태줄을 score/action 중심의 세로 분리 출력으로 개선
 - [x] 웹 Dashboard의 agent command surface를 더 실사용 중심으로 다듬기
 - [x] 기능/코드 품질 회귀 테스트와 브라우저 검증 실행
 - [x] PR 생성, CI 확인, main merge, branch cleanup
@@ -144,7 +144,7 @@
 ### 판단 기준
 
 - 기존 HUD의 stdout, ANSI 색상, 줄바꿈을 변경하지 않는다.
-- prompt-memory 상태줄은 한 줄에 과도한 정보를 몰아넣지 않고 readiness와 coaching action을 분리한다.
+- prompt-coach 상태줄은 한 줄에 과도한 정보를 몰아넣지 않고 readiness와 coaching action을 분리한다.
 - 웹 UI는 command 실행 맥락, 복사 행동, 현재 개선 포인트를 즉시 이해할 수 있어야 한다.
 - 모든 출력은 local-first privacy를 유지하고 prompt body, raw path, token을 노출하지 않는다.
 
@@ -159,25 +159,25 @@
 
 ### 판단 기준
 
-- 기존 Claude HUD의 multiline/ANSI 출력은 유지하고 prompt-memory는 가로 폭을 과도하게 늘리지 않는다.
-- 기능 추가는 prompt-memory 정체성인 local-first prompt coach/memory에 직접 도움이 되는 것만 한다.
+- 기존 Claude HUD의 multiline/ANSI 출력은 유지하고 prompt-coach는 가로 폭을 과도하게 늘리지 않는다.
+- 기능 추가는 prompt-coach 정체성인 local-first prompt coach/memory에 직접 도움이 되는 것만 한다.
 - UI 개선은 `DESIGN.md`의 warm developer workbench 기준을 따른다.
 - prompt body, raw path, token은 stdout/stderr, browser diagnostics, test output에 노출하지 않는다.
 
 ## 2026-05-03 Claude StatusLine Multiline Layout
 
 - [x] 현재 chained statusLine 출력이 기존 HUD 줄바꿈을 깨는 원인 확인
-- [x] 기존 HUD multiline 보존과 prompt-memory compact line 회귀 테스트 추가
-- [x] chained renderer와 prompt-memory statusLine 문구를 짧게 개선
+- [x] 기존 HUD multiline 보존과 prompt-coach compact line 회귀 테스트 추가
+- [x] chained renderer와 prompt-coach statusLine 문구를 짧게 개선
 - [x] 로컬 Claude 설정/실행 출력 재검증
 - [x] targeted/full 검증 실행
 - [ ] PR 생성, CI 확인, main merge, branch cleanup
 
 ### 판단 기준
 
-- `claude-hud` 같은 기존 HUD의 줄바꿈과 ANSI 출력은 prompt-memory가 한 줄로 뭉개면 안 된다.
-- 기존 HUD가 있으면 prompt-memory는 별도 짧은 line으로 붙여 가로 폭을 과도하게 늘리지 않는다.
-- 기존 HUD가 실패하거나 비어 있으면 prompt-memory만 짧고 읽기 쉬운 한 줄로 표시한다.
+- `claude-hud` 같은 기존 HUD의 줄바꿈과 ANSI 출력은 prompt-coach가 한 줄로 뭉개면 안 된다.
+- 기존 HUD가 있으면 prompt-coach는 별도 짧은 line으로 붙여 가로 폭을 과도하게 늘리지 않는다.
+- 기존 HUD가 실패하거나 비어 있으면 prompt-coach만 짧고 읽기 쉬운 한 줄로 표시한다.
 - statusLine 출력은 prompt body, raw path, token을 포함하지 않는다.
 
 ## 2026-05-03 Stable CLI Entry Path For Hooks
@@ -206,16 +206,16 @@
 
 ### 판단 기준
 
-- Claude Code는 `statusLine`을 하나만 지원하므로 여러 설정을 만들지 않고 하나의 command 안에서 기존 HUD와 prompt-memory를 같이 실행한다.
-- 기존 `claude-hud` 같은 command는 설치 시 보존되고, prompt-memory 제거 시 가능한 경우 원래 command로 복구되어야 한다.
-- reinstall은 기존 command를 중첩 wrapping하지 않고 prompt-memory command만 갱신해야 한다.
+- Claude Code는 `statusLine`을 하나만 지원하므로 여러 설정을 만들지 않고 하나의 command 안에서 기존 HUD와 prompt-coach를 같이 실행한다.
+- 기존 `claude-hud` 같은 command는 설치 시 보존되고, prompt-coach 제거 시 가능한 경우 원래 command로 복구되어야 한다.
+- reinstall은 기존 command를 중첩 wrapping하지 않고 prompt-coach command만 갱신해야 한다.
 - statusLine 출력과 로그는 prompt body, raw path, secret을 노출하지 않아야 한다.
 
 ## 2026-05-03 Coach Release Readiness
 
 - [x] benchmark v1에 coach actionability 지표 추가
 - [x] `coach_prompt` agent brief를 첫 보완/다음 요청 template 중심으로 강화
-- [x] `prompt-memory start --open-web`로 첫 3분 setup 안내 압축
+- [x] `prompt-coach start --open-web`로 첫 3분 setup 안내 압축
 - [x] README/README.ko 첫 3분 외부 사용자 흐름 재정리
 - [x] 테스트/벤치마크/릴리스 게이트 실행
 - [x] PR 생성, CI 확인, main merge, branch cleanup
@@ -354,7 +354,7 @@
 
 ### 판단 기준
 
-- `prompt-memory`는 외부 LLM/API를 직접 호출하지 않고 현재 Claude Code/Codex/Gemini CLI 세션이 rewrite를 만든다.
+- `prompt-coach`는 외부 LLM/API를 직접 호출하지 않고 현재 Claude Code/Codex/Gemini CLI 세션이 rewrite를 만든다.
 - prepare tool은 bounded redacted prompt packet과 명확한 rewrite contract만 반환한다.
 - record tool은 승인 가능한 rewrite draft와 metadata만 저장하고 raw prompt body, raw absolute path, secret을 저장/반환하지 않는다.
 - local deterministic rewrite는 빠른 fallback으로 유지하고, agent-assisted rewrite는 사용자가 명시적으로 요청했을 때만 실행한다.
@@ -403,7 +403,7 @@
 
 ### 판단 기준
 
-- `prompt-memory`가 사용자 Claude/OAuth나 Codex 계정을 대신 라우팅하는 숨은 외부 호출을 하지 않는다.
+- `prompt-coach`가 사용자 Claude/OAuth나 Codex 계정을 대신 라우팅하는 숨은 외부 호출을 하지 않는다.
 - Claude Code/Codex 현재 세션이 MCP tool로 redacted prompt packet을 받아 직접 평가하고, 결과만 저장한다.
 - 원문 prompt body, raw absolute path, secret은 judge packet/result/log/stdout/stderr에 노출하지 않는다.
 - LLM judge 결과는 advisory signal로 저장하고, deterministic local score를 기본 기준으로 유지한다.
@@ -411,7 +411,7 @@
 ## 2026-05-03 Agent Wrapper Experiment
 
 - [x] 로컬 Claude/Codex CLI의 초기 prompt 입력 표면 확인
-- [x] `pm-claude` / `pm-codex` wrapper 설계와 TDD 구현
+- [x] `pc-claude` / `pc-codex` wrapper 설계와 TDD 구현
 - [x] package bin, README/PLUGINS 문서, release packaging 반영
 - [x] dry-run/실행 smoke와 전체 검증 실행
 - [x] PR 생성, CI 확인, main merge, branch cleanup
@@ -419,8 +419,8 @@
 ### 판단 기준
 
 - wrapper는 초기 prompt 인자만 rewrite/approval 대상으로 삼고, interactive 입력창 내부를 계속 가로채는 것처럼 과장하지 않는다.
-- 기본값은 approval 모드이며, 진짜 딸깍 자동 rewrite는 `--pm-mode auto`로 명시한다.
-- `--pm-dry-run`은 실제 Claude/Codex를 실행하지 않고 어떤 prompt가 선택될지 privacy-safe JSON으로 검증 가능해야 한다.
+- 기본값은 approval 모드이며, 진짜 딸깍 자동 rewrite는 `--pc-mode auto`로 명시한다.
+- `--pc-dry-run`은 실제 Claude/Codex를 실행하지 않고 어떤 prompt가 선택될지 privacy-safe JSON으로 검증 가능해야 한다.
 - subcommand, auth, mcp, plugin 같은 관리 명령은 rewrite하지 않고 원 CLI로 pass-through 해야 한다.
 
 ## 2026-05-03 Coach Setup Profile
@@ -535,8 +535,8 @@
 ## 2026-05-03 Always-On Prompt Buddy
 
 - [x] Claude Code status line에 최신 prompt score HUD를 TDD로 추가
-- [x] Claude Code/Codex 옆 split pane에서 띄우는 `prompt-memory buddy` CLI를 TDD로 추가
-- [x] `/prompt-memory:coach` / MCP 문서와 plugin 안내를 always-on buddy 흐름과 연결
+- [x] Claude Code/Codex 옆 split pane에서 띄우는 `prompt-coach buddy` CLI를 TDD로 추가
+- [x] `/prompt-coach:coach` / MCP 문서와 plugin 안내를 always-on buddy 흐름과 연결
 - [x] privacy-safe 출력, CLI 실제 실행, release gate 검증
 - [x] 커밋, 푸시, CI 확인
 
@@ -550,8 +550,8 @@
 ## 2026-05-03 Unified Agent Coach
 
 - [x] `coach_prompt` MCP 통합 workflow를 TDD로 추가
-- [x] `prompt-memory coach --json` CLI fallback을 추가하고 top-level CLI에 연결
-- [x] Claude Code `/prompt-memory:coach` command와 Codex skill/default prompt를 갱신
+- [x] `prompt-coach coach --json` CLI fallback을 추가하고 top-level CLI에 연결
+- [x] Claude Code `/prompt-coach:coach` command와 Codex skill/default prompt를 갱신
 - [x] privacy-safe partial failure와 raw path/body 미노출 검증
 - [x] release gate, 커밋, 푸시, CI 확인
 
@@ -666,7 +666,7 @@
 
 ### 판단 기준
 
-- 사용자는 prompt-memory 안에서 다음 Claude Code/Codex 요청을 작성하고 바로 점수를 확인할 수 있어야 한다.
+- 사용자는 prompt-coach 안에서 다음 Claude Code/Codex 요청을 작성하고 바로 점수를 확인할 수 있어야 한다.
 - 초안 작성/점수 preview는 로컬 deterministic rule만 사용하고 prompt를 저장하지 않는다.
 - Practice 화면은 raw prompt archive를 새로 노출하지 않고 사용자가 직접 작성 중인 draft만 다룬다.
 
@@ -756,7 +756,7 @@
 ## 2026-05-03 MCP Status Preflight And Final Polish
 
 - [x] UI/UX 추가 탭 필요성 재평가
-- [x] MCP에서 prompt-memory 준비 상태를 확인하는 preflight tool 추가
+- [x] MCP에서 prompt-coach 준비 상태를 확인하는 preflight tool 추가
 - [x] README/Plugin/Tech spec에 새 MCP tool 사용 맥락 반영
 - [x] MCP 테스트와 release/browser 검증 재실행
 - [x] 커밋, 푸시, CI 확인
@@ -862,7 +862,7 @@
 ## 2026-05-02 Dashboard Design Rebuild And Functionality Recheck
 
 - [x] `/Users/jinan/ai/awesome-design-md` 참고 기준을 프로젝트 디자인 문서와 작업 규칙에 반영
-- [x] `/Users/jinan/side-project/oh-my-ontology` 디자인 시스템을 확인하고 prompt-memory 기준으로 이식
+- [x] `/Users/jinan/side-project/oh-my-ontology` 디자인 시스템을 확인하고 prompt-coach 기준으로 이식
 - [x] warm teal/dashboard command center 스타일을 oh-my-ontology 단일 인디고 다크 시스템으로 재구축
 - [x] 낮은 점수 review queue가 실제 개선 대상만 보여주는지 실패 테스트 작성
 - [x] Prompt Habit Coach dashboard를 command center 형태로 재구축
@@ -873,7 +873,7 @@
 
 ### 디자인 기준
 
-- awesome-design-md는 그대로 복제하지 않고 `prompt-memory`의 로컬 우선 developer tool 정체성에 맞게 적용한다.
+- awesome-design-md는 그대로 복제하지 않고 `prompt-coach`의 로컬 우선 developer tool 정체성에 맞게 적용한다.
 - 사용자가 명시한 기준은 `/Users/jinan/side-project/oh-my-ontology`의 Linear-base dark indigo design system이다.
 - Dashboard 첫 영역은 score, biggest weakness, next fix, low-score review queue가 한눈에 들어오는 작업 화면이어야 한다.
 - 낮은 점수 큐는 높은 점수 prompt를 섞어 보여주면 안 된다.
@@ -899,7 +899,7 @@
 ## 2026-05-02 Archive Score Review / MCP Batch Scoring
 
 - [x] 누적 프롬프트 archive score 공통 엔진과 privacy-safe report 구현
-- [x] CLI `prompt-memory score` 추가 및 JSON/text 출력 검증
+- [x] CLI `prompt-coach score` 추가 및 JSON/text 출력 검증
 - [x] MCP `score_prompt_archive` 도구 추가 및 Claude/Codex 호출 문서화
 - [x] Web API와 Dashboard에서 archive score review 제공
 - [x] Claude Code slash command와 Codex plugin skill에 archive score 흐름 추가
@@ -911,7 +911,7 @@
 
 - 원문 프롬프트 전체를 MCP 응답으로 반환하지 않는다.
 - 기본 점수는 로컬 deterministic Prompt Quality Score를 사용한다.
-- Claude Code/Codex는 `/prompt-memory:score` 또는 MCP 요청 시 report를 해석하고 개선 방향을 제안한다.
+- Claude Code/Codex는 `/prompt-coach:score` 또는 MCP 요청 시 report를 해석하고 개선 방향을 제안한다.
 - CLI와 Web도 같은 archive score report를 사용한다.
 - 외부 LLM judge나 자동 원문 재입력은 이번 단위에서 제외한다.
 
@@ -1079,7 +1079,7 @@
 
 ### 정체성 기준
 
-- `prompt-memory`는 단순 프롬프트 저장소가 아니다.
+- `prompt-coach`는 단순 프롬프트 저장소가 아니다.
 - 핵심 정체성은 "Claude Code, Codex 같은 AI 코딩 도구에 입력한 프롬프트를 로컬에 안전하게 기록하고, 다시 찾고, 분석하고, 다음 요청을 더 잘 쓰도록 돕는 developer tool"이다.
 - 제품 포지셔닝은 "AI coding prompt memory and improvement workspace, local-first"로 통일한다.
 
@@ -1087,7 +1087,7 @@
 
 - [x] local prompt improver 실패 테스트 작성
 - [x] `improvePrompt` rule 기반 개선안 생성 구현
-- [x] `prompt-memory improve --stdin|--text --json` CLI 추가
+- [x] `prompt-coach improve --stdin|--text --json` CLI 추가
 - [x] prompt detail UI에 개선안 preview와 복사 버튼 추가
 - [x] hook 자동 대체/자동 재제출은 제외하고 사용자 승인형 copy flow로 제한
 - [x] CLI/UI 실제 사용성 검증
@@ -1102,7 +1102,7 @@
 
 ### 점검 결과
 
-- `prompt-memory improve --text "이거 좀 고쳐줘" --json`이 승인형 copy 개선안을 생성하는 것을 확인했다.
+- `prompt-coach improve --text "이거 좀 고쳐줘" --json`이 승인형 copy 개선안을 생성하는 것을 확인했다.
 - 상세 화면에 "승인 후 재입력할 개선안" preview와 "개선안 복사" 버튼을 추가했다.
 - Playwright로 desktop/mobile 상세 화면을 확인했고, 개선안 복사 후 copy count가 증가했다.
 - mobile 390px에서 document horizontal overflow는 없었다.
@@ -1139,8 +1139,8 @@
 - [x] import job storage 실패 테스트 작성
 - [x] `import_jobs`, `import_records`, `import_errors` SQLite migration 추가
 - [x] raw-free import job 저장/조회/list 구현
-- [x] `prompt-memory import --dry-run --save-job` CLI 추가
-- [x] `prompt-memory import-job <id>` 조회 CLI 추가
+- [x] `prompt-coach import --dry-run --save-job` CLI 추가
+- [x] `prompt-coach import-job <id>` 조회 CLI 추가
 - [x] targeted 검증 실행
 - [x] full 검증, 커밋 및 푸시
 
@@ -1184,7 +1184,7 @@
 
 - [x] import dry-run 범위 확정
 - [x] source별 allowlist parser 실패 테스트 작성
-- [x] `prompt-memory import --dry-run --file <path>` CLI 추가
+- [x] `prompt-coach import --dry-run --file <path>` CLI 추가
 - [x] raw-free dry-run summary 출력 구현
 - [x] assistant/tool/command/file content 제외 회귀 테스트
 - [x] malformed JSONL이 전체 dry-run을 깨지 않는지 검증
@@ -1207,29 +1207,29 @@
 
 ### 점검 결과
 
-- README 상단에 Quick Start를 추가해 `prompt-memory` CLI 설치와 Claude Code/Codex marketplace 추가를 분리했다.
+- README 상단에 Quick Start를 추가해 `prompt-coach` CLI 설치와 Claude Code/Codex marketplace 추가를 분리했다.
 - marketplace plugin은 CLI binary를 설치하지 않으므로, 권장 순서를 CLI 설치 후 marketplace 추가로 명시했다.
-- Claude Code는 `/plugin marketplace add wlsdks/prompt-memory`, `/plugin install prompt-memory`, `/reload-plugins`, `/prompt-memory:setup` 순서로 정리했다.
-- Codex는 `codex plugin marketplace add wlsdks/prompt-memory` 후 `prompt-memory setup`으로 hook을 설치하고 Codex hooks를 활성화한다고 정리했다.
+- Claude Code는 `/plugin marketplace add wlsdks/prompt-coach`, `/plugin install prompt-coach`, `/reload-plugins`, `/prompt-coach:setup` 순서로 정리했다.
+- Codex는 `codex plugin marketplace add wlsdks/prompt-coach` 후 `prompt-coach setup`으로 hook을 설치하고 Codex hooks를 활성화한다고 정리했다.
 - 검증 명령: `git diff --check`, `pnpm pack:dry-run` 통과. Node 20.20.0에서 실행되어 `engines.node >=22 <25` 경고는 계속 발생한다.
 
 ## 2026-05-02 Claude HUD-style Plugin
 
 - [x] Claude Code plugin 구조 설계: marketplace, manifest, slash commands, statusLine
 - [x] 실패 테스트 작성: Claude plugin 파일, command 문서, statusLine 출력
-- [x] `.claude-plugin` marketplace/manifest와 `/prompt-memory:*` commands 추가
-- [x] `prompt-memory statusline claude-code` CLI 추가
+- [x] `.claude-plugin` marketplace/manifest와 `/prompt-coach:*` commands 추가
+- [x] `prompt-coach statusline claude-code` CLI 추가
 - [x] README/docs/package 포함 파일 갱신
 - [x] 검증 명령 실행
 - [x] 커밋 및 푸시
 
 ### 점검 결과
 
-- Claude Code repo-local marketplace 파일을 `.claude-plugin/marketplace.json`에 추가했다. 사용 흐름은 `/plugin marketplace add wlsdks/prompt-memory`, `/plugin install prompt-memory`, `/reload-plugins`다.
-- Claude Code plugin manifest `.claude-plugin/plugin.json`에 `/prompt-memory:setup`, `/prompt-memory:status`, `/prompt-memory:open` command 문서를 연결했다.
-- `/prompt-memory:setup`은 CLI 존재 여부를 먼저 확인하고, `prompt-memory setup --dry-run`을 보여준 뒤 승인 시 실제 setup을 실행하도록 작성했다. statusLine은 기존 Claude `statusLine`을 대체할 수 있어서 별도 승인 후 `install-statusline`을 실행하게 했다.
-- `prompt-memory statusline claude-code`, `install-statusline claude-code`, `uninstall-statusline claude-code`를 추가했다. statusLine은 capture on/paused/setup needed, server 상태, last ingest 상태를 한 줄로 출력한다.
-- 검증 명령: `pnpm format`, `pnpm test`, `pnpm lint`, `pnpm build`, `pnpm pack:dry-run`, `pnpm smoke:release`, `git diff --check` 통과. `pnpm prompt-memory install-statusline claude-code --dry-run`과 `pnpm prompt-memory statusline claude-code`도 실제 빌드된 CLI로 실행했다.
+- Claude Code repo-local marketplace 파일을 `.claude-plugin/marketplace.json`에 추가했다. 사용 흐름은 `/plugin marketplace add wlsdks/prompt-coach`, `/plugin install prompt-coach`, `/reload-plugins`다.
+- Claude Code plugin manifest `.claude-plugin/plugin.json`에 `/prompt-coach:setup`, `/prompt-coach:status`, `/prompt-coach:open` command 문서를 연결했다.
+- `/prompt-coach:setup`은 CLI 존재 여부를 먼저 확인하고, `prompt-coach setup --dry-run`을 보여준 뒤 승인 시 실제 setup을 실행하도록 작성했다. statusLine은 기존 Claude `statusLine`을 대체할 수 있어서 별도 승인 후 `install-statusline`을 실행하게 했다.
+- `prompt-coach statusline claude-code`, `install-statusline claude-code`, `uninstall-statusline claude-code`를 추가했다. statusLine은 capture on/paused/setup needed, server 상태, last ingest 상태를 한 줄로 출력한다.
+- 검증 명령: `pnpm format`, `pnpm test`, `pnpm lint`, `pnpm build`, `pnpm pack:dry-run`, `pnpm smoke:release`, `git diff --check` 통과. `pnpm prompt-coach install-statusline claude-code --dry-run`과 `pnpm prompt-coach statusline claude-code`도 실제 빌드된 CLI로 실행했다.
 - 현재 로컬에서는 서버가 내려가 있어 statusLine 출력은 `PM capture paused | server down | last ingest failed`였다. Node 20.20.0에서 실행되어 `engines.node >=22 <25` 경고는 계속 발생한다.
 
 ## 2026-05-02 Claude/Codex Plugin Packaging
@@ -1243,9 +1243,9 @@
 
 ### 점검 결과
 
-- Codex용 repo-local plugin 패키지를 `plugins/prompt-memory`에 추가했다. 구성은 `.codex-plugin/plugin.json`, `hooks.json`, `skills/prompt-memory/SKILL.md`다.
-- Codex plugin hook은 `UserPromptSubmit`에서 `prompt-memory hook codex`를 실행하며, CLI가 `PATH`에 없거나 실패하면 `|| true`로 fail-open한다. hook command에는 ingest token을 넣지 않았다.
-- Claude Code는 공식 확장 지점이 settings hook이라 `integrations/claude-code/settings.example.json`과 설명 문서를 추가했다. 일반 사용자는 `prompt-memory setup` 또는 `install-hook claude-code`가 더 안전하다.
+- Codex용 repo-local plugin 패키지를 `plugins/prompt-coach`에 추가했다. 구성은 `.codex-plugin/plugin.json`, `hooks.json`, `skills/prompt-coach/SKILL.md`다.
+- Codex plugin hook은 `UserPromptSubmit`에서 `prompt-coach hook codex`를 실행하며, CLI가 `PATH`에 없거나 실패하면 `|| true`로 fail-open한다. hook command에는 ingest token을 넣지 않았다.
+- Claude Code는 공식 확장 지점이 settings hook이라 `integrations/claude-code/settings.example.json`과 설명 문서를 추가했다. 일반 사용자는 `prompt-coach setup` 또는 `install-hook claude-code`가 더 안전하다.
 - README와 `docs/PLUGINS.md`에 plugin 패키징과 명시적 setup이 여전히 필요한 이유를 문서화했다.
 - `package.json` `files`에 `docs/PLUGINS.md`, `plugins`, `integrations`를 추가했고, `pnpm pack:dry-run`에서 tarball 포함을 확인했다.
 - 검증 명령: `pnpm format`, `pnpm test`, `pnpm lint`, `pnpm build`, `pnpm pack:dry-run`, `pnpm smoke:release`, `git diff --check` 통과. Node 20.20.0에서 실행되어 `engines.node >=22 <25` 경고는 계속 발생한다.
@@ -1254,18 +1254,18 @@
 
 - [x] `setup`/service 설계 범위 확정
 - [x] 실패 테스트 작성: setup dry-run, hook install, macOS service plist
-- [x] `prompt-memory setup` 구현
-- [x] `prompt-memory service install/start/status/stop` 구현
+- [x] `prompt-coach setup` 구현
+- [x] `prompt-coach service install/start/status/stop` 구현
 - [x] README에 명시적 setup 필요 이유와 간단 사용법 추가
 - [x] 검증 명령 실행
 - [x] 커밋 및 푸시
 
 ### 점검 결과
 
-- `prompt-memory setup`은 data dir 초기화, Claude Code/Codex hook 자동 감지 설치, macOS LaunchAgent 서버 등록을 한 번에 수행한다.
+- `prompt-coach setup`은 data dir 초기화, Claude Code/Codex hook 자동 감지 설치, macOS LaunchAgent 서버 등록을 한 번에 수행한다.
 - package install만으로 사용자 설정 파일이나 로그인 서비스를 바꾸지 않는 이유를 README에 명시했다. `setup`은 사용자가 로컬 설정 변경을 승인하는 명시적 단계다.
-- `prompt-memory setup --dry-run`으로 어떤 설정이 바뀔지 먼저 확인할 수 있고, `--no-service`로 hook만 설치한 뒤 서버는 수동 실행할 수 있다.
-- `prompt-memory service install/status/start/stop`을 추가했다. 현재 자동 서비스 등록은 macOS LaunchAgent만 지원하고, 다른 OS에서는 unsupported 결과를 돌려준다.
+- `prompt-coach setup --dry-run`으로 어떤 설정이 바뀔지 먼저 확인할 수 있고, `--no-service`로 hook만 설치한 뒤 서버는 수동 실행할 수 있다.
+- `prompt-coach service install/status/start/stop`을 추가했다. 현재 자동 서비스 등록은 macOS LaunchAgent만 지원하고, 다른 OS에서는 unsupported 결과를 돌려준다.
 - 검증 명령: `pnpm format`, `pnpm test`, `pnpm lint`, `pnpm build`, `pnpm pack:dry-run`, `pnpm smoke:release`, `git diff --check` 통과. Node 20.20.0에서 실행되어 `engines.node >=22 <25` 경고는 계속 발생한다.
 
 ## 2026-05-02 Hook 재점검 및 동작 설명
@@ -1282,7 +1282,7 @@
 - 처음 재점검에서 서버가 내려가 있어 `doctor`의 `server.ok=false`였다. hook은 fail-open이라 도구 사용은 막지 않지만, 서버가 내려가 있으면 저장되지 않는다.
 - 서버를 foreground로 실행한 상태에서 설치된 hook command 문자열을 그대로 읽어 stdin payload를 넣었고, Claude Code/Codex 모두 새 prompt가 저장됐다.
 - 저장 확인: 최신 2건이 각각 `claude-code-v1`, `codex-v1` adapter로 `indexed` 상태였고, `password/access_token`과 API key 계열 값은 마스킹됐다.
-- 결론: hook 등록은 한 번 설치하면 유지된다. 다만 저장을 하려면 `prompt-memory server`가 떠 있어야 한다. 현재 MVP에는 OS 로그인 시 서버 자동 시작 등록 기능은 없다.
+- 결론: hook 등록은 한 번 설치하면 유지된다. 다만 저장을 하려면 `prompt-coach server`가 떠 있어야 한다. 현재 MVP에는 OS 로그인 시 서버 자동 시작 등록 기능은 없다.
 
 ## 2026-05-02 Claude Code/Codex 실제 Hook 연동 점검
 
@@ -1299,8 +1299,8 @@
 
 - 실제 CLI 존재: `claude --version`은 `2.1.126 (Claude Code)`, `codex --version`은 `codex-cli 0.128.0`.
 - 최초 상태: 기본 data dir 기준 `doctor claude-code`, `doctor codex` 모두 server/token/hook 미설정이었다.
-- 실제 설치: `prompt-memory init`으로 기본 prompt-memory data dir을 초기화했고, `install-hook claude-code`, `install-hook codex`를 실행했다. Claude 설정은 `~/.claude/settings.json`, Codex 설정은 `~/.codex/hooks.json`, `~/.codex/config.toml`에 설치됐다.
-- 발견/수정: 설치된 hook command가 `prompt-memory hook ...` 전역 명령을 가정해 실제 셸에서 `command not found`가 났다. installer를 수정해 `PROMPT_MEMORY_HOOK="..." "<node>" "<repo>/dist/cli/index.js" hook ...` 형태의 절대 실행 명령을 기록하고 기존 hook도 갱신하게 했다.
+- 실제 설치: `prompt-coach init`으로 기본 prompt-coach data dir을 초기화했고, `install-hook claude-code`, `install-hook codex`를 실행했다. Claude 설정은 `~/.claude/settings.json`, Codex 설정은 `~/.codex/hooks.json`, `~/.codex/config.toml`에 설치됐다.
+- 발견/수정: 설치된 hook command가 `prompt-coach hook ...` 전역 명령을 가정해 실제 셸에서 `command not found`가 났다. installer를 수정해 `PROMPT_COACH_HOOK="..." "<node>" "<repo>/dist/cli/index.js" hook ...` 형태의 절대 실행 명령을 기록하고 기존 hook도 갱신하게 했다.
 - 실제 저장 검증: 설치된 설정 파일의 command 문자열을 그대로 읽어 `sh -c`로 실행했고, Claude Code payload와 Codex payload가 각각 `claude-code-v1`, `codex-v1`로 저장됐다.
 - 보안 확인: 실제 저장된 두 prompt 모두 `password/access_token` 계열은 `[REDACTED:secret_assignment]`, API key 계열은 `[REDACTED:api_key]`로 마스킹됐다.
 - doctor 결과: Claude Code와 Codex 모두 server/token/settings ok. Codex는 `codexHooksEnabled=true`, `duplicateHooks=false`, `hookSources=["user"]`. 마지막 ingest status는 `ok=true`, `status=200`.
@@ -1338,7 +1338,7 @@
 
 ### 점검 결과
 
-- `localhost:3100`은 `excalidraw-mcp-server`였고, `prompt-memory`는 임시 data dir `/tmp/prompt-memory-devtools.5BogJo`로 `http://127.0.0.1:17373`에서 별도 실행했다.
+- `localhost:3100`은 `excalidraw-mcp-server`였고, `prompt-coach`는 임시 data dir `/tmp/prompt-coach-devtools.5BogJo`로 `http://127.0.0.1:17373`에서 별도 실행했다.
 - 샘플 prompt 3건을 ingest했고, 1건은 삭제 흐름 확인 후 정상 삭제되어 최종 UI에는 2건이 남았다.
 - 목록, 검색, 태그 필터, 민감정보 필터, 상세 분석 preview, prompt 복사 이벤트, bookmark, 삭제 modal/confirm, dashboard, settings를 Chrome DevTools MCP로 확인했다.
 - desktop 1440x900, mobile 390x844에서 screenshot과 accessibility snapshot을 확인했고, mobile horizontal overflow는 없었다.
@@ -1415,7 +1415,7 @@
 - [x] Codex hook wrapper route 테스트 작성
 - [x] Codex doctor feature flag/hook/중복 탐지 테스트 작성
 - [x] `install-hook codex` / `uninstall-hook codex` 구현
-- [x] `prompt-memory hook codex` 구현
+- [x] `prompt-coach hook codex` 구현
 - [x] `doctor codex` 구현
 - [x] targeted/full 검증 실행
 - [x] 커밋 및 푸시
@@ -1498,7 +1498,7 @@
 
 - CI matrix는 이번 작업에서 제외한다.
 - 스모크는 배포 산출물인 `dist/cli/index.js`를 직접 실행해서 사용자가 받을 CLI 흐름을 검증한다.
-- 실제 사용자 `~/.claude`, `~/.codex`, `~/.prompt-memory`를 건드리지 않도록 임시 HOME과 임시 data dir만 사용한다.
+- 실제 사용자 `~/.claude`, `~/.codex`, `~/.prompt-coach`를 건드리지 않도록 임시 HOME과 임시 data dir만 사용한다.
 - 샌드박스에서는 로컬 포트 listen이 `EPERM`으로 막혀 `pnpm smoke:release`를 권한 상승으로 실행했고 통과했다.
 - `pnpm format`, `pnpm test`, `pnpm lint`, `pnpm build`, `pnpm pack:dry-run`, `pnpm smoke:release`, `git diff --check`를 통과했다.
 
@@ -1584,7 +1584,7 @@
   - [x] `pnpm pack:dry-run`
   - [x] `git diff --check`
 - [x] 로컬 디자인 가이드 구조와 관련 예시 확인
-- [x] `prompt-memory` 전용 `DESIGN.md` 재작성
+- [x] `prompt-coach` 전용 `DESIGN.md` 재작성
   - [x] Visual Theme & Atmosphere
   - [x] Color Palette & Roles
   - [x] Typography Rules
@@ -1609,7 +1609,7 @@
 ### P12 설계 메모
 
 - `awesome-design-md`의 목적은 특정 사이트 복제가 아니라 AI가 반복해서 따를 수 있는 명확한 디자인 문서다.
-- `prompt-memory`는 마케팅 사이트가 아니라 로컬 운영형 developer tool이므로 첫 화면은 계속 실제 archive/list로 둔다.
+- `prompt-coach`는 마케팅 사이트가 아니라 로컬 운영형 developer tool이므로 첫 화면은 계속 실제 archive/list로 둔다.
 - 시각 방향은 Linear의 정밀한 정보 밀도와 Cursor의 따뜻한 로컬 도구 톤을 참고하되, 자체 색상/컴포넌트 언어로 유지한다.
 
 ## P13 Feature Discovery / Usability Review
@@ -2280,18 +2280,18 @@
 
 - [x] MCP tool 계약 설계: 사용자 요청에 따라 current prompt text 또는 저장 prompt id를 점수화
 - [x] MCP tool handler 단위 테스트 추가
-- [x] `prompt-memory mcp` stdio JSON-RPC 서버 구현
+- [x] `prompt-coach mcp` stdio JSON-RPC 서버 구현
 - [x] Claude Code/Codex 연결 문서화
 - [x] 직접 JSON-RPC smoke, test/lint/build/pack 검증
 - [x] 커밋 및 PR 브랜치 푸시
 
 ### 설계 메모
 
-- MCP 서버는 `prompt-memory mcp`로 실행되는 stdio JSON-RPC 서버다.
+- MCP 서버는 `prompt-coach mcp`로 실행되는 stdio JSON-RPC 서버다.
 - 노출 tool은 `score_prompt` 하나만 둔다. 입력은 `prompt`, `prompt_id`, `latest: true` 중 정확히 하나다.
 - 직접 전달된 prompt text는 저장하지 않고, 결과에도 prompt body를 반환하지 않는다.
 - 저장 prompt scoring은 기존 SQLite analysis를 읽고 score/checklist metadata만 반환한다.
-- Claude Code는 `claude mcp add --transport stdio prompt-memory -- prompt-memory mcp`, Codex는 `codex mcp add prompt-memory -- prompt-memory mcp`로 연결하도록 문서화했다.
+- Claude Code는 `claude mcp add --transport stdio prompt-coach -- prompt-coach mcp`, Codex는 `codex mcp add prompt-coach -- prompt-coach mcp`로 연결하도록 문서화했다.
 
 ## 2026-05-08 Multi-Track Improvement Pass
 

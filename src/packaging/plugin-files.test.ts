@@ -18,12 +18,12 @@ describe("plugin packaging files", () => {
 
     expect(marketplace.plugins).toContainEqual(
       expect.objectContaining({
-        name: "prompt-memory",
+        name: "prompt-coach",
         source: "./",
         category: "memory",
       }),
     );
-    expect(manifest.name).toBe("prompt-memory");
+    expect(manifest.name).toBe("prompt-coach");
     expect(manifest.commands).toEqual([
       "./commands/setup.md",
       "./commands/status.md",
@@ -78,42 +78,42 @@ describe("plugin packaging files", () => {
     );
 
     expect(guard).toContain(
-      "prompt-memory setup --profile coach --rewrite-guard <chosen>",
+      "prompt-coach setup --profile coach --rewrite-guard <chosen>",
     );
     expect(guard).toContain("AskUserQuestion");
     expect(guard).toMatch(/off.*context.*ask.*block-and-copy/s);
 
     expect(setup).toContain(
-      "prompt-memory setup --profile coach --register-mcp --dry-run",
+      "prompt-coach setup --profile coach --register-mcp --dry-run",
     );
     expect(setup).toContain(
-      "prompt-memory setup --profile coach --register-mcp",
+      "prompt-coach setup --profile coach --register-mcp",
     );
-    expect(setup).toContain("prompt-memory statusline claude-code");
-    expect(status).toContain("prompt-memory doctor claude-code");
-    expect(status).toContain("prompt-memory statusline claude-code");
-    expect(buddy).toContain("prompt-memory buddy");
-    expect(buddy).toContain("prompt-memory buddy --json");
-    expect(coach).toContain("prompt-memory:coach_prompt");
-    expect(coach).toContain("prompt-memory coach --json");
-    expect(score).toContain("prompt-memory score --json");
-    expect(score).toContain("prompt-memory:score_prompt_archive");
-    expect(judge).toContain("prompt-memory:prepare_agent_judge_batch");
-    expect(judge).toContain("prompt-memory:record_agent_judgments");
+    expect(setup).toContain("prompt-coach statusline claude-code");
+    expect(status).toContain("prompt-coach doctor claude-code");
+    expect(status).toContain("prompt-coach statusline claude-code");
+    expect(buddy).toContain("prompt-coach buddy");
+    expect(buddy).toContain("prompt-coach buddy --json");
+    expect(coach).toContain("prompt-coach:coach_prompt");
+    expect(coach).toContain("prompt-coach coach --json");
+    expect(score).toContain("prompt-coach score --json");
+    expect(score).toContain("prompt-coach:score_prompt_archive");
+    expect(judge).toContain("prompt-coach:prepare_agent_judge_batch");
+    expect(judge).toContain("prompt-coach:record_agent_judgments");
     expect(judge).toContain(
-      "Do not call external providers through prompt-memory",
+      "Do not call external providers through prompt-coach",
     );
-    expect(score).toContain("prompt-memory:score_prompt latest=true");
-    expect(score).toContain("prompt-memory score --latest --json");
+    expect(score).toContain("prompt-coach:score_prompt latest=true");
+    expect(score).toContain("prompt-coach score --latest --json");
     expect(improveLast).toContain("AskUserQuestion");
-    expect(improveLast).toContain("prompt-memory:improve_prompt latest=true");
-    expect(improveLast).toContain("prompt-memory improve --latest --json");
+    expect(improveLast).toContain("prompt-coach:improve_prompt latest=true");
+    expect(improveLast).toContain("prompt-coach improve --latest --json");
     expect(improveLast).toContain(
-      "prompt-memory:prepare_agent_rewrite latest=true",
+      "prompt-coach:prepare_agent_rewrite latest=true",
     );
-    expect(improveLast).toContain("prompt-memory:record_agent_rewrite");
+    expect(improveLast).toContain("prompt-coach:record_agent_rewrite");
     expect(improveLast).toContain("Do not auto-submit the rewrite");
-    expect(habits).toContain("prompt-memory:score_prompt_archive");
+    expect(habits).toContain("prompt-coach:score_prompt_archive");
     expect(open).toContain("http://127.0.0.1:17373");
   });
 
@@ -127,18 +127,18 @@ describe("plugin packaging files", () => {
         category: string;
         defaultPrompt: string[];
       };
-    }>("plugins/prompt-memory/.codex-plugin/plugin.json");
+    }>("plugins/prompt-coach/.codex-plugin/plugin.json");
 
-    expect(manifest.name).toBe("prompt-memory");
+    expect(manifest.name).toBe("prompt-coach");
     expect(manifest.hooks).toBe("./hooks.json");
     expect(manifest.skills).toBe("./skills/");
     expect(manifest.interface.displayName).toBe("Prompt Memory");
     expect(manifest.interface.category).toBe("Coding");
     expect(manifest.interface.defaultPrompt).toEqual(
       expect.arrayContaining([
-        "Show my prompt-memory buddy side pane command",
-        "Show my prompt-memory hook rewrite-guard mode",
-        "Toggle the prompt-memory rewrite guard between off / context / ask / block-and-copy",
+        "Show my prompt-coach buddy side pane command",
+        "Show my prompt-coach hook rewrite-guard mode",
+        "Toggle the prompt-coach rewrite guard between off / context / ask / block-and-copy",
         "Score my latest captured prompt",
         "Improve my latest captured prompt",
         "Run my full prompt coach workflow",
@@ -161,12 +161,12 @@ describe("plugin packaging files", () => {
           hooks: Array<{ type: string; command: string; timeout: number }>;
         }>;
       };
-    }>("plugins/prompt-memory/hooks.json");
+    }>("plugins/prompt-coach/hooks.json");
 
     const command = hooks.hooks.UserPromptSubmit[0]?.hooks[0]?.command ?? "";
-    expect(command).toContain("prompt-memory hook codex");
+    expect(command).toContain("prompt-coach hook codex");
     expect(command).toContain("|| true");
-    expect(command).not.toMatch(/PROMPT_MEMORY_TOKEN|Bearer|token=/i);
+    expect(command).not.toMatch(/PROMPT_COACH_TOKEN|Bearer|token=/i);
   });
 
   it("documents Claude Code as a hook integration without embedding secrets", () => {
@@ -179,9 +179,9 @@ describe("plugin packaging files", () => {
     }>("integrations/claude-code/settings.example.json");
 
     const command = example.hooks.UserPromptSubmit[0]?.hooks[0]?.command ?? "";
-    expect(command).toContain("prompt-memory hook claude-code");
+    expect(command).toContain("prompt-coach hook claude-code");
     expect(command).toContain("|| true");
-    expect(command).not.toMatch(/PROMPT_MEMORY_TOKEN|Bearer|token=/i);
+    expect(command).not.toMatch(/PROMPT_COACH_TOKEN|Bearer|token=/i);
   });
 
   it("includes plugin artifacts in npm package files", () => {
@@ -191,9 +191,9 @@ describe("plugin packaging files", () => {
     }>("package.json");
 
     expect(packageJson.bin).toMatchObject({
-      "prompt-memory": "./dist/cli/index.js",
-      "pm-claude": "./dist/cli/pm-claude.js",
-      "pm-codex": "./dist/cli/pm-codex.js",
+      "prompt-coach": "./dist/cli/index.js",
+      "pc-claude": "./dist/cli/pc-claude.js",
+      "pc-codex": "./dist/cli/pc-codex.js",
     });
     expect(packageJson.files).toContain(".claude-plugin");
     expect(packageJson.files).toContain("commands");
@@ -217,10 +217,10 @@ describe("plugin packaging files", () => {
     ).toContain("chmodSync");
     expect(
       readFileSync(join(process.cwd(), "scripts/fix-bin-mode.mjs"), "utf8"),
-    ).toContain("pm-claude.js");
+    ).toContain("pc-claude.js");
     expect(
       readFileSync(join(process.cwd(), "scripts/fix-bin-mode.mjs"), "utf8"),
-    ).toContain("pm-codex.js");
+    ).toContain("pc-codex.js");
   });
 
   it("registers the repo-local plugin in the local marketplace file", () => {
@@ -234,8 +234,8 @@ describe("plugin packaging files", () => {
     }>(".agents/plugins/marketplace.json");
 
     expect(marketplace.plugins).toContainEqual({
-      name: "prompt-memory",
-      source: { source: "local", path: "./plugins/prompt-memory" },
+      name: "prompt-coach",
+      source: { source: "local", path: "./plugins/prompt-coach" },
       policy: { installation: "AVAILABLE", authentication: "ON_INSTALL" },
       category: "Coding",
     });

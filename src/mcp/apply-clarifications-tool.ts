@@ -5,7 +5,7 @@ import {
   type PromptImprovement,
 } from "../analysis/improve.js";
 import type { PromptQualityCriterion } from "../shared/schema.js";
-import type { PromptMemoryMcpToolDefinition } from "./score-tool-definitions.js";
+import type { PromptCoachMcpToolDefinition } from "./score-tool-definitions.js";
 import type { ScorePromptToolOptions } from "./score-tool-types.js";
 
 const LOCAL_READ_ONLY_TOOL_ANNOTATIONS = {
@@ -53,7 +53,7 @@ export type ApplyClarificationsToolResult =
       message: string;
     };
 
-export const APPLY_CLARIFICATIONS_TOOL_DEFINITION: PromptMemoryMcpToolDefinition =
+export const APPLY_CLARIFICATIONS_TOOL_DEFINITION: PromptCoachMcpToolDefinition =
   {
     name: "apply_clarifications",
     description:

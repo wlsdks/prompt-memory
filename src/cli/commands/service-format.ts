@@ -54,11 +54,11 @@ export function classifyLaunchctlError(
 export function explainLaunchctlError(code: LaunchctlErrorCode): string {
   switch (code) {
     case "unsupported_platform":
-      return "prompt-memory service is supported on macOS only.";
+      return "prompt-coach service is supported on macOS only.";
     case "already_loaded":
-      return "Service is already loaded. Run `prompt-memory service stop` first if you want to reload it.";
+      return "Service is already loaded. Run `prompt-coach service stop` first if you want to reload it.";
     case "not_loaded":
-      return "Service is not loaded. Run `prompt-memory service install` first.";
+      return "Service is not loaded. Run `prompt-coach service install` first.";
     case "denied":
       return "macOS denied the operation. Open System Settings > Privacy & Security > Full Disk Access and grant access to your Terminal, then try again.";
     case "unknown":
@@ -145,7 +145,7 @@ export function formatServiceInstallPlain(
       lines.push(`launchctl reported: ${result.startError}`);
     }
   } else {
-    lines.push("service not started (use `prompt-memory service start`)");
+    lines.push("service not started (use `prompt-coach service start`)");
   }
 
   return lines.join("\n");

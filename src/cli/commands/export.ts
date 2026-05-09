@@ -1,6 +1,6 @@
 import type { Command } from "commander";
 
-import { loadHookAuth, loadPromptMemoryConfig } from "../../config/config.js";
+import { loadHookAuth, loadPromptCoachConfig } from "../../config/config.js";
 import {
   createAnonymizedExportPreview,
   executeAnonymizedExport,
@@ -22,7 +22,7 @@ export function registerExportCommand(program: Command): void {
   program
     .command("export")
     .description("Preview or run anonymized prompt exports.")
-    .option("--data-dir <path>", "Override the prompt-memory data directory.")
+    .option("--data-dir <path>", "Override the prompt-coach data directory.")
     .option("--anonymized", "Use the anonymized export path.")
     .option("--preview", "Create a raw-free export preview job.")
     .option("--job <id>", "Execute a previewed export job.")
@@ -40,7 +40,7 @@ export function registerExportCommand(program: Command): void {
 export function exportForCli(options: ExportCliOptions): string {
   if (!options.anonymized) {
     throw new UserError(
-      "--anonymized is required. Try: prompt-memory export --anonymized --preview",
+      "--anonymized is required. Try: prompt-coach export --anonymized --preview",
     );
   }
 
@@ -97,7 +97,7 @@ function withExportStorage<T>(
     hmacSecret: string,
   ) => T,
 ): T {
-  const config = loadPromptMemoryConfig(dataDir);
+  const config = loadPromptCoachConfig(dataDir);
   const hookAuth = loadHookAuth(dataDir);
   const storage = createSqlitePromptStorage({
     dataDir: config.data_dir,

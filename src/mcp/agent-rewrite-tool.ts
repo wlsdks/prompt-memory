@@ -1,5 +1,5 @@
 import { improvePrompt } from "../analysis/improve.js";
-import { loadHookAuth, loadPromptMemoryConfig } from "../config/config.js";
+import { loadHookAuth, loadPromptCoachConfig } from "../config/config.js";
 import { redactPrompt } from "../redaction/redact.js";
 import type { PromptQualityCriterion } from "../shared/schema.js";
 import { createSqlitePromptStorage } from "../storage/sqlite.js";
@@ -36,7 +36,7 @@ export function prepareAgentRewriteTool(
   }
 
   try {
-    const config = loadPromptMemoryConfig(options.dataDir);
+    const config = loadPromptCoachConfig(options.dataDir);
     const auth = loadHookAuth(options.dataDir);
     const storage = createSqlitePromptStorage({
       dataDir: config.data_dir,
@@ -61,7 +61,7 @@ export function prepareAgentRewriteTool(
       if (!prompt?.analysis) {
         return rewriteError(
           "not_found",
-          `Prompt not found or not analyzed: ${promptId}. Run get_prompt_memory_status to confirm the archive state, or pass a different \`prompt_id\`.`,
+          `Prompt not found or not analyzed: ${promptId}. Run get_prompt_coach_status to confirm the archive state, or pass a different \`prompt_id\`.`,
         );
       }
 
@@ -107,7 +107,7 @@ export function prepareAgentRewriteTool(
           "Rewrite the redacted_prompt as the active user-controlled coding-agent session. Preserve the user's intent, remove ambiguity, keep secrets redacted, do not add unrelated scope, and call record_agent_rewrite with the improved_prompt only after the user wants it saved. Do not auto-submit the rewrite.",
         privacy: {
           local_only: true,
-          external_calls_by_prompt_memory: false,
+          external_calls_by_prompt_coach: false,
           intended_external_rewriter: "current_agent_session",
           returns_redacted_prompt_body: true,
           returns_raw_prompt_body: false,
@@ -137,7 +137,7 @@ export function recordAgentRewriteTool(
   }
 
   try {
-    const config = loadPromptMemoryConfig(options.dataDir);
+    const config = loadPromptCoachConfig(options.dataDir);
     const auth = loadHookAuth(options.dataDir);
     const storage = createSqlitePromptStorage({
       dataDir: config.data_dir,
@@ -196,7 +196,7 @@ export function recordAgentRewriteTool(
           "Open the prompt detail or run improve/coach again to compare this saved agent rewrite with the local baseline before resubmitting.",
         privacy: {
           local_only: true,
-          external_calls_by_prompt_memory: false,
+          external_calls_by_prompt_coach: false,
           stores_original_prompt_body: false,
           stores_rewrite_draft: true,
           returns_rewrite_draft: false,
@@ -301,7 +301,7 @@ function storageUnavailableMessage(error: unknown): string {
     error instanceof Error && "code" in error && typeof error.code === "string"
       ? ` Reason: ${error.code}.`
       : "";
-  return `Local prompt-memory archive is not available. Run \`prompt-memory init\` first or pass --data-dir.${reason}`;
+  return `Local prompt-coach archive is not available. Run \`prompt-coach init\` first or pass --data-dir.${reason}`;
 }
 
 function rewriteError(

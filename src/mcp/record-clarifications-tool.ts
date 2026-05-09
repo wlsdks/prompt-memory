@@ -3,10 +3,10 @@ import {
   type ClarifyingAnswer,
   type PromptImprovement,
 } from "../analysis/improve.js";
-import { loadHookAuth, loadPromptMemoryConfig } from "../config/config.js";
+import { loadHookAuth, loadPromptCoachConfig } from "../config/config.js";
 import type { PromptQualityCriterion } from "../shared/schema.js";
 import { createSqlitePromptStorage } from "../storage/sqlite.js";
-import type { PromptMemoryMcpToolDefinition } from "./score-tool-definitions.js";
+import type { PromptCoachMcpToolDefinition } from "./score-tool-definitions.js";
 import type { ScorePromptToolOptions } from "./score-tool-types.js";
 
 const QUALITY_CRITERIA: readonly PromptQualityCriterion[] = [
@@ -60,11 +60,11 @@ export type RecordClarificationsToolResult =
 
 const RECORD_CLARIFICATIONS_ANALYZER = "clarifications-v1";
 
-export const RECORD_CLARIFICATIONS_TOOL_DEFINITION: PromptMemoryMcpToolDefinition =
+export const RECORD_CLARIFICATIONS_TOOL_DEFINITION: PromptCoachMcpToolDefinition =
   {
     name: "record_clarifications",
     description:
-      "Save the user's verbatim answers to clarifying_questions, plus the resulting approval-ready draft, against a stored prompt in the local prompt-memory archive. Each answer must be tagged origin: \"user\" — agents must not guess on the user's behalf. The tool writes a redacted improvement draft to the local SQLite archive (prompt_improvement_drafts) and returns metadata only — never the prompt body or the draft text. Local-only, no external LLM calls.",
+      "Save the user's verbatim answers to clarifying_questions, plus the resulting approval-ready draft, against a stored prompt in the local prompt-coach archive. Each answer must be tagged origin: \"user\" — agents must not guess on the user's behalf. The tool writes a redacted improvement draft to the local SQLite archive (prompt_improvement_drafts) and returns metadata only — never the prompt body or the draft text. Local-only, no external LLM calls.",
     annotations: {
       ...NON_DESTRUCTIVE_WRITE_TOOL_ANNOTATIONS,
       title: "Record clarifying answers and draft",
@@ -212,7 +212,7 @@ export function recordClarificationsTool(
 
   let storage: ReturnType<typeof createSqlitePromptStorage> | undefined;
   try {
-    const config = loadPromptMemoryConfig(options.dataDir);
+    const config = loadPromptCoachConfig(options.dataDir);
     const auth = loadHookAuth(options.dataDir);
     storage = createSqlitePromptStorage({
       dataDir: config.data_dir,
@@ -270,7 +270,7 @@ export function recordClarificationsTool(
       analyzer: RECORD_CLARIFICATIONS_ANALYZER,
       recorded_at: draft.created_at,
       next_action:
-        "Open the draft in the local archive to review and copy. The draft body is not echoed in this response — fetch it via the local web UI or `prompt-memory show` if needed.",
+        "Open the draft in the local archive to review and copy. The draft body is not echoed in this response — fetch it via the local web UI or `prompt-coach show` if needed.",
       privacy: {
         local_only: true,
         stores_input: true,
@@ -296,5 +296,5 @@ function storageUnavailableMessage(error: unknown): string {
     error instanceof Error && error.message.length > 0
       ? ` (${error.message.split("\n")[0]})`
       : "";
-  return `Local prompt-memory archive is not available. Run \`prompt-memory init\` first or pass --data-dir.${reason}`;
+  return `Local prompt-coach archive is not available. Run \`prompt-coach init\` first or pass --data-dir.${reason}`;
 }

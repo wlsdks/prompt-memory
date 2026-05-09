@@ -29,7 +29,7 @@ type JsonValue =
 
 type JsonObject = { readonly [key: string]: JsonValue };
 
-export type PromptMemoryMcpToolDefinition = {
+export type PromptCoachMcpToolDefinition = {
   readonly name: string;
   readonly description: string;
   readonly annotations: JsonObject;
@@ -81,11 +81,11 @@ const TOOL_ERROR_OUTPUT_SCHEMA = {
   },
 } as const;
 
-export const GET_PROMPT_MEMORY_STATUS_TOOL_DEFINITION: PromptMemoryMcpToolDefinition =
+export const GET_PROMPT_COACH_STATUS_TOOL_DEFINITION: PromptCoachMcpToolDefinition =
   {
-    name: "get_prompt_memory_status",
+    name: "get_prompt_coach_status",
     description:
-      "Check whether the local prompt-memory archive is initialized and has captured prompts before calling scoring tools. Use this first when the user asks if prompt-memory is working, whether Claude Code/Codex prompts are being captured, or which prompt-memory MCP tool to call next. Returns local readiness, safe counts, latest prompt metadata, available tool names, and next actions. It never returns prompt bodies, raw absolute paths, secrets, or external LLM results.",
+      "Check whether the local prompt-coach archive is initialized and has captured prompts before calling scoring tools. Use this first when the user asks if prompt-coach is working, whether Claude Code/Codex prompts are being captured, or which prompt-coach MCP tool to call next. Returns local readiness, safe counts, latest prompt metadata, available tool names, and next actions. It never returns prompt bodies, raw absolute paths, secrets, or external LLM results.",
     annotations: {
       ...LOCAL_READ_ONLY_TOOL_ANNOTATIONS,
       title: "Prompt-memory status preflight",
@@ -152,10 +152,10 @@ export const GET_PROMPT_MEMORY_STATUS_TOOL_DEFINITION: PromptMemoryMcpToolDefini
     },
   } as const;
 
-export const SCORE_PROMPT_TOOL_DEFINITION: PromptMemoryMcpToolDefinition = {
+export const SCORE_PROMPT_TOOL_DEFINITION: PromptCoachMcpToolDefinition = {
   name: "score_prompt",
   description:
-    "Score a coding prompt with prompt-memory's local deterministic 0-100 Prompt Quality Score. Use this when the user asks Claude Code or Codex to evaluate the current request, a pasted prompt, a stored prompt id, or the latest captured prompt. The tool does not call external LLMs, does not store direct prompt input, and does not return prompt bodies.",
+    "Score a coding prompt with prompt-coach's local deterministic 0-100 Prompt Quality Score. Use this when the user asks Claude Code or Codex to evaluate the current request, a pasted prompt, a stored prompt id, or the latest captured prompt. The tool does not call external LLMs, does not store direct prompt input, and does not return prompt bodies.",
   annotations: {
     ...LOCAL_READ_ONLY_TOOL_ANNOTATIONS,
     title: "Prompt quality score",
@@ -171,12 +171,12 @@ export const SCORE_PROMPT_TOOL_DEFINITION: PromptMemoryMcpToolDefinition = {
       prompt_id: {
         type: "string",
         description:
-          "Stored prompt id to score from the local prompt-memory archive.",
+          "Stored prompt id to score from the local prompt-coach archive.",
       },
       latest: {
         type: "boolean",
         description:
-          "Set true to score the latest stored prompt in the local prompt-memory archive.",
+          "Set true to score the latest stored prompt in the local prompt-coach archive.",
       },
     },
     additionalProperties: false,
@@ -239,10 +239,10 @@ export const SCORE_PROMPT_TOOL_DEFINITION: PromptMemoryMcpToolDefinition = {
   },
 } as const;
 
-export const IMPROVE_PROMPT_TOOL_DEFINITION: PromptMemoryMcpToolDefinition = {
+export const IMPROVE_PROMPT_TOOL_DEFINITION: PromptCoachMcpToolDefinition = {
   name: "improve_prompt",
   description:
-    "Generate an approval-ready improved coding prompt draft with prompt-memory's local deterministic Prompt Coach. Use this when the user asks Claude Code or Codex to rewrite, clarify, or upgrade the current request, a pasted prompt, a stored prompt id, or the latest captured prompt before resubmitting it. The tool is copy-based: it never auto-submits the draft, never calls external LLMs, does not store direct prompt input, and does not return the original stored prompt body.",
+    "Generate an approval-ready improved coding prompt draft with prompt-coach's local deterministic Prompt Coach. Use this when the user asks Claude Code or Codex to rewrite, clarify, or upgrade the current request, a pasted prompt, a stored prompt id, or the latest captured prompt before resubmitting it. The tool is copy-based: it never auto-submits the draft, never calls external LLMs, does not store direct prompt input, and does not return the original stored prompt body.",
   annotations: {
     ...LOCAL_READ_ONLY_TOOL_ANNOTATIONS,
     title: "Approval-ready prompt rewrite",
@@ -258,12 +258,12 @@ export const IMPROVE_PROMPT_TOOL_DEFINITION: PromptMemoryMcpToolDefinition = {
       prompt_id: {
         type: "string",
         description:
-          "Stored prompt id to improve from the local prompt-memory archive without returning the original stored body.",
+          "Stored prompt id to improve from the local prompt-coach archive without returning the original stored body.",
       },
       latest: {
         type: "boolean",
         description:
-          "Set true to improve the latest stored prompt in the local prompt-memory archive.",
+          "Set true to improve the latest stored prompt in the local prompt-coach archive.",
       },
       language: {
         type: "string",
@@ -365,11 +365,11 @@ export const IMPROVE_PROMPT_TOOL_DEFINITION: PromptMemoryMcpToolDefinition = {
   },
 } as const;
 
-export const SCORE_PROMPT_ARCHIVE_TOOL_DEFINITION: PromptMemoryMcpToolDefinition =
+export const SCORE_PROMPT_ARCHIVE_TOOL_DEFINITION: PromptCoachMcpToolDefinition =
   {
     name: "score_prompt_archive",
     description:
-      "Score the local prompt-memory archive across many stored Claude Code or Codex prompts. Use this when the user asks to evaluate accumulated prompt habits, score all recent prompts, find low scoring prompts, summarize recurring prompt quality gaps, or prepare the next better request. The result is a local-only aggregate report with distribution, recurring gaps, a practice plan, a next prompt template, and low-score metadata; it does not return prompt bodies, raw paths, or call external LLMs.",
+      "Score the local prompt-coach archive across many stored Claude Code or Codex prompts. Use this when the user asks to evaluate accumulated prompt habits, score all recent prompts, find low scoring prompts, summarize recurring prompt quality gaps, or prepare the next better request. The result is a local-only aggregate report with distribution, recurring gaps, a practice plan, a next prompt template, and low-score metadata; it does not return prompt bodies, raw paths, or call external LLMs.",
     annotations: {
       ...LOCAL_READ_ONLY_TOOL_ANNOTATIONS,
       title: "Archive prompt habit score",
@@ -563,11 +563,11 @@ export const SCORE_PROMPT_ARCHIVE_TOOL_DEFINITION: PromptMemoryMcpToolDefinition
     },
   } as const;
 
-export const REVIEW_PROJECT_INSTRUCTIONS_TOOL_DEFINITION: PromptMemoryMcpToolDefinition =
+export const REVIEW_PROJECT_INSTRUCTIONS_TOOL_DEFINITION: PromptCoachMcpToolDefinition =
   {
     name: "review_project_instructions",
     description:
-      "Review a local project's Claude Code/Codex instruction files such as AGENTS.md and CLAUDE.md using prompt-memory's deterministic local rubric. Use this when the user asks whether project rules are good enough, wants agent instructions scored, or wants suggestions for improving coding-agent behavior. With no project_id, set latest=true or omit project_id to review the most recently captured project. The tool can rescan local instruction files, but returns only file metadata, checklist scores, and suggestions; it never returns file bodies, raw absolute paths, or calls external LLMs.",
+      "Review a local project's Claude Code/Codex instruction files such as AGENTS.md and CLAUDE.md using prompt-coach's deterministic local rubric. Use this when the user asks whether project rules are good enough, wants agent instructions scored, or wants suggestions for improving coding-agent behavior. With no project_id, set latest=true or omit project_id to review the most recently captured project. The tool can rescan local instruction files, but returns only file metadata, checklist scores, and suggestions; it never returns file bodies, raw absolute paths, or calls external LLMs.",
     annotations: {
       ...LOCAL_READ_ONLY_TOOL_ANNOTATIONS,
       title: "Project instruction review",
@@ -578,7 +578,7 @@ export const REVIEW_PROJECT_INSTRUCTIONS_TOOL_DEFINITION: PromptMemoryMcpToolDef
         project_id: {
           type: "string",
           description:
-            "Optional prompt-memory project id from the Projects UI/API. Use this for an exact project.",
+            "Optional prompt-coach project id from the Projects UI/API. Use this for an exact project.",
         },
         latest: {
           type: "boolean",
@@ -725,10 +725,10 @@ export const REVIEW_PROJECT_INSTRUCTIONS_TOOL_DEFINITION: PromptMemoryMcpToolDef
     },
   } as const;
 
-export const COACH_PROMPT_TOOL_DEFINITION: PromptMemoryMcpToolDefinition = {
+export const COACH_PROMPT_TOOL_DEFINITION: PromptCoachMcpToolDefinition = {
   name: "coach_prompt",
   description:
-    "Run prompt-memory's one-call agent coaching workflow for Claude Code or Codex. Use this when the user asks to coach the latest request, check whether the prompt is good enough, improve it, summarize recurring habits, review project rules, or generate the next better request without opening the web UI. It combines local status, latest prompt score, approval-required rewrite, archive habit review, and optional AGENTS.md/CLAUDE.md rule review. It is read-only, local-only, never auto-submits drafts, and never returns prompt bodies, raw paths, instruction file bodies, secrets, or external LLM results.",
+    "Run prompt-coach's one-call agent coaching workflow for Claude Code or Codex. Use this when the user asks to coach the latest request, check whether the prompt is good enough, improve it, summarize recurring habits, review project rules, or generate the next better request without opening the web UI. It combines local status, latest prompt score, approval-required rewrite, archive habit review, and optional AGENTS.md/CLAUDE.md rule review. It is read-only, local-only, never auto-submits drafts, and never returns prompt bodies, raw paths, instruction file bodies, secrets, or external LLM results.",
   annotations: {
     ...LOCAL_READ_ONLY_TOOL_ANNOTATIONS,
     title: "One-call prompt coach",
@@ -784,7 +784,7 @@ export const COACH_PROMPT_TOOL_DEFINITION: PromptMemoryMcpToolDefinition = {
     properties: {
       mode: { const: "agent_coach" },
       generated_at: { type: "string" },
-      status: GET_PROMPT_MEMORY_STATUS_TOOL_DEFINITION.outputSchema,
+      status: GET_PROMPT_COACH_STATUS_TOOL_DEFINITION.outputSchema,
       latest_score: SCORE_PROMPT_TOOL_DEFINITION.outputSchema,
       improvement: IMPROVE_PROMPT_TOOL_DEFINITION.outputSchema,
       archive: SCORE_PROMPT_ARCHIVE_TOOL_DEFINITION.outputSchema,
@@ -845,9 +845,9 @@ export const COACH_PROMPT_TOOL_DEFINITION: PromptMemoryMcpToolDefinition = {
   },
 } as const;
 
-export const PROMPT_MEMORY_MCP_TOOL_DEFINITIONS: readonly PromptMemoryMcpToolDefinition[] =
+export const PROMPT_COACH_MCP_TOOL_DEFINITIONS: readonly PromptCoachMcpToolDefinition[] =
   [
-    GET_PROMPT_MEMORY_STATUS_TOOL_DEFINITION,
+    GET_PROMPT_COACH_STATUS_TOOL_DEFINITION,
     COACH_PROMPT_TOOL_DEFINITION,
     SCORE_PROMPT_TOOL_DEFINITION,
     IMPROVE_PROMPT_TOOL_DEFINITION,
@@ -862,6 +862,6 @@ export const PROMPT_MEMORY_MCP_TOOL_DEFINITIONS: readonly PromptMemoryMcpToolDef
     RECORD_AGENT_JUDGMENTS_TOOL_DEFINITION,
   ];
 
-export function listPromptMemoryMcpToolNames(): string[] {
-  return PROMPT_MEMORY_MCP_TOOL_DEFINITIONS.map((tool) => tool.name);
+export function listPromptCoachMcpToolNames(): string[] {
+  return PROMPT_COACH_MCP_TOOL_DEFINITIONS.map((tool) => tool.name);
 }

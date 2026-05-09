@@ -8,7 +8,7 @@ import {
 const NOW = new Date("2026-05-08T00:00:00.000Z");
 
 describe("DEFAULT_MIN_SCORE", () => {
-  it("is the threshold both the rewrite-guard hook and pm-claude/pm-codex wrapper used to define independently", () => {
+  it("is the threshold both the rewrite-guard hook and pc-claude/pc-codex wrapper used to define independently", () => {
     expect(DEFAULT_MIN_SCORE).toBe(80);
   });
 });

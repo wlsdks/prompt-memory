@@ -5,7 +5,7 @@ import { join } from "node:path";
 import { afterEach, describe, expect, it } from "vitest";
 
 import { normalizeClaudeCodePayload } from "../../adapters/claude-code.js";
-import { initializePromptMemory } from "../../config/config.js";
+import { initializePromptCoach } from "../../config/config.js";
 import { redactPrompt } from "../../redaction/redact.js";
 import { createSqlitePromptStorage } from "../../storage/sqlite.js";
 import { scoreArchiveForCli } from "./score.js";
@@ -68,12 +68,12 @@ describe("score CLI command", () => {
 
   it("hints at the start command when the archive is empty", () => {
     const dataDir = createTempDir();
-    initializePromptMemory({ dataDir });
+    initializePromptCoach({ dataDir });
 
     const text = scoreArchiveForCli({ dataDir });
 
     expect(text).toContain("scored 0 prompts");
-    expect(text).toContain("No prompts captured yet. Run prompt-memory start");
+    expect(text).toContain("No prompts captured yet. Run prompt-coach start");
     // Privacy line still trails the report.
     expect(text.lastIndexOf("Privacy:")).toBeGreaterThan(
       text.indexOf("No prompts captured yet."),
@@ -115,7 +115,7 @@ describe("score CLI command", () => {
 
   it("includes a runnable example in the missing-input error path on --latest with empty archive", () => {
     const dataDir = createTempDir();
-    initializePromptMemory({ dataDir });
+    initializePromptCoach({ dataDir });
 
     const text = scoreArchiveForCli({ dataDir, latest: true });
 
@@ -157,7 +157,7 @@ describe("score CLI command", () => {
 });
 
 async function createScoreFixture(dataDir: string) {
-  const init = initializePromptMemory({ dataDir });
+  const init = initializePromptCoach({ dataDir });
   const storage = createSqlitePromptStorage({
     dataDir,
     hmacSecret: init.hookAuth.web_session_secret,
@@ -219,7 +219,7 @@ async function storeClaudePrompt(
 }
 
 function createTempDir(): string {
-  const dir = join(tmpdir(), `prompt-memory-score-cli-${randomUUID()}`);
+  const dir = join(tmpdir(), `prompt-coach-score-cli-${randomUUID()}`);
   mkdirSync(dir, { recursive: true });
   tempDirs.push(dir);
   return dir;

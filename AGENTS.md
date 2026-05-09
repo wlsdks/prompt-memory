@@ -4,7 +4,7 @@
 
 ## 프로젝트 요약
 
-- `prompt-memory`는 Claude Code, Codex 같은 AI 코딩 도구에 입력한 프롬프트를 로컬에 안전하게 기록하고, 다시 찾고, 분석하고, 다음 요청을 더 잘 쓰도록 돕는 developer tool이다.
+- `prompt-coach`는 Claude Code, Codex 같은 AI 코딩 도구에 입력한 프롬프트를 로컬에 안전하게 기록하고, 다시 찾고, 분석하고, 다음 요청을 더 잘 쓰도록 돕는 developer tool이다.
 - 제품 포지셔닝은 "AI coding prompt memory and improvement workspace, local-first"다.
 - 이 도구는 프롬프트 코치이자, 사용자가 반복해서 넣는 좋지 않은 프롬프트 패턴을 회고하고 개선하도록 돕는 로컬 작업대다.
 - MVP의 핵심 원칙은 로컬 저장, 명시적 설치, 비밀정보 보호, Markdown을 사람이 읽을 수 있는 원본으로 유지하는 것이다.
@@ -37,7 +37,7 @@ git diff --check
 
 ```bash
 pnpm build
-pnpm prompt-memory server -- --data-dir <temp-data-dir>
+pnpm prompt-coach server -- --data-dir <temp-data-dir>
 ```
 
 그 다음 Playwright MCP로 실제 브라우저에서 목록, 상세, 삭제, 반응형 레이아웃, 빈 화면 여부, 콘솔/네트워크 오류를 점검한다.
@@ -48,7 +48,7 @@ pnpm prompt-memory server -- --data-dir <temp-data-dir>
 - 데이터는 문자열 파싱보다 스키마, 타입, SQLite 쿼리, Markdown/YAML 파서를 우선 사용한다.
 - 사용자 프롬프트, 토큰, 원문 비밀정보를 stdout, stderr, 서버 에러, 로그에 노출하지 않는다.
 - Hook은 fail-open을 기본으로 하며, Claude Code `UserPromptSubmit` stdout은 컨텍스트로 들어갈 수 있으므로 특별히 조심한다.
-- Agent judge 기능은 현재 사용자가 제어하는 Claude Code/Codex/Gemini CLI 세션이 MCP로 redacted packet을 받아 평가하는 opt-in 흐름만 허용한다. `prompt-memory`가 provider 인증정보를 추출, 저장, proxy하거나 숨은 외부 LLM 호출을 해서는 안 된다.
+- Agent judge 기능은 현재 사용자가 제어하는 Claude Code/Codex/Gemini CLI 세션이 MCP로 redacted packet을 받아 평가하는 opt-in 흐름만 허용한다. `prompt-coach`가 provider 인증정보를 추출, 저장, proxy하거나 숨은 외부 LLM 호출을 해서는 안 된다.
 - 삭제는 Markdown, DB row, FTS, 관련 이벤트/태그/분석 데이터를 함께 정리해야 한다.
 - `rebuild-index`는 Markdown archive를 source of truth로 보고 DB/FTS를 복구해야 한다.
 

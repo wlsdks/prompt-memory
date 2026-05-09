@@ -5,7 +5,7 @@ import { join } from "node:path";
 import { afterEach, describe, expect, it } from "vitest";
 
 import { normalizeClaudeCodePayload } from "../adapters/claude-code.js";
-import { initializePromptMemory } from "../config/config.js";
+import { initializePromptCoach } from "../config/config.js";
 import { redactPrompt } from "../redaction/redact.js";
 import { createSqlitePromptStorage } from "../storage/sqlite.js";
 import {
@@ -30,7 +30,7 @@ describe("anonymized export", () => {
     const rawSecret = "sk-proj-1234567890abcdef";
     const rawPath = "/Users/example/private-project/src/secret.ts";
     const dataDir = createTempDir();
-    initializePromptMemory({ dataDir });
+    initializePromptCoach({ dataDir });
     const storage = createSqlitePromptStorage({
       dataDir,
       hmacSecret: "test-secret",
@@ -106,7 +106,7 @@ describe("anonymized export", () => {
 
   it("preserves the human project label for the personal_backup preset", async () => {
     const dataDir = createTempDir();
-    initializePromptMemory({ dataDir });
+    initializePromptCoach({ dataDir });
     const storage = createSqlitePromptStorage({
       dataDir,
       hmacSecret: "test-secret",
@@ -133,7 +133,7 @@ describe("anonymized export", () => {
 
   it("masks the project label as proj_<hash> for the issue_report_attachment preset", async () => {
     const dataDir = createTempDir();
-    initializePromptMemory({ dataDir });
+    initializePromptCoach({ dataDir });
     const storage = createSqlitePromptStorage({
       dataDir,
       hmacSecret: "test-secret",
@@ -161,7 +161,7 @@ describe("anonymized export", () => {
 
   it("invalidates execution when a previewed prompt is deleted", async () => {
     const dataDir = createTempDir();
-    initializePromptMemory({ dataDir });
+    initializePromptCoach({ dataDir });
     const storage = createSqlitePromptStorage({
       dataDir,
       hmacSecret: "test-secret",
@@ -191,7 +191,7 @@ describe("anonymized export", () => {
 
   it("invalidates execution when exportable prompt membership changes after preview", async () => {
     const dataDir = createTempDir();
-    initializePromptMemory({ dataDir });
+    initializePromptCoach({ dataDir });
     const storage = createSqlitePromptStorage({
       dataDir,
       hmacSecret: "test-secret",
@@ -225,7 +225,7 @@ describe("anonymized export", () => {
 
   it("invalidates execution when project policy changes after preview", async () => {
     const dataDir = createTempDir();
-    initializePromptMemory({ dataDir });
+    initializePromptCoach({ dataDir });
     const storage = createSqlitePromptStorage({
       dataDir,
       hmacSecret: "test-secret",
@@ -291,7 +291,7 @@ function nextDate(values: string[]): () => Date {
 }
 
 function createTempDir(): string {
-  const dir = join(tmpdir(), `prompt-memory-export-${randomUUID()}`);
+  const dir = join(tmpdir(), `prompt-coach-export-${randomUUID()}`);
   mkdirSync(dir, { recursive: true });
   tempDirs.push(dir);
   return dir;

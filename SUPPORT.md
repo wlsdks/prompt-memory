@@ -1,6 +1,6 @@
 # Support
 
-prompt-memory is pre-release open-source software.
+prompt-coach is pre-release open-source software.
 
 ## Questions And Ideas
 
@@ -19,7 +19,7 @@ session tokens, or proprietary source code into public discussions.
 
 Use GitHub Issues for reproducible bugs. Include:
 
-- prompt-memory version
+- prompt-coach version
 - operating system
 - Node.js version
 - command or UI path

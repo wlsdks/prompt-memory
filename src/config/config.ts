@@ -9,7 +9,7 @@ import { dirname } from "node:path";
 
 import { z } from "zod";
 
-import { getPromptMemoryPaths, supportsPosixMode } from "../storage/paths.js";
+import { getPromptCoachPaths, supportsPosixMode } from "../storage/paths.js";
 import {
   generateAppToken,
   generateIngestToken,
@@ -51,7 +51,7 @@ export const ExperimentalRulesSchema = z
 
 export type ExperimentalRulesSetting = z.infer<typeof ExperimentalRulesSchema>;
 
-export const PromptMemoryConfigSchema = z.object({
+export const PromptCoachConfigSchema = z.object({
   schema_version: z.literal(1),
   data_dir: z.string().min(1),
   database_path: z.string().min(1),
@@ -74,7 +74,7 @@ export const HookAuthSchema = z.object({
   created_at: z.string().min(1),
 });
 
-export type PromptMemoryConfig = z.infer<typeof PromptMemoryConfigSchema>;
+export type PromptCoachConfig = z.infer<typeof PromptCoachConfigSchema>;
 export type HookAuth = z.infer<typeof HookAuthSchema>;
 
 export type InitOptions = {
@@ -83,7 +83,7 @@ export type InitOptions = {
 };
 
 export type InitResult = {
-  config: PromptMemoryConfig;
+  config: PromptCoachConfig;
   hookAuth: HookAuth;
   created: {
     config: boolean;
@@ -94,8 +94,8 @@ export type InitResult = {
 const OWNER_ONLY_DIR_MODE = 0o700;
 const OWNER_ONLY_FILE_MODE = 0o600;
 
-export function initializePromptMemory(options: InitOptions = {}): InitResult {
-  const paths = getPromptMemoryPaths(options.dataDir);
+export function initializePromptCoach(options: InitOptions = {}): InitResult {
+  const paths = getPromptCoachPaths(options.dataDir);
   const createdAt = (options.now ?? new Date()).toISOString();
 
   ensureOwnerOnlyDir(paths.dataDir);
@@ -106,11 +106,11 @@ export function initializePromptMemory(options: InitOptions = {}): InitResult {
 
   const existingConfig = readJsonIfExists(
     paths.configPath,
-    PromptMemoryConfigSchema,
+    PromptCoachConfigSchema,
   );
   const config =
     existingConfig ??
-    PromptMemoryConfigSchema.parse({
+    PromptCoachConfigSchema.parse({
       schema_version: 1,
       data_dir: paths.dataDir,
       database_path: paths.databasePath,
@@ -146,15 +146,15 @@ export function initializePromptMemory(options: InitOptions = {}): InitResult {
   };
 }
 
-export function loadPromptMemoryConfig(dataDir?: string): PromptMemoryConfig {
-  const paths = getPromptMemoryPaths(dataDir);
-  return PromptMemoryConfigSchema.parse(
+export function loadPromptCoachConfig(dataDir?: string): PromptCoachConfig {
+  const paths = getPromptCoachPaths(dataDir);
+  return PromptCoachConfigSchema.parse(
     JSON.parse(readFileSync(paths.configPath, "utf8")),
   );
 }
 
 export function loadHookAuth(dataDir?: string): HookAuth {
-  const paths = getPromptMemoryPaths(dataDir);
+  const paths = getPromptCoachPaths(dataDir);
   return HookAuthSchema.parse(
     JSON.parse(readFileSync(paths.hookAuthPath, "utf8")),
   );
@@ -164,7 +164,7 @@ export function writeHookAuth(
   dataDir: string | undefined,
   hookAuth: HookAuth,
 ): void {
-  const paths = getPromptMemoryPaths(dataDir);
+  const paths = getPromptCoachPaths(dataDir);
   writeOwnerOnlyJson(paths.hookAuthPath, HookAuthSchema.parse(hookAuth));
 }
 
@@ -172,13 +172,13 @@ export function updateAutoJudgeSettings(
   dataDir: string | undefined,
   patch: Partial<AutoJudgeSettings>,
 ): AutoJudgeSettings {
-  const paths = getPromptMemoryPaths(dataDir);
-  const current = loadPromptMemoryConfig(dataDir);
+  const paths = getPromptCoachPaths(dataDir);
+  const current = loadPromptCoachConfig(dataDir);
   const next = AutoJudgeSettingsSchema.parse({
     ...current.auto_judge,
     ...patch,
   });
-  const updatedConfig = PromptMemoryConfigSchema.parse({
+  const updatedConfig = PromptCoachConfigSchema.parse({
     ...current,
     auto_judge: next,
   });

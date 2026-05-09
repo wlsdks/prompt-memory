@@ -4,7 +4,7 @@ import { join } from "node:path";
 import { randomUUID } from "node:crypto";
 import { afterEach, describe, expect, it } from "vitest";
 
-import { initializePromptMemory, loadHookAuth } from "../../config/config.js";
+import { initializePromptCoach, loadHookAuth } from "../../config/config.js";
 import {
   installCodexHook,
   installClaudeCodeHook,
@@ -28,7 +28,7 @@ describe("Claude Code hook install/uninstall", () => {
     const dir = createTempDir();
     const dataDir = join(dir, "data");
     const settingsPath = join(dir, "settings.json");
-    initializePromptMemory({ dataDir });
+    initializePromptCoach({ dataDir });
 
     const result = installClaudeCodeHook({
       dataDir,
@@ -46,7 +46,7 @@ describe("Claude Code hook install/uninstall", () => {
     const dir = createTempDir();
     const dataDir = join(dir, "data");
     const settingsPath = join(dir, "settings.json");
-    initializePromptMemory({ dataDir });
+    initializePromptCoach({ dataDir });
     writeFileSync(
       settingsPath,
       `${JSON.stringify({ theme: "dark", hooks: { Stop: [] } }, null, 2)}\n`,
@@ -64,7 +64,7 @@ describe("Claude Code hook install/uninstall", () => {
     expect(settings.hooks.UserPromptSubmit).toHaveLength(1);
     expect(settings.hooks.UserPromptSubmit[0].hooks).toHaveLength(1);
     expect(settings.hooks.UserPromptSubmit[0].hooks[0].command).toContain(
-      "prompt-memory hook claude-code",
+      "prompt-coach hook claude-code",
     );
     expect(settings.hooks.UserPromptSubmit[0].hooks[0].command).not.toContain(
       loadHookAuth(dataDir).ingest_token,
@@ -75,7 +75,7 @@ describe("Claude Code hook install/uninstall", () => {
     const dir = createTempDir();
     const dataDir = join(dir, "data");
     const settingsPath = join(dir, "settings.json");
-    initializePromptMemory({ dataDir });
+    initializePromptCoach({ dataDir });
 
     const result = installClaudeCodeHook({
       dataDir,
@@ -88,7 +88,7 @@ describe("Claude Code hook install/uninstall", () => {
 
     const command =
       result.nextSettings.hooks.UserPromptSubmit[0].hooks[0].command;
-    expect(command).toContain("prompt-memory hook claude-code");
+    expect(command).toContain("prompt-coach hook claude-code");
     expect(command).toContain("--rewrite-guard");
     expect(command).toContain("block-and-copy");
     expect(command).toContain("--rewrite-min-score");
@@ -101,7 +101,7 @@ describe("Claude Code hook install/uninstall", () => {
     const dir = createTempDir();
     const dataDir = join(dir, "data");
     const settingsPath = join(dir, "settings.json");
-    initializePromptMemory({ dataDir });
+    initializePromptCoach({ dataDir });
 
     const result = installClaudeCodeHook({
       dataDir,
@@ -113,7 +113,7 @@ describe("Claude Code hook install/uninstall", () => {
     expect(result.nextSettings.hooks.UserPromptSubmit).toHaveLength(1);
     expect(result.nextSettings.hooks.SessionStart).toHaveLength(1);
     const command = result.nextSettings.hooks.SessionStart[0].hooks[0].command;
-    expect(command).toContain("prompt-memory hook session-start claude-code");
+    expect(command).toContain("prompt-coach hook session-start claude-code");
     expect(command).toContain("--open-web");
     expect(command).not.toContain(loadHookAuth(dataDir).ingest_token);
   });
@@ -122,7 +122,7 @@ describe("Claude Code hook install/uninstall", () => {
     const dir = createTempDir();
     const dataDir = join(dir, "data");
     const settingsPath = join(dir, "settings.json");
-    initializePromptMemory({ dataDir });
+    initializePromptCoach({ dataDir });
     const oldToken = loadHookAuth(dataDir).ingest_token;
     installClaudeCodeHook({ dataDir, settingsPath });
 
@@ -142,7 +142,7 @@ describe("Codex hook install/uninstall", () => {
     const dataDir = join(dir, "data");
     const hooksPath = join(dir, ".codex", "hooks.json");
     const configPath = join(dir, ".codex", "config.toml");
-    initializePromptMemory({ dataDir });
+    initializePromptCoach({ dataDir });
 
     const result = installCodexHook({
       dataDir,
@@ -165,7 +165,7 @@ describe("Codex hook install/uninstall", () => {
     const dataDir = join(dir, "data");
     const hooksPath = join(dir, ".codex", "hooks.json");
     const configPath = join(dir, ".codex", "config.toml");
-    initializePromptMemory({ dataDir });
+    initializePromptCoach({ dataDir });
     mkdirSync(join(dir, ".codex"), { recursive: true });
     writeFileSync(
       hooksPath,
@@ -196,7 +196,7 @@ describe("Codex hook install/uninstall", () => {
     expect(hooks.hooks.Stop).toHaveLength(1);
     expect(hooks.hooks.UserPromptSubmit).toHaveLength(1);
     expect(hooks.hooks.UserPromptSubmit[0].hooks[0].command).toContain(
-      "prompt-memory hook codex",
+      "prompt-coach hook codex",
     );
     expect(hooks.hooks.UserPromptSubmit[0].hooks[0].command).not.toContain(
       loadHookAuth(dataDir).ingest_token,
@@ -211,7 +211,7 @@ describe("Codex hook install/uninstall", () => {
     const dataDir = join(dir, "data");
     const hooksPath = join(dir, ".codex", "hooks.json");
     const configPath = join(dir, ".codex", "config.toml");
-    initializePromptMemory({ dataDir });
+    initializePromptCoach({ dataDir });
 
     const result = installCodexHook({
       dataDir,
@@ -223,7 +223,7 @@ describe("Codex hook install/uninstall", () => {
     });
 
     const command = result.nextHooks.hooks.UserPromptSubmit[0].hooks[0].command;
-    expect(command).toContain("prompt-memory hook codex");
+    expect(command).toContain("prompt-coach hook codex");
     expect(command).toContain("--rewrite-guard");
     expect(command).toContain("context");
     expect(command).toContain("--rewrite-min-score");
@@ -235,7 +235,7 @@ describe("Codex hook install/uninstall", () => {
     const dataDir = join(dir, "data");
     const hooksPath = join(dir, ".codex", "hooks.json");
     const configPath = join(dir, ".codex", "config.toml");
-    initializePromptMemory({ dataDir });
+    initializePromptCoach({ dataDir });
 
     const result = installCodexHook({
       dataDir,
@@ -248,7 +248,7 @@ describe("Codex hook install/uninstall", () => {
     expect(result.nextHooks.hooks.UserPromptSubmit).toHaveLength(1);
     expect(result.nextHooks.hooks.SessionStart).toHaveLength(1);
     const command = result.nextHooks.hooks.SessionStart[0].hooks[0].command;
-    expect(command).toContain("prompt-memory hook session-start codex");
+    expect(command).toContain("prompt-coach hook session-start codex");
     expect(command).toContain("--open-web");
     expect(command).not.toContain(loadHookAuth(dataDir).ingest_token);
   });
@@ -258,7 +258,7 @@ describe("Codex hook install/uninstall", () => {
     const dataDir = join(dir, "data");
     const hooksPath = join(dir, ".codex", "hooks.json");
     const configPath = join(dir, ".codex", "config.toml");
-    initializePromptMemory({ dataDir });
+    initializePromptCoach({ dataDir });
     const oldToken = loadHookAuth(dataDir).ingest_token;
     installCodexHook({ dataDir, hooksPath, configPath });
 
@@ -275,7 +275,7 @@ describe("Codex hook install/uninstall", () => {
 });
 
 function createTempDir(): string {
-  const dir = join(tmpdir(), `prompt-memory-install-${randomUUID()}`);
+  const dir = join(tmpdir(), `prompt-coach-install-${randomUUID()}`);
   mkdirSync(dir, { recursive: true });
   tempDirs.push(dir);
   return dir;

@@ -1,6 +1,6 @@
 import type { Command } from "commander";
 
-import { runPromptMemoryMcpServer } from "../../mcp/server.js";
+import { runPromptCoachMcpServer } from "../../mcp/server.js";
 
 type McpCliOptions = {
   dataDir?: string;
@@ -9,9 +9,9 @@ type McpCliOptions = {
 export function registerMcpCommand(program: Command): void {
   program
     .command("mcp")
-    .description("Run the local prompt-memory MCP server over stdio.")
-    .option("--data-dir <path>", "Override the prompt-memory data directory.")
+    .description("Run the local prompt-coach MCP server over stdio.")
+    .option("--data-dir <path>", "Override the prompt-coach data directory.")
     .action(async (options: McpCliOptions) => {
-      await runPromptMemoryMcpServer({ dataDir: options.dataDir });
+      await runPromptCoachMcpServer({ dataDir: options.dataDir });
     });
 }

@@ -1,6 +1,6 @@
 # Package Contents
 
-This document describes what should be included when `prompt-memory` is
+This document describes what should be included when `prompt-coach` is
 published to npm.
 
 Check the current package with:
@@ -13,8 +13,8 @@ npm pack --dry-run --json
 
 The npm package intentionally includes:
 
-- `dist/cli`: the compiled `prompt-memory` CLI entrypoint plus experimental
-  `pm-claude` and `pm-codex` wrapper entrypoints
+- `dist/cli`: the compiled `prompt-coach` CLI entrypoint plus experimental
+  `pc-claude` and `pc-codex` wrapper entrypoints
 - `dist/server`: the compiled local Fastify server and web API
 - `dist/web`: the compiled React web UI assets
 - `dist/storage`, `dist/analysis`, `dist/hooks`, `dist/importer`,
@@ -26,7 +26,7 @@ The npm package intentionally includes:
     documentation boundary for agent-judge mode
 - Claude Code plugin artifacts under `.claude-plugin`, `commands`, and
   `integrations/claude-code`
-- Codex plugin artifacts under `plugins/prompt-memory`
+- Codex plugin artifacts under `plugins/prompt-coach`
 - local verification scripts: `scripts/benchmark.mjs`,
   `scripts/browser-e2e.mjs`, `scripts/quality-gate.mjs`, and
   `scripts/release-smoke.mjs`
@@ -38,7 +38,7 @@ The npm package should not include:
 - source TypeScript files under `src/`
 - test fixtures under `tests/`
 - GitHub workflow and issue template files under `.github/`
-- local runtime data such as `.prompt-memory/`, SQLite databases, logs,
+- local runtime data such as `.prompt-coach/`, SQLite databases, logs,
   spool files, quarantine files, and prompt archives
 - environment files such as `.env`
 - local package artifacts such as `*.tgz`

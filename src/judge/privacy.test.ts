@@ -5,7 +5,7 @@ import { randomUUID } from "node:crypto";
 import { afterEach, describe, expect, it } from "vitest";
 
 import { normalizeClaudeCodePayload } from "../adapters/claude-code.js";
-import { initializePromptMemory } from "../config/config.js";
+import { initializePromptCoach } from "../config/config.js";
 import { redactPrompt } from "../redaction/redact.js";
 import { createSqlitePromptStorage } from "../storage/sqlite.js";
 import { createJudgeWorker } from "./judge-worker.js";
@@ -25,7 +25,7 @@ afterEach(() => {
 describe("auto-judge privacy boundary", () => {
   it("never delivers a raw secret to the judge subprocess and never stores it on judge_score", async () => {
     const dataDir = createTempDir();
-    initializePromptMemory({ dataDir });
+    initializePromptCoach({ dataDir });
     const storage = createSqlitePromptStorage({
       dataDir,
       hmacSecret: "test-secret",
@@ -85,7 +85,7 @@ describe("auto-judge privacy boundary", () => {
 
   it("does not record any judge_score when the judge subprocess is skipped", async () => {
     const dataDir = createTempDir();
-    initializePromptMemory({ dataDir });
+    initializePromptCoach({ dataDir });
     const storage = createSqlitePromptStorage({
       dataDir,
       hmacSecret: "test-secret",
@@ -129,7 +129,7 @@ describe("auto-judge privacy boundary", () => {
 });
 
 function createTempDir(): string {
-  const dir = join(tmpdir(), `prompt-memory-judge-privacy-${randomUUID()}`);
+  const dir = join(tmpdir(), `prompt-coach-judge-privacy-${randomUUID()}`);
   mkdirSync(dir, { recursive: true });
   tempDirs.push(dir);
   return dir;

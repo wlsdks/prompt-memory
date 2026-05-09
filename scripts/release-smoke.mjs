@@ -15,7 +15,7 @@ import { join, resolve } from "node:path";
 
 const repoRoot = resolve(new URL("..", import.meta.url).pathname);
 const cliPath = join(repoRoot, "dist", "cli", "index.js");
-const tempRoot = mkdtempSync(join(tmpdir(), "prompt-memory-release-smoke-"));
+const tempRoot = mkdtempSync(join(tmpdir(), "prompt-coach-release-smoke-"));
 const dataDir = join(tempRoot, "data");
 const homeDir = join(tempRoot, "home");
 const serverPort = 18_000 + Math.floor(Math.random() * 10_000);
@@ -290,7 +290,7 @@ function runCli(args) {
   });
   if (result.status !== 0) {
     throw new Error(
-      `CLI failed: prompt-memory ${args.join(" ")}\n${result.stderr}`,
+      `CLI failed: prompt-coach ${args.join(" ")}\n${result.stderr}`,
     );
   }
   return result.stdout.trim();
@@ -503,7 +503,7 @@ function getMarkdownPath(promptId) {
 }
 
 function openDb() {
-  const db = new Database(join(dataDir, "prompt-memory.sqlite"));
+  const db = new Database(join(dataDir, "prompt-coach.sqlite"));
   const walMode = db.pragma("journal_mode = WAL", { simple: true });
   assertEqual(
     String(walMode).toLowerCase(),

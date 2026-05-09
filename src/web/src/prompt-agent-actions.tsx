@@ -34,7 +34,7 @@ export function createPromptAgentActionSnapshot(
     actions: [
       {
         id: "mcp-score",
-        command: `prompt-memory:score_prompt prompt_id=${prompt.id} include_suggestions=true`,
+        command: `prompt-coach:score_prompt prompt_id=${prompt.id} include_suggestions=true`,
         detail: "Re-score this stored prompt and return the exact weak fields.",
         icon: "score",
         label: "Score selected prompt",
@@ -42,7 +42,7 @@ export function createPromptAgentActionSnapshot(
       },
       {
         id: "mcp-improve",
-        command: `prompt-memory:improve_prompt prompt_id=${prompt.id}`,
+        command: `prompt-coach:improve_prompt prompt_id=${prompt.id}`,
         detail: "Create a copy-ready local rewrite without auto-submitting it.",
         icon: "improve",
         label: "Create local rewrite",
@@ -50,7 +50,7 @@ export function createPromptAgentActionSnapshot(
       },
       {
         id: "agent-rewrite",
-        command: `prompt-memory:prepare_agent_rewrite prompt_id=${prompt.id} include_local_baseline=true`,
+        command: `prompt-coach:prepare_agent_rewrite prompt_id=${prompt.id} include_local_baseline=true`,
         detail:
           "Ask the active agent session to rewrite the redacted packet, then record the result if useful.",
         icon: "agent",
@@ -59,7 +59,7 @@ export function createPromptAgentActionSnapshot(
       },
       {
         id: "open-stored",
-        command: `prompt-memory show ${prompt.id} --json`,
+        command: `prompt-coach show ${prompt.id} --json`,
         detail: "Inspect the stored metadata from the terminal when debugging.",
         icon: "json",
         label: "Inspect stored record",

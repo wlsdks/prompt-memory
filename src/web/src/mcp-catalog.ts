@@ -2,7 +2,7 @@ import type { QualityDashboard, SettingsResponse } from "./api.js";
 
 export const MCP_FLOW_STEPS = [
   {
-    tool: "get_prompt_memory_status",
+    tool: "get_prompt_coach_status",
     detail:
       "Check setup, capture readiness, latest safe metadata, and the next tool to call.",
   },
@@ -36,16 +36,16 @@ export const MCP_FLOW_STEPS = [
 export const MCP_TOOL_CATALOG = [
   {
     kind: "preflight",
-    name: "get_prompt_memory_status",
+    name: "get_prompt_coach_status",
     title: "Check capture readiness first",
-    when: "The user asks if prompt-memory is working, whether prompts are being captured, or what to do next.",
+    when: "The user asks if prompt-coach is working, whether prompts are being captured, or what to do next.",
     returns:
       "Ready/setup status, safe prompt counts, latest prompt metadata, available tools, and next actions.",
     assurances: ["read-only", "local-only", "structured JSON", "output schema"],
     privacy:
       "No prompt body, no raw absolute path, no external LLM call, no secret value.",
     prompt:
-      "Use prompt-memory get_prompt_memory_status and tell me whether capture is working before scoring anything.",
+      "Use prompt-coach get_prompt_coach_status and tell me whether capture is working before scoring anything.",
   },
   {
     kind: "coach",
@@ -58,7 +58,7 @@ export const MCP_TOOL_CATALOG = [
     privacy:
       "No prompt body, no raw absolute path, no instruction file body, no external LLM call, and no auto-submit.",
     prompt:
-      "Use prompt-memory coach_prompt and give me the latest score, first fix, recurring habit gap, and next request guidance.",
+      "Use prompt-coach coach_prompt and give me the latest score, first fix, recurring habit gap, and next request guidance.",
   },
   {
     kind: "single prompt",
@@ -71,7 +71,7 @@ export const MCP_TOOL_CATALOG = [
     privacy:
       "Direct prompt input is analyzed locally and not stored by this MCP tool.",
     prompt:
-      "Use prompt-memory score_prompt with latest=true and tell me what to improve in my last request.",
+      "Use prompt-coach score_prompt with latest=true and tell me what to improve in my last request.",
   },
   {
     kind: "rewrite",
@@ -84,7 +84,7 @@ export const MCP_TOOL_CATALOG = [
     privacy:
       "No auto-submit, no external LLM call, and direct prompt input is not stored.",
     prompt:
-      "Use prompt-memory improve_prompt with latest=true and give me an approval-ready draft I can copy and resubmit.",
+      "Use prompt-coach improve_prompt with latest=true and give me an approval-ready draft I can copy and resubmit.",
   },
   {
     kind: "advanced rewrite",
@@ -95,9 +95,9 @@ export const MCP_TOOL_CATALOG = [
       "One redacted prompt packet, local score metadata, local baseline rewrite, rewrite contract, and agent instructions.",
     assurances: ["read-only", "opt-in", "redacted packet", "output schema"],
     privacy:
-      "prompt-memory makes no external provider call; the redacted prompt is returned only to the active user-controlled agent session.",
+      "prompt-coach makes no external provider call; the redacted prompt is returned only to the active user-controlled agent session.",
     prompt:
-      "Use prompt-memory prepare_agent_rewrite with latest=true. Rewrite that redacted prompt yourself, then ask before saving it.",
+      "Use prompt-coach prepare_agent_rewrite with latest=true. Rewrite that redacted prompt yourself, then ask before saving it.",
   },
   {
     kind: "advanced rewrite",
@@ -110,7 +110,7 @@ export const MCP_TOOL_CATALOG = [
     privacy:
       "Stores a redacted rewrite draft and metadata only; does not store the original prompt body, return the rewrite body, or store raw paths.",
     prompt:
-      "After I approve your rewrite, call prompt-memory record_agent_rewrite with provider, prompt_id, improved_prompt, confidence, summary, and changed_sections.",
+      "After I approve your rewrite, call prompt-coach record_agent_rewrite with provider, prompt_id, improved_prompt, confidence, summary, and changed_sections.",
   },
   {
     kind: "archive",
@@ -123,7 +123,7 @@ export const MCP_TOOL_CATALOG = [
     privacy:
       "Returns metadata only; no prompt bodies and no raw absolute paths.",
     prompt:
-      "Use prompt-memory score_prompt_archive for recent Codex prompts and summarize my recurring prompt habit gaps.",
+      "Use prompt-coach score_prompt_archive for recent Codex prompts and summarize my recurring prompt habit gaps.",
   },
   {
     kind: "project rules",
@@ -135,7 +135,7 @@ export const MCP_TOOL_CATALOG = [
     assurances: ["read-only", "local-only", "structured JSON", "output schema"],
     privacy: "Returns no instruction file bodies and no raw absolute paths.",
     prompt:
-      "Use prompt-memory review_project_instructions with latest=true and tell me whether my AGENTS.md/CLAUDE.md rules are strong enough.",
+      "Use prompt-coach review_project_instructions with latest=true and tell me whether my AGENTS.md/CLAUDE.md rules are strong enough.",
   },
   {
     kind: "advanced judge",
@@ -146,9 +146,9 @@ export const MCP_TOOL_CATALOG = [
       "A bounded packet of locally redacted prompt bodies, local score metadata, quality gaps, and a rubric for the active agent session.",
     assurances: ["read-only", "opt-in", "redacted packet", "output schema"],
     privacy:
-      "prompt-memory makes no external provider call; redacted prompt bodies are returned only for the active user-controlled agent session.",
+      "prompt-coach makes no external provider call; redacted prompt bodies are returned only for the active user-controlled agent session.",
     prompt:
-      "Use prompt-memory prepare_agent_judge_batch with selection=low_score and max_prompts=5. Judge those redacted prompts yourself.",
+      "Use prompt-coach prepare_agent_judge_batch with selection=low_score and max_prompts=5. Judge those redacted prompts yourself.",
   },
   {
     kind: "advanced judge",
@@ -161,7 +161,7 @@ export const MCP_TOOL_CATALOG = [
     privacy:
       "Stores scores, confidence, risks, and suggestions only; no prompt bodies, raw paths, or provider credentials.",
     prompt:
-      "After judging the prepared packet, call prompt-memory record_agent_judgments with one score, confidence, summary, risks, and suggestions per prompt_id.",
+      "After judging the prepared packet, call prompt-coach record_agent_judgments with one score, confidence, summary, risks, and suggestions per prompt_id.",
   },
 ];
 
@@ -197,7 +197,7 @@ export function createMcpReadiness({
   let tone: McpReadinessTone = "muted";
   let summary =
     "Load local archive status before asking Claude Code or Codex to score prompt habits.";
-  let firstCall = "get_prompt_memory_status";
+  let firstCall = "get_prompt_coach_status";
   let nextAction =
     "Use the status tool first so the agent can confirm capture, scoring, and privacy readiness.";
 
@@ -205,9 +205,9 @@ export function createMcpReadiness({
     status = "Server unavailable";
     tone = "warning";
     summary =
-      "Start the local prompt-memory server before using Claude Code or Codex MCP tools.";
+      "Start the local prompt-coach server before using Claude Code or Codex MCP tools.";
     nextAction =
-      "Run prompt-memory server, then call get_prompt_memory_status from the agent.";
+      "Run prompt-coach server, then call get_prompt_coach_status from the agent.";
   } else if (redactionMode === "raw") {
     status = "Privacy check needed";
     tone = "warning";
@@ -221,7 +221,7 @@ export function createMcpReadiness({
     summary =
       "No stored prompts are available yet, so archive scoring cannot reveal habit patterns.";
     nextAction =
-      "Capture a few Claude Code or Codex prompts, then call get_prompt_memory_status again.";
+      "Capture a few Claude Code or Codex prompts, then call get_prompt_coach_status again.";
   } else if (scoredPrompts === 0) {
     status = "Ready to score";
     tone = "ready";

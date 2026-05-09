@@ -9,7 +9,7 @@ import { join } from "node:path";
 
 import { z } from "zod";
 
-import { getPromptMemoryPaths, supportsPosixMode } from "../storage/paths.js";
+import { getPromptCoachPaths, supportsPosixMode } from "../storage/paths.js";
 
 const LastHookStatusSchema = z.object({
   ok: z.boolean(),
@@ -28,7 +28,7 @@ export function writeLastHookStatus(
   status: LastHookStatus,
 ): void {
   const path = getLastHookStatusPath(dataDir);
-  mkdirSync(getPromptMemoryPaths(dataDir).logsDir, {
+  mkdirSync(getPromptCoachPaths(dataDir).logsDir, {
     recursive: true,
     mode: OWNER_ONLY_DIR_MODE,
   });
@@ -56,5 +56,5 @@ export function readLastHookStatus(
 }
 
 function getLastHookStatusPath(dataDir?: string): string {
-  return join(getPromptMemoryPaths(dataDir).logsDir, LAST_INGEST_STATUS_FILE);
+  return join(getPromptCoachPaths(dataDir).logsDir, LAST_INGEST_STATUS_FILE);
 }
