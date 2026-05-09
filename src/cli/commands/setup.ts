@@ -111,6 +111,7 @@ export type SetupResult = {
       namespaceDir: string;
       installedCount: number;
       skippedCount: number;
+      removedCount: number;
     };
   };
   service: {
@@ -288,10 +289,18 @@ function formatSlashCommandsStatus(
   if (total === 0) {
     return "no commands found";
   }
-  if (slash.installedCount === 0) {
+  const parts: string[] = [];
+  if (slash.installedCount > 0) {
+    parts.push(`${slash.installedCount} installed`);
+  }
+  if (slash.removedCount > 0) {
+    parts.push(`${slash.removedCount} removed`);
+  }
+  if (parts.length === 0) {
     return `up to date (${slash.skippedCount} commands)`;
   }
-  return `${slash.installedCount} installed, ${slash.skippedCount} unchanged at ${slash.namespaceDir}`;
+  parts.push(`${slash.skippedCount} unchanged`);
+  return `${parts.join(", ")} at ${slash.namespaceDir}`;
 }
 
 function formatServiceStatus(service: SetupResult["service"]): string {
@@ -578,6 +587,7 @@ function formatSlashCommands(
     namespaceDir: result.namespaceDir,
     installedCount: result.installed.length,
     skippedCount: result.skipped.length,
+    removedCount: result.removed.length,
   };
 }
 
