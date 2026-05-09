@@ -181,24 +181,18 @@ function registerUninstallStatusLineCommand(program: Command): void {
     });
 }
 
+const STATUSLINE_PREFIX = "prompt:";
+
 export async function renderClaudeCodeStatusLine(
   options: StatusLineOptions = {},
 ): Promise<string> {
   const result = await doctorClaudeCode(options);
   const configured = result.token.ok && result.settings.hookInstalled;
   const ready = result.server.ok && configured;
-  const readinessParts = [
-    ready
-      ? "PM capture on"
-      : configured
-        ? "PM capture paused"
-        : "PM setup needed",
-  ];
-
-  readinessParts.push(result.server.ok ? "server ok" : "server down");
+  const ingestOk = result.lastIngestStatus?.ok ?? true;
+  const fullyHealthy = ready && ingestOk;
 
   let coachingLine: string | undefined;
-
   if (ready) {
     coachingLine = formatLatestScoreForStatusLine(
       scorePromptTool(
@@ -208,18 +202,29 @@ export async function renderClaudeCodeStatusLine(
     );
   }
 
+  if (fullyHealthy && coachingLine) {
+    return coachingLine;
+  }
+
+  const diagnosticParts: string[] = [
+    ready ? "archiving" : configured ? "archiving paused" : "setup needed",
+    result.server.ok ? "server ok" : "server down",
+  ];
+
   if (!result.settings.hookInstalled) {
-    readinessParts.push("hook missing");
+    diagnosticParts.push("hook missing");
   } else if (!result.token.ok) {
-    readinessParts.push("token missing");
+    diagnosticParts.push("token missing");
   } else {
     const ingest = formatLastIngest(result.lastIngestStatus);
     if (ingest) {
-      readinessParts.push(ingest);
+      diagnosticParts.push(ingest);
     }
   }
 
-  return [readinessParts.join(" | "), coachingLine].filter(Boolean).join("\n");
+  const diagnosticLine = `${STATUSLINE_PREFIX} ${diagnosticParts.join(" | ")}`;
+
+  return [diagnosticLine, coachingLine].filter(Boolean).join("\n");
 }
 
 export function renderChainedClaudeCodeStatusLine(
@@ -246,10 +251,10 @@ function formatLatestScoreForStatusLine(
   const gap = result.checklist.find(
     (item) => item.status === "missing" || item.status === "weak",
   );
-  const score = `PM score ${result.quality_score.value}/${result.quality_score.max} ${result.quality_score.band}`;
+  const score = `${STATUSLINE_PREFIX} score ${result.quality_score.value}/${result.quality_score.max} ${result.quality_score.band}`;
 
   return gap
-    ? `${score} | gap ${gap.label} | try /prompt-memory:improve-last`
+    ? `${score} | weakest: ${gap.label} | next: /prompt-memory:improve-last`
     : score;
 }
 
@@ -314,10 +319,10 @@ function formatLastIngest(
   }
 
   if (status.ok) {
-    return "ingest ok";
+    return "save ok";
   }
 
-  return `ingest failed${status.status ? ` ${status.status}` : ""}`;
+  return `save failed${status.status ? ` (HTTP ${status.status})` : ""}`;
 }
 
 function ensureStatusLine(

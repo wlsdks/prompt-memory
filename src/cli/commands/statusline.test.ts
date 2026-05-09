@@ -29,7 +29,7 @@ afterEach(() => {
 });
 
 describe("renderClaudeCodeStatusLine", () => {
-  it("renders capture on with latest score when server, token, hook, and archive are healthy", async () => {
+  it("renders only the score line when server, token, hook, and last ingest are all healthy", async () => {
     const dir = createTempDir();
     const dataDir = join(dir, "data");
     const settingsPath = join(dir, "settings.json");
@@ -68,18 +68,67 @@ describe("renderClaudeCodeStatusLine", () => {
       checkServer: async () => true,
     });
 
-    expect(line).toContain("PM capture on");
-    expect(line).toContain("\nPM score");
-    expect(line).toContain("score");
+    // Healthy → single line, no diagnostic row.
+    expect(line.split("\n").length).toBe(1);
+    expect(line).toMatch(/^prompt: score \d+\/\d+ /);
     expect(line).toContain("needs_work");
-    expect(line).toContain("server ok");
-    expect(line).toContain("ingest ok");
-    expect(line).toContain("try /prompt-memory:improve-last");
+    expect(line).toContain("weakest:");
+    expect(line).toContain("next: /prompt-memory:improve-last");
+    expect(line).not.toContain("archiving");
+    expect(line).not.toContain("server ok");
+    expect(line).not.toContain("save ok");
+    expect(line).not.toContain("PM ");
     expect(line).not.toContain("sk-proj-1234567890abcdef");
     expect(line).not.toContain("/Users/example");
   });
 
-  it("renders setup hints when capture is not ready", async () => {
+  it("renders a diagnostic line above the score line when last ingest failed", async () => {
+    const dir = createTempDir();
+    const dataDir = join(dir, "data");
+    const settingsPath = join(dir, "settings.json");
+    const init = initializePromptMemory({ dataDir });
+    installClaudeCodeHook({ dataDir, settingsPath });
+    const storage = createSqlitePromptStorage({
+      dataDir,
+      hmacSecret: init.hookAuth.web_session_secret,
+      now: () => new Date("2026-05-03T18:00:00.000Z"),
+    });
+    const event = normalizeClaudeCodePayload(
+      {
+        session_id: "session-statusline-401",
+        transcript_path: "/tmp/x/transcript.jsonl",
+        cwd: "/tmp/x",
+        permission_mode: "default",
+        hook_event_name: "UserPromptSubmit",
+        prompt: "Add tests for the new validation rules.",
+      },
+      new Date("2026-05-03T17:59:00.000Z"),
+    );
+    await storage.storePrompt({
+      event,
+      redaction: redactPrompt(event.prompt, "mask"),
+    });
+    storage.close();
+    writeLastHookStatus(dataDir, {
+      ok: false,
+      status: 401,
+      checked_at: "2026-05-02T00:00:00.000Z",
+    });
+
+    const line = await renderClaudeCodeStatusLine({
+      dataDir,
+      settingsPath,
+      checkServer: async () => true,
+    });
+
+    const rows = line.split("\n");
+    expect(rows.length).toBe(2);
+    expect(rows[0]).toContain("prompt:");
+    expect(rows[0]).toContain("save failed");
+    expect(rows[1]).toMatch(/^prompt: score \d+\/\d+ /);
+  });
+
+  it("renders setup hints in a single line when capture is not ready", async () => {
     const dir = createTempDir();
 
     const line = await renderClaudeCodeStatusLine({
@@ -88,7 +137,7 @@ describe("renderClaudeCodeStatusLine", () => {
       checkServer: async () => false,
     });
 
-    expect(line).toBe("PM setup needed | server down | hook missing");
+    expect(line).toBe("prompt: setup needed | server down | hook missing");
   });
 });
 
@@ -228,11 +277,14 @@ describe("renderChainedClaudeCodeStatusLine", () => {
       previousCommand: "previous",
       promptMemoryCommand: "prompt-memory",
       runCommand: (command) => ({
-        stdout: command === "previous" ? "HUD ready\n" : "PM capture on\n",
+        stdout:
+          command === "previous"
+            ? "HUD ready\n"
+            : "prompt: score 23/100 weak\n",
       }),
     });
 
-    expect(line).toBe("HUD ready\nPM capture on");
+    expect(line).toBe("HUD ready\nprompt: score 23/100 weak");
   });
 
   it("preserves multiline output from an existing Claude Code status line", () => {
@@ -243,12 +295,12 @@ describe("renderChainedClaudeCodeStatusLine", () => {
         stdout:
           command === "previous"
             ? "HUD model line\nHUD context line\n"
-            : "PM on | score 23 weak\n",
+            : "prompt: score 23 weak\n",
       }),
     });
 
     expect(line).toBe(
-      "HUD model line\nHUD context line\nPM on | score 23 weak",
+      "HUD model line\nHUD context line\nprompt: score 23 weak",
     );
   });
 
@@ -260,12 +312,12 @@ describe("renderChainedClaudeCodeStatusLine", () => {
         stdout:
           command === "previous"
             ? "HUD model line\nHUD context line\n"
-            : "PM capture on | server ok\nPM score 23/100 weak | gap Goal clarity\n",
+            : "prompt: save failed (HTTP 401)\nprompt: score 23/100 weak | weakest: Goal clarity\n",
       }),
     });
 
     expect(line).toBe(
-      "HUD model line\nHUD context line\nPM capture on | server ok\nPM score 23/100 weak | gap Goal clarity",
+      "HUD model line\nHUD context line\nprompt: save failed (HTTP 401)\nprompt: score 23/100 weak | weakest: Goal clarity",
     );
   });
 
@@ -292,11 +344,11 @@ describe("renderChainedClaudeCodeStatusLine", () => {
       previousCommand: "previous",
       promptMemoryCommand: "prompt-memory",
       runCommand: (command) => ({
-        stdout: command === "previous" ? "" : "PM capture on\n",
+        stdout: command === "previous" ? "" : "prompt: score 23/100 weak\n",
       }),
     });
 
-    expect(line).toBe("PM capture on");
+    expect(line).toBe("prompt: score 23/100 weak");
   });
 
   it("passes Claude Code statusLine stdin to chained commands", () => {
