@@ -5,12 +5,18 @@ import {
   coachPromptTool,
   type CoachPromptToolResult,
 } from "../../mcp/score-tool.js";
+import { UserError } from "../user-error.js";
+
+export type BuddyStyle = "block" | "line" | "json";
+
+const BUDDY_STYLES: readonly BuddyStyle[] = ["block", "line", "json"];
 
 type BuddyCliOptions = {
   dataDir?: string;
   interval?: string | number;
   json?: boolean;
   once?: boolean;
+  style?: BuddyStyle;
 };
 
 const DEFAULT_BUDDY_INTERVAL_SECONDS = 2;
@@ -55,12 +61,22 @@ export function registerBuddyCommand(program: Command): void {
     .option("--json", "Print one JSON snapshot.")
     .option("--once", "Print one text snapshot and exit.")
     .option(
+      "--style <style>",
+      "Output style: block (default multi-line), line (single statusline-style row), or json.",
+    )
+    .option(
       "--interval <seconds>",
       "Refresh interval for the terminal buddy.",
       String(DEFAULT_BUDDY_INTERVAL_SECONDS),
     )
     .action(async (options: BuddyCliOptions) => {
-      if (options.json || options.once || !process.stdout.isTTY) {
+      const style = resolveBuddyStyle(options);
+      if (
+        style === "json" ||
+        style === "line" ||
+        options.once ||
+        !process.stdout.isTTY
+      ) {
         console.log(renderBuddyForCli(options));
         return;
       }
@@ -70,11 +86,33 @@ export function registerBuddyCommand(program: Command): void {
 }
 
 export function renderBuddyForCli(options: BuddyCliOptions = {}): string {
+  const style = resolveBuddyStyle(options);
   const snapshot = createBuddySnapshot(options);
 
-  return options.json
-    ? JSON.stringify(snapshot, null, 2)
-    : formatBuddySnapshot(snapshot);
+  switch (style) {
+    case "json":
+      return JSON.stringify(snapshot, null, 2);
+    case "line":
+      return formatBuddyLine(snapshot);
+    case "block":
+    default:
+      return formatBuddySnapshot(snapshot);
+  }
+}
+
+function resolveBuddyStyle(options: BuddyCliOptions): BuddyStyle {
+  if (options.style !== undefined) {
+    if (!BUDDY_STYLES.includes(options.style)) {
+      throw new UserError(
+        `Unsupported --style value: ${String(options.style)}. Use one of: ${BUDDY_STYLES.join(", ")}.`,
+      );
+    }
+    return options.style;
+  }
+  if (options.json) {
+    return "json";
+  }
+  return "block";
 }
 
 function createBuddySnapshot(options: BuddyCliOptions = {}): BuddySnapshot {
@@ -145,6 +183,29 @@ function createHabitSnapshot(
     band: result.archive.archive_score.band,
     top_gap: result.archive.top_gaps[0]?.label,
   };
+}
+
+function formatBuddyLine(snapshot: BuddySnapshot): string {
+  const segments: string[] = ["pm"];
+
+  if (snapshot.latest_prompt) {
+    segments.push(
+      `${snapshot.latest_prompt.value}/${snapshot.latest_prompt.max} ${snapshot.latest_prompt.band}`,
+    );
+    if (snapshot.latest_prompt.top_gap) {
+      segments.push(`gap=${snapshot.latest_prompt.top_gap}`);
+    }
+  } else {
+    segments.push("no prompt yet");
+  }
+
+  if (snapshot.habit) {
+    segments.push(`habit ${snapshot.habit.average}/${snapshot.habit.max}`);
+  }
+
+  segments.push(snapshot.status.status);
+
+  return segments.join(" · ");
 }
 
 function formatBuddySnapshot(snapshot: BuddySnapshot): string {

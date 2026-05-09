@@ -11,6 +11,7 @@ import { registerExportCommand } from "./commands/export.js";
 import { registerHookCommand } from "./commands/hook.js";
 import { registerImproveCommand } from "./commands/improve.js";
 import { registerImportCommand } from "./commands/import.js";
+import { registerInstallCodexHudCommand } from "./commands/install-codex-hud.js";
 import { registerInstallHookCommands } from "./commands/install-hook.js";
 import { registerInitCommand } from "./commands/init.js";
 import { registerMcpCommand } from "./commands/mcp.js";
@@ -41,6 +42,7 @@ export function createProgram(): Command {
   registerExportCommand(program);
   registerImproveCommand(program);
   registerImportCommand(program);
+  registerInstallCodexHudCommand(program);
   registerInstallHookCommands(program);
   registerMcpCommand(program);
   registerStartCommand(program);

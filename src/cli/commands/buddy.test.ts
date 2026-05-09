@@ -81,6 +81,76 @@ describe("buddy CLI", () => {
     expect(result.mode).toBe("buddy");
     expect(result.privacy.returns_prompt_bodies).toBe(false);
   });
+
+  it("renders a single-line snapshot when --style line is used", async () => {
+    const dataDir = createTempDir();
+    const init = initializePromptMemory({ dataDir });
+    const storage = createSqlitePromptStorage({
+      dataDir,
+      hmacSecret: init.hookAuth.web_session_secret,
+      now: () => new Date("2026-05-03T18:30:00.000Z"),
+    });
+    const event = normalizeClaudeCodePayload(
+      {
+        session_id: "session-buddy-line",
+        transcript_path: "/tmp/x/transcript.jsonl",
+        cwd: "/tmp/x",
+        permission_mode: "default",
+        hook_event_name: "UserPromptSubmit",
+        prompt: "Add tests covering the new validation rules.",
+      },
+      new Date("2026-05-03T18:29:00.000Z"),
+    );
+    await storage.storePrompt({
+      event,
+      redaction: redactPrompt(event.prompt, "mask"),
+    });
+    storage.close();
+
+    const output = renderBuddyForCli({ dataDir, style: "line" });
+
+    expect(output.trimEnd().includes("\n")).toBe(false);
+    expect(output).toContain("pm");
+    expect(output).toMatch(/\d+\/100/);
+    expect(output).toContain("·");
+  });
+
+  it("--style block matches the default multi-line block format", async () => {
+    const dataDir = createTempDir();
+    initializePromptMemory({ dataDir });
+
+    const def = renderBuddyForCli({ dataDir });
+    const block = renderBuddyForCli({ dataDir, style: "block" });
+
+    expect(block).toContain("Prompt Memory Buddy");
+    expect(def.startsWith("Prompt Memory Buddy")).toBe(true);
+    expect(def.split("\n").length).toBe(block.split("\n").length);
+  });
+
+  it("--style json is equivalent shape to --json", () => {
+    const dataDir = createTempDir();
+    initializePromptMemory({ dataDir });
+
+    const fromStyle = JSON.parse(
+      renderBuddyForCli({ dataDir, style: "json" }),
+    ) as { mode: string };
+    const fromFlag = JSON.parse(renderBuddyForCli({ dataDir, json: true })) as {
+      mode: string;
+    };
+
+    expect(fromStyle.mode).toBe("buddy");
+    expect(fromFlag.mode).toBe("buddy");
+    expect(Object.keys(fromStyle).sort()).toEqual(Object.keys(fromFlag).sort());
+  });
+
+  it("rejects unsupported --style values", () => {
+    const dataDir = createTempDir();
+    initializePromptMemory({ dataDir });
+
+    expect(() =>
+      renderBuddyForCli({ dataDir, style: "weird" as never }),
+    ).toThrow(/style/);
+  });
 });
 
 function createTempDir(): string {
