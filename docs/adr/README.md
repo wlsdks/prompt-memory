@@ -12,7 +12,8 @@ Format:
 - Sections: Context, Friction signals, Considered options, Recommendation,
   Decision.
 
-| Number | Title | Status |
-| ------ | ----- | ------ |
-| [0001](./0001-mcp-per-tool-modules.md) | MCP per-tool module migration | Proposed |
-| [0002](./0002-storage-capability-registry.md) | Storage capability registry | Proposed |
+| Number                                                | Title                                                      | Status   |
+| ----------------------------------------------------- | ---------------------------------------------------------- | -------- |
+| [0001](./0001-mcp-per-tool-modules.md)                | MCP per-tool module migration                              | Proposed |
+| [0002](./0002-storage-capability-registry.md)         | Storage capability registry                                | Proposed |
+| [0003](./0003-export-import-dormant-in-solo-phase.md) | export and import are dormant in the solo-maintainer phase | Accepted |
