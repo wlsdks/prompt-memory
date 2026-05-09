@@ -83,7 +83,7 @@ describe("coach CLI", () => {
     expect(text).toContain("Next actions");
     expect(text).toContain("Agent commands");
     expect(text).toContain("/prompt-memory:coach");
-    expect(text).toContain("/prompt-memory:score-last");
+    expect(text).toContain("/prompt-memory:score");
     expect(text).toContain("/prompt-memory:improve-last");
     expect(text).toContain("prompt-memory:coach_prompt");
     expect(text).toContain("prompt-memory buddy");

@@ -126,7 +126,7 @@ function formatAgentFollowUpCommands(result: CoachPromptToolResult): string[] {
   ];
 
   if (result.latest_score && !("is_error" in result.latest_score)) {
-    rows.splice(1, 0, "- Claude Code score: /prompt-memory:score-last");
+    rows.splice(1, 0, "- Claude Code score: /prompt-memory:score");
   }
 
   if (result.improvement && !("is_error" in result.improvement)) {

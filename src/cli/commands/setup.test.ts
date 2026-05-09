@@ -397,6 +397,40 @@ describe("runSetup", () => {
     );
   });
 
+  it("reports stale slash commands removed by setup", () => {
+    const dir = createTempDir();
+    const dataDir = join(dir, "data");
+    const settingsPath = join(dir, ".claude", "settings.json");
+    const claudeCommandsDir = join(dir, ".claude", "commands");
+    const slashCommandsSourceDir = join(dir, "fake-pm-source");
+    mkdirSync(slashCommandsSourceDir, { recursive: true });
+    writeFileSync(
+      join(slashCommandsSourceDir, "guard.md"),
+      "# guard fixture\n",
+    );
+    const namespaceDir = join(claudeCommandsDir, "prompt-memory");
+    mkdirSync(namespaceDir, { recursive: true });
+    writeFileSync(join(namespaceDir, "guard.md"), "# guard fixture\n");
+    writeFileSync(join(namespaceDir, "score-last.md"), "# stale\n");
+
+    const result = runSetup({
+      profile: "coach",
+      dataDir,
+      settingsPath,
+      noService: true,
+      detectedTools: ["claude-code"],
+      claudeCommandsDir,
+      slashCommandsSourceDir,
+    });
+
+    expect(result.slashCommands.claudeCode?.removedCount).toBe(1);
+    expect(result.slashCommands.claudeCode?.changed).toBe(true);
+    expect(formatSetupResult(result)).toContain(
+      "Claude Code slash commands: 1 removed",
+    );
+    expect(existsSync(join(namespaceDir, "score-last.md"))).toBe(false);
+  });
+
   it("respects --skip-slash-commands and reports the slash status as skipped", () => {
     const dir = createTempDir();
     const dataDir = join(dir, "data");

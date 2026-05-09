@@ -94,15 +94,13 @@ The plugin exposes:
   checks
 - `/prompt-memory:coach` to run the one-call prompt coach workflow inside
   Claude Code
-- `/prompt-memory:score` to score accumulated prompt habits
+- `/prompt-memory:score` to score the latest captured request or the
+  accumulated archive
 - `/prompt-memory:judge` to ask the active Claude Code session to judge a
   bounded batch of low-scoring redacted prompts through MCP
-- `/prompt-memory:score-last` to score the latest captured request
 - `/prompt-memory:improve-last` to generate an approval-ready rewrite for the
-  latest captured request
+  latest captured request, in either deterministic or active-agent mode
 - `/prompt-memory:habits` to summarize recurring prompt habit gaps
-- `/prompt-memory:rules` to review project `AGENTS.md` / `CLAUDE.md` quality
-- `/prompt-memory:coach-next` to create the next better request template
 - `/prompt-memory:open` to open the local archive
 
 Prompt capture still uses Claude Code hook configuration in settings files. The

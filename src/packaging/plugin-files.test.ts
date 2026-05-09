@@ -32,12 +32,8 @@ describe("plugin packaging files", () => {
       "./commands/coach.md",
       "./commands/score.md",
       "./commands/judge.md",
-      "./commands/score-last.md",
       "./commands/improve-last.md",
-      "./commands/agent-improve-last.md",
       "./commands/habits.md",
-      "./commands/rules.md",
-      "./commands/coach-next.md",
       "./commands/open.md",
     ]);
   });
@@ -63,10 +59,6 @@ describe("plugin packaging files", () => {
       join(process.cwd(), "commands/buddy.md"),
       "utf8",
     );
-    const scoreLast = readFileSync(
-      join(process.cwd(), "commands/score-last.md"),
-      "utf8",
-    );
     const judge = readFileSync(
       join(process.cwd(), "commands/judge.md"),
       "utf8",
@@ -75,20 +67,8 @@ describe("plugin packaging files", () => {
       join(process.cwd(), "commands/improve-last.md"),
       "utf8",
     );
-    const agentImproveLast = readFileSync(
-      join(process.cwd(), "commands/agent-improve-last.md"),
-      "utf8",
-    );
     const habits = readFileSync(
       join(process.cwd(), "commands/habits.md"),
-      "utf8",
-    );
-    const rules = readFileSync(
-      join(process.cwd(), "commands/rules.md"),
-      "utf8",
-    );
-    const coachNext = readFileSync(
-      join(process.cwd(), "commands/coach-next.md"),
       "utf8",
     );
     const open = readFileSync(join(process.cwd(), "commands/open.md"), "utf8");
@@ -123,19 +103,17 @@ describe("plugin packaging files", () => {
     expect(judge).toContain(
       "Do not call external providers through prompt-memory",
     );
-    expect(scoreLast).toContain("prompt-memory:score_prompt latest=true");
-    expect(scoreLast).toContain("prompt-memory score --latest --json");
+    expect(score).toContain("prompt-memory:score_prompt latest=true");
+    expect(score).toContain("prompt-memory score --latest --json");
+    expect(improveLast).toContain("AskUserQuestion");
     expect(improveLast).toContain("prompt-memory:improve_prompt latest=true");
     expect(improveLast).toContain("prompt-memory improve --latest --json");
-    expect(agentImproveLast).toContain(
+    expect(improveLast).toContain(
       "prompt-memory:prepare_agent_rewrite latest=true",
     );
-    expect(agentImproveLast).toContain("prompt-memory:record_agent_rewrite");
-    expect(agentImproveLast).toContain("Do not auto-submit the rewrite");
+    expect(improveLast).toContain("prompt-memory:record_agent_rewrite");
+    expect(improveLast).toContain("Do not auto-submit the rewrite");
     expect(habits).toContain("prompt-memory:score_prompt_archive");
-    expect(rules).toContain("prompt-memory:review_project_instructions");
-    expect(coachNext).toContain("next_prompt_template");
-    expect(coachNext).toContain("prompt-memory score --json");
     expect(open).toContain("http://127.0.0.1:17373");
   });
 
@@ -163,11 +141,16 @@ describe("plugin packaging files", () => {
         "Toggle the prompt-memory rewrite guard between off / context / ask / block-and-copy",
         "Score my latest captured prompt",
         "Improve my latest captured prompt",
-        "Rewrite my latest captured prompt with the active agent session",
         "Run my full prompt coach workflow",
         "Judge my low-scoring prompts with the active agent session",
         "Summarize my prompt habits",
       ]),
+    );
+    expect(manifest.interface.defaultPrompt).not.toContain(
+      "Rewrite my latest captured prompt with the active agent session",
+    );
+    expect(manifest.interface.defaultPrompt).not.toContain(
+      "Review my current project AGENTS.md or CLAUDE.md rules",
     );
   });
 
