@@ -8,9 +8,16 @@ allowed-tools: Bash, AskUserQuestion
 This command rewrites the most recently captured prompt for the user's approval.
 There are two modes — pick one before running anything.
 
-## 1. Ask the user which mode to use
+## 1. Pick the rewrite mode
 
-Use `AskUserQuestion` with these two options. Show them verbatim.
+Default to **deterministic** mode and run it without asking. This matches the
+historical UX — `/prompt-memory:improve-last` should produce a rewrite quickly
+in the common case.
+
+Only call `AskUserQuestion` when the user's request explicitly signals agent
+intent — phrases like "agent", "rewrite with the active session", "have Claude
+rewrite", "semantic rewrite", or asking for a more thoughtful rewrite than the
+local heuristic. In that case, present these two options verbatim:
 
 - **deterministic** — Local rewrite from prompt-memory's heuristic improver. No
   agent reasoning; reproducible; never sends prompt content out of the local
@@ -20,8 +27,6 @@ Use `AskUserQuestion` with these two options. Show them verbatim.
   and a baseline draft. You rewrite, then ask the user before saving. Because
   the redacted packet is processed by this active provider session, the user's
   configured provider may see the redacted text.
-
-If the user has no preference, default to **deterministic**.
 
 ## 2a. Deterministic mode
 
