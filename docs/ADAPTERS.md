@@ -50,4 +50,4 @@ Tool-specific fields such as `turn_id`, `transcript_path`, `model`, or `permissi
 - Install command: `prompt-memory install-hook codex`
 - Status: beta
 
-Codex hooks require `[features].codex_hooks = true` in `config.toml`.
+Codex hooks require `[features].hooks = true` in `config.toml`.

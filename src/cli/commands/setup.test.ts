@@ -53,7 +53,7 @@ describe("runSetup", () => {
     expect(readFileSync(hooksPath, "utf8")).toContain(
       "prompt-memory hook codex",
     );
-    expect(readFileSync(configPath, "utf8")).toContain("codex_hooks = true");
+    expect(readFileSync(configPath, "utf8")).toContain("hooks = true");
     expect(readFileSync(plistPath, "utf8")).toContain(
       "com.prompt-memory.server",
     );

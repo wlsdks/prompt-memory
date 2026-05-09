@@ -20,14 +20,14 @@ installed package:
 
 ```sh
 prompt-memory start
-prompt-memory setup --profile coach --register-mcp
+prompt-memory setup --profile coach --register-mcp --open-web
 ```
 
 The coach profile installs capture hooks, low-friction rewrite guidance, local
 server startup where supported, and the Claude Code status line when Claude Code
-is detected. `--register-mcp` also registers `prompt-memory mcp` with detected
-Claude Code/Codex CLIs so the active agent can call coach/rewrite/judge tools.
-Use plain `prompt-memory setup` only when the user wants passive capture without
+is detected. `--register-mcp` also registers the MCP server with detected Claude
+Code/Codex CLIs so the active agent can call coach/rewrite/judge tools. Use
+plain `prompt-memory setup` only when the user wants passive capture without
 coaching.
 
 After setup, ask the user to send one real coding prompt in Claude Code or
@@ -55,8 +55,11 @@ repo script:
 
 ```sh
 pnpm build
-pnpm prompt-memory setup --profile coach --register-mcp
+pnpm setup
 ```
+
+`pnpm setup` registers MCP with absolute Node + `dist/cli/index.js` paths, which
+is the safer Codex configuration for a cloned checkout.
 
 ## Common Checks
 
@@ -115,10 +118,12 @@ Use these workflows before sending the user to the web UI:
   `latest=true` for AGENTS.md / CLAUDE.md quality checks.
 - Next request template: use `score_prompt_archive` and turn
   `next_prompt_template` plus `practice_plan` into one approval-ready template.
-- One-command setup: prefer `prompt-memory setup --profile coach --register-mcp`
-  over asking the user to install hooks, rewrite guidance, status line, and MCP
-  registration separately. For a new user, show `prompt-memory start` first so
-  the happy path stays `setup -> one real prompt -> coach`.
+- One-command setup: prefer
+  `prompt-memory setup --profile coach --register-mcp --open-web` over asking
+  the user to install hooks, rewrite guidance, status line, and MCP registration
+  separately. In a cloned checkout, prefer `pnpm setup`. For a new user, show
+  `prompt-memory start` first so the happy path stays
+  `setup -> one real prompt -> coach`.
 - Initial prompt wrapper: when the user wants one-click rewrite before launching
   a new agent session, suggest `pm-claude --pm-mode auto -- "..."` or
   `pm-codex --pm-mode auto -- "..."`. Use `--pm-dry-run` first when verifying.

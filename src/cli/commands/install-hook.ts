@@ -75,6 +75,7 @@ const PROMPT_MEMORY_SESSION_MARKER =
   "prompt-memory hook session-start claude-code";
 const CODEX_PROMPT_MEMORY_SESSION_MARKER =
   "prompt-memory hook session-start codex";
+const CODEX_HOOKS_FEATURE_KEY = "hooks";
 
 export function registerInstallHookCommands(program: Command): void {
   program
@@ -411,7 +412,10 @@ export function isCodexHooksFeatureEnabled(config: string): boolean {
       continue;
     }
 
-    if (inFeatures && /^codex_hooks\s*=\s*true\b/.test(trimmed)) {
+    if (
+      inFeatures &&
+      /^(hooks|codex_hooks)\s*=\s*true\b/.test(trimmed)
+    ) {
       return true;
     }
   }
@@ -609,7 +613,7 @@ function removeSessionStartHook(
 function ensureCodexHooksFeature(config: string): string {
   const source = config.trimEnd();
   if (!source) {
-    return "[features]\ncodex_hooks = true\n";
+    return `[features]\n${CODEX_HOOKS_FEATURE_KEY} = true\n`;
   }
 
   const lines = source.split(/\r?\n/);
@@ -629,18 +633,34 @@ function ensureCodexHooksFeature(config: string): string {
   }
 
   if (featuresIndex < 0) {
-    return `${source}\n\n[features]\ncodex_hooks = true\n`;
+    return `${source}\n\n[features]\n${CODEX_HOOKS_FEATURE_KEY} = true\n`;
   }
 
+  let hooksLineIndex = -1;
+  const legacyLineIndexes = new Set<number>();
   for (let index = featuresIndex + 1; index < nextSectionIndex; index += 1) {
-    if (/^\s*codex_hooks\s*=/.test(lines[index] ?? "")) {
-      lines[index] = "codex_hooks = true";
-      return `${lines.join("\n")}\n`;
+    const line = lines[index] ?? "";
+    if (/^\s*hooks\s*=/.test(line)) {
+      hooksLineIndex = index;
+    } else if (/^\s*codex_hooks\s*=/.test(line)) {
+      legacyLineIndexes.add(index);
     }
   }
 
-  lines.splice(featuresIndex + 1, 0, "codex_hooks = true");
-  return `${lines.join("\n")}\n`;
+  if (hooksLineIndex >= 0) {
+    lines[hooksLineIndex] = `${CODEX_HOOKS_FEATURE_KEY} = true`;
+  } else if (legacyLineIndexes.size > 0) {
+    hooksLineIndex = Math.min(...legacyLineIndexes);
+    legacyLineIndexes.delete(hooksLineIndex);
+    lines[hooksLineIndex] = `${CODEX_HOOKS_FEATURE_KEY} = true`;
+  } else {
+    lines.splice(featuresIndex + 1, 0, `${CODEX_HOOKS_FEATURE_KEY} = true`);
+  }
+
+  const migrated = lines.filter(
+    (_line, index) => !legacyLineIndexes.has(index),
+  );
+  return `${migrated.join("\n")}\n`;
 }
 
 function buildHookCommand(

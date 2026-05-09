@@ -17,7 +17,6 @@ import {
   type CodexHooksSettings,
 } from "./install-hook.js";
 import {
-  PUBLISHED_PROMPT_MEMORY_ENTRY,
   mcpListSpec,
   mcpRegistrationCommand,
   type AgentTool,
@@ -191,7 +190,7 @@ function formatCodexSettings(result: DoctorCodexResult): string {
   const duplicate = result.settings.duplicateHooks
     ? "; duplicate hooks found"
     : "";
-  return `- Codex hook: ${result.settings.hookInstalled ? `installed${source}` : "missing"}; codex_hooks ${result.settings.codexHooksEnabled ? "enabled" : "disabled"}${duplicate}`;
+  return `- Codex hook: ${result.settings.hookInstalled ? `installed${source}` : "missing"}; hooks ${result.settings.codexHooksEnabled ? "enabled" : "disabled"}${duplicate}`;
 }
 
 function doctorNextSteps(
@@ -214,7 +213,7 @@ function doctorNextSteps(
   }
   if (!result.mcp.registered) {
     steps.push(
-      `Register MCP: ${mcpRegistrationCommand(tool, PUBLISHED_PROMPT_MEMORY_ENTRY)}.`,
+      `Register MCP: ${mcpRegistrationCommand(tool)}.`,
     );
   } else {
     steps.push(
