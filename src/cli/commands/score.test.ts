@@ -80,6 +80,50 @@ describe("score CLI command", () => {
     );
   });
 
+  it("scores ad-hoc text passed via --text without touching storage", () => {
+    const text = scoreArchiveForCli({ text: "fix the bug" });
+
+    expect(text).toMatch(/Prompt score/);
+    expect(text).toMatch(/0\/100 \(weak\)/);
+    expect(text).toContain("Goal clarity");
+    expect(text).toContain("[missing]");
+    expect(text).toContain("Privacy: local-only");
+  });
+
+  it("returns the same JSON shape from --text as MCP score_prompt(prompt:...)", () => {
+    const json = scoreArchiveForCli({ text: "fix the bug", json: true });
+    const parsed = JSON.parse(json) as {
+      source: string;
+      quality_score: { value: number; band: string };
+      checklist: Array<{ key: string; status: string }>;
+      privacy: { stores_input: boolean; external_calls: boolean };
+    };
+
+    expect(parsed.source).toBe("text");
+    expect(parsed.quality_score.value).toBe(0);
+    expect(parsed.quality_score.band).toBe("weak");
+    expect(parsed.checklist.length).toBe(5);
+    expect(parsed.privacy.stores_input).toBe(false);
+    expect(parsed.privacy.external_calls).toBe(false);
+  });
+
+  it("rejects empty --text with a friendly UserError", () => {
+    expect(() => scoreArchiveForCli({ text: "   " })).toThrow(
+      /must not be empty/i,
+    );
+  });
+
+  it("includes a runnable example in the missing-input error path on --latest with empty archive", () => {
+    const dataDir = createTempDir();
+    initializePromptMemory({ dataDir });
+
+    const text = scoreArchiveForCli({ dataDir, latest: true });
+
+    expect(text).toContain("Latest prompt score");
+    expect(text).toMatch(/error not_found/);
+    expect(text).toContain("--text");
+  });
+
   it("prints a privacy-safe latest prompt score without returning the prompt body", async () => {
     const dataDir = createTempDir();
     await createScoreFixture(dataDir);
