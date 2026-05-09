@@ -73,7 +73,7 @@ describe("renderClaudeCodeStatusLine", () => {
     expect(line).toMatch(/^prompt: score \d+\/\d+ /);
     expect(line).toContain("needs_work");
     expect(line).toContain("weakest:");
-    expect(line).toContain("next: /prompt-memory:improve-last");
+    expect(line).toContain("run: /prompt-memory:improve-last");
     expect(line).not.toContain("archiving");
     expect(line).not.toContain("server ok");
     expect(line).not.toContain("save ok");
