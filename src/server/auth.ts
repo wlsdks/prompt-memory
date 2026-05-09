@@ -15,7 +15,7 @@ export type WebSession = {
   expiresAt: number;
 };
 
-const SESSION_COOKIE_NAME = "prompt_memory_session";
+const SESSION_COOKIE_NAME = "prompt_coach_session";
 const SESSION_DURATION_MS = 12 * HOUR_MS;
 const SESSION_DURATION_SECONDS = SESSION_DURATION_MS / 1000;
 

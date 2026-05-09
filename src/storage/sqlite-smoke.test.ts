@@ -27,7 +27,7 @@ describe("better-sqlite3 smoke test", () => {
   });
 
   it("supports WAL mode for file databases", () => {
-    const dir = mkdtempSync(join(tmpdir(), "prompt-memory-sqlite-"));
+    const dir = mkdtempSync(join(tmpdir(), "prompt-coach-sqlite-"));
     tempDirs.push(dir);
 
     const db = new Database(join(dir, "smoke.sqlite"));

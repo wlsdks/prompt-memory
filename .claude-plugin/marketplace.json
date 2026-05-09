@@ -1,7 +1,7 @@
 {
-  "name": "prompt-memory",
+  "name": "prompt-coach",
   "owner": {
-    "name": "prompt-memory contributors",
+    "name": "prompt-coach contributors",
     "email": "wlsdks@users.noreply.github.com"
   },
   "metadata": {
@@ -10,12 +10,12 @@
   },
   "plugins": [
     {
-      "name": "prompt-memory",
+      "name": "prompt-coach",
       "source": "./",
       "description": "Capture Claude Code prompts locally, redact secrets before storage, search the archive, and show capture health in the Claude Code status line.",
       "category": "memory",
       "tags": [
-        "prompt-memory",
+        "prompt-coach",
         "memory",
         "hooks",
         "statusline",

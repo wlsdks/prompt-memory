@@ -5,7 +5,7 @@ import { randomUUID } from "node:crypto";
 import { afterEach, describe, expect, it } from "vitest";
 
 import { normalizeClaudeCodePayload } from "../../adapters/claude-code.js";
-import { initializePromptMemory, loadHookAuth } from "../../config/config.js";
+import { initializePromptCoach, loadHookAuth } from "../../config/config.js";
 import { redactPrompt } from "../../redaction/redact.js";
 import { createSqlitePromptStorage } from "../../storage/sqlite.js";
 import { createProgram } from "../index.js";
@@ -78,7 +78,7 @@ describe("import CLI", () => {
         file: "/tmp/missing.jsonl",
         source: "manual-jsonl",
       }),
-    ).toThrow(/prompt-memory import --dry-run --file/);
+    ).toThrow(/prompt-coach import --dry-run --file/);
   });
 
   it("includes a usage hint when --file is omitted", () => {
@@ -91,8 +91,8 @@ describe("import CLI", () => {
   });
 
   it("hints at the next command when --resume points to a missing job", async () => {
-    const dataDir = createTempDir("prompt-memory-import-missing-");
-    initializePromptMemory({ dataDir });
+    const dataDir = createTempDir("prompt-coach-import-missing-");
+    initializePromptCoach({ dataDir });
     const file = writeJsonl([
       {
         hook_event_name: "UserPromptSubmit",
@@ -109,12 +109,12 @@ describe("import CLI", () => {
         resume: "imp_does_not_exist",
         source: "manual-jsonl",
       }),
-    ).rejects.toThrow(/Import job not found.*prompt-memory import-job/);
+    ).rejects.toThrow(/Import job not found.*prompt-coach import-job/);
   });
 
   it("does not mutate prompt storage during dry-run", () => {
-    const dataDir = createTempDir("prompt-memory-import-data-");
-    initializePromptMemory({ dataDir });
+    const dataDir = createTempDir("prompt-coach-import-data-");
+    initializePromptCoach({ dataDir });
     const hmacSecret = loadHookAuth(dataDir).web_session_secret;
     const storage = createSqlitePromptStorage({
       dataDir,
@@ -148,8 +148,8 @@ describe("import CLI", () => {
 
   it("saves and shows raw-free dry-run jobs when requested", () => {
     const rawSecret = "sk-proj-1234567890abcdef";
-    const dataDir = createTempDir("prompt-memory-import-job-");
-    initializePromptMemory({ dataDir });
+    const dataDir = createTempDir("prompt-coach-import-job-");
+    initializePromptCoach({ dataDir });
     const file = writeJsonl([
       {
         hook_event_name: "UserPromptSubmit",
@@ -178,21 +178,21 @@ describe("import CLI", () => {
   });
 
   it("hints at the dry-run save command when import-job points at a missing id", () => {
-    const dataDir = createTempDir("prompt-memory-import-job-missing-");
-    initializePromptMemory({ dataDir });
+    const dataDir = createTempDir("prompt-coach-import-job-missing-");
+    initializePromptCoach({ dataDir });
 
     expect(() =>
       showImportJobForCli("imp_does_not_exist", { dataDir }),
     ).toThrow(/Import job not found: imp_does_not_exist/);
     expect(() =>
       showImportJobForCli("imp_does_not_exist", { dataDir }),
-    ).toThrow(/prompt-memory import --dry-run --save-job/);
+    ).toThrow(/prompt-coach import --dry-run --save-job/);
   });
 
   it("resumes a saved dry-run job, imports prompts, and filters imported prompts", async () => {
     const rawSecret = "sk-proj-1234567890abcdef";
-    const dataDir = createTempDir("prompt-memory-import-execute-");
-    initializePromptMemory({ dataDir });
+    const dataDir = createTempDir("prompt-coach-import-execute-");
+    initializePromptCoach({ dataDir });
     const file = writeJsonl([
       {
         hook_event_name: "UserPromptSubmit",
@@ -270,8 +270,8 @@ describe("import CLI", () => {
   });
 
   it("skips import candidates when project capture is disabled", async () => {
-    const dataDir = createTempDir("prompt-memory-import-policy-");
-    initializePromptMemory({ dataDir });
+    const dataDir = createTempDir("prompt-coach-import-policy-");
+    initializePromptCoach({ dataDir });
     const hmacSecret = loadHookAuth(dataDir).web_session_secret;
     const storage = createSqlitePromptStorage({
       dataDir,
@@ -325,7 +325,7 @@ describe("import CLI", () => {
 });
 
 function writeJsonl(records: Array<Record<string, unknown>>): string {
-  const dir = createTempDir("prompt-memory-import-cli-");
+  const dir = createTempDir("prompt-coach-import-cli-");
 
   const path = join(dir, "transcript.jsonl");
   writeFileSync(

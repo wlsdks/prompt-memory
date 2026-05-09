@@ -1,11 +1,11 @@
-# MCP Tool Inventory (prompt-memory)
+# MCP Tool Inventory (prompt-coach)
 
-The stdio MCP server (`prompt-memory mcp`) exposes 10 tools. All read tools are local-only and return structured JSON metadata via MCP `outputSchema` plus a text JSON fallback. Archive-backed tools never return stored prompt bodies, raw absolute paths, secrets, or hidden external LLM results.
+The stdio MCP server (`prompt-coach mcp`) exposes 10 tools. All read tools are local-only and return structured JSON metadata via MCP `outputSchema` plus a text JSON fallback. Archive-backed tools never return stored prompt bodies, raw absolute paths, secrets, or hidden external LLM results.
 
 ## Read tools
 | Tool | Purpose |
 |---|---|
-| `get_prompt_memory_status` | Local archive readiness, capture state, suggested next tool |
+| `get_prompt_coach_status` | Local archive readiness, capture state, suggested next tool |
 | `coach_prompt` | One-call agent workflow: status + latest score + redacted rewrite + recent habits + project review + next-prompt guidance |
 | `score_prompt` | Score direct text, stored `prompt_id`, or latest stored prompt |
 | `improve_prompt` | Approval-ready improved draft for direct text / `prompt_id` / latest |
@@ -28,5 +28,5 @@ The stdio MCP server (`prompt-memory mcp`) exposes 10 tools. All read tools are 
 
 ## Privacy contract
 - Agent-judge packets are the only path that returns redacted prompt bodies, and only when explicitly requested.
-- `prompt-memory` does not extract, store, or proxy any provider tokens (Claude.ai OAuth, Claude Code internal auth, OpenAI/Codex/ChatGPT session tokens, Gemini keys).
+- `prompt-coach` does not extract, store, or proxy any provider tokens (Claude.ai OAuth, Claude Code internal auth, OpenAI/Codex/ChatGPT session tokens, Gemini keys).
 - `prepare_agent_rewrite` / `prepare_agent_judge_batch` rely on the user's already-authenticated CLI session as the rewriter / evaluator.

@@ -13,10 +13,10 @@ file layouts:
   the JSON schema and tool name; `src/mcp/score-tool-types.ts` owns the
   TypeScript argument/result contract; `src/mcp/score-tool.ts` owns the
   handler orchestration; `src/mcp/server.ts` owns JSON-RPC dispatch via
-  `PROMPT_MEMORY_MCP_TOOL_HANDLERS`. The same axis applies to
+  `PROMPT_COACH_MCP_TOOL_HANDLERS`. The same axis applies to
   `agent-judge-tool-*` and `agent-rewrite-tool-*`.
 
-  Tools currently in this layout: `get_prompt_memory_status`, `score_prompt`,
+  Tools currently in this layout: `get_prompt_coach_status`, `score_prompt`,
   `improve_prompt`, `score_prompt_archive`, `review_project_instructions`,
   `coach_prompt`, `prepare_agent_judge_batch`, `record_agent_judgments`,
   `prepare_agent_rewrite`, `record_agent_rewrite` (10 tools).
@@ -29,7 +29,7 @@ file layouts:
 Adding a new tool currently requires the contributor to know that:
 
 1. The handler must be added to (or registered through)
-   `PROMPT_MEMORY_MCP_TOOL_HANDLERS` in `src/mcp/server.ts`.
+   `PROMPT_COACH_MCP_TOOL_HANDLERS` in `src/mcp/server.ts`.
 2. The tool definition must live in a `*-tool-definitions.ts` file or in the
    per-tool module.
 3. The TypeScript contract must live in a `*-tool-types.ts` file or in the
@@ -68,7 +68,7 @@ Pros: no churn, clarifies the existing decision, removes ambiguity for new
 tools.
 
 Cons: split-vs-per-tool stays as a permanent fork in the conventions; the
-`PROMPT_MEMORY_MCP_TOOL_HANDLERS` literal in `server.ts` remains a manual
+`PROMPT_COACH_MCP_TOOL_HANDLERS` literal in `server.ts` remains a manual
 list.
 
 ### Option B — migrate everything to per-tool modules
@@ -94,7 +94,7 @@ import. `server.ts` imports the registry instead of the literal handler map.
 The split layout can stay where it is; the change is purely the dispatch
 indirection.
 
-Pros: removes the manual `PROMPT_MEMORY_MCP_TOOL_HANDLERS` list. Keeps the
+Pros: removes the manual `PROMPT_COACH_MCP_TOOL_HANDLERS` list. Keeps the
 existing privacy review surface intact. No wholesale rewrite.
 
 Cons: side-effectful module imports; some teams treat that as an anti-pattern

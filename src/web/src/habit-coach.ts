@@ -145,7 +145,7 @@ export function createHabitNextRequestBrief(coach: PromptHabitCoach): string {
 
   return [
     "Goal:",
-    "Improve my next Claude Code/Codex request using my prompt-memory habit signals.",
+    "Improve my next Claude Code/Codex request using my prompt-coach habit signals.",
     "",
     "Context:",
     `- Current habit score: ${coach.score.value}/${coach.score.max} (${coach.score.band}).`,

@@ -1,5 +1,5 @@
 ---
-description: Run the full prompt-memory coach inside Claude Code
+description: Run the full prompt-coach coach inside Claude Code
 allowed-tools: Bash
 ---
 
@@ -8,7 +8,7 @@ allowed-tools: Bash
 Prefer the MCP tool when it is available:
 
 ```text
-prompt-memory:coach_prompt
+prompt-coach:coach_prompt
 ```
 
 Use this as the default command when the user wants prompt coaching inside
@@ -19,7 +19,7 @@ request guidance in one call.
 If MCP is not configured, use the privacy-safe CLI fallback:
 
 ```bash
-prompt-memory coach --json
+prompt-coach coach --json
 ```
 
 Summarize the result as:

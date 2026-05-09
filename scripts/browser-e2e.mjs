@@ -17,7 +17,7 @@ import { chromium } from "playwright";
 
 const repoRoot = resolve(new URL("..", import.meta.url).pathname);
 const cliPath = join(repoRoot, "dist", "cli", "index.js");
-const tempRoot = mkdtempSync(join(tmpdir(), "prompt-memory-browser-e2e-"));
+const tempRoot = mkdtempSync(join(tmpdir(), "prompt-coach-browser-e2e-"));
 const dataDir = join(tempRoot, "data");
 const homeDir = join(tempRoot, "home");
 const rawPathPrefix = join(tempRoot, "workspace");
@@ -39,8 +39,8 @@ try {
   writeFileSync(
     join(privateProjectDir, "AGENTS.md"),
     [
-      "# prompt-memory",
-      "prompt-memory is a local-first developer tool built with TypeScript and SQLite.",
+      "# prompt-coach",
+      "prompt-coach is a local-first developer tool built with TypeScript and SQLite.",
       "Agents plan in tasks/todo.md, avoid reverting user changes, commit, and push.",
       "Run pnpm test, pnpm lint, pnpm build, and Playwright E2E after UI changes.",
       "Never expose secrets, prompt bodies, raw paths, tokens, stdout, or stderr leaks.",
@@ -147,12 +147,12 @@ try {
   );
   await assertText(
     page,
-    "prompt-memory:score_prompt prompt_id=",
+    "prompt-coach:score_prompt prompt_id=",
     "Detail should expose a stored prompt MCP score command.",
   );
   await assertText(
     page,
-    "prompt-memory:prepare_agent_rewrite prompt_id=",
+    "prompt-coach:prepare_agent_rewrite prompt_id=",
     "Detail should expose a stored prompt agent rewrite command.",
   );
   await page.locator(".prompt-comparison").first().waitFor();
@@ -327,7 +327,7 @@ try {
   );
   await assertText(
     page,
-    "get_prompt_memory_status",
+    "get_prompt_coach_status",
     "MCP page should expose the preflight status tool.",
   );
   await assertText(
@@ -403,7 +403,7 @@ function step(message) {
 }
 
 function insertJudgeScoreForClaudePrompt({ score, reason }) {
-  const dbPath = join(dataDir, "prompt-memory.sqlite");
+  const dbPath = join(dataDir, "prompt-coach.sqlite");
   const db = new Database(dbPath);
   try {
     const row = db
@@ -441,7 +441,7 @@ function runCli(args) {
   });
   if (result.status !== 0) {
     throw new Error(
-      `CLI failed: prompt-memory ${args.join(" ")}\n${result.stderr}`,
+      `CLI failed: prompt-coach ${args.join(" ")}\n${result.stderr}`,
     );
   }
   return result.stdout.trim();

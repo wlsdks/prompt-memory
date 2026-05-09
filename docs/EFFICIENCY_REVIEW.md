@@ -6,7 +6,7 @@ Status: Phase 2 planning input
 
 ## Conclusion
 
-`prompt-memory` has moved beyond the first MVP. It already includes local capture, local storage, search, delete, hook install/diagnostics, web UI, local rule-based analysis, tags, quality gaps, dashboard metrics, reuse signals, duplicate detection, project policy, import, export, Prompt Coach, benchmark, and release smoke coverage.
+`prompt-coach` has moved beyond the first MVP. It already includes local capture, local storage, search, delete, hook install/diagnostics, web UI, local rule-based analysis, tags, quality gaps, dashboard metrics, reuse signals, duplicate detection, project policy, import, export, Prompt Coach, benchmark, and release smoke coverage.
 
 The next work should not simply add more analysis features. The strongest improvements are the ones that reduce user effort and release risk:
 

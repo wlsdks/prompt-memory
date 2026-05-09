@@ -41,17 +41,17 @@ export type ServiceInstallResult = {
   startError?: string;
 };
 
-const SERVICE_LABEL = "com.prompt-memory.server";
+const SERVICE_LABEL = "com.prompt-coach.server";
 
 export function registerServiceCommand(program: Command): void {
   const service = program
     .command("service")
-    .description("Manage prompt-memory background service.");
+    .description("Manage prompt-coach background service.");
 
   service
     .command("install")
-    .description("Install a login service for the local prompt-memory server.")
-    .option("--data-dir <path>", "Override the prompt-memory data directory.")
+    .description("Install a login service for the local prompt-coach server.")
+    .option("--data-dir <path>", "Override the prompt-coach data directory.")
     .option("--plist-path <path>", "Override macOS LaunchAgent plist path.")
     .option("--dry-run", "Print intended service change without writing.")
     .option("--no-start", "Install service without starting it now.")
@@ -75,7 +75,7 @@ export function registerServiceCommand(program: Command): void {
 
   service
     .command("start")
-    .description("Start the prompt-memory service on supported platforms.")
+    .description("Start the prompt-coach service on supported platforms.")
     .option("--plist-path <path>", "Override macOS LaunchAgent plist path.")
     .option("--json", "Print machine-readable JSON instead of plain text.")
     .action((options: ServiceActionOptions & { json?: boolean }) => {
@@ -92,7 +92,7 @@ export function registerServiceCommand(program: Command): void {
 
   service
     .command("stop")
-    .description("Stop the prompt-memory service on supported platforms.")
+    .description("Stop the prompt-coach service on supported platforms.")
     .option("--plist-path <path>", "Override macOS LaunchAgent plist path.")
     .option("--json", "Print machine-readable JSON instead of plain text.")
     .action((options: ServiceActionOptions & { json?: boolean }) => {
@@ -109,7 +109,7 @@ export function registerServiceCommand(program: Command): void {
 
   service
     .command("status")
-    .description("Check the prompt-memory service status.")
+    .description("Check the prompt-coach service status.")
     .option("--json", "Print machine-readable JSON instead of plain text.")
     .action((options: ServiceActionOptions & { json?: boolean }) => {
       const result = serviceStatus(options);
@@ -159,7 +159,7 @@ export function installService(
   if (changed) {
     mkdirSync(dirname(plistPath), { recursive: true, mode: 0o700 });
     if (existsSync(plistPath)) {
-      backupPath = `${plistPath}.prompt-memory.${Date.now()}.bak`;
+      backupPath = `${plistPath}.prompt-coach.${Date.now()}.bak`;
       copyFileSync(plistPath, backupPath);
     }
     writeFileSync(plistPath, nextPlist, { mode: 0o600 });
@@ -312,7 +312,7 @@ function defaultLaunchAgentPath(): string {
 }
 
 function logPath(fileName: string): string {
-  return join(homedir(), ".prompt-memory", "logs", fileName);
+  return join(homedir(), ".prompt-coach", "logs", fileName);
 }
 
 function launchdDomain(): string {

@@ -5,7 +5,7 @@ import { join } from "node:path";
 import { afterEach, describe, expect, it } from "vitest";
 
 import { normalizeClaudeCodePayload } from "../adapters/claude-code.js";
-import { initializePromptMemory } from "../config/config.js";
+import { initializePromptCoach } from "../config/config.js";
 import { redactPrompt } from "../redaction/redact.js";
 import { createSqlitePromptStorage } from "../storage/sqlite.js";
 import { recordClarificationsTool } from "./record-clarifications-tool.js";
@@ -20,7 +20,7 @@ afterEach(() => {
 });
 
 function createTempDir(): string {
-  const dir = join(tmpdir(), `prompt-memory-record-${randomUUID()}`);
+  const dir = join(tmpdir(), `prompt-coach-record-${randomUUID()}`);
   mkdirSync(dir, { recursive: true });
   tempDirs.push(dir);
   return dir;
@@ -31,7 +31,7 @@ async function seedPrompt(
   text: string,
   receivedAt = "2026-05-05T12:00:00.000Z",
 ): Promise<string> {
-  const init = initializePromptMemory({ dataDir });
+  const init = initializePromptCoach({ dataDir });
   const storage = createSqlitePromptStorage({
     dataDir,
     hmacSecret: init.hookAuth.web_session_secret,
@@ -81,7 +81,7 @@ describe("recordClarificationsTool", () => {
 
   it("returns not_found when the prompt id is missing from the archive", () => {
     const dataDir = createTempDir();
-    initializePromptMemory({ dataDir });
+    initializePromptCoach({ dataDir });
     const result = recordClarificationsTool(
       {
         prompt_id: "does-not-exist",
@@ -141,7 +141,7 @@ describe("recordClarificationsTool", () => {
     expect(serialized).not.toContain("Fix the delete API bug");
 
     // The draft is actually persisted.
-    const init = initializePromptMemory({ dataDir });
+    const init = initializePromptCoach({ dataDir });
     const storage = createSqlitePromptStorage({
       dataDir,
       hmacSecret: init.hookAuth.web_session_secret,

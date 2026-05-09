@@ -42,7 +42,7 @@ export type ReviewProjectInstructionsToolArguments = {
   include_suggestions?: boolean;
 };
 
-export type GetPromptMemoryStatusToolArguments = {
+export type GetPromptCoachStatusToolArguments = {
   include_latest?: boolean;
 };
 
@@ -126,7 +126,7 @@ export type ReviewProjectInstructionsToolResult =
       message: string;
     };
 
-export type GetPromptMemoryStatusToolResult = {
+export type GetPromptCoachStatusToolResult = {
   status: "ready" | "empty" | "setup_needed";
   total_prompts: number;
   scored_prompts: number;
@@ -154,7 +154,7 @@ export type GetPromptMemoryStatusToolResult = {
 export type CoachPromptToolResult = {
   mode: "agent_coach";
   generated_at: string;
-  status: GetPromptMemoryStatusToolResult;
+  status: GetPromptCoachStatusToolResult;
   latest_score?: ScorePromptToolResult;
   improvement?: ImprovePromptToolResult;
   archive?: ScorePromptArchiveToolResult;

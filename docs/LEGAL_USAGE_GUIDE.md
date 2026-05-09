@@ -2,7 +2,7 @@
 
 This is an engineering compliance note, not legal advice. It records the public
 documentation reviewed on 2026-05-03 and the product boundary chosen for
-`prompt-memory`.
+`prompt-coach`.
 
 ## Reviewed Sources
 
@@ -39,7 +39,7 @@ documentation reviewed on 2026-05-03 and the product boundary chosen for
 
 ## Product Boundary
 
-`prompt-memory` must stay local-first and provider-neutral:
+`prompt-coach` must stay local-first and provider-neutral:
 
 - It does not extract, store, proxy, sell, or reuse Claude.ai OAuth tokens,
   Claude Code internal auth tokens, OpenAI/Codex session tokens, ChatGPT account
@@ -47,7 +47,7 @@ documentation reviewed on 2026-05-03 and the product boundary chosen for
 - It does not make hidden background calls to Claude, Codex, OpenAI, Anthropic,
   or other external LLM providers.
 - Local deterministic scoring remains the default.
-- LLM rewrite and judge behavior is opt-in and agent-mediated. `prompt-memory`
+- LLM rewrite and judge behavior is opt-in and agent-mediated. `prompt-coach`
   can return a bounded, locally redacted prompt packet through MCP so the active
   user-controlled Claude Code, Codex, or Gemini CLI session can rewrite or
   evaluate it. That active agent may send the redacted packet through its
@@ -62,7 +62,7 @@ documentation reviewed on 2026-05-03 and the product boundary chosen for
 
 ## Why This Boundary Was Chosen
 
-The risky design would be for `prompt-memory` to silently spawn provider CLIs or
+The risky design would be for `prompt-coach` to silently spawn provider CLIs or
 route requests through a user's logged-in provider account as a third-party
 service. That could blur the line between the user's ordinary use and a product
 using provider credentials on the user's behalf.
@@ -73,18 +73,18 @@ active agent session:
 1. The user explicitly asks Claude Code, Codex, or another MCP-capable agent to
    rewrite or judge stored prompts.
 2. The agent calls `prepare_agent_rewrite` or `prepare_agent_judge_batch`.
-3. `prompt-memory` returns only bounded metadata and, when requested, locally
+3. `prompt-coach` returns only bounded metadata and, when requested, locally
    redacted prompt bodies.
 4. The active agent rewrites or evaluates the redacted packet in its normal
    user-controlled session.
 5. The agent calls `record_agent_rewrite` with the improved draft after user
    approval, or `record_agent_judgments` with scores, confidence, risks, and
    suggestions.
-6. `prompt-memory` stores only redacted rewrite drafts or judgment metadata.
+6. `prompt-coach` stores only redacted rewrite drafts or judgment metadata.
 
 This keeps authentication, model choice, billing, plan restrictions, web search,
 and provider policy enforcement inside the user's chosen agent tool rather than
-inside `prompt-memory`.
+inside `prompt-coach`.
 
 ## Implementation Rules
 
@@ -92,7 +92,7 @@ inside `prompt-memory`.
   against provider documentation before release.
 - Do not add code that shells out to `claude`, `codex`, or another provider CLI
   for hidden evaluation by default.
-- Do not ask users to paste provider tokens into `prompt-memory`.
+- Do not ask users to paste provider tokens into `prompt-coach`.
 - If a future hosted or team feature is added, it must not route requests
   through an individual user's local Claude/Codex credentials.
 - Keep the MCP tool descriptions explicit: agent rewrite/judge packets may

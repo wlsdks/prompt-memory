@@ -1,6 +1,6 @@
 import { readFileSync } from "node:fs";
 
-import { loadHookAuth, loadPromptMemoryConfig } from "../config/config.js";
+import { loadHookAuth, loadPromptCoachConfig } from "../config/config.js";
 import {
   postHookPayload,
   type PostHookPayloadResult,
@@ -37,23 +37,23 @@ export type RunClaudeCodeHookOptions = {
 export async function runClaudeCodeHook(
   options: RunClaudeCodeHookOptions,
 ): Promise<HookRunResult> {
-  return runPromptMemoryHook(options, "claude-code");
+  return runPromptCoachHook(options, "claude-code");
 }
 
 export async function runCodexHook(
   options: RunClaudeCodeHookOptions,
 ): Promise<HookRunResult> {
-  return runPromptMemoryHook(options, "codex");
+  return runPromptCoachHook(options, "codex");
 }
 
-async function runPromptMemoryHook(
+async function runPromptCoachHook(
   options: RunClaudeCodeHookOptions,
   tool: "claude-code" | "codex",
 ): Promise<HookRunResult> {
   let stdout = "";
   try {
     const payload = JSON.parse(options.stdin);
-    const config = loadPromptMemoryConfig(options.dataDir);
+    const config = loadPromptCoachConfig(options.dataDir);
     const hookAuth = loadHookAuth(options.dataDir);
     const postPayload = options.postPayload ?? postHookPayload;
     const url = `http://${config.server.host}:${config.server.port}/api/v1/ingest/${tool}`;

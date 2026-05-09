@@ -1,9 +1,9 @@
 # MCP Coach Loop Audit (2026-05-08)
 
-환경: `/tmp/pm-audit-mcp-72858` (init 직후 빈 archive). `pnpm prompt-memory mcp` stdio JSON-RPC + CLI 미러. stdin EOF/SIGTERM에 깨끗하게 종료(exit 0, stderr 0줄).
+환경: `/tmp/pm-audit-mcp-72858` (init 직후 빈 archive). `pnpm prompt-coach mcp` stdio JSON-RPC + CLI 미러. stdin EOF/SIGTERM에 깨끗하게 종료(exit 0, stderr 0줄).
 
 ## 도구 카탈로그 첫인상
-`tools/list`는 13개 (사용자 인식 12개 + status). 즉시 이해: `score_prompt`, `improve_prompt`, `coach_prompt`, `score_prompt_archive`, `review_project_instructions`, `get_prompt_memory_status`. 모호: `apply_clarifications` / `record_clarifications` / `ask_clarifying_questions` 셋 — 이름이 비슷하고 description이 모두 "user's verbatim answers...clarifying_questions"로 시작해 호출 단계 구분이 어려움. `prepare_agent_*` / `record_agent_*` 페어는 "redacted packet" 도메인어 모르면 어렵다. `initialize.instructions`(1745자)가 ASK-FIRST 룰과 `coach_prompt` default를 강하게 깔아주는 점은 좋음.
+`tools/list`는 13개 (사용자 인식 12개 + status). 즉시 이해: `score_prompt`, `improve_prompt`, `coach_prompt`, `score_prompt_archive`, `review_project_instructions`, `get_prompt_coach_status`. 모호: `apply_clarifications` / `record_clarifications` / `ask_clarifying_questions` 셋 — 이름이 비슷하고 description이 모두 "user's verbatim answers...clarifying_questions"로 시작해 호출 단계 구분이 어려움. `prepare_agent_*` / `record_agent_*` 페어는 "redacted packet" 도메인어 모르면 어렵다. `initialize.instructions`(1745자)가 ASK-FIRST 룰과 `coach_prompt` default를 강하게 깔아주는 점은 좋음.
 
 ## 흐름별 friction
 | 심각도 | 도구/명령 | 입력 | 응답에서 부족한 것 | 막힘 지점 |
@@ -38,4 +38,4 @@
 ### README/docs 추가
 - `coach_prompt`를 default로 호출하라는 가이드는 `initialize.instructions`에는 있으나 `docs/PLUGINS.md`에는 없음. README "First 3-Minute Coach Loop" 다음 줄에 "MCP에서는 `coach_prompt`만 부르세요" 추가.
 - `apply_clarifications` / `record_clarifications` / `ask_clarifying_questions` 셋의 사용 시점을 다이어그램(질문→답→저장) 1장으로 PLUGINS.md에 명시 — 도구 선택 비용 절감.
-- 빈 archive 첫 사용자를 위해 `get_prompt_memory_status` → empty → `setup` 순서를 README Quick Start 최상단으로 끌어올리기.
+- 빈 archive 첫 사용자를 위해 `get_prompt_coach_status` → empty → `setup` 순서를 README Quick Start 최상단으로 끌어올리기.

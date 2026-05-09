@@ -20,11 +20,11 @@ import {
 } from "./record-clarifications-tool.js";
 import {
   COACH_PROMPT_TOOL_DEFINITION,
-  GET_PROMPT_MEMORY_STATUS_TOOL_DEFINITION,
+  GET_PROMPT_COACH_STATUS_TOOL_DEFINITION,
   IMPROVE_PROMPT_TOOL_DEFINITION,
   PREPARE_AGENT_REWRITE_TOOL_DEFINITION,
   PREPARE_AGENT_JUDGE_BATCH_TOOL_DEFINITION,
-  PROMPT_MEMORY_MCP_TOOL_DEFINITIONS,
+  PROMPT_COACH_MCP_TOOL_DEFINITIONS,
   RECORD_AGENT_REWRITE_TOOL_DEFINITION,
   RECORD_AGENT_JUDGMENTS_TOOL_DEFINITION,
   REVIEW_PROJECT_INSTRUCTIONS_TOOL_DEFINITION,
@@ -33,7 +33,7 @@ import {
 } from "./score-tool-definitions.js";
 import {
   coachPromptTool,
-  getPromptMemoryStatusTool,
+  getPromptCoachStatusTool,
   improvePromptTool,
   prepareAgentRewriteTool,
   prepareAgentJudgeBatchTool,
@@ -53,7 +53,7 @@ import type {
 } from "./agent-rewrite-tool-types.js";
 import type {
   CoachPromptToolArguments,
-  GetPromptMemoryStatusToolArguments,
+  GetPromptCoachStatusToolArguments,
   ImprovePromptToolArguments,
   ReviewProjectInstructionsToolArguments,
   ScorePromptArchiveToolArguments,
@@ -85,17 +85,17 @@ type JsonRpcResponse =
       };
     };
 
-export type PromptMemoryMcpServerContext = {
+export type PromptCoachMcpServerContext = {
   channel: RpcChannel;
   clientCapabilities: Record<string, unknown>;
 };
 
-export type PromptMemoryMcpServerOptions = ScorePromptToolOptions & {
-  ctx?: PromptMemoryMcpServerContext;
+export type PromptCoachMcpServerOptions = ScorePromptToolOptions & {
+  ctx?: PromptCoachMcpServerContext;
 };
 
-type PromptMemoryToolResult =
-  | ReturnType<typeof getPromptMemoryStatusTool>
+type PromptCoachToolResult =
+  | ReturnType<typeof getPromptCoachStatusTool>
   | ReturnType<typeof coachPromptTool>
   | ReturnType<typeof scorePromptTool>
   | ReturnType<typeof improvePromptTool>
@@ -109,67 +109,60 @@ type PromptMemoryToolResult =
   | ReturnType<typeof prepareAgentJudgeBatchTool>
   | ReturnType<typeof recordAgentJudgmentsTool>;
 
-type PromptMemoryToolHandler = (
+type PromptCoachToolHandler = (
   args: Record<string, unknown>,
-  options: PromptMemoryMcpServerOptions,
-) => PromptMemoryToolResult | Promise<PromptMemoryToolResult>;
+  options: PromptCoachMcpServerOptions,
+) => PromptCoachToolResult | Promise<PromptCoachToolResult>;
 
-const PROMPT_MEMORY_MCP_TOOL_HANDLERS: Record<string, PromptMemoryToolHandler> =
-  {
-    [GET_PROMPT_MEMORY_STATUS_TOOL_DEFINITION.name]: (args, options) =>
-      getPromptMemoryStatusTool(
-        args as GetPromptMemoryStatusToolArguments,
-        options,
-      ),
-    [COACH_PROMPT_TOOL_DEFINITION.name]: (args, options) =>
-      coachPromptTool(args as CoachPromptToolArguments, options),
-    [SCORE_PROMPT_TOOL_DEFINITION.name]: (args, options) =>
-      scorePromptTool(args as ScorePromptToolArguments, options),
-    [IMPROVE_PROMPT_TOOL_DEFINITION.name]: (args, options) =>
-      improvePromptTool(args as ImprovePromptToolArguments, options),
-    [APPLY_CLARIFICATIONS_TOOL_DEFINITION.name]: (args, options) =>
-      applyClarificationsTool(
-        args as ApplyClarificationsToolArguments,
-        options,
-      ),
-    [ASK_CLARIFYING_QUESTIONS_TOOL_DEFINITION.name]: (args, options) =>
-      askClarifyingQuestionsTool(
-        args as AskClarifyingQuestionsToolArguments,
-        options,
-      ),
-    [RECORD_CLARIFICATIONS_TOOL_DEFINITION.name]: (args, options) =>
-      recordClarificationsTool(
-        args as RecordClarificationsToolArguments,
-        options,
-      ),
-    [SCORE_PROMPT_ARCHIVE_TOOL_DEFINITION.name]: (args, options) =>
-      scorePromptArchiveTool(args as ScorePromptArchiveToolArguments, options),
-    [REVIEW_PROJECT_INSTRUCTIONS_TOOL_DEFINITION.name]: (args, options) =>
-      reviewProjectInstructionsTool(
-        args as ReviewProjectInstructionsToolArguments,
-        options,
-      ),
-    [PREPARE_AGENT_REWRITE_TOOL_DEFINITION.name]: (args, options) =>
-      prepareAgentRewriteTool(
-        args as PrepareAgentRewriteToolArguments,
-        options,
-      ),
-    [RECORD_AGENT_REWRITE_TOOL_DEFINITION.name]: (args, options) =>
-      recordAgentRewriteTool(args as RecordAgentRewriteToolArguments, options),
-    [PREPARE_AGENT_JUDGE_BATCH_TOOL_DEFINITION.name]: (args, options) =>
-      prepareAgentJudgeBatchTool(
-        args as PrepareAgentJudgeBatchToolArguments,
-        options,
-      ),
-    [RECORD_AGENT_JUDGMENTS_TOOL_DEFINITION.name]: (args, options) =>
-      recordAgentJudgmentsTool(
-        args as RecordAgentJudgmentsToolArguments,
-        options,
-      ),
-  };
+const PROMPT_COACH_MCP_TOOL_HANDLERS: Record<string, PromptCoachToolHandler> = {
+  [GET_PROMPT_COACH_STATUS_TOOL_DEFINITION.name]: (args, options) =>
+    getPromptCoachStatusTool(
+      args as GetPromptCoachStatusToolArguments,
+      options,
+    ),
+  [COACH_PROMPT_TOOL_DEFINITION.name]: (args, options) =>
+    coachPromptTool(args as CoachPromptToolArguments, options),
+  [SCORE_PROMPT_TOOL_DEFINITION.name]: (args, options) =>
+    scorePromptTool(args as ScorePromptToolArguments, options),
+  [IMPROVE_PROMPT_TOOL_DEFINITION.name]: (args, options) =>
+    improvePromptTool(args as ImprovePromptToolArguments, options),
+  [APPLY_CLARIFICATIONS_TOOL_DEFINITION.name]: (args, options) =>
+    applyClarificationsTool(args as ApplyClarificationsToolArguments, options),
+  [ASK_CLARIFYING_QUESTIONS_TOOL_DEFINITION.name]: (args, options) =>
+    askClarifyingQuestionsTool(
+      args as AskClarifyingQuestionsToolArguments,
+      options,
+    ),
+  [RECORD_CLARIFICATIONS_TOOL_DEFINITION.name]: (args, options) =>
+    recordClarificationsTool(
+      args as RecordClarificationsToolArguments,
+      options,
+    ),
+  [SCORE_PROMPT_ARCHIVE_TOOL_DEFINITION.name]: (args, options) =>
+    scorePromptArchiveTool(args as ScorePromptArchiveToolArguments, options),
+  [REVIEW_PROJECT_INSTRUCTIONS_TOOL_DEFINITION.name]: (args, options) =>
+    reviewProjectInstructionsTool(
+      args as ReviewProjectInstructionsToolArguments,
+      options,
+    ),
+  [PREPARE_AGENT_REWRITE_TOOL_DEFINITION.name]: (args, options) =>
+    prepareAgentRewriteTool(args as PrepareAgentRewriteToolArguments, options),
+  [RECORD_AGENT_REWRITE_TOOL_DEFINITION.name]: (args, options) =>
+    recordAgentRewriteTool(args as RecordAgentRewriteToolArguments, options),
+  [PREPARE_AGENT_JUDGE_BATCH_TOOL_DEFINITION.name]: (args, options) =>
+    prepareAgentJudgeBatchTool(
+      args as PrepareAgentJudgeBatchToolArguments,
+      options,
+    ),
+  [RECORD_AGENT_JUDGMENTS_TOOL_DEFINITION.name]: (args, options) =>
+    recordAgentJudgmentsTool(
+      args as RecordAgentJudgmentsToolArguments,
+      options,
+    ),
+};
 
-export async function runPromptMemoryMcpServer(
-  options: PromptMemoryMcpServerOptions = {},
+export async function runPromptCoachMcpServer(
+  options: PromptCoachMcpServerOptions = {},
   input: Readable = process.stdin,
   output: Writable = process.stdout,
 ): Promise<void> {
@@ -178,11 +171,11 @@ export async function runPromptMemoryMcpServer(
     crlfDelay: Number.POSITIVE_INFINITY,
   });
   const channel = options.ctx?.channel ?? createRpcChannel(output);
-  const ctx: PromptMemoryMcpServerContext = options.ctx ?? {
+  const ctx: PromptCoachMcpServerContext = options.ctx ?? {
     channel,
     clientCapabilities: {},
   };
-  const optionsWithCtx: PromptMemoryMcpServerOptions = { ...options, ctx };
+  const optionsWithCtx: PromptCoachMcpServerOptions = { ...options, ctx };
   const inflight = new Set<Promise<void>>();
 
   try {
@@ -248,7 +241,7 @@ export async function runPromptMemoryMcpServer(
 
 export function handleMcpLine(
   line: string,
-  options: PromptMemoryMcpServerOptions = {},
+  options: PromptCoachMcpServerOptions = {},
 ): Promise<JsonRpcResponse[]> {
   let parsed: unknown;
   try {
@@ -272,7 +265,7 @@ export function handleMcpLine(
 
 export async function handleMcpMessage(
   message: unknown,
-  options: PromptMemoryMcpServerOptions = {},
+  options: PromptCoachMcpServerOptions = {},
 ): Promise<JsonRpcResponse | undefined> {
   if (!isJsonRpcRequest(message)) {
     return jsonRpcError(null, -32600, "Invalid JSON-RPC request.");
@@ -300,17 +293,17 @@ export async function handleMcpMessage(
           },
         },
         serverInfo: {
-          name: "prompt-memory",
+          name: "prompt-coach",
           version: VERSION,
         },
         instructions:
-          "Use coach_prompt for the default one-call Claude Code/Codex coaching workflow: status, latest prompt score, approval-ready rewrite, habit review, project instruction review, and next request guidance. Use get_prompt_memory_status only for readiness checks, score_prompt for one prompt, improve_prompt for one local deterministic rewrite, ask_clarifying_questions when you want prompt-memory to drive the elicitation flow itself (it asks the user via MCP elicitation/create when the client supports it and composes the final draft, otherwise falls back to clarifying_questions metadata), apply_clarifications when the user has answered the clarifying_questions returned by improve_prompt or coach_prompt and you need to compose the final draft from the user's verbatim answers, record_clarifications when you also want to save the user's verbatim answers and the resulting draft against a stored prompt in the archive, prepare_agent_rewrite and record_agent_rewrite when the user explicitly wants the active agent session to semantically rewrite a stored prompt, score_prompt_archive for habit-only review, review_project_instructions for AGENTS.md/CLAUDE.md-only checks, and prepare_agent_judge_batch plus record_agent_judgments when the active agent should judge accumulated prompts. ASK-FIRST RULE: whenever any tool returns a non-empty clarifying_questions array, ask the user those questions through your native ask UI (Claude Code AskUserQuestion, Codex ask_user_question) before composing or submitting any rewrite, then pass the user's verbatim answers to apply_clarifications with origin set to user. Do not guess answers, do not skip questions, and never auto-submit a rewrite. This server is local-only and does not call external LLMs.",
+          "Use coach_prompt for the default one-call Claude Code/Codex coaching workflow: status, latest prompt score, approval-ready rewrite, habit review, project instruction review, and next request guidance. Use get_prompt_coach_status only for readiness checks, score_prompt for one prompt, improve_prompt for one local deterministic rewrite, ask_clarifying_questions when you want prompt-coach to drive the elicitation flow itself (it asks the user via MCP elicitation/create when the client supports it and composes the final draft, otherwise falls back to clarifying_questions metadata), apply_clarifications when the user has answered the clarifying_questions returned by improve_prompt or coach_prompt and you need to compose the final draft from the user's verbatim answers, record_clarifications when you also want to save the user's verbatim answers and the resulting draft against a stored prompt in the archive, prepare_agent_rewrite and record_agent_rewrite when the user explicitly wants the active agent session to semantically rewrite a stored prompt, score_prompt_archive for habit-only review, review_project_instructions for AGENTS.md/CLAUDE.md-only checks, and prepare_agent_judge_batch plus record_agent_judgments when the active agent should judge accumulated prompts. ASK-FIRST RULE: whenever any tool returns a non-empty clarifying_questions array, ask the user those questions through your native ask UI (Claude Code AskUserQuestion, Codex ask_user_question) before composing or submitting any rewrite, then pass the user's verbatim answers to apply_clarifications with origin set to user. Do not guess answers, do not skip questions, and never auto-submit a rewrite. This server is local-only and does not call external LLMs.",
       });
     case "ping":
       return jsonRpcResult(id, {});
     case "tools/list":
       return jsonRpcResult(id, {
-        tools: PROMPT_MEMORY_MCP_TOOL_DEFINITIONS,
+        tools: PROMPT_COACH_MCP_TOOL_DEFINITIONS,
       });
     case "tools/call":
       return await handleToolCall(id, message.params, options);
@@ -322,7 +315,7 @@ export async function handleMcpMessage(
 async function handleToolCall(
   id: JsonRpcId,
   params: unknown,
-  options: PromptMemoryMcpServerOptions,
+  options: PromptCoachMcpServerOptions,
 ): Promise<JsonRpcResponse> {
   if (!isToolCallParams(params)) {
     return jsonRpcError(
@@ -332,7 +325,7 @@ async function handleToolCall(
     );
   }
 
-  const handler = PROMPT_MEMORY_MCP_TOOL_HANDLERS[params.name];
+  const handler = PROMPT_COACH_MCP_TOOL_HANDLERS[params.name];
   const handlerResult = handler?.(params.arguments, options);
 
   if (!handlerResult) {

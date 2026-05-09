@@ -5,29 +5,29 @@ export type AgentCommandSpec = {
   args: string[];
 };
 
-export type PromptMemoryEntry = {
+export type PromptCoachEntry = {
   command: string;
   args: string[];
 };
 
 const DIST_CLI_PATTERN = /[/\\]dist[/\\]cli[/\\]index\.js$/;
 
-export const PUBLISHED_PROMPT_MEMORY_ENTRY: PromptMemoryEntry = {
-  command: "prompt-memory",
+export const PUBLISHED_PROMPT_COACH_ENTRY: PromptCoachEntry = {
+  command: "prompt-coach",
   args: [],
 };
 
-export function defaultPromptMemoryEntry(): PromptMemoryEntry {
+export function defaultPromptCoachEntry(): PromptCoachEntry {
   const cliPath = process.argv[1];
   if (typeof cliPath === "string" && DIST_CLI_PATTERN.test(cliPath)) {
     return { command: process.execPath, args: [cliPath] };
   }
-  return { ...PUBLISHED_PROMPT_MEMORY_ENTRY };
+  return { ...PUBLISHED_PROMPT_COACH_ENTRY };
 }
 
 export function mcpRegistrationSpec(
   tool: AgentTool,
-  entry: PromptMemoryEntry = defaultPromptMemoryEntry(),
+  entry: PromptCoachEntry = defaultPromptCoachEntry(),
 ): AgentCommandSpec {
   if (tool === "claude-code") {
     return {
@@ -37,7 +37,7 @@ export function mcpRegistrationSpec(
         "add",
         "--transport",
         "stdio",
-        "prompt-memory",
+        "prompt-coach",
         "--",
         entry.command,
         ...entry.args,
@@ -51,7 +51,7 @@ export function mcpRegistrationSpec(
     args: [
       "mcp",
       "add",
-      "prompt-memory",
+      "prompt-coach",
       "--",
       entry.command,
       ...entry.args,
@@ -70,12 +70,12 @@ export function mcpListSpec(tool: AgentTool): AgentCommandSpec {
 
 export function mcpRegistrationCommand(
   tool: AgentTool,
-  entry?: PromptMemoryEntry,
+  entry?: PromptCoachEntry,
 ): string {
   const spec = mcpRegistrationSpec(tool, entry);
   return [spec.command, ...spec.args].join(" ");
 }
 
 export function doctorCommand(tool: AgentTool): string {
-  return `prompt-memory doctor ${tool}`;
+  return `prompt-coach doctor ${tool}`;
 }

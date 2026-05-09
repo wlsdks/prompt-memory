@@ -1,10 +1,10 @@
 # Product Thesis (Owner Intent)
 
-The owner's stated intent for `prompt-memory`, captured 2026-05-05:
+The owner's stated intent for `prompt-coach`, captured 2026-05-05:
 
 > "사람들이 어느 순간부터 귀찮아서 그냥 해! 작업해! 이런 것만 하고 사고 과정이 사라졌다. 그걸 고치고 싶다."
 
-Translated: AI coding users have started skipping the *thinking step* — they just type "just do it / fix it" instead of stating goal, context, constraints, expected behavior, and verification. `prompt-memory` exists to **reintroduce that thinking step** without slowing the user down.
+Translated: AI coding users have started skipping the *thinking step* — they just type "just do it / fix it" instead of stating goal, context, constraints, expected behavior, and verification. `prompt-coach` exists to **reintroduce that thinking step** without slowing the user down.
 
 ## How that intent maps to the product
 - **Capture** every coding prompt locally so users can review their own pattern, not just the result.

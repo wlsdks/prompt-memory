@@ -11,7 +11,7 @@ import type { Command } from "commander";
 
 import { resolveCliEntryPath } from "../entry-path.js";
 import {
-  initializePromptMemory,
+  initializePromptCoach,
   revokeIngestToken,
 } from "../../config/config.js";
 import { UserError } from "../user-error.js";
@@ -69,22 +69,22 @@ export type CodexHookInstallResult = {
   nextConfig: string;
 };
 
-const PROMPT_MEMORY_MARKER = "prompt-memory hook claude-code";
-const CODEX_PROMPT_MEMORY_MARKER = "prompt-memory hook codex";
-const PROMPT_MEMORY_SESSION_MARKER =
-  "prompt-memory hook session-start claude-code";
-const CODEX_PROMPT_MEMORY_SESSION_MARKER =
-  "prompt-memory hook session-start codex";
+const PROMPT_COACH_MARKER = "prompt-coach hook claude-code";
+const CODEX_PROMPT_COACH_MARKER = "prompt-coach hook codex";
+const PROMPT_COACH_SESSION_MARKER =
+  "prompt-coach hook session-start claude-code";
+const CODEX_PROMPT_COACH_SESSION_MARKER =
+  "prompt-coach hook session-start codex";
 const CODEX_HOOKS_FEATURE_KEY = "hooks";
 
 export function registerInstallHookCommands(program: Command): void {
   program
     .command("install-hook")
     .description(
-      "Install the prompt-memory capture hook for Claude Code or Codex.",
+      "Install the prompt-coach capture hook for Claude Code or Codex.",
     )
     .argument("<tool>", "Tool to install hook for.")
-    .option("--data-dir <path>", "Override the prompt-memory data directory.")
+    .option("--data-dir <path>", "Override the prompt-coach data directory.")
     .option("--settings-path <path>", "Override Claude Code settings path.")
     .option("--hooks-path <path>", "Override Codex hooks.json path.")
     .option("--config-path <path>", "Override Codex config.toml path.")
@@ -149,10 +149,10 @@ export function registerInstallHookCommands(program: Command): void {
   program
     .command("uninstall-hook")
     .description(
-      "Uninstall the prompt-memory capture hook for Claude Code or Codex.",
+      "Uninstall the prompt-coach capture hook for Claude Code or Codex.",
     )
     .argument("<tool>", "Tool to uninstall hook for.")
-    .option("--data-dir <path>", "Override the prompt-memory data directory.")
+    .option("--data-dir <path>", "Override the prompt-coach data directory.")
     .option("--settings-path <path>", "Override Claude Code settings path.")
     .option("--hooks-path <path>", "Override Codex hooks.json path.")
     .option("--config-path <path>", "Override Codex config.toml path.")
@@ -200,7 +200,7 @@ export function installClaudeCodeHook(
   options: HookInstallOptions = {},
 ): HookInstallResult {
   if (!options.dryRun) {
-    initializePromptMemory({ dataDir: options.dataDir });
+    initializePromptCoach({ dataDir: options.dataDir });
   }
 
   const settingsPath = options.settingsPath ?? defaultClaudeSettingsPath();
@@ -225,7 +225,7 @@ export function installClaudeCodeHook(
   if (changed) {
     mkdirSync(dirname(settingsPath), { recursive: true, mode: 0o700 });
     if (existsSync(settingsPath)) {
-      backupPath = `${settingsPath}.prompt-memory.${Date.now()}.bak`;
+      backupPath = `${settingsPath}.prompt-coach.${Date.now()}.bak`;
       copyFileSync(settingsPath, backupPath);
     }
     writeFileSync(settingsPath, `${JSON.stringify(next, null, 2)}\n`, {
@@ -254,7 +254,7 @@ export function uninstallClaudeCodeHook(
   if (changed) {
     mkdirSync(dirname(settingsPath), { recursive: true, mode: 0o700 });
     if (existsSync(settingsPath)) {
-      backupPath = `${settingsPath}.prompt-memory.${Date.now()}.bak`;
+      backupPath = `${settingsPath}.prompt-coach.${Date.now()}.bak`;
       copyFileSync(settingsPath, backupPath);
     }
     writeFileSync(settingsPath, `${JSON.stringify(next, null, 2)}\n`, {
@@ -276,7 +276,7 @@ export function installCodexHook(
   options: HookInstallOptions = {},
 ): CodexHookInstallResult {
   if (!options.dryRun) {
-    initializePromptMemory({ dataDir: options.dataDir });
+    initializePromptCoach({ dataDir: options.dataDir });
   }
 
   const hooksPath = options.hooksPath ?? defaultCodexHooksPath();
@@ -357,45 +357,43 @@ export function uninstallCodexHook(
   };
 }
 
-export function hasPromptMemoryHook(settings: ClaudeSettings): boolean {
+export function hasPromptCoachHook(settings: ClaudeSettings): boolean {
   return Boolean(
     settings.hooks?.UserPromptSubmit?.some((group) =>
-      group.hooks?.some((hook) => hook.command.includes(PROMPT_MEMORY_MARKER)),
+      group.hooks?.some((hook) => hook.command.includes(PROMPT_COACH_MARKER)),
     ),
   );
 }
 
-export function hasPromptMemorySessionStartHook(
+export function hasPromptCoachSessionStartHook(
   settings: ClaudeSettings,
 ): boolean {
   return Boolean(
     settings.hooks?.SessionStart?.some((group) =>
       group.hooks?.some((hook) =>
-        hook.command.includes(PROMPT_MEMORY_SESSION_MARKER),
+        hook.command.includes(PROMPT_COACH_SESSION_MARKER),
       ),
     ),
   );
 }
 
-export function hasPromptMemoryCodexHook(
-  settings: CodexHooksSettings,
-): boolean {
+export function hasPromptCoachCodexHook(settings: CodexHooksSettings): boolean {
   return Boolean(
     settings.hooks?.UserPromptSubmit?.some((group) =>
       group.hooks?.some((hook) =>
-        hook.command.includes(CODEX_PROMPT_MEMORY_MARKER),
+        hook.command.includes(CODEX_PROMPT_COACH_MARKER),
       ),
     ),
   );
 }
 
-export function hasPromptMemoryCodexSessionStartHook(
+export function hasPromptCoachCodexSessionStartHook(
   settings: CodexHooksSettings,
 ): boolean {
   return Boolean(
     settings.hooks?.SessionStart?.some((group) =>
       group.hooks?.some((hook) =>
-        hook.command.includes(CODEX_PROMPT_MEMORY_SESSION_MARKER),
+        hook.command.includes(CODEX_PROMPT_COACH_SESSION_MARKER),
       ),
     ),
   );
@@ -412,10 +410,7 @@ export function isCodexHooksFeatureEnabled(config: string): boolean {
       continue;
     }
 
-    if (
-      inFeatures &&
-      /^(hooks|codex_hooks)\s*=\s*true\b/.test(trimmed)
-    ) {
+    if (inFeatures && /^(hooks|codex_hooks)\s*=\s*true\b/.test(trimmed)) {
       return true;
     }
   }
@@ -433,7 +428,7 @@ function ensureHook(
   const userPromptSubmit = [...(hooks.UserPromptSubmit ?? [])].map((group) => ({
     ...group,
     hooks: group.hooks.map((hook) => {
-      if (!isClaudePromptMemoryHook(hook.command)) {
+      if (!isClaudePromptCoachHook(hook.command)) {
         return hook;
       }
 
@@ -459,7 +454,7 @@ function ensureHook(
     hooks.SessionStart = ensureSessionStartHook(
       hooks.SessionStart ?? [],
       options.sessionStartCommand,
-      PROMPT_MEMORY_SESSION_MARKER,
+      PROMPT_COACH_SESSION_MARKER,
     );
   }
 
@@ -477,7 +472,7 @@ function removeHook(
     .map((group) => ({
       ...group,
       hooks: group.hooks.filter(
-        (hook) => !isClaudePromptMemoryHook(hook.command),
+        (hook) => !isClaudePromptCoachHook(hook.command),
       ),
     }))
     .filter((group) => group.hooks.length > 0);
@@ -485,7 +480,7 @@ function removeHook(
   hooks.UserPromptSubmit = userPromptSubmit;
   hooks.SessionStart = removeSessionStartHook(
     hooks.SessionStart ?? [],
-    PROMPT_MEMORY_SESSION_MARKER,
+    PROMPT_COACH_SESSION_MARKER,
   );
 
   return {
@@ -504,7 +499,7 @@ function ensureCodexHook(
   const userPromptSubmit = [...(hooks.UserPromptSubmit ?? [])].map((group) => ({
     ...group,
     hooks: group.hooks.map((hook) => {
-      if (!isCodexPromptMemoryHook(hook.command)) {
+      if (!isCodexPromptCoachHook(hook.command)) {
         return hook;
       }
 
@@ -530,7 +525,7 @@ function ensureCodexHook(
     hooks.SessionStart = ensureSessionStartHook(
       hooks.SessionStart ?? [],
       options.sessionStartCommand,
-      CODEX_PROMPT_MEMORY_SESSION_MARKER,
+      CODEX_PROMPT_COACH_SESSION_MARKER,
     );
   }
 
@@ -548,7 +543,7 @@ function removeCodexHook(
     .map((group) => ({
       ...group,
       hooks: group.hooks.filter(
-        (hook) => !isCodexPromptMemoryHook(hook.command),
+        (hook) => !isCodexPromptCoachHook(hook.command),
       ),
     }))
     .filter((group) => group.hooks.length > 0);
@@ -556,7 +551,7 @@ function removeCodexHook(
   hooks.UserPromptSubmit = userPromptSubmit;
   hooks.SessionStart = removeSessionStartHook(
     hooks.SessionStart ?? [],
-    CODEX_PROMPT_MEMORY_SESSION_MARKER,
+    CODEX_PROMPT_COACH_SESSION_MARKER,
   );
 
   return {
@@ -694,7 +689,7 @@ function buildHookCommandWithOptions(
   const dataDirArg = dataDir ? ` --data-dir ${JSON.stringify(dataDir)}` : "";
   const rewriteArgs = buildRewriteGuardArgs(options);
   const marker =
-    tool === "claude-code" ? PROMPT_MEMORY_MARKER : CODEX_PROMPT_MEMORY_MARKER;
+    tool === "claude-code" ? PROMPT_COACH_MARKER : CODEX_PROMPT_COACH_MARKER;
   return `${markerAssignment(marker)} ${shellQuote(
     process.execPath,
   )} ${shellQuote(cliEntryPath())} hook ${tool}${dataDirArg}${rewriteArgs}`;
@@ -707,8 +702,8 @@ function buildSessionStartHookCommand(
   const dataDirArg = dataDir ? ` --data-dir ${JSON.stringify(dataDir)}` : "";
   const marker =
     tool === "claude-code"
-      ? PROMPT_MEMORY_SESSION_MARKER
-      : CODEX_PROMPT_MEMORY_SESSION_MARKER;
+      ? PROMPT_COACH_SESSION_MARKER
+      : CODEX_PROMPT_COACH_SESSION_MARKER;
   return `${markerAssignment(marker)} ${shellQuote(
     process.execPath,
   )} ${shellQuote(cliEntryPath())} hook session-start ${tool}${dataDirArg} --open-web`;
@@ -746,16 +741,16 @@ function isRewriteGuardMode(
   );
 }
 
-function isClaudePromptMemoryHook(command: string): boolean {
-  return command.includes(PROMPT_MEMORY_MARKER);
+function isClaudePromptCoachHook(command: string): boolean {
+  return command.includes(PROMPT_COACH_MARKER);
 }
 
-function isCodexPromptMemoryHook(command: string): boolean {
-  return command.includes(CODEX_PROMPT_MEMORY_MARKER);
+function isCodexPromptCoachHook(command: string): boolean {
+  return command.includes(CODEX_PROMPT_COACH_MARKER);
 }
 
 function markerAssignment(marker: string): string {
-  return `PROMPT_MEMORY_HOOK=${shellQuote(marker)}`;
+  return `PROMPT_COACH_HOOK=${shellQuote(marker)}`;
 }
 
 function shellQuote(value: string): string {
@@ -814,7 +809,7 @@ function backupIfExists(path: string): string | undefined {
     return undefined;
   }
 
-  const backupPath = `${path}.prompt-memory.${Date.now()}.bak`;
+  const backupPath = `${path}.prompt-coach.${Date.now()}.bak`;
   copyFileSync(path, backupPath);
   return backupPath;
 }

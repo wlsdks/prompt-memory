@@ -2,7 +2,7 @@ import type { FastifyInstance } from "fastify";
 import type { Command } from "commander";
 import { fileURLToPath } from "node:url";
 
-import { loadHookAuth, loadPromptMemoryConfig } from "../../config/config.js";
+import { loadHookAuth, loadPromptCoachConfig } from "../../config/config.js";
 import {
   createJudgeWorker,
   type JudgeWorker,
@@ -25,19 +25,19 @@ export function registerServerCommand(program: Command): void {
   program
     .command("server")
     .description(
-      "Run the local prompt-memory HTTP server (web UI, capture, MCP routes).",
+      "Run the local prompt-coach HTTP server (web UI, capture, MCP routes).",
     )
-    .option("--data-dir <path>", "Override the prompt-memory data directory.")
+    .option("--data-dir <path>", "Override the prompt-coach data directory.")
     .action(async (options: ServerCommandOptions) => {
-      const started = await startPromptMemoryServer(options);
+      const started = await startPromptCoachServer(options);
       console.log(started.url);
     });
 }
 
-export async function startPromptMemoryServer(
+export async function startPromptCoachServer(
   options: ServerCommandOptions = {},
 ): Promise<StartedServer> {
-  const config = loadPromptMemoryConfig(options.dataDir);
+  const config = loadPromptCoachConfig(options.dataDir);
   const hookAuth = loadHookAuth(options.dataDir);
   const storage = createSqlitePromptStorage({
     dataDir: config.data_dir,
@@ -65,7 +65,7 @@ export async function startPromptMemoryServer(
 
   const judgeWorker = createJudgeWorker({
     storage,
-    getSettings: () => loadPromptMemoryConfig(options.dataDir).auto_judge,
+    getSettings: () => loadPromptCoachConfig(options.dataDir).auto_judge,
   });
   judgeWorker.start();
 

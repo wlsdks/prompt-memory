@@ -1,50 +1,50 @@
 ---
-name: prompt-memory
-description: Use when the user wants to install, verify, search, or troubleshoot the local prompt-memory archive for Codex or Claude Code prompts.
+name: prompt-coach
+description: Use when the user wants to install, verify, search, or troubleshoot the local prompt-coach archive for Codex or Claude Code prompts.
 ---
 
 # Prompt Memory
 
-Use this skill when the user wants Codex to work with the local `prompt-memory`
+Use this skill when the user wants Codex to work with the local `prompt-coach`
 archive.
 
 ## What This Plugin Does
 
-`prompt-memory` stores coding-agent prompts locally. It redacts sensitive values
+`prompt-coach` stores coding-agent prompts locally. It redacts sensitive values
 before writing Markdown files, indexes the archive in SQLite, and exposes a
 local web UI at `http://127.0.0.1:17373`.
 
-The plugin hook is fail-open and expects the `prompt-memory` CLI to be available
+The plugin hook is fail-open and expects the `prompt-coach` CLI to be available
 on `PATH`. For the most useful local setup, run the coach profile from the
 installed package:
 
 ```sh
-prompt-memory start
-prompt-memory setup --profile coach --register-mcp --open-web
+prompt-coach start
+prompt-coach setup --profile coach --register-mcp --open-web
 ```
 
 The coach profile installs capture hooks, low-friction rewrite guidance, local
 server startup where supported, and the Claude Code status line when Claude Code
 is detected. `--register-mcp` also registers the MCP server with detected Claude
 Code/Codex CLIs so the active agent can call coach/rewrite/judge tools. Use
-plain `prompt-memory setup` only when the user wants passive capture without
+plain `prompt-coach setup` only when the user wants passive capture without
 coaching.
 
 After setup, ask the user to send one real coding prompt in Claude Code or
-Codex, then run `prompt-memory coach`. Use `doctor` and manual MCP registration
+Codex, then run `prompt-coach coach`. Use `doctor` and manual MCP registration
 only if capture or agent-native commands do not appear.
 
 Toggle the `UserPromptSubmit` rewrite guard between four modes
 (`off`, `context`, `ask`, `block-and-copy`) without remembering CLI flags:
 
 ```sh
-prompt-memory hook status        # see the mode currently installed per tool
-prompt-memory setup --rewrite-guard ask --no-service --skip-statusline
+prompt-coach hook status        # see the mode currently installed per tool
+prompt-coach setup --rewrite-guard ask --no-service --skip-statusline
 ```
 
 In `ask` mode, when a captured Codex prompt scores low and clears the
 trigger gate (length ≥ 30, score < 60, not an acknowledgment), the
-hook tells the active agent to call the prompt-memory
+hook tells the active agent to call the prompt-coach
 `ask_clarifying_questions` MCP tool with `allow_native_dialog: true`.
 The MCP tool prefers `elicitation/create` and falls back to a native
 OS dialog (osascript / zenity / PowerShell InputBox) when the host
@@ -66,19 +66,19 @@ is the safer Codex configuration for a cloned checkout.
 Check Codex capture:
 
 ```sh
-prompt-memory doctor codex
+prompt-coach doctor codex
 ```
 
 Check Claude Code capture:
 
 ```sh
-prompt-memory doctor claude-code
+prompt-coach doctor claude-code
 ```
 
 Open the web archive:
 
 ```sh
-prompt-memory server
+prompt-coach server
 ```
 
 Then visit `http://127.0.0.1:17373`.
@@ -86,7 +86,7 @@ Then visit `http://127.0.0.1:17373`.
 Run the local MCP score server when Codex needs to score a prompt on request:
 
 ```sh
-prompt-memory mcp
+prompt-coach mcp
 ```
 
 ## Agent-Native Workflows
@@ -94,39 +94,39 @@ prompt-memory mcp
 Use these workflows before sending the user to the web UI:
 
 - Always-on side pane: tell the user to open a second terminal pane and run
-  `prompt-memory buddy`. Use `prompt-memory buddy --once` for a one-shot text
-  snapshot or `prompt-memory buddy --json` for automation. This is the
+  `prompt-coach buddy`. Use `prompt-coach buddy --once` for a one-shot text
+  snapshot or `prompt-coach buddy --json` for automation. This is the
   cross-agent alternative to a persistent right-side UI panel.
-- Full coach workflow: call `prompt-memory:coach_prompt`. If MCP is
-  unavailable, run `prompt-memory coach --json`. Use this as the default when
+- Full coach workflow: call `prompt-coach:coach_prompt`. If MCP is
+  unavailable, run `prompt-coach coach --json`. Use this as the default when
   the user asks to coach, evaluate, improve, or prepare the next request.
-- Latest prompt score: call `prompt-memory:score_prompt` with `latest=true`.
-  If MCP is unavailable, run `prompt-memory score --latest --json`.
-- Latest prompt rewrite: call `prompt-memory:improve_prompt` with
+- Latest prompt score: call `prompt-coach:score_prompt` with `latest=true`.
+  If MCP is unavailable, run `prompt-coach score --latest --json`.
+- Latest prompt rewrite: call `prompt-coach:improve_prompt` with
   `latest=true`. If MCP is unavailable, run
-  `prompt-memory improve --latest --json`.
+  `prompt-coach improve --latest --json`.
 - Agent-assisted latest prompt rewrite: call
-  `prompt-memory:prepare_agent_rewrite` with `latest=true`, rewrite the returned
+  `prompt-coach:prepare_agent_rewrite` with `latest=true`, rewrite the returned
   redacted prompt in the active Codex/Claude Code session, ask for approval,
-  then call `prompt-memory:record_agent_rewrite` only if the user wants the
+  then call `prompt-coach:record_agent_rewrite` only if the user wants the
   improved draft saved. Use this when the user wants semantic LLM help beyond
   the local deterministic rewrite.
-- Habit review: call `prompt-memory:score_prompt_archive` with
+- Habit review: call `prompt-coach:score_prompt_archive` with
   `max_prompts=200` and summarize recurring gaps, practice plan, and low-score
   ids.
-- Project rules review: call `prompt-memory:review_project_instructions` with
+- Project rules review: call `prompt-coach:review_project_instructions` with
   `latest=true` for AGENTS.md / CLAUDE.md quality checks.
 - Next request template: use `score_prompt_archive` and turn
   `next_prompt_template` plus `practice_plan` into one approval-ready template.
 - One-command setup: prefer
-  `prompt-memory setup --profile coach --register-mcp --open-web` over asking
+  `prompt-coach setup --profile coach --register-mcp --open-web` over asking
   the user to install hooks, rewrite guidance, status line, and MCP registration
   separately. In a cloned checkout, prefer `pnpm setup`. For a new user, show
-  `prompt-memory start` first so the happy path stays
+  `prompt-coach start` first so the happy path stays
   `setup -> one real prompt -> coach`.
 - Initial prompt wrapper: when the user wants one-click rewrite before launching
-  a new agent session, suggest `pm-claude --pm-mode auto -- "..."` or
-  `pm-codex --pm-mode auto -- "..."`. Use `--pm-dry-run` first when verifying.
+  a new agent session, suggest `pc-claude --pc-mode auto -- "..."` or
+  `pc-codex --pc-mode auto -- "..."`. Use `--pc-dry-run` first when verifying.
   Be clear that wrappers rewrite only the initial prompt argument, not every
   later interactive message.
 
@@ -135,7 +135,7 @@ project policy controls, export, or a visual review of trends.
 
 The MCP tools are:
 
-- `get_prompt_memory_status` for local setup, capture readiness, and next calls
+- `get_prompt_coach_status` for local setup, capture readiness, and next calls
 - `coach_prompt` for the default one-call Claude Code/Codex prompt coach
   workflow
 - `score_prompt` for one current, pasted, stored, or latest prompt
@@ -156,7 +156,7 @@ low scoring prompts, or summarize recurring prompt quality gaps. If MCP is not
 configured, fall back to:
 
 ```sh
-prompt-memory score --json
+prompt-coach score --json
 ```
 
 MCP tools return local structured metadata with declared output schemas without
@@ -191,6 +191,6 @@ human-in-the-loop flow, not automatic replacement or auto-submit.
 - Do not add hidden external LLM calls. Archive-backed analysis is local by
   default; agent-judge mode is allowed only through the explicit MCP packet and
   the active user-controlled agent session.
-- Agent-assisted rewrite follows the same boundary: prompt-memory prepares a
+- Agent-assisted rewrite follows the same boundary: prompt-coach prepares a
   redacted packet and records a redacted draft, while the current user-controlled
   agent session performs the semantic rewrite.

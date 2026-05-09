@@ -4,8 +4,8 @@ import { resolveHomePath, safeResolveUnderRoot } from "./paths.js";
 
 describe("path helpers", () => {
   it("resolves home-relative paths", () => {
-    expect(resolveHomePath("~/.prompt-memory", "/Users/example")).toBe(
-      "/Users/example/.prompt-memory",
+    expect(resolveHomePath("~/.prompt-coach", "/Users/example")).toBe(
+      "/Users/example/.prompt-coach",
     );
   });
 

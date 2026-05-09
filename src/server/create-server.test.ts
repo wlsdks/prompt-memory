@@ -5,7 +5,7 @@ import { randomUUID } from "node:crypto";
 import { fileURLToPath } from "node:url";
 import { afterEach, describe, expect, it } from "vitest";
 
-import { initializePromptMemory } from "../config/config.js";
+import { initializePromptCoach } from "../config/config.js";
 import { createServer } from "./create-server.js";
 import type {
   ExportJob,
@@ -43,9 +43,9 @@ afterEach(() => {
 });
 
 function createPersistedTestDataDir(): string {
-  const dataDir = join(tmpdir(), `prompt-memory-server-${randomUUID()}`);
+  const dataDir = join(tmpdir(), `prompt-coach-server-${randomUUID()}`);
   mkdirSync(dataDir, { recursive: true });
-  initializePromptMemory({ dataDir });
+  initializePromptCoach({ dataDir });
   persistedDataDirs.push(dataDir);
   return dataDir;
 }
@@ -109,7 +109,7 @@ describe("createServer P2 ingest boundary", () => {
       .csrf_token;
 
     expect(session.statusCode).toBe(200);
-    expect(cookie).toContain("prompt_memory_session=");
+    expect(cookie).toContain("prompt_coach_session=");
     expect(csrfToken).toBeTypeOf("string");
 
     const noCsrf = await server.inject({
@@ -156,7 +156,7 @@ describe("createServer P2 ingest boundary", () => {
     expect(response.statusCode).toBe(200);
     expect(response.json()).toMatchObject({
       data: {
-        data_dir: "/tmp/prompt-memory-test",
+        data_dir: "/tmp/prompt-coach-test",
         redaction_mode: "mask",
         server: {
           host: "127.0.0.1",
@@ -276,7 +276,7 @@ describe("createServer P2 ingest boundary", () => {
         items: [
           {
             project_id: "proj_memory",
-            label: "prompt-memory",
+            label: "prompt-coach",
             alias: "workbench",
             path_kind: "project_root",
             prompt_count: 2,
@@ -727,7 +727,7 @@ describe("createServer P2 ingest boundary", () => {
     expect(storage.events).toHaveLength(1);
     expect(storage.events[0]?.event.tool).toBe("claude-code");
     expect(storage.events[0]?.event.cwd).toBe(
-      "/Users/example/side-project/prompt-memory",
+      "/Users/example/side-project/prompt-coach",
     );
     expect(storage.events[0]?.redaction.stored_text).toContain(
       "[REDACTED:email]",
@@ -769,8 +769,8 @@ describe("createServer P2 ingest boundary", () => {
       source_event: "UserPromptSubmit",
       session_id: "codex-session-123",
       turn_id: "turn-456",
-      cwd: "/Users/example/side-project/prompt-memory",
-      transcript_path: "/Users/example/.codex/sessions/prompt-memory.jsonl",
+      cwd: "/Users/example/side-project/prompt-coach",
+      transcript_path: "/Users/example/.codex/sessions/prompt-coach.jsonl",
       model: "gpt-5.5",
       adapter_version: "codex-v1",
     });
@@ -1256,7 +1256,7 @@ type TestServerOptions = {
 
 function createTestServer(options: TestServerOptions = {}) {
   return createServer({
-    dataDir: options.dataDir ?? "/tmp/prompt-memory-test",
+    dataDir: options.dataDir ?? "/tmp/prompt-coach-test",
     autoJudge: options.autoJudge,
     auth: {
       appToken: "app-token",
@@ -1318,7 +1318,7 @@ function createMemoryStorage() {
         items: [
           {
             project_id: "proj_memory",
-            label: "prompt-memory",
+            label: "prompt-coach",
             alias: "workbench",
             path_kind: "project_root" as const,
             prompt_count: 2,
@@ -1346,7 +1346,7 @@ function createMemoryStorage() {
       policyUpdates.push({ projectId, patch, actor });
       return {
         project_id: projectId,
-        label: "prompt-memory",
+        label: "prompt-coach",
         alias: typeof patch.alias === "string" ? patch.alias : "workbench",
         path_kind: "project_root" as const,
         prompt_count: 2,

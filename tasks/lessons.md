@@ -13,7 +13,7 @@
 ## 2026-05-02
 
 - Dashboard처럼 제품 인상이 크게 달라지는 UI는 `/Users/jinan/ai/awesome-design-md`의 실제 reference를 먼저 확인하고, `DESIGN.md`에 적용 기준을 남긴 뒤 구현한다.
-- `prompt-memory` 대시보드 UI는 `/Users/jinan/side-project/oh-my-ontology`의 dark indigo 운영형 디자인 시스템을 1차 기준으로 삼고, AI-looking gradient/glass/neon 스타일을 피한다.
+- `prompt-coach` 대시보드 UI는 `/Users/jinan/side-project/oh-my-ontology`의 dark indigo 운영형 디자인 시스템을 1차 기준으로 삼고, AI-looking gradient/glass/neon 스타일을 피한다.
 
 ## 2026-05-04
 

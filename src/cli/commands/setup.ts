@@ -1,7 +1,7 @@
 import { spawnSync } from "node:child_process";
 import type { Command } from "commander";
 
-import { initializePromptMemory } from "../../config/config.js";
+import { initializePromptCoach } from "../../config/config.js";
 import { clampScore } from "../../shared/clamp-score.js";
 import {
   installClaudeCodeHook,
@@ -11,11 +11,15 @@ import {
 } from "./install-hook.js";
 import {
   defaultClaudeCommandsDir,
-  defaultPromptMemorySlashCommandsSource,
-  installPromptMemorySlashCommands,
+  defaultPromptCoachSlashCommandsSource,
+  installPromptCoachSlashCommands,
   type SlashCommandInstallResult,
 } from "./install-slash-commands.js";
 import { installService, type ServiceInstallResult } from "./service.js";
+import {
+  migrateLegacyDataDir,
+  type DataDirMigrationResult,
+} from "../../storage/data-dir-migration.js";
 import {
   installClaudeCodeStatusLine,
   type StatusLineInstallResult,
@@ -64,6 +68,8 @@ export type SetupOptions = {
   };
   registerMcp?: boolean;
   json?: boolean;
+  legacyDataDir?: string;
+  skipLegacyMigration?: boolean;
 };
 
 export type SetupResult = {
@@ -130,6 +136,7 @@ export type SetupResult = {
     claudeCode?: McpRegistrationResult;
     codex?: McpRegistrationResult;
   };
+  dataDirMigration?: DataDirMigrationResult;
   nextSteps: string[];
 };
 
@@ -144,9 +151,9 @@ export function registerSetupCommand(program: Command): void {
   program
     .command("setup")
     .description(
-      "Initialize prompt-memory, install detected hooks, and set up local server startup.",
+      "Initialize prompt-coach, install detected hooks, and set up local server startup.",
     )
-    .option("--data-dir <path>", "Override the prompt-memory data directory.")
+    .option("--data-dir <path>", "Override the prompt-coach data directory.")
     .option("--settings-path <path>", "Override Claude Code settings path.")
     .option("--hooks-path <path>", "Override Codex hooks.json path.")
     .option("--config-path <path>", "Override Codex config.toml path.")
@@ -179,7 +186,7 @@ export function registerSetupCommand(program: Command): void {
     .option("--skip-statusline", "Do not install the Claude Code status line.")
     .option(
       "--skip-slash-commands",
-      "Do not install /prompt-memory:* slash commands into Claude Code.",
+      "Do not install /prompt-coach:* slash commands into Claude Code.",
     )
     .option(
       "--open-web",
@@ -219,8 +226,8 @@ export function setupNeedsAttention(
 export function formatSetupResult(result: SetupResult): string {
   const lines = [
     result.dryRun
-      ? "prompt-memory setup preview"
-      : "prompt-memory setup complete",
+      ? "prompt-coach setup preview"
+      : "prompt-coach setup complete",
     `Profile: ${result.profile}`,
     `Data: ${result.dataDir}`,
     `Tools: ${result.detectedTools.length > 0 ? result.detectedTools.join(", ") : "none detected"}`,
@@ -319,10 +326,10 @@ function formatMcpRegistration(
 
 function isFirstScoreStep(step: string): boolean {
   return (
-    step.startsWith("Run prompt-memory server") ||
-    step.startsWith("Run prompt-memory service start") ||
+    step.startsWith("Run prompt-coach server") ||
+    step.startsWith("Run prompt-coach service start") ||
     step.startsWith("Send one real coding prompt") ||
-    step.startsWith("Then run /prompt-memory:improve-last")
+    step.startsWith("Then run /prompt-coach:improve-last")
   );
 }
 
@@ -330,7 +337,7 @@ function isTroubleshootingStep(step: string): boolean {
   return (
     step.startsWith("Register MCP") ||
     step.startsWith("Retry MCP") ||
-    step.startsWith("Run prompt-memory doctor")
+    step.startsWith("Run prompt-coach doctor")
   );
 }
 
@@ -356,9 +363,9 @@ export function runSetup(options: SetupOptions = {}): SetupResult {
   const rewriteGuard = resolveRewriteGuardOptions({ ...options, profile });
   const initResult = options.dryRun
     ? undefined
-    : initializePromptMemory({ dataDir: options.dataDir });
+    : initializePromptCoach({ dataDir: options.dataDir });
   const dataDir =
-    initResult?.config.data_dir ?? options.dataDir ?? "~/.prompt-memory";
+    initResult?.config.data_dir ?? options.dataDir ?? "~/.prompt-coach";
 
   const claudeResult = detectedTools.includes("claude-code")
     ? installClaudeCodeHook({
@@ -391,10 +398,10 @@ export function runSetup(options: SetupOptions = {}): SetupResult {
       : undefined;
   const slashCommandsResult =
     !options.skipSlashCommands && detectedTools.includes("claude-code")
-      ? installPromptMemorySlashCommands({
+      ? installPromptCoachSlashCommands({
           sourceDir:
             options.slashCommandsSourceDir ??
-            defaultPromptMemorySlashCommandsSource(),
+            defaultPromptCoachSlashCommandsSource(),
           targetDir: options.claudeCommandsDir ?? defaultClaudeCommandsDir(),
           dryRun: options.dryRun,
         })
@@ -625,29 +632,29 @@ function buildNextSteps(options: {
 
   if (options.detectedTools.length === 0) {
     steps.push(
-      "Install Claude Code or Codex, then run prompt-memory setup again.",
+      "Install Claude Code or Codex, then run prompt-coach setup again.",
     );
   }
 
   if (options.noService) {
-    steps.push("Run prompt-memory server before using connected tools.");
+    steps.push("Run prompt-coach server before using connected tools.");
   } else if (!options.serviceResult?.supported) {
-    steps.push("Run prompt-memory server manually on this platform.");
+    steps.push("Run prompt-coach server manually on this platform.");
   } else if (!options.serviceResult.started) {
-    steps.push("Run prompt-memory service start or prompt-memory server.");
+    steps.push("Run prompt-coach service start or prompt-coach server.");
   }
 
   if (options.profile === "coach") {
     steps.push(
-      "Send one real coding prompt in Claude Code or Codex, then run prompt-memory coach.",
+      "Send one real coding prompt in Claude Code or Codex, then run prompt-coach coach.",
     );
     if (options.detectedTools.includes("claude-code")) {
       steps.push(
-        "Then run /prompt-memory:improve-last inside Claude Code to see prompt-memory rewrite that prompt.",
+        "Then run /prompt-coach:improve-last inside Claude Code to see prompt-coach rewrite that prompt.",
       );
     }
     steps.push(
-      "Coach profile enabled: prompt-memory will add low-friction rewrite guidance inside supported hooks.",
+      "Coach profile enabled: prompt-coach will add low-friction rewrite guidance inside supported hooks.",
     );
     if (!options.mcpResult.registerRequested) {
       for (const tool of options.detectedTools) {
@@ -670,7 +677,7 @@ function buildNextSteps(options: {
     }
     if (options.statusLineResult) {
       steps.push(
-        "Restart Claude Code if the prompt-memory status line is not visible.",
+        "Restart Claude Code if the prompt-coach status line is not visible.",
       );
     }
   }
@@ -688,7 +695,7 @@ function buildDoctorNextStep(tools: SetupTool[]): string {
     return `Run ${doctorCommand(tools[0])} if capture does not appear.`;
   }
 
-  return "Run prompt-memory doctor claude-code or prompt-memory doctor codex if capture does not appear.";
+  return "Run prompt-coach doctor claude-code or prompt-coach doctor codex if capture does not appear.";
 }
 
 function registerMcpForTools(

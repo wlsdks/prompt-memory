@@ -1,6 +1,6 @@
 export type Language = "en" | "ko";
 
-const LANGUAGE_KEY = "prompt-memory.language";
+const LANGUAGE_KEY = "prompt-coach.language";
 
 export function detectInitialLanguage(): Language {
   const stored = window.localStorage.getItem(LANGUAGE_KEY);
@@ -465,8 +465,8 @@ const UI_TRANSLATIONS: Record<string, string> = {
     "공유하기 전에 측정 결과를 점검하세요.",
   "Not measured in this session yet": "이번 세션에서 아직 측정하지 않았습니다",
   "Capture prompts first": "먼저 프롬프트를 수집하세요",
-  "Run prompt-memory setup, then send a few real coding requests.":
-    "prompt-memory setup을 실행한 뒤 실제 코딩 요청을 몇 개 보내세요.",
+  "Run prompt-coach setup, then send a few real coding requests.":
+    "prompt-coach setup을 실행한 뒤 실제 코딩 요청을 몇 개 보내세요.",
   "Open the review queue and rewrite one weak prompt into a reusable request.":
     "리뷰 큐를 열고 약한 프롬프트 하나를 재사용 가능한 요청으로 고쳐 쓰세요.",
   "Capture a few Claude Code or Codex prompts before measuring.":
@@ -506,8 +506,8 @@ const UI_TRANSLATIONS: Record<string, string> = {
   "Needs practice": "연습 필요",
   "No data yet": "아직 데이터 없음",
   "Agent cockpit": "에이전트 조종석",
-  "Use prompt-memory inside Claude Code or Codex":
-    "Claude Code 또는 Codex 안에서 prompt-memory 사용",
+  "Use prompt-coach inside Claude Code or Codex":
+    "Claude Code 또는 Codex 안에서 prompt-coach 사용",
   "Keep the web UI for review, then run these commands directly in the coding agent loop.":
     "웹 UI는 회고용으로 두고, 실제 코딩 에이전트 루프에서는 이 명령을 바로 실행하세요.",
   "Local-only shortcuts. This panel does not render prompt bodies, raw paths, or tokens.":
@@ -539,8 +539,8 @@ const UI_TRANSLATIONS: Record<string, string> = {
     "최근 프롬프트 점수만 필요할 때 MCP 도구로 호출합니다.",
   "Keep a compact always-on prompt score companion in a side pane.":
     "옆 pane에 항상 켜두는 작은 프롬프트 점수 companion을 둡니다.",
-  "Add prompt-memory under the existing Claude HUD without replacing it.":
-    "기존 Claude HUD를 대체하지 않고 그 아래에 prompt-memory를 추가합니다.",
+  "Add prompt-coach under the existing Claude HUD without replacing it.":
+    "기존 Claude HUD를 대체하지 않고 그 아래에 prompt-coach를 추가합니다.",
   "Copied command": "명령 복사됨",
   next: "다음",
   "Review Goal clarity": "목표 명확성 리뷰",
@@ -625,8 +625,8 @@ const UI_TRANSLATIONS: Record<string, string> = {
   "View all": "전체 보기",
   Sensitive: "민감정보",
   "Agent tool surface": "에이전트 도구 표면",
-  "Use prompt-memory from Claude Code or Codex":
-    "Claude Code 또는 Codex에서 prompt-memory 사용",
+  "Use prompt-coach from Claude Code or Codex":
+    "Claude Code 또는 Codex에서 prompt-coach 사용",
   "Start with status, then choose the scoring or project-rule review tool that matches the user request.":
     "먼저 상태를 확인한 뒤 사용자 요청에 맞는 점수 측정 또는 프로젝트 규칙 리뷰 도구를 선택하세요.",
   "MCP setup commands": "MCP 설정 명령",
@@ -645,18 +645,18 @@ const UI_TRANSLATIONS: Record<string, string> = {
     "Claude Code 또는 Codex에 프롬프트 습관 점수를 요청하기 전에 로컬 아카이브 상태를 불러오세요.",
   "Use the status tool first so the agent can confirm capture, scoring, and privacy readiness.":
     "에이전트가 수집, 점수화, 개인정보 준비 상태를 확인할 수 있도록 먼저 status tool을 사용하세요.",
-  "Start the local prompt-memory server before using Claude Code or Codex MCP tools.":
-    "Claude Code 또는 Codex MCP 도구를 사용하기 전에 로컬 prompt-memory 서버를 시작하세요.",
-  "Run prompt-memory server, then call get_prompt_memory_status from the agent.":
-    "prompt-memory server를 실행한 뒤 에이전트에서 get_prompt_memory_status를 호출하세요.",
+  "Start the local prompt-coach server before using Claude Code or Codex MCP tools.":
+    "Claude Code 또는 Codex MCP 도구를 사용하기 전에 로컬 prompt-coach 서버를 시작하세요.",
+  "Run prompt-coach server, then call get_prompt_coach_status from the agent.":
+    "prompt-coach server를 실행한 뒤 에이전트에서 get_prompt_coach_status를 호출하세요.",
   "MCP tools avoid prompt bodies, but raw redaction mode should be reviewed before sharing reports.":
     "MCP 도구는 prompt 본문을 피하지만, raw redaction mode에서는 리포트 공유 전에 설정을 점검하세요.",
   "Switch redaction to mask or review local settings before asking an agent to summarize results.":
     "에이전트에 결과 요약을 요청하기 전에 redaction을 mask로 바꾸거나 로컬 설정을 점검하세요.",
   "No stored prompts are available yet, so archive scoring cannot reveal habit patterns.":
     "아직 저장된 prompt가 없어 아카이브 점수로 습관 패턴을 볼 수 없습니다.",
-  "Capture a few Claude Code or Codex prompts, then call get_prompt_memory_status again.":
-    "Claude Code 또는 Codex prompt를 몇 개 수집한 뒤 get_prompt_memory_status를 다시 호출하세요.",
+  "Capture a few Claude Code or Codex prompts, then call get_prompt_coach_status again.":
+    "Claude Code 또는 Codex prompt를 몇 개 수집한 뒤 get_prompt_coach_status를 다시 호출하세요.",
   "Stored prompts are available; the next useful step is an archive quality review.":
     "저장된 prompt가 있습니다. 다음으로 유용한 단계는 아카이브 품질 리뷰입니다.",
   "Stored prompts are available; the next useful step is the default one-call coach.":
@@ -706,8 +706,8 @@ const UI_TRANSLATIONS: Record<string, string> = {
   "local-only": "로컬 전용",
   "structured JSON": "구조화 JSON",
   "output schema": "출력 스키마",
-  "The user asks if prompt-memory is working, whether prompts are being captured, or what to do next.":
-    "사용자가 prompt-memory가 동작하는지, prompt가 캡처되는지, 다음에 무엇을 해야 하는지 물을 때 사용합니다.",
+  "The user asks if prompt-coach is working, whether prompts are being captured, or what to do next.":
+    "사용자가 prompt-coach가 동작하는지, prompt가 캡처되는지, 다음에 무엇을 해야 하는지 물을 때 사용합니다.",
   "The user asks to review the latest request, improve the next prompt, summarize habits, or get one agent-native coaching result without opening the web UI.":
     "사용자가 웹 UI를 열지 않고 최신 요청 리뷰, 다음 prompt 개선, 습관 요약, agent-native coach 결과를 원할 때 사용합니다.",
   "Ready/setup status, safe prompt counts, latest prompt metadata, available tools, and next actions.":

@@ -51,7 +51,7 @@ export type PrepareAgentRewriteToolResult =
       agent_instructions: string;
       privacy: {
         local_only: true;
-        external_calls_by_prompt_memory: false;
+        external_calls_by_prompt_coach: false;
         intended_external_rewriter: "current_agent_session";
         returns_redacted_prompt_body: true;
         returns_raw_prompt_body: false;
@@ -90,7 +90,7 @@ export type RecordAgentRewriteToolResult =
       next_action: string;
       privacy: {
         local_only: true;
-        external_calls_by_prompt_memory: false;
+        external_calls_by_prompt_coach: false;
         stores_original_prompt_body: false;
         stores_rewrite_draft: true;
         returns_rewrite_draft: false;

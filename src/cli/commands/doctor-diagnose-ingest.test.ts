@@ -17,48 +17,48 @@ describe("diagnoseIngestFailure", () => {
     const diagnosis = diagnoseIngestFailure({
       tool: "claude-code",
       status: 401,
-      configuredDataDir: "/Users/x/.prompt-memory",
+      configuredDataDir: "/Users/x/.prompt-coach",
       commandRunner: runner,
       readFile: () => undefined,
     });
 
     expect(diagnosis.cause).toBe<IngestFailureCause>("server_owner_mismatch");
     expect(diagnosis.hint).toContain("/tmp/pm-temp/data");
-    expect(diagnosis.hint).toContain("/Users/x/.prompt-memory");
-    expect(diagnosis.hint).toContain("prompt-memory service install");
+    expect(diagnosis.hint).toContain("/Users/x/.prompt-coach");
+    expect(diagnosis.hint).toContain("prompt-coach service install");
   });
 
   it("returns 'node_abi_mismatch' when server.err.log contains a NODE_MODULE_VERSION error", () => {
     const runner = staticRunner({
       lsofStdout: "p99999\n",
       psStdout:
-        "/path/node /path/cli.js server --data-dir /Users/x/.prompt-memory\n",
+        "/path/node /path/cli.js server --data-dir /Users/x/.prompt-coach\n",
     });
 
     const diagnosis = diagnoseIngestFailure({
       tool: "claude-code",
       status: 401,
-      configuredDataDir: "/Users/x/.prompt-memory",
+      configuredDataDir: "/Users/x/.prompt-coach",
       commandRunner: runner,
       readFile: () =>
         "Error: The module ... was compiled against a different Node.js version using NODE_MODULE_VERSION 115. This version of Node.js requires NODE_MODULE_VERSION 127.",
     });
 
     expect(diagnosis.cause).toBe<IngestFailureCause>("node_abi_mismatch");
-    expect(diagnosis.hint).toContain("prompt-memory service install");
+    expect(diagnosis.hint).toContain("prompt-coach service install");
   });
 
   it("falls back to 'token_stale' when the bound server matches and no ABI error is logged", () => {
     const runner = staticRunner({
       lsofStdout: "p99999\n",
       psStdout:
-        "/path/node /path/cli.js server --data-dir /Users/x/.prompt-memory\n",
+        "/path/node /path/cli.js server --data-dir /Users/x/.prompt-coach\n",
     });
 
     const diagnosis = diagnoseIngestFailure({
       tool: "claude-code",
       status: 401,
-      configuredDataDir: "/Users/x/.prompt-memory",
+      configuredDataDir: "/Users/x/.prompt-coach",
       commandRunner: runner,
       readFile: () => "",
     });
@@ -71,7 +71,7 @@ describe("diagnoseIngestFailure", () => {
     const diagnosis = diagnoseIngestFailure({
       tool: "claude-code",
       status: 401,
-      configuredDataDir: "/Users/x/.prompt-memory",
+      configuredDataDir: "/Users/x/.prompt-coach",
       readFile: () => undefined,
     });
 
@@ -82,7 +82,7 @@ describe("diagnoseIngestFailure", () => {
     const diagnosis = diagnoseIngestFailure({
       tool: "claude-code",
       status: 500,
-      configuredDataDir: "/Users/x/.prompt-memory",
+      configuredDataDir: "/Users/x/.prompt-coach",
       readFile: () => undefined,
     });
 
@@ -94,13 +94,13 @@ describe("diagnoseIngestFailure", () => {
     const runner = staticRunner({
       lsofStdout: "p99999\n",
       psStdout:
-        "/path/node /path/cli.js server --data-dir /Users/x/.prompt-memory/\n",
+        "/path/node /path/cli.js server --data-dir /Users/x/.prompt-coach/\n",
     });
 
     const diagnosis = diagnoseIngestFailure({
       tool: "claude-code",
       status: 401,
-      configuredDataDir: "/Users/x/.prompt-memory",
+      configuredDataDir: "/Users/x/.prompt-coach",
       commandRunner: runner,
       readFile: () => "",
     });

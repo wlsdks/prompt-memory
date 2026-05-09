@@ -21,7 +21,7 @@ describe("web api export client", () => {
       if (url === "/api/v1/settings") {
         return jsonResponse({
           data: {
-            data_dir: "/Users/example/.prompt-memory",
+            data_dir: "/Users/example/.prompt-coach",
             excluded_project_roots: [],
             redaction_mode: "mask",
             server: { host: "127.0.0.1", port: 17373 },
@@ -106,7 +106,7 @@ describe("web api export client", () => {
           anonymous_id: "anon_abcdef123456",
           tool: "claude-code",
           coarse_date: "2026-05-02",
-          project_alias: "prompt-memory",
+          project_alias: "prompt-coach",
           prompt: "Fix [REDACTED:path] with [REDACTED:api_key]",
           tags: ["backend"],
           quality_gaps: ["Verification criteria"],

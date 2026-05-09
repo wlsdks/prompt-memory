@@ -26,21 +26,21 @@ pnpm test -- -t "redaction"       # by test name
 ## Dev loops
 ```sh
 pnpm dev:web                       # vite dev server for src/web
-pnpm prompt-memory server          # local Fastify server (127.0.0.1:17373)
-pnpm prompt-memory mcp             # stdio MCP server
-pnpm prompt-memory setup --profile coach --register-mcp --dry-run
+pnpm prompt-coach server          # local Fastify server (127.0.0.1:17373)
+pnpm prompt-coach mcp             # stdio MCP server
+pnpm prompt-coach setup --profile coach --register-mcp --dry-run
 ```
 
 ## CLI inspection
 ```sh
-pnpm prompt-memory list
-pnpm prompt-memory search "<query>"
-pnpm prompt-memory show <prompt-id>
-pnpm prompt-memory coach
-pnpm prompt-memory score --json
-pnpm prompt-memory rebuild-index
-pnpm prompt-memory doctor claude-code
-pnpm prompt-memory doctor codex
+pnpm prompt-coach list
+pnpm prompt-coach search "<query>"
+pnpm prompt-coach show <prompt-id>
+pnpm prompt-coach coach
+pnpm prompt-coach score --json
+pnpm prompt-coach rebuild-index
+pnpm prompt-coach doctor claude-code
+pnpm prompt-coach doctor codex
 ```
 
 ## Format

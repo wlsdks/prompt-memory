@@ -1,6 +1,6 @@
 import type { Command } from "commander";
 
-import { loadHookAuth, loadPromptMemoryConfig } from "../../config/config.js";
+import { loadHookAuth, loadPromptCoachConfig } from "../../config/config.js";
 import { createProjectKey } from "../../storage/project-id.js";
 import { createSqlitePromptStorage } from "../../storage/sqlite.js";
 import type {
@@ -36,7 +36,7 @@ export function registerProjectCommand(program: Command): void {
   project
     .command("list")
     .description("List captured projects with policy summary.")
-    .option("--data-dir <path>", "Override the prompt-memory data directory.")
+    .option("--data-dir <path>", "Override the prompt-coach data directory.")
     .option("--json", "Print JSON.")
     .action((options: ProjectListCliOptions) => {
       console.log(listProjectsForCli(options));
@@ -45,7 +45,7 @@ export function registerProjectCommand(program: Command): void {
   project
     .command("show <cwd>")
     .description("Show the project policy for the given working directory.")
-    .option("--data-dir <path>", "Override the prompt-memory data directory.")
+    .option("--data-dir <path>", "Override the prompt-coach data directory.")
     .option("--json", "Print JSON.")
     .action((cwd: string, options: ProjectListCliOptions) => {
       console.log(showProjectForCli({ ...options, cwd }));
@@ -56,7 +56,7 @@ export function registerProjectCommand(program: Command): void {
     .description(
       "Update the project policy for the given working directory (capture, retention, etc.).",
     )
-    .option("--data-dir <path>", "Override the prompt-memory data directory.")
+    .option("--data-dir <path>", "Override the prompt-coach data directory.")
     .option("--alias <name>", "Human-readable label for the project.")
     .option("--capture-disabled", "Stop capturing prompts from this project.")
     .option(
@@ -123,7 +123,7 @@ export function showProjectForCli(options: ProjectShowCliOptions): string {
 
     if (!summary) {
       throw new UserError(
-        `No captured project matches cwd "${options.cwd}". Capture at least one prompt from this directory first, or run prompt-memory project list to see known projects.`,
+        `No captured project matches cwd "${options.cwd}". Capture at least one prompt from this directory first, or run prompt-coach project list to see known projects.`,
       );
     }
 
@@ -236,7 +236,7 @@ function withProjectStorage<T>(
     hmacSecret: string;
   }) => T,
 ): T {
-  const config = loadPromptMemoryConfig(dataDir);
+  const config = loadPromptCoachConfig(dataDir);
   const hookAuth = loadHookAuth(dataDir);
   const storage = createSqlitePromptStorage({
     dataDir: config.data_dir,

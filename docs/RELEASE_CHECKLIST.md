@@ -35,7 +35,7 @@ Use this checklist before publishing a public beta or npm package.
 
 Confirm `pnpm pack:dry-run` includes:
 
-- [ ] built CLI files under `dist/cli` (including `pm-claude.js`, `pm-codex.js`)
+- [ ] built CLI files under `dist/cli` (including `pc-claude.js`, `pc-codex.js`)
 - [ ] built server files under `dist/server`
 - [ ] built web assets under `dist/web`
 - [ ] `README.md`, `README.ko.md`
@@ -90,8 +90,8 @@ Confirm `pnpm pack:dry-run` excludes:
 - [ ] Project list and policy toggle work in the web UI without exposing raw project paths.
 - [ ] `capture_disabled` project policy blocks new ingest for that project.
 - [ ] `capture_disabled` project policy skips matching import candidates for known projects.
-- [ ] `prompt-memory import --dry-run --save-job` stores a raw-free job summary.
-- [ ] `prompt-memory import --execute` imports prompt candidates and supports resume/idempotency.
+- [ ] `prompt-coach import --dry-run --save-job` stores a raw-free job summary.
+- [ ] `prompt-coach import --execute` imports prompt candidates and supports resume/idempotency.
 - [ ] Imported-only filter works in CLI/API list flows.
 - [ ] Prompt detail shows local analysis and Prompt Coach draft.
 - [ ] Prompt Coach draft can be copied and saved without overwriting the original prompt.
@@ -110,10 +110,10 @@ Confirm `pnpm pack:dry-run` excludes:
 
 `pnpm smoke:release` automates the core local smoke path below with an isolated temporary data directory and HOME.
 
-- [ ] `prompt-memory init`
-- [ ] `prompt-memory server`
-- [ ] `prompt-memory install-hook claude-code --dry-run`
-- [ ] `prompt-memory install-hook codex --dry-run`
+- [ ] `prompt-coach init`
+- [ ] `prompt-coach server`
+- [ ] `prompt-coach install-hook claude-code --dry-run`
+- [ ] `prompt-coach install-hook codex --dry-run`
 - [ ] Capture one fixture-like Claude Code prompt.
 - [ ] Capture one fixture-like Codex prompt.
 - [ ] Confirm both prompts appear in CLI.

@@ -1,4 +1,4 @@
-import { loadHookAuth, loadPromptMemoryConfig } from "../config/config.js";
+import { loadHookAuth, loadPromptCoachConfig } from "../config/config.js";
 import { createSqlitePromptStorage } from "../storage/sqlite.js";
 import type { PromptSummary } from "../storage/ports.js";
 import type {
@@ -75,7 +75,7 @@ export function prepareAgentJudgeBatchTool(
   }
 
   try {
-    const config = loadPromptMemoryConfig(options.dataDir);
+    const config = loadPromptCoachConfig(options.dataDir);
     const auth = loadHookAuth(options.dataDir);
     const storage = createSqlitePromptStorage({
       dataDir: config.data_dir,
@@ -96,7 +96,7 @@ export function prepareAgentJudgeBatchTool(
       if (selected.length === 0) {
         return batchError(
           "not_found",
-          "No stored prompts are available for agent judging. Capture Claude Code or Codex prompts first, or call get_prompt_memory_status to confirm what's in the archive.",
+          "No stored prompts are available for agent judging. Capture Claude Code or Codex prompts first, or call get_prompt_coach_status to confirm what's in the archive.",
         );
       }
 
@@ -139,7 +139,7 @@ export function prepareAgentJudgeBatchTool(
           "Evaluate each redacted_prompt as the current user-controlled coding-agent session. Score 0-100 using the rubric, do not reward verbosity by itself, then call record_agent_judgments without prompt bodies.",
         privacy: {
           local_only: true,
-          external_calls_by_prompt_memory: false,
+          external_calls_by_prompt_coach: false,
           intended_external_evaluator: "current_agent_session",
           returns_redacted_prompt_bodies: includeRedactedPrompt,
           returns_raw_prompt_bodies: false,
@@ -166,7 +166,7 @@ export function recordAgentJudgmentsTool(
   }
 
   try {
-    const config = loadPromptMemoryConfig(options.dataDir);
+    const config = loadPromptCoachConfig(options.dataDir);
     const auth = loadHookAuth(options.dataDir);
     const storage = createSqlitePromptStorage({
       dataDir: config.data_dir,
@@ -205,7 +205,7 @@ export function recordAgentJudgmentsTool(
             : "No judgments were recorded. Check prompt ids and retry with a fresh prepare_agent_judge_batch packet.",
         privacy: {
           local_only: true,
-          external_calls_by_prompt_memory: false,
+          external_calls_by_prompt_coach: false,
           stores_prompt_bodies: false,
           stores_raw_paths: false,
           stores_judgment_results: true,
@@ -289,7 +289,7 @@ function storageUnavailableMessage(error: unknown): string {
     error instanceof Error && "code" in error && typeof error.code === "string"
       ? ` Reason: ${error.code}.`
       : "";
-  return `Local prompt-memory archive is not available. Run \`prompt-memory init\` first or pass --data-dir.${reason}`;
+  return `Local prompt-coach archive is not available. Run \`prompt-coach init\` first or pass --data-dir.${reason}`;
 }
 
 function batchError(

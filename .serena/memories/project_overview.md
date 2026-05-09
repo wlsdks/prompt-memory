@@ -1,7 +1,7 @@
-# prompt-memory — Project Overview
+# prompt-coach — Project Overview
 
 ## What it is
-`prompt-memory` is an **AI coding prompt memory and improvement workspace, local-first**. It is a developer tool that records prompts entered into AI coding tools such as Claude Code and Codex, stores them locally, helps users find them again, analyzes weak prompting patterns, and helps users write better follow-up requests.
+`prompt-coach` is an **AI coding prompt memory and improvement workspace, local-first**. It is a developer tool that records prompts entered into AI coding tools such as Claude Code and Codex, stores them locally, helps users find them again, analyzes weak prompting patterns, and helps users write better follow-up requests.
 
 ## Core values
 - Local-first by default; nothing leaves the user's machine.
@@ -23,5 +23,5 @@
 ## Key docs
 - `docs/PRD.md`, `docs/PRD_PHASE2.md`
 - `docs/ARCHITECTURE.md`, `docs/TECH_SPEC.md`, `docs/IMPLEMENTATION_PLAN.md`
-- `CLAUDE.md`, `AGENTS.md`, `.claude/rules/prompt-memory.md`
+- `CLAUDE.md`, `AGENTS.md`, `.claude/rules/prompt-coach.md`
 - `DESIGN.md`

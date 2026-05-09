@@ -22,7 +22,7 @@ import {
   directionGlyph,
   type ArchiveTrend,
 } from "../../analysis/archive-trend.js";
-import { loadHookAuth, loadPromptMemoryConfig } from "../../config/config.js";
+import { loadHookAuth, loadPromptCoachConfig } from "../../config/config.js";
 import { createSqlitePromptStorage } from "../../storage/sqlite.js";
 import { doctorClaudeCode } from "./doctor.js";
 import type { ClaudeSettings } from "./install-hook.js";
@@ -57,12 +57,12 @@ export type StatusLineInstallResult = {
 
 type ChainedStatusLineOptions = {
   previous: string;
-  promptMemory: string;
+  promptCoach: string;
 };
 
 type RenderChainedStatusLineOptions = {
   previousCommand: string;
-  promptMemoryCommand: string;
+  promptCoachCommand: string;
   stdin?: string;
   runCommand?: StatusLineCommandRunner;
 };
@@ -74,7 +74,7 @@ type StatusLineCommandRunner = (
   stdout?: string | Buffer | null;
 };
 
-const STATUSLINE_MARKER = "prompt-memory statusline claude-code";
+const STATUSLINE_MARKER = "prompt-coach statusline claude-code";
 
 export function registerStatusLineCommand(program: Command): void {
   registerRenderStatusLineCommand(program);
@@ -86,9 +86,9 @@ export function registerStatusLineCommand(program: Command): void {
 function registerRenderStatusLineCommand(program: Command): void {
   program
     .command("statusline")
-    .description("Render the prompt-memory status line for Claude Code.")
+    .description("Render the prompt-coach status line for Claude Code.")
     .argument("<tool>", "Tool to render a status line for.")
-    .option("--data-dir <path>", "Override the prompt-memory data directory.")
+    .option("--data-dir <path>", "Override the prompt-coach data directory.")
     .option("--settings-path <path>", "Override Claude Code settings path.")
     .action(async (tool: string, options: StatusLineOptions) => {
       if (tool !== "claude-code") {
@@ -105,13 +105,13 @@ function registerChainedStatusLineCommand(program: Command): void {
   program
     .command("statusline-chain")
     .description(
-      "Render a chained status line that combines prompt-memory with another tool's existing status line.",
+      "Render a chained status line that combines prompt-coach with another tool's existing status line.",
     )
     .argument("<tool>", "Tool to render a chained status line for.")
     .requiredOption("--previous <base64url>", "Previous status line command.")
     .requiredOption(
-      "--prompt-memory <base64url>",
-      "prompt-memory status line command.",
+      "--prompt-coach <base64url>",
+      "prompt-coach status line command.",
     )
     .action((tool: string, options: ChainedStatusLineOptions) => {
       if (tool !== "claude-code") {
@@ -123,7 +123,7 @@ function registerChainedStatusLineCommand(program: Command): void {
       console.log(
         renderChainedClaudeCodeStatusLine({
           previousCommand: decodeStatusLineCommand(options.previous),
-          promptMemoryCommand: decodeStatusLineCommand(options.promptMemory),
+          promptCoachCommand: decodeStatusLineCommand(options.promptCoach),
           stdin: readStatusLineStdin(),
         }),
       );
@@ -133,10 +133,10 @@ function registerChainedStatusLineCommand(program: Command): void {
 function registerInstallStatusLineCommand(program: Command): void {
   program
     .command("install-statusline")
-    .description("Install the prompt-memory status line for Claude Code.")
+    .description("Install the prompt-coach status line for Claude Code.")
     .argument("<tool>", "Tool to install status line for.")
     .option("--settings-path <path>", "Override Claude Code settings path.")
-    .option("--data-dir <path>", "Override the prompt-memory data directory.")
+    .option("--data-dir <path>", "Override the prompt-coach data directory.")
     .option("--dry-run", "Preview settings change without writing.")
     .action((tool: string, options: StatusLineInstallOptions) => {
       if (tool !== "claude-code") {
@@ -164,7 +164,7 @@ function registerInstallStatusLineCommand(program: Command): void {
 function registerUninstallStatusLineCommand(program: Command): void {
   program
     .command("uninstall-statusline")
-    .description("Uninstall the prompt-memory status line for Claude Code.")
+    .description("Uninstall the prompt-coach status line for Claude Code.")
     .argument("<tool>", "Tool to uninstall status line for.")
     .option("--settings-path <path>", "Override Claude Code settings path.")
     .action((tool: string, options: StatusLineInstallOptions) => {
@@ -243,11 +243,11 @@ export function renderChainedClaudeCodeStatusLine(
   const previous = normalizePreviousStatusLineOutput(
     runCommand(options.previousCommand, options.stdin).stdout,
   );
-  const promptMemory = normalizePromptMemoryStatusLineOutput(
-    runCommand(options.promptMemoryCommand, options.stdin).stdout,
+  const promptCoach = normalizePromptCoachStatusLineOutput(
+    runCommand(options.promptCoachCommand, options.stdin).stdout,
   );
 
-  return [previous, promptMemory].filter(Boolean).join("\n");
+  return [previous, promptCoach].filter(Boolean).join("\n");
 }
 
 function formatLatestScoreForStatusLine(
@@ -265,7 +265,7 @@ function formatLatestScoreForStatusLine(
   const score = `${STATUSLINE_PREFIX} score ${result.quality_score.value}/${result.quality_score.max} ${result.quality_score.band}${trendSuffix}`;
 
   return gap
-    ? `${score} | weakest: ${gap.label} | run: /prompt-memory:improve-last`
+    ? `${score} | weakest: ${gap.label} | run: /prompt-coach:improve-last`
     : score;
 }
 
@@ -273,7 +273,7 @@ function readArchiveTrend(
   options: StatusLineOptions,
 ): ArchiveTrend | undefined {
   try {
-    const config = loadPromptMemoryConfig(options.dataDir);
+    const config = loadPromptCoachConfig(options.dataDir);
     const auth = loadHookAuth(options.dataDir);
     const storage = createSqlitePromptStorage({
       dataDir: config.data_dir,
@@ -366,7 +366,7 @@ function ensureStatusLine(
   const currentCommand = settings.statusLine?.command;
   const previousCommand = currentCommand
     ? (extractPreviousStatusLineCommand(currentCommand) ??
-      (isPromptMemoryStatusLine(currentCommand) ? undefined : currentCommand))
+      (isPromptCoachStatusLine(currentCommand) ? undefined : currentCommand))
     : undefined;
 
   return {
@@ -383,7 +383,7 @@ function ensureStatusLine(
 function removeStatusLine(settings: StatusLineSettings): StatusLineSettings {
   const command = settings.statusLine?.command;
 
-  if (!command || !isPromptMemoryStatusLine(command)) {
+  if (!command || !isPromptCoachStatusLine(command)) {
     return settings;
   }
 
@@ -412,16 +412,16 @@ function buildStatusLineCommand(dataDir?: string): string {
 
 function buildChainedStatusLineCommand(
   previousCommand: string,
-  promptMemoryCommand: string,
+  promptCoachCommand: string,
 ): string {
   return `${markerAssignment(STATUSLINE_MARKER)} ${shellQuote(
     process.execPath,
   )} ${shellQuote(cliEntryPath())} statusline-chain claude-code --previous ${shellQuote(
     encodeStatusLineCommand(previousCommand),
-  )} --prompt-memory ${shellQuote(encodeStatusLineCommand(promptMemoryCommand))}`;
+  )} --prompt-coach ${shellQuote(encodeStatusLineCommand(promptCoachCommand))}`;
 }
 
-function isPromptMemoryStatusLine(command: string | undefined): boolean {
+function isPromptCoachStatusLine(command: string | undefined): boolean {
   return Boolean(command?.includes(STATUSLINE_MARKER));
 }
 
@@ -506,7 +506,7 @@ function normalizePreviousStatusLineOutput(
     .trim();
 }
 
-function normalizePromptMemoryStatusLineOutput(
+function normalizePromptCoachStatusLineOutput(
   output: string | Buffer | null | undefined,
 ): string {
   if (!output) {
@@ -522,7 +522,7 @@ function normalizePromptMemoryStatusLineOutput(
 }
 
 function markerAssignment(marker: string): string {
-  return `PROMPT_MEMORY_STATUSLINE=${shellQuote(marker)}`;
+  return `PROMPT_COACH_STATUSLINE=${shellQuote(marker)}`;
 }
 
 function shellQuote(value: string): string {
@@ -547,7 +547,7 @@ function writeSettingsWithBackup(
 ): string | undefined {
   mkdirSync(dirname(settingsPath), { recursive: true, mode: 0o700 });
   const backupPath = existsSync(settingsPath)
-    ? `${settingsPath}.prompt-memory.${Date.now()}.bak`
+    ? `${settingsPath}.prompt-coach.${Date.now()}.bak`
     : undefined;
 
   if (backupPath) {

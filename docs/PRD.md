@@ -1,4 +1,4 @@
-# prompt-memory PRD
+# prompt-coach PRD
 
 Date: 2026-05-01
 
@@ -6,7 +6,7 @@ Status: Public beta candidate
 
 ## 1. Product Positioning
 
-`prompt-memory` is an AI coding prompt memory and improvement workspace, local-first.
+`prompt-coach` is an AI coding prompt memory and improvement workspace, local-first.
 
 It records prompts entered into AI coding tools such as Claude Code and Codex, stores them locally, helps users search and review them, analyzes weak prompting patterns, and helps users write better follow-up requests.
 
@@ -145,27 +145,27 @@ SQLite must be rebuildable from Markdown where applicable. User-owned policy and
 
 Required public commands:
 
-- `prompt-memory setup`
-- `prompt-memory init`
-- `prompt-memory doctor`
-- `prompt-memory hook`
-- `prompt-memory install-hook`
-- `prompt-memory uninstall-hook`
-- `prompt-memory statusline`
-- `prompt-memory install-statusline`
-- `prompt-memory uninstall-statusline`
-- `prompt-memory service`
-- `prompt-memory server`
-- `prompt-memory list`
-- `prompt-memory search`
-- `prompt-memory show`
-- `prompt-memory open`
-- `prompt-memory delete`
-- `prompt-memory rebuild-index`
-- `prompt-memory import`
-- `prompt-memory import-job`
-- `prompt-memory export`
-- `prompt-memory improve`
+- `prompt-coach setup`
+- `prompt-coach init`
+- `prompt-coach doctor`
+- `prompt-coach hook`
+- `prompt-coach install-hook`
+- `prompt-coach uninstall-hook`
+- `prompt-coach statusline`
+- `prompt-coach install-statusline`
+- `prompt-coach uninstall-statusline`
+- `prompt-coach service`
+- `prompt-coach server`
+- `prompt-coach list`
+- `prompt-coach search`
+- `prompt-coach show`
+- `prompt-coach open`
+- `prompt-coach delete`
+- `prompt-coach rebuild-index`
+- `prompt-coach import`
+- `prompt-coach import-job`
+- `prompt-coach export`
+- `prompt-coach improve`
 
 CLI behavior:
 

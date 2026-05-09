@@ -5,7 +5,7 @@ import { randomUUID } from "node:crypto";
 import { afterEach, describe, expect, it } from "vitest";
 
 import { normalizeClaudeCodePayload } from "../../adapters/claude-code.js";
-import { initializePromptMemory } from "../../config/config.js";
+import { initializePromptCoach } from "../../config/config.js";
 import { redactPrompt } from "../../redaction/redact.js";
 import { createServer } from "../create-server.js";
 import { createSqlitePromptStorage } from "../../storage/sqlite.js";
@@ -720,7 +720,7 @@ describe("prompt read/delete API", () => {
 
 async function createPromptApiFixture() {
   const dataDir = createTempDir();
-  initializePromptMemory({ dataDir });
+  initializePromptCoach({ dataDir });
   const storage = createSqlitePromptStorage({
     dataDir,
     hmacSecret: "test-secret",
@@ -769,7 +769,7 @@ async function createPromptApiFixture() {
 
 async function createDuplicatePromptApiFixture() {
   const dataDir = createTempDir();
-  initializePromptMemory({ dataDir });
+  initializePromptCoach({ dataDir });
   const storage = createSqlitePromptStorage({
     dataDir,
     hmacSecret: "test-secret",
@@ -822,7 +822,7 @@ async function createDuplicatePromptApiFixture() {
 
 async function createReusedPromptApiFixture() {
   const dataDir = createTempDir();
-  initializePromptMemory({ dataDir });
+  initializePromptCoach({ dataDir });
   const storage = createSqlitePromptStorage({
     dataDir,
     hmacSecret: "test-secret",
@@ -895,7 +895,7 @@ async function storeClaudePrompt(
 }
 
 function createTempDir(): string {
-  const dir = join(tmpdir(), `prompt-memory-api-${randomUUID()}`);
+  const dir = join(tmpdir(), `prompt-coach-api-${randomUUID()}`);
   mkdirSync(dir, { recursive: true });
   tempDirs.push(dir);
   return dir;

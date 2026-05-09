@@ -5,7 +5,7 @@ import { join } from "node:path";
 import { afterEach, describe, expect, it } from "vitest";
 
 import { normalizeClaudeCodePayload } from "../../adapters/claude-code.js";
-import { initializePromptMemory } from "../../config/config.js";
+import { initializePromptCoach } from "../../config/config.js";
 import { redactPrompt } from "../../redaction/redact.js";
 import { createSqlitePromptStorage } from "../../storage/sqlite.js";
 import { createProgram } from "../index.js";
@@ -33,7 +33,7 @@ describe("buddy CLI", () => {
 
   it("renders latest score, habit signal, and privacy notes without prompt bodies", async () => {
     const dataDir = createTempDir();
-    const init = initializePromptMemory({ dataDir });
+    const init = initializePromptCoach({ dataDir });
     const storage = createSqlitePromptStorage({
       dataDir,
       hmacSecret: init.hookAuth.web_session_secret,
@@ -70,7 +70,7 @@ describe("buddy CLI", () => {
 
   it("prints a machine-readable snapshot for automation", async () => {
     const dataDir = createTempDir();
-    initializePromptMemory({ dataDir });
+    initializePromptCoach({ dataDir });
 
     const json = renderBuddyForCli({ dataDir, json: true });
     const result = JSON.parse(json) as {
@@ -84,7 +84,7 @@ describe("buddy CLI", () => {
 
   it("renders a single-line snapshot when --style line is used", async () => {
     const dataDir = createTempDir();
-    const init = initializePromptMemory({ dataDir });
+    const init = initializePromptCoach({ dataDir });
     const storage = createSqlitePromptStorage({
       dataDir,
       hmacSecret: init.hookAuth.web_session_secret,
@@ -117,7 +117,7 @@ describe("buddy CLI", () => {
 
   it("--style block matches the default multi-line block format", async () => {
     const dataDir = createTempDir();
-    initializePromptMemory({ dataDir });
+    initializePromptCoach({ dataDir });
 
     const def = renderBuddyForCli({ dataDir });
     const block = renderBuddyForCli({ dataDir, style: "block" });
@@ -129,7 +129,7 @@ describe("buddy CLI", () => {
 
   it("--style json is equivalent shape to --json", () => {
     const dataDir = createTempDir();
-    initializePromptMemory({ dataDir });
+    initializePromptCoach({ dataDir });
 
     const fromStyle = JSON.parse(
       renderBuddyForCli({ dataDir, style: "json" }),
@@ -145,7 +145,7 @@ describe("buddy CLI", () => {
 
   it("rejects unsupported --style values", () => {
     const dataDir = createTempDir();
-    initializePromptMemory({ dataDir });
+    initializePromptCoach({ dataDir });
 
     expect(() =>
       renderBuddyForCli({ dataDir, style: "weird" as never }),
@@ -154,7 +154,7 @@ describe("buddy CLI", () => {
 });
 
 function createTempDir(): string {
-  const dir = join(tmpdir(), `prompt-memory-buddy-cli-${randomUUID()}`);
+  const dir = join(tmpdir(), `prompt-coach-buddy-cli-${randomUUID()}`);
   mkdirSync(dir, { recursive: true });
   tempDirs.push(dir);
   return dir;

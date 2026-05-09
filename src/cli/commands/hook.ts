@@ -38,13 +38,13 @@ export type HookStatusReport = {
 export function registerHookCommand(program: Command): void {
   const hook = program
     .command("hook")
-    .description("Run prompt-memory hook handlers.");
+    .description("Run prompt-coach hook handlers.");
 
   hook
     .command("session-start")
     .argument("<tool>", "Tool that triggered SessionStart.")
     .description("Handle Claude Code/Codex SessionStart hook payload.")
-    .option("--data-dir <path>", "Override the prompt-memory data directory.")
+    .option("--data-dir <path>", "Override the prompt-coach data directory.")
     .option("--open-web", "Open the local web UI for this session.")
     .action(async (tool: string, options: HookCliOptions) => {
       if (tool !== "claude-code" && tool !== "codex") {
@@ -66,7 +66,7 @@ export function registerHookCommand(program: Command): void {
   hook
     .command("claude-code")
     .description("Handle Claude Code UserPromptSubmit hook payload.")
-    .option("--data-dir <path>", "Override the prompt-memory data directory.")
+    .option("--data-dir <path>", "Override the prompt-coach data directory.")
     .option(
       "--rewrite-guard <mode>",
       "Opt-in prompt rewrite guard: off, context, ask, or block-and-copy.",
@@ -126,7 +126,7 @@ export function registerHookCommand(program: Command): void {
   hook
     .command("codex")
     .description("Handle Codex UserPromptSubmit hook payload.")
-    .option("--data-dir <path>", "Override the prompt-memory data directory.")
+    .option("--data-dir <path>", "Override the prompt-coach data directory.")
     .option(
       "--rewrite-guard <mode>",
       "Opt-in prompt rewrite guard: off, context, ask, or block-and-copy.",
@@ -195,8 +195,8 @@ function parseHookEntries(
 ): HookStatusReport {
   const marker =
     tool === "claude-code"
-      ? "prompt-memory hook claude-code"
-      : "prompt-memory hook codex";
+      ? "prompt-coach hook claude-code"
+      : "prompt-coach hook codex";
   for (const group of groups) {
     for (const entry of group.hooks ?? []) {
       const command = entry.command ?? "";
@@ -243,7 +243,7 @@ function parseLanguageFlag(command: string): "en" | "ko" | undefined {
 export function formatHookStatusReports(
   reports: readonly HookStatusReport[],
 ): string {
-  const lines = ["prompt-memory hook status", ""];
+  const lines = ["prompt-coach hook status", ""];
   for (const report of reports) {
     if (!report.installed) {
       lines.push(`- ${report.tool}: not installed (${report.configPath})`);
@@ -261,7 +261,7 @@ export function formatHookStatusReports(
   }
   lines.push("");
   lines.push(
-    "Switch modes with /prompt-memory:guard or `prompt-memory setup --rewrite-guard <mode>`.",
+    "Switch modes with /prompt-coach:guard or `prompt-coach setup --rewrite-guard <mode>`.",
   );
   return lines.join("\n");
 }

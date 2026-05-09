@@ -4,7 +4,7 @@ import { join } from "node:path";
 import { randomUUID } from "node:crypto";
 import { afterEach, describe, expect, it } from "vitest";
 
-import { initializePromptMemory } from "../../config/config.js";
+import { initializePromptCoach } from "../../config/config.js";
 import { writeLastHookStatus } from "../../hooks/hook-status.js";
 import { installClaudeCodeHook, installCodexHook } from "./install-hook.js";
 import { doctorClaudeCode, doctorCodex, formatDoctorResult } from "./doctor.js";
@@ -40,7 +40,7 @@ describe("doctorClaudeCode", () => {
     const dir = createTempDir();
     const dataDir = join(dir, "data");
     const settingsPath = join(dir, "settings.json");
-    initializePromptMemory({ dataDir });
+    initializePromptCoach({ dataDir });
     writeFileSync(settingsPath, "{not-json");
 
     const result = await doctorClaudeCode({
@@ -58,7 +58,7 @@ describe("doctorClaudeCode", () => {
     const dir = createTempDir();
     const dataDir = join(dir, "data");
     const settingsPath = join(dir, "settings.json");
-    initializePromptMemory({ dataDir });
+    initializePromptCoach({ dataDir });
     installClaudeCodeHook({ dataDir, settingsPath });
     writeLastHookStatus(dataDir, {
       ok: false,
@@ -97,12 +97,12 @@ describe("doctorClaudeCode", () => {
 
     const output = formatDoctorResult("claude-code", result);
 
-    expect(output).toContain("prompt-memory doctor: claude-code");
+    expect(output).toContain("prompt-coach doctor: claude-code");
     expect(output).toContain("Status: needs attention");
     expect(output).toContain("Local server: not reachable");
     expect(output).toContain("MCP command access: not detected");
     expect(output).toContain("Register MCP: claude mcp add");
-    expect(output).toContain("prompt-memory setup --profile coach");
+    expect(output).toContain("prompt-coach setup --profile coach");
     expect(output).toContain("Use --json for automation.");
   });
 
@@ -110,7 +110,7 @@ describe("doctorClaudeCode", () => {
     const dir = createTempDir();
     const dataDir = join(dir, "data");
     const settingsPath = join(dir, "settings.json");
-    initializePromptMemory({ dataDir });
+    initializePromptCoach({ dataDir });
     installClaudeCodeHook({ dataDir, settingsPath });
     writeLastHookStatus(dataDir, {
       ok: false,
@@ -130,7 +130,7 @@ describe("doctorClaudeCode", () => {
 
     expect(output).toContain("Last ingest: failed (401)");
     expect(output).toContain(
-      "Reinstall the hook to refresh the local ingest token: prompt-memory install-hook claude-code.",
+      "Reinstall the hook to refresh the local ingest token: prompt-coach install-hook claude-code.",
     );
   });
 
@@ -138,7 +138,7 @@ describe("doctorClaudeCode", () => {
     const dir = createTempDir();
     const dataDir = join(dir, "data");
     const settingsPath = join(dir, "settings.json");
-    initializePromptMemory({ dataDir });
+    initializePromptCoach({ dataDir });
     installClaudeCodeHook({ dataDir, settingsPath });
     writeLastHookStatus(dataDir, {
       ok: false,
@@ -158,23 +158,23 @@ describe("doctorClaudeCode", () => {
 
     expect(output).toContain("Last ingest: failed (503)");
     expect(output).toContain(
-      "Run prompt-memory buddy --once to inspect the most recent failed hook ingest.",
+      "Run prompt-coach buddy --once to inspect the most recent failed hook ingest.",
     );
   });
 
-  it("detects Claude Code MCP registration when config includes prompt-memory mcp", async () => {
+  it("detects Claude Code MCP registration when config includes prompt-coach mcp", async () => {
     const dir = createTempDir();
     const dataDir = join(dir, "data");
     const settingsPath = join(dir, "settings.json");
     const mcpConfigPath = join(dir, "claude.json");
-    initializePromptMemory({ dataDir });
+    initializePromptCoach({ dataDir });
     installClaudeCodeHook({ dataDir, settingsPath });
     writeFileSync(
       mcpConfigPath,
       JSON.stringify({
         mcpServers: {
-          "prompt-memory": {
-            command: "prompt-memory",
+          "prompt-coach": {
+            command: "prompt-coach",
             args: ["mcp"],
           },
         },
@@ -199,7 +199,7 @@ describe("doctorClaudeCode", () => {
     const dataDir = join(dir, "data");
     const settingsPath = join(dir, "settings.json");
     const commands: string[] = [];
-    initializePromptMemory({ dataDir });
+    initializePromptCoach({ dataDir });
     installClaudeCodeHook({ dataDir, settingsPath });
 
     const result = await doctorClaudeCode({
@@ -211,7 +211,7 @@ describe("doctorClaudeCode", () => {
         commands.push([command, ...args].join(" "));
         return {
           status: 0,
-          stdout: "prompt-memory  prompt-memory mcp\n",
+          stdout: "prompt-coach  prompt-coach mcp\n",
         };
       },
     });
@@ -224,7 +224,7 @@ describe("doctorClaudeCode", () => {
     const dir = createTempDir();
     const dataDir = join(dir, "data");
     const settingsPath = join(dir, "settings.json");
-    initializePromptMemory({ dataDir });
+    initializePromptCoach({ dataDir });
     installClaudeCodeHook({ dataDir, settingsPath });
 
     const result = await doctorClaudeCode({
@@ -246,7 +246,7 @@ describe("doctorCodex", () => {
   it("detects missing Codex feature flag and hook", async () => {
     const dir = createTempDir();
     const dataDir = join(dir, "data");
-    initializePromptMemory({ dataDir });
+    initializePromptCoach({ dataDir });
 
     const result = await doctorCodex({
       dataDir,
@@ -271,11 +271,11 @@ describe("doctorCodex", () => {
     const dataDir = join(dir, "data");
     const hooksPath = join(dir, ".codex", "hooks.json");
     const configPath = join(dir, ".codex", "config.toml");
-    initializePromptMemory({ dataDir });
+    initializePromptCoach({ dataDir });
     installCodexHook({ dataDir, hooksPath, configPath });
     writeFileSync(
       configPath,
-      `${readFileSync(configPath, "utf8")}\n[mcp_servers.prompt-memory]\ncommand = "prompt-memory"\nargs = ["mcp"]\n`,
+      `${readFileSync(configPath, "utf8")}\n[mcp_servers.prompt-coach]\ncommand = "prompt-coach"\nargs = ["mcp"]\n`,
     );
 
     const result = await doctorCodex({
@@ -299,7 +299,7 @@ describe("doctorCodex", () => {
     const configPath = join(dir, ".codex", "config.toml");
     const projectHooksPath = join(dir, "project", ".codex", "hooks.json");
     const projectConfigPath = join(dir, "project", ".codex", "config.toml");
-    initializePromptMemory({ dataDir });
+    initializePromptCoach({ dataDir });
     installCodexHook({ dataDir, hooksPath, configPath });
     installCodexHook({
       dataDir,
@@ -325,7 +325,7 @@ describe("doctorCodex", () => {
   it("formats Codex doctor output with hook and feature flag status", async () => {
     const dir = createTempDir();
     const dataDir = join(dir, "data");
-    initializePromptMemory({ dataDir });
+    initializePromptCoach({ dataDir });
 
     const result = await doctorCodex({
       dataDir,
@@ -338,12 +338,12 @@ describe("doctorCodex", () => {
 
     const output = formatDoctorResult("codex", result);
 
-    expect(output).toContain("prompt-memory doctor: codex");
+    expect(output).toContain("prompt-coach doctor: codex");
     expect(output).toContain("Codex hook: missing");
     expect(output).toContain("hooks disabled");
     expect(output).toContain("MCP command access: not detected");
-    expect(output).toContain("Register MCP: codex mcp add prompt-memory");
-    expect(output).toContain("Run prompt-memory install-hook codex");
+    expect(output).toContain("Register MCP: codex mcp add prompt-coach");
+    expect(output).toContain("Run prompt-coach install-hook codex");
   });
 
   it("detects Codex MCP registration from read-only mcp list fallback", async () => {
@@ -352,7 +352,7 @@ describe("doctorCodex", () => {
     const hooksPath = join(dir, ".codex", "hooks.json");
     const configPath = join(dir, ".codex", "config.toml");
     const commands: string[] = [];
-    initializePromptMemory({ dataDir });
+    initializePromptCoach({ dataDir });
     installCodexHook({ dataDir, hooksPath, configPath });
 
     const result = await doctorCodex({
@@ -366,7 +366,7 @@ describe("doctorCodex", () => {
         return {
           status: 0,
           stdout:
-            "Name             Command\nprompt-memory    prompt-memory mcp\n",
+            "Name             Command\nprompt-coach    prompt-coach mcp\n",
         };
       },
     });
@@ -377,7 +377,7 @@ describe("doctorCodex", () => {
 });
 
 function createTempDir(): string {
-  const dir = join(tmpdir(), `prompt-memory-doctor-${randomUUID()}`);
+  const dir = join(tmpdir(), `prompt-coach-doctor-${randomUUID()}`);
   mkdirSync(dir, { recursive: true });
   tempDirs.push(dir);
   return dir;

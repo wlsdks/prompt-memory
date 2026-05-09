@@ -33,7 +33,7 @@ describe("runSetup", () => {
     const plistPath = join(
       dir,
       "LaunchAgents",
-      "com.prompt-memory.server.plist",
+      "com.prompt-coach.server.plist",
     );
 
     const result = runSetup({
@@ -54,14 +54,14 @@ describe("runSetup", () => {
     expect(result.service.installed).toBe(true);
     expect(existsSync(join(dataDir, "config.json"))).toBe(true);
     expect(readFileSync(settingsPath, "utf8")).toContain(
-      "prompt-memory hook claude-code",
+      "prompt-coach hook claude-code",
     );
     expect(readFileSync(hooksPath, "utf8")).toContain(
-      "prompt-memory hook codex",
+      "prompt-coach hook codex",
     );
     expect(readFileSync(configPath, "utf8")).toContain("hooks = true");
     expect(readFileSync(plistPath, "utf8")).toContain(
-      "com.prompt-memory.server",
+      "com.prompt-coach.server",
     );
   });
 
@@ -74,7 +74,7 @@ describe("runSetup", () => {
     const plistPath = join(
       dir,
       "LaunchAgents",
-      "com.prompt-memory.server.plist",
+      "com.prompt-coach.server.plist",
     );
 
     const result = runSetup({
@@ -123,14 +123,14 @@ describe("runSetup", () => {
     });
     expect(result.nextSteps).toEqual(
       expect.arrayContaining([
-        "Register MCP for agent commands: claude mcp add --transport stdio prompt-memory -- prompt-memory mcp.",
-        "Register MCP for agent commands: codex mcp add prompt-memory -- prompt-memory mcp.",
-        "Send one real coding prompt in Claude Code or Codex, then run prompt-memory coach.",
+        "Register MCP for agent commands: claude mcp add --transport stdio prompt-coach -- prompt-coach mcp.",
+        "Register MCP for agent commands: codex mcp add prompt-coach -- prompt-coach mcp.",
+        "Send one real coding prompt in Claude Code or Codex, then run prompt-coach coach.",
       ]),
     );
     expect(
       result.nextSteps.indexOf(
-        "Send one real coding prompt in Claude Code or Codex, then run prompt-memory coach.",
+        "Send one real coding prompt in Claude Code or Codex, then run prompt-coach coach.",
       ),
     ).toBeLessThan(
       result.nextSteps.indexOf(
@@ -141,13 +141,13 @@ describe("runSetup", () => {
 
     const claudeSettings = readFileSync(settingsPath, "utf8");
     const codexHooks = readFileSync(hooksPath, "utf8");
-    expect(claudeSettings).toContain("prompt-memory hook claude-code");
+    expect(claudeSettings).toContain("prompt-coach hook claude-code");
     expect(claudeSettings).toContain("--rewrite-guard");
     expect(claudeSettings).toContain("context");
     expect(claudeSettings).toContain("--rewrite-min-score");
     expect(claudeSettings).toContain("80");
-    expect(claudeSettings).toContain("prompt-memory statusline claude-code");
-    expect(codexHooks).toContain("prompt-memory hook codex");
+    expect(claudeSettings).toContain("prompt-coach statusline claude-code");
+    expect(codexHooks).toContain("prompt-coach hook codex");
     expect(codexHooks).toContain("--rewrite-guard");
     expect(codexHooks).toContain("context");
   });
@@ -175,10 +175,10 @@ describe("runSetup", () => {
       "Auto web open: installed on SessionStart",
     );
     expect(readFileSync(settingsPath, "utf8")).toContain(
-      "prompt-memory hook session-start claude-code",
+      "prompt-coach hook session-start claude-code",
     );
     expect(readFileSync(hooksPath, "utf8")).toContain(
-      "prompt-memory hook session-start codex",
+      "prompt-coach hook session-start codex",
     );
   });
 
@@ -226,8 +226,8 @@ describe("runSetup", () => {
     });
 
     expect(commands).toEqual([
-      "claude mcp add --transport stdio prompt-memory -- prompt-memory mcp",
-      "codex mcp add prompt-memory -- prompt-memory mcp",
+      "claude mcp add --transport stdio prompt-coach -- prompt-coach mcp",
+      "codex mcp add prompt-coach -- prompt-coach mcp",
     ]);
     expect(result.mcp.claudeCode).toMatchObject({ ok: true, dryRun: false });
     expect(result.mcp.codex).toMatchObject({
@@ -238,7 +238,7 @@ describe("runSetup", () => {
     expect(formatSetupResult(result)).toContain("Claude Code MCP: registered");
     expect(formatSetupResult(result)).toContain("Codex MCP: failed");
     expect(result.nextSteps).toContain(
-      "Retry MCP registration: codex mcp add prompt-memory -- prompt-memory mcp.",
+      "Retry MCP registration: codex mcp add prompt-coach -- prompt-coach mcp.",
     );
     expect(setupNeedsAttention(result, true)).toBe(true);
   });
@@ -260,7 +260,7 @@ describe("runSetup", () => {
     expect(result.mcp.registerRequested).toBe(false);
     expect(result.mcp.claudeCode).toBeUndefined();
     expect(result.nextSteps).toContain(
-      "Register MCP for agent commands: claude mcp add --transport stdio prompt-memory -- prompt-memory mcp.",
+      "Register MCP for agent commands: claude mcp add --transport stdio prompt-coach -- prompt-coach mcp.",
     );
   });
 
@@ -339,7 +339,7 @@ describe("runSetup", () => {
 
     const output = formatSetupResult(result);
 
-    expect(output).toContain("prompt-memory setup preview");
+    expect(output).toContain("prompt-coach setup preview");
     expect(output).toContain("Profile: coach");
     expect(output).toContain("Claude Code hook: installed");
     expect(output).toContain("Codex hook: installed");
@@ -348,15 +348,15 @@ describe("runSetup", () => {
       output.indexOf("If capture does not appear:"),
     );
     expect(output).toContain("Register MCP for agent commands");
-    expect(output).toContain("prompt-memory coach");
-    expect(output).toContain("/prompt-memory:improve-last");
+    expect(output).toContain("prompt-coach coach");
+    expect(output).toContain("/prompt-coach:improve-last");
     expect(output.indexOf("Send one real coding prompt")).toBeLessThan(
-      output.indexOf("/prompt-memory:improve-last"),
+      output.indexOf("/prompt-coach:improve-last"),
     );
     expect(output).toContain("Use --json for automation.");
   });
 
-  it("installs the prompt-memory slash commands under <claudeCommandsDir>/prompt-memory", () => {
+  it("installs the prompt-coach slash commands under <claudeCommandsDir>/prompt-coach", () => {
     const dir = createTempDir();
     const dataDir = join(dir, "data");
     const settingsPath = join(dir, ".claude", "settings.json");
@@ -384,13 +384,10 @@ describe("runSetup", () => {
 
     expect(result.slashCommands.claudeCode?.installedCount).toBe(2);
     expect(result.slashCommands.claudeCode?.namespaceDir).toBe(
-      join(claudeCommandsDir, "prompt-memory"),
+      join(claudeCommandsDir, "prompt-coach"),
     );
     expect(
-      readFileSync(
-        join(claudeCommandsDir, "prompt-memory", "guard.md"),
-        "utf8",
-      ),
+      readFileSync(join(claudeCommandsDir, "prompt-coach", "guard.md"), "utf8"),
     ).toBe("# guard fixture\n");
     expect(formatSetupResult(result)).toContain(
       "Claude Code slash commands: 2 installed",
@@ -408,7 +405,7 @@ describe("runSetup", () => {
       join(slashCommandsSourceDir, "guard.md"),
       "# guard fixture\n",
     );
-    const namespaceDir = join(claudeCommandsDir, "prompt-memory");
+    const namespaceDir = join(claudeCommandsDir, "prompt-coach");
     mkdirSync(namespaceDir, { recursive: true });
     writeFileSync(join(namespaceDir, "guard.md"), "# guard fixture\n");
     writeFileSync(join(namespaceDir, "score-last.md"), "# stale\n");
@@ -451,12 +448,12 @@ describe("runSetup", () => {
     expect(formatSetupResult(result)).toContain(
       "Claude Code slash commands: skipped",
     );
-    expect(existsSync(join(claudeCommandsDir, "prompt-memory"))).toBe(false);
+    expect(existsSync(join(claudeCommandsDir, "prompt-coach"))).toBe(false);
   });
 });
 
 function createTempDir(): string {
-  const dir = join(tmpdir(), `prompt-memory-setup-${randomUUID()}`);
+  const dir = join(tmpdir(), `prompt-coach-setup-${randomUUID()}`);
   mkdirSync(dir, { recursive: true });
   tempDirs.push(dir);
   return dir;

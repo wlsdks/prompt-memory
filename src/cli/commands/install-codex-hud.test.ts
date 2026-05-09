@@ -122,7 +122,7 @@ describe("renderCodexHudInstall (dry-run / instructions)", () => {
     });
     expect(result.executed).toBe(false);
     expect(result.text.toLowerCase()).toContain("cmux");
-    expect(result.text).toContain("prompt-memory buddy");
+    expect(result.text).toContain("prompt-coach buddy");
   });
 
   it("none: returns instructions for a separate terminal pane", () => {
@@ -131,7 +131,7 @@ describe("renderCodexHudInstall (dry-run / instructions)", () => {
       multiplexer: "none",
     });
     expect(result.executed).toBe(false);
-    expect(result.text).toContain("prompt-memory buddy");
+    expect(result.text).toContain("prompt-coach buddy");
     expect(result.text.toLowerCase()).toContain("terminal");
   });
 

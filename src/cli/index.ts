@@ -31,7 +31,7 @@ export function createProgram(): Command {
   const program = new Command();
 
   program
-    .name("prompt-memory")
+    .name("prompt-coach")
     .description("Local-first prompt archive for AI coding tools.")
     .version(VERSION);
 

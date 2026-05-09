@@ -26,7 +26,7 @@ const cliPath = join(repoRoot, "dist", "cli", "index.js");
 const packageJson = JSON.parse(
   readFileSync(join(repoRoot, "package.json"), "utf8"),
 );
-const tempRoot = mkdtempSync(join(tmpdir(), "prompt-memory-benchmark-"));
+const tempRoot = mkdtempSync(join(tmpdir(), "prompt-coach-benchmark-"));
 const dataDir = join(tempRoot, "data");
 const homeDir = join(tempRoot, "home");
 const rawPathPrefix = "/Users/example";
@@ -107,7 +107,7 @@ if (fixtureSet === "real") {
     if (jsonOutput) {
       console.log(JSON.stringify(message, null, 2));
     } else {
-      console.log(`prompt-memory benchmark ${dataset}`);
+      console.log(`prompt-coach benchmark ${dataset}`);
       console.log("status: no_fixtures");
       console.log(message.detail);
     }
@@ -408,7 +408,7 @@ function countPrivacyLeaks(surfaces) {
     }
   }
 
-  const db = new Database(join(dataDir, "prompt-memory.sqlite"));
+  const db = new Database(join(dataDir, "prompt-coach.sqlite"));
   try {
     for (const table of ["prompts", "prompt_analyses", "redaction_events"]) {
       const rows = JSON.stringify(db.prepare(`SELECT * FROM ${table}`).all());
@@ -522,7 +522,7 @@ function runCli(args) {
   });
   if (result.status !== 0) {
     throw new Error(
-      `CLI failed: prompt-memory ${args.join(" ")}\n${result.stderr}`,
+      `CLI failed: prompt-coach ${args.join(" ")}\n${result.stderr}`,
     );
   }
   return result.stdout.trim();
@@ -600,7 +600,7 @@ function passes(scores) {
 }
 
 function printReport(report) {
-  console.log(`prompt-memory benchmark ${report.dataset}`);
+  console.log(`prompt-coach benchmark ${report.dataset}`);
   console.log(`pass: ${report.pass ? "yes" : "no"}`);
   for (const [key, value] of Object.entries(report.scores)) {
     console.log(`${key}: ${value}`);

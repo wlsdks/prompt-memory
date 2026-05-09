@@ -23,7 +23,7 @@
 - Hook stdout is dangerous because it can become model context — keep capture hooks quiet and fail-open.
 - MCP and CLI outputs must be local-only and metadata-oriented unless the user explicitly asks for their own stored prompt content.
 - Redaction is applied before Markdown / SQLite / FTS write.
-- `prompt-memory` does not extract, store, proxy, or sell Claude.ai / Claude Code / OpenAI / Codex / ChatGPT / Gemini provider tokens.
+- `prompt-coach` does not extract, store, proxy, or sell Claude.ai / Claude Code / OpenAI / Codex / ChatGPT / Gemini provider tokens.
 - Agent judge / rewrite is opt-in and routed through the user's already-authenticated CLI session.
 
 ## Workflow

@@ -1,6 +1,6 @@
 # Linear-Inspired Dashboard Reference
 
-이 문서는 `<workstation>/ai/awesome-design-md`와 `getdesign linear.app` reference를 `prompt-memory` Dashboard에 맞게 적용한 내부 기준이다. Linear를 복제하지 않고, prompt-memory의 local-first developer tool 정체성에 맞게 번역해서 쓴다.
+이 문서는 `<workstation>/ai/awesome-design-md`와 `getdesign linear.app` reference를 `prompt-coach` Dashboard에 맞게 적용한 내부 기준이다. Linear를 복제하지 않고, prompt-coach의 local-first developer tool 정체성에 맞게 번역해서 쓴다.
 
 ## 적용할 점
 
@@ -8,7 +8,7 @@
 - Dashboard 상단은 한 덩어리의 command surface처럼 보여야 한다.
 - 정보는 큰 카드 여러 개보다 hairline separator, compact row, 작은 status pill로 정리한다.
 - 가장 중요한 상태 하나를 명확히 크게 보여주고, 바로 옆에 약점과 다음 행동을 둔다.
-- accent color는 한 가지 역할에 집중한다. `prompt-memory`에서는 teal을 유지하고, dark command surface 내부에서만 lavender-blue reference를 약하게 빌려 쓴다.
+- accent color는 한 가지 역할에 집중한다. `prompt-coach`에서는 teal을 유지하고, dark command surface 내부에서만 lavender-blue reference를 약하게 빌려 쓴다.
 - 그림자보다 1px border와 surface contrast로 깊이를 만든다.
 
 ## 적용하지 않을 점

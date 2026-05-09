@@ -25,7 +25,7 @@ describe("resolveCliEntryPath", () => {
     mkdirSync(join(root, "dist", "cli"), { recursive: true });
     writeFileSync(
       join(root, "package.json"),
-      `${JSON.stringify({ name: "prompt-memory" })}\n`,
+      `${JSON.stringify({ name: "prompt-coach" })}\n`,
     );
     writeFileSync(join(root, "dist", "cli", "index.js"), "");
 
@@ -43,7 +43,7 @@ describe("resolveCliEntryPath", () => {
     mkdirSync(join(root, "src", "cli", "commands"), { recursive: true });
     writeFileSync(
       join(root, "package.json"),
-      `${JSON.stringify({ name: "prompt-memory" })}\n`,
+      `${JSON.stringify({ name: "prompt-coach" })}\n`,
     );
 
     const entryPath = resolveCliEntryPath(
@@ -69,7 +69,7 @@ describe("resolveCliEntryPath", () => {
 });
 
 function createTempDir(): string {
-  const dir = join(tmpdir(), `prompt-memory-entry-path-${randomUUID()}`);
+  const dir = join(tmpdir(), `prompt-coach-entry-path-${randomUUID()}`);
   mkdirSync(dir, { recursive: true });
   tempDirs.push(dir);
   return dir;

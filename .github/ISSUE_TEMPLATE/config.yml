@@ -1,8 +1,8 @@
 blank_issues_enabled: false
 contact_links:
   - name: Security report
-    url: https://github.com/wlsdks/prompt-memory/security/policy
+    url: https://github.com/wlsdks/prompt-coach/security/policy
     about: Please do not open public issues for security reports.
   - name: Questions and ideas
-    url: https://github.com/wlsdks/prompt-memory/discussions
+    url: https://github.com/wlsdks/prompt-coach/discussions
     about: Use Discussions for setup questions, workflow ideas, and open-ended feedback.

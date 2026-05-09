@@ -1,5 +1,5 @@
 # the name by which the project can be referenced within Serena
-project_name: "prompt-memory"
+project_name: "prompt-coach"
 
 
 # list of languages for which language servers are started; choose from:
@@ -118,7 +118,7 @@ added_modes:
 # initial prompt for the project. It will always be given to the LLM upon activating the project
 # (contrary to the memories, which are loaded on demand).
 initial_prompt: |
-  prompt-memory is a local-first AI coding prompt memory and improvement workspace.
+  prompt-coach is a local-first AI coding prompt memory and improvement workspace.
   Reply in Korean. Read the memories `project_overview`, `style_and_conventions`,
   `code_structure`, `suggested_commands`, `task_completion_checklist`, and
   `product_thesis` before non-trivial work.

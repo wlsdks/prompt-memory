@@ -57,7 +57,7 @@ export function registerBuddyCommand(program: Command): void {
     .description(
       "Show an always-on prompt score buddy for a side terminal pane.",
     )
-    .option("--data-dir <path>", "Override the prompt-memory data directory.")
+    .option("--data-dir <path>", "Override the prompt-coach data directory.")
     .option("--json", "Print one JSON snapshot.")
     .option("--once", "Print one text snapshot and exit.")
     .option(
@@ -256,7 +256,7 @@ function createNextMove({
   habit: BuddySnapshot["habit"];
 }): string {
   if (result.status.status !== "ready") {
-    return result.status.next_actions[0] ?? "Run prompt-memory setup.";
+    return result.status.next_actions[0] ?? "Run prompt-coach setup.";
   }
 
   if (latest?.top_gap) {

@@ -11,7 +11,7 @@ import { randomUUID } from "node:crypto";
 import { afterEach, describe, expect, it } from "vitest";
 
 import {
-  installPromptMemorySlashCommands,
+  installPromptCoachSlashCommands,
   type SlashCommandInstallResult,
 } from "./install-slash-commands.js";
 
@@ -26,22 +26,22 @@ afterEach(() => {
   }
 });
 
-describe("installPromptMemorySlashCommands", () => {
-  it("copies every *.md file from sourceDir to <targetDir>/prompt-memory/", () => {
+describe("installPromptCoachSlashCommands", () => {
+  it("copies every *.md file from sourceDir to <targetDir>/prompt-coach/", () => {
     const { sourceDir, targetDir } = makeFixture();
     seedSource(sourceDir, [
       ["guard.md", "# guard\n"],
       ["improve-last.md", "# improve-last\n"],
     ]);
 
-    const result = installPromptMemorySlashCommands({
+    const result = installPromptCoachSlashCommands({
       sourceDir,
       targetDir,
     });
 
     expectInstalled(result, ["guard.md", "improve-last.md"]);
     expect(result.changed).toBe(true);
-    const namespaceDir = join(targetDir, "prompt-memory");
+    const namespaceDir = join(targetDir, "prompt-coach");
     expect(readdirSync(namespaceDir).sort()).toEqual([
       "guard.md",
       "improve-last.md",
@@ -54,11 +54,11 @@ describe("installPromptMemorySlashCommands", () => {
   it("skips files that already exist with identical content", () => {
     const { sourceDir, targetDir } = makeFixture();
     seedSource(sourceDir, [["guard.md", "# guard\n"]]);
-    const namespaceDir = join(targetDir, "prompt-memory");
+    const namespaceDir = join(targetDir, "prompt-coach");
     mkdirSync(namespaceDir, { recursive: true });
     writeFileSync(join(namespaceDir, "guard.md"), "# guard\n");
 
-    const result = installPromptMemorySlashCommands({
+    const result = installPromptCoachSlashCommands({
       sourceDir,
       targetDir,
     });
@@ -68,14 +68,14 @@ describe("installPromptMemorySlashCommands", () => {
     expect(result.changed).toBe(false);
   });
 
-  it("rewrites files whose content drifted from the source (force = true default for prompt-memory namespace)", () => {
+  it("rewrites files whose content drifted from the source (force = true default for prompt-coach namespace)", () => {
     const { sourceDir, targetDir } = makeFixture();
     seedSource(sourceDir, [["guard.md", "# guard new\n"]]);
-    const namespaceDir = join(targetDir, "prompt-memory");
+    const namespaceDir = join(targetDir, "prompt-coach");
     mkdirSync(namespaceDir, { recursive: true });
     writeFileSync(join(namespaceDir, "guard.md"), "# guard old\n");
 
-    const result = installPromptMemorySlashCommands({
+    const result = installPromptCoachSlashCommands({
       sourceDir,
       targetDir,
     });
@@ -92,7 +92,7 @@ describe("installPromptMemorySlashCommands", () => {
     const { sourceDir, targetDir } = makeFixture();
     seedSource(sourceDir, [["guard.md", "# guard\n"]]);
 
-    const result = installPromptMemorySlashCommands({
+    const result = installPromptCoachSlashCommands({
       sourceDir,
       targetDir,
       dryRun: true,
@@ -100,13 +100,13 @@ describe("installPromptMemorySlashCommands", () => {
 
     expect(result.dryRun).toBe(true);
     expect(result.installed).toEqual(["guard.md"]);
-    expect(() => readdirSync(join(targetDir, "prompt-memory"))).toThrow();
+    expect(() => readdirSync(join(targetDir, "prompt-coach"))).toThrow();
   });
 
   it("returns an empty result when sourceDir does not exist", () => {
     const targetDir = createTempDir();
 
-    const result = installPromptMemorySlashCommands({
+    const result = installPromptCoachSlashCommands({
       sourceDir: join(targetDir, "missing-source"),
       targetDir,
     });
@@ -116,16 +116,16 @@ describe("installPromptMemorySlashCommands", () => {
     expect(result.changed).toBe(false);
   });
 
-  it("removes stale prompt-memory commands that no longer exist in the source", () => {
+  it("removes stale prompt-coach commands that no longer exist in the source", () => {
     const { sourceDir, targetDir } = makeFixture();
     seedSource(sourceDir, [["guard.md", "# guard\n"]]);
-    const namespaceDir = join(targetDir, "prompt-memory");
+    const namespaceDir = join(targetDir, "prompt-coach");
     mkdirSync(namespaceDir, { recursive: true });
     writeFileSync(join(namespaceDir, "guard.md"), "# guard\n");
     writeFileSync(join(namespaceDir, "score-last.md"), "# stale score-last\n");
     writeFileSync(join(namespaceDir, "rules.md"), "# stale rules\n");
 
-    const result = installPromptMemorySlashCommands({
+    const result = installPromptCoachSlashCommands({
       sourceDir,
       targetDir,
     });
@@ -138,12 +138,12 @@ describe("installPromptMemorySlashCommands", () => {
   it("dry-run reports stale removals without touching disk", () => {
     const { sourceDir, targetDir } = makeFixture();
     seedSource(sourceDir, [["guard.md", "# guard\n"]]);
-    const namespaceDir = join(targetDir, "prompt-memory");
+    const namespaceDir = join(targetDir, "prompt-coach");
     mkdirSync(namespaceDir, { recursive: true });
     writeFileSync(join(namespaceDir, "guard.md"), "# guard\n");
     writeFileSync(join(namespaceDir, "score-last.md"), "# stale\n");
 
-    const result = installPromptMemorySlashCommands({
+    const result = installPromptCoachSlashCommands({
       sourceDir,
       targetDir,
       dryRun: true,
@@ -165,13 +165,13 @@ describe("installPromptMemorySlashCommands", () => {
       ["notes.json", "{}\n"],
     ]);
 
-    const result = installPromptMemorySlashCommands({
+    const result = installPromptCoachSlashCommands({
       sourceDir,
       targetDir,
     });
 
     expect(result.installed).toEqual(["guard.md"]);
-    expect(readdirSync(join(targetDir, "prompt-memory"))).toEqual(["guard.md"]);
+    expect(readdirSync(join(targetDir, "prompt-coach"))).toEqual(["guard.md"]);
   });
 });
 
@@ -195,7 +195,7 @@ function seedSource(dir: string, files: ReadonlyArray<[string, string]>): void {
 }
 
 function createTempDir(): string {
-  const dir = join(tmpdir(), `prompt-memory-slash-${randomUUID()}`);
+  const dir = join(tmpdir(), `prompt-coach-slash-${randomUUID()}`);
   mkdirSync(dir, { recursive: true });
   tempDirs.push(dir);
   return dir;

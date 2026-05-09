@@ -224,9 +224,9 @@ function formatCmuxInstructions(
     "  cmux does not expose a CLI split-pane command, so open a new pane",
     "  via cmux's split shortcut (default Cmd+D / Cmd+Shift+D) and run:",
     "",
-    `    $ prompt-memory buddy --style ${options.style} --interval ${options.interval}`,
+    `    $ prompt-coach buddy --style ${options.style} --interval ${options.interval}`,
     "",
-    "  If prompt-memory is not on PATH, use the absolute form:",
+    "  If prompt-coach is not on PATH, use the absolute form:",
     `    $ ${buddyCommand}`,
   ].join("\n");
 }
@@ -241,9 +241,9 @@ function formatNoneInstructions(
     "",
     "  Open a separate terminal window or pane and run:",
     "",
-    `    $ prompt-memory buddy --style ${options.style} --interval ${options.interval}`,
+    `    $ prompt-coach buddy --style ${options.style} --interval ${options.interval}`,
     "",
-    "  If prompt-memory is not on PATH, use the absolute form:",
+    "  If prompt-coach is not on PATH, use the absolute form:",
     `    $ ${buddyCommand}`,
   ].join("\n");
 }
@@ -254,7 +254,7 @@ function cmuxInstructions(
 ): { shortcut: string; buddy_command_pretty: string; buddy_argv: string[] } {
   return {
     shortcut: "cmux split shortcut (default Cmd+D / Cmd+Shift+D)",
-    buddy_command_pretty: `prompt-memory buddy --style ${options.style} --interval ${options.interval}`,
+    buddy_command_pretty: `prompt-coach buddy --style ${options.style} --interval ${options.interval}`,
     buddy_argv: buddyArgv,
   };
 }
@@ -264,7 +264,7 @@ function noneInstructions(
   options: CodexHudOptions,
 ): { buddy_command_pretty: string; buddy_argv: string[] } {
   return {
-    buddy_command_pretty: `prompt-memory buddy --style ${options.style} --interval ${options.interval}`,
+    buddy_command_pretty: `prompt-coach buddy --style ${options.style} --interval ${options.interval}`,
     buddy_argv: buddyArgv,
   };
 }
@@ -280,9 +280,9 @@ export function registerInstallCodexHudCommand(program: Command): void {
   program
     .command("install-codex-hud")
     .description(
-      "Install a side-pane HUD for Codex by spawning prompt-memory buddy in a tmux split (or printing instructions for cmux/no multiplexer).",
+      "Install a side-pane HUD for Codex by spawning prompt-coach buddy in a tmux split (or printing instructions for cmux/no multiplexer).",
     )
-    .option("--data-dir <path>", "Override the prompt-memory data directory.")
+    .option("--data-dir <path>", "Override the prompt-coach data directory.")
     .option(
       "--pane <position>",
       "Where to place the buddy pane (right, left, top, bottom).",

@@ -1,5 +1,5 @@
 ---
-description: Score prompt-memory habits (latest prompt or accumulated archive)
+description: Score prompt-coach habits (latest prompt or accumulated archive)
 allowed-tools: Bash
 ---
 
@@ -13,7 +13,7 @@ archive. Pick the scope based on the user's request.
 Prefer the MCP tool when it is available:
 
 ```text
-prompt-memory:score_prompt latest=true
+prompt-coach:score_prompt latest=true
 ```
 
 Ask it to include concise suggestions and summarize:
@@ -25,10 +25,10 @@ Ask it to include concise suggestions and summarize:
 If MCP is not configured, use the privacy-safe CLI fallback:
 
 ```bash
-prompt-memory score --latest --json
+prompt-coach score --latest --json
 ```
 
-If no captured prompt exists yet, tell the user to run `prompt-memory setup`
+If no captured prompt exists yet, tell the user to run `prompt-coach setup`
 and submit one Claude Code or Codex prompt first.
 
 ## Accumulated archive
@@ -36,13 +36,13 @@ and submit one Claude Code or Codex prompt first.
 Prefer the MCP tool when it is available:
 
 ```text
-prompt-memory:score_prompt_archive
+prompt-coach:score_prompt_archive
 ```
 
 If MCP is not configured, run:
 
 ```bash
-prompt-memory score --json
+prompt-coach score --json
 ```
 
 Summarize the average archive score, recurring quality gaps, and the lowest
@@ -51,8 +51,8 @@ scoring prompt ids.
 If the user asks to focus on one tool, use:
 
 ```bash
-prompt-memory score --tool claude-code --json
-prompt-memory score --tool codex --json
+prompt-coach score --tool claude-code --json
+prompt-coach score --tool codex --json
 ```
 
 ## Safety

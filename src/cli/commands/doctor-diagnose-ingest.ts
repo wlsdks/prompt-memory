@@ -37,17 +37,12 @@ export function diagnoseIngestFailure({
   port = DEFAULT_PORT,
   commandRunner,
   readFile = defaultReadFile,
-  serverErrLogPath = join(
-    homedir(),
-    ".prompt-memory",
-    "logs",
-    "server.err.log",
-  ),
+  serverErrLogPath = join(homedir(), ".prompt-coach", "logs", "server.err.log"),
 }: DiagnoseIngestFailureInput): IngestFailureDiagnosis {
   if (status !== 401) {
     return {
       cause: "unknown",
-      hint: "Run prompt-memory buddy --once to inspect the most recent failed hook ingest.",
+      hint: "Run prompt-coach buddy --once to inspect the most recent failed hook ingest.",
     };
   }
 
@@ -58,7 +53,7 @@ export function diagnoseIngestFailure({
   ) {
     return {
       cause: "server_owner_mismatch",
-      hint: `A different server is bound to port ${port} using data dir ${ownerDataDir} instead of ${configuredDataDir}. Stop it and start the configured service: prompt-memory service stop && prompt-memory service install.`,
+      hint: `A different server is bound to port ${port} using data dir ${ownerDataDir} instead of ${configuredDataDir}. Stop it and start the configured service: prompt-coach service stop && prompt-coach service install.`,
     };
   }
 
@@ -68,13 +63,13 @@ export function diagnoseIngestFailure({
   ) {
     return {
       cause: "node_abi_mismatch",
-      hint: "The local server keeps exiting with a Node ABI mismatch (better-sqlite3 NODE_MODULE_VERSION error). Reinstall the LaunchAgent with the current Node binary: prompt-memory service install.",
+      hint: "The local server keeps exiting with a Node ABI mismatch (better-sqlite3 NODE_MODULE_VERSION error). Reinstall the LaunchAgent with the current Node binary: prompt-coach service install.",
     };
   }
 
   return {
     cause: "token_stale",
-    hint: `Reinstall the hook to refresh the local ingest token: prompt-memory install-hook ${tool}.`,
+    hint: `Reinstall the hook to refresh the local ingest token: prompt-coach install-hook ${tool}.`,
   };
 }
 

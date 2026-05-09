@@ -19,7 +19,7 @@ describe("MCP stdio server", () => {
       result: {
         tools: [
           expect.objectContaining({
-            name: "get_prompt_memory_status",
+            name: "get_prompt_coach_status",
           }),
           expect.objectContaining({
             name: "coach_prompt",
@@ -259,7 +259,7 @@ describe("MCP stdio server", () => {
         },
       },
       {
-        dataDir: join(tmpdir(), `prompt-memory-missing-${randomUUID()}`),
+        dataDir: join(tmpdir(), `prompt-coach-missing-${randomUUID()}`),
       },
     );
 
@@ -365,7 +365,7 @@ describe("MCP stdio server", () => {
         },
       },
       {
-        dataDir: join(tmpdir(), `prompt-memory-missing-${randomUUID()}`),
+        dataDir: join(tmpdir(), `prompt-coach-missing-${randomUUID()}`),
       },
     );
 
@@ -384,19 +384,19 @@ describe("MCP stdio server", () => {
     });
   });
 
-  it("returns text MCP content for get_prompt_memory_status calls", async () => {
+  it("returns text MCP content for get_prompt_coach_status calls", async () => {
     const response = await handleMcpMessage(
       {
         jsonrpc: "2.0",
         id: "status-1",
         method: "tools/call",
         params: {
-          name: "get_prompt_memory_status",
+          name: "get_prompt_coach_status",
           arguments: {},
         },
       },
       {
-        dataDir: join(tmpdir(), `prompt-memory-missing-${randomUUID()}`),
+        dataDir: join(tmpdir(), `prompt-coach-missing-${randomUUID()}`),
       },
     );
 
@@ -427,7 +427,7 @@ describe("MCP stdio server", () => {
         },
       },
       {
-        dataDir: join(tmpdir(), `prompt-memory-missing-${randomUUID()}`),
+        dataDir: join(tmpdir(), `prompt-coach-missing-${randomUUID()}`),
       },
     );
 
@@ -448,7 +448,7 @@ describe("MCP stdio server", () => {
           }),
           agent_brief: expect.objectContaining({
             next_actions: expect.arrayContaining([
-              expect.stringContaining("prompt-memory setup"),
+              expect.stringContaining("prompt-coach setup"),
             ]),
           }),
           privacy: expect.objectContaining({

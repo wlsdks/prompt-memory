@@ -25,9 +25,9 @@ src/
 `cli`, `server`, `hooks`, `mcp`, and `web`. They orchestrate; reusable rules live in `analysis`, `redaction`, `storage`, `shared`.
 
 Bin entries (from `package.json`):
-- `prompt-memory` -> `dist/cli/index.js`
-- `pm-claude` -> `dist/cli/pm-claude.js`
-- `pm-codex` -> `dist/cli/pm-codex.js`
+- `prompt-coach` -> `dist/cli/index.js`
+- `pc-claude` -> `dist/cli/pc-claude.js`
+- `pc-codex` -> `dist/cli/pc-codex.js`
 
 ## MCP module split (do not collapse)
 - `score-tool-definitions.ts` — tool definitions / JSON schemas

@@ -6,11 +6,11 @@
 
 ## Context
 
-`initializePromptMemory` creates two subdirectories under the prompt-memory
+`initializePromptCoach` creates two subdirectories under the prompt-coach
 data root and records them in `config.json`:
 
-- `~/.prompt-memory/quarantine/`
-- `~/.prompt-memory/spool/`
+- `~/.prompt-coach/quarantine/`
+- `~/.prompt-coach/spool/`
 
 A 2026-05-09 audit of the maintainer's real archive (482 captured prompts,
 1.8M Markdown archive) found these directories empty and never written to:
@@ -21,8 +21,8 @@ quarantine/ 0 files
 spool/      0 files
 ```
 
-A grep across `src/` confirms no code path beyond `initializePromptMemory`
-and `getPromptMemoryPaths` references either directory. They are created,
+A grep across `src/` confirms no code path beyond `initializePromptCoach`
+and `getPromptCoachPaths` references either directory. They are created,
 exported through the config, and never used.
 
 ## Friction signals
@@ -71,7 +71,7 @@ detector flagged them as borderline secrets. The intent is:
   confidence is below a threshold. The user can then review the
   quarantine bucket separately before allowing the entry into search /
   scoring.
-- `prompt-memory doctor` would surface a non-zero quarantine count as a
+- `prompt-coach doctor` would surface a non-zero quarantine count as a
   next step.
 
 When this lands, the change set is:
@@ -89,22 +89,22 @@ was down. The intent is:
 - When `127.0.0.1:17373` is unreachable, the Claude Code / Codex hook
   writes the redacted payload to `spool/<timestamp>-<id>.json` instead of
   losing it.
-- `prompt-memory server` (or a small drainer in `src/hooks/`) replays
+- `prompt-coach server` (or a small drainer in `src/hooks/`) replays
   the spool on next startup and ingests the entries in order.
 
 When this lands, the change set is:
 
 - A `spool` write path in the hook fail-open branch (`src/hooks/`).
-- A drain hook in the server boot path or in `prompt-memory service start`.
-- A `spool size` line in `prompt-memory doctor`.
+- A drain hook in the server boot path or in `prompt-coach service start`.
+- A `spool size` line in `prompt-coach doctor`.
 
 ## Decision
 
 Treat `quarantine/` and `spool/` as **reserved-but-empty** under the data
 dir. Specifically:
 
-- Continue creating both directories during `initializePromptMemory` and
-  exporting the paths from `getPromptMemoryPaths` and `config.json`.
+- Continue creating both directories during `initializePromptCoach` and
+  exporting the paths from `getPromptCoachPaths` and `config.json`.
 - Do not write to them from any other code path, and do not introduce
   unrelated use cases for them.
 - Any PR that begins writing to either directory must reference this

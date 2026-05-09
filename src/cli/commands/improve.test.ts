@@ -5,7 +5,7 @@ import { join } from "node:path";
 import { afterEach, describe, expect, it } from "vitest";
 
 import { normalizeClaudeCodePayload } from "../../adapters/claude-code.js";
-import { initializePromptMemory } from "../../config/config.js";
+import { initializePromptCoach } from "../../config/config.js";
 import { redactPrompt } from "../../redaction/redact.js";
 import { createSqlitePromptStorage } from "../../storage/sqlite.js";
 import { createProgram } from "../index.js";
@@ -54,7 +54,7 @@ describe("improve CLI", () => {
 
   it("includes a runnable example in the missing-input error", () => {
     expect(() => improvePromptForCli({ json: true })).toThrow(
-      /prompt-memory improve --text/,
+      /prompt-coach improve --text/,
     );
   });
 
@@ -87,7 +87,7 @@ describe("improve CLI", () => {
 
   it("prints a privacy-safe improvement for the latest stored prompt", async () => {
     const dataDir = createTempDir();
-    const init = initializePromptMemory({ dataDir });
+    const init = initializePromptCoach({ dataDir });
     const storage = createSqlitePromptStorage({
       dataDir,
       hmacSecret: init.hookAuth.web_session_secret,
@@ -187,7 +187,7 @@ describe("improve CLI", () => {
 });
 
 function createTempDir(): string {
-  const dir = join(tmpdir(), `prompt-memory-improve-cli-${randomUUID()}`);
+  const dir = join(tmpdir(), `prompt-coach-improve-cli-${randomUUID()}`);
   mkdirSync(dir, { recursive: true });
   tempDirs.push(dir);
   return dir;

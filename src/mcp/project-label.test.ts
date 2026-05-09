@@ -4,8 +4,8 @@ import { projectLabel } from "./project-label.js";
 
 describe("projectLabel (mcp)", () => {
   it("returns the last segment of a posix path", () => {
-    expect(projectLabel("/Users/example/projects/prompt-memory")).toBe(
-      "prompt-memory",
+    expect(projectLabel("/Users/example/projects/prompt-coach")).toBe(
+      "prompt-coach",
     );
   });
 

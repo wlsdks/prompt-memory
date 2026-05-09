@@ -24,7 +24,7 @@ export function problem(
   errors?: Array<{ field: string; message: string }>,
 ): HttpProblem {
   return new HttpProblem({
-    type: `https://prompt-memory.local/errors/${toKebabCase(title)}`,
+    type: `https://prompt-coach.local/errors/${toKebabCase(title)}`,
     title,
     status,
     detail,

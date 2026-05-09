@@ -14,7 +14,7 @@ npm whoami
 The unscoped package name currently appears available:
 
 ```sh
-npm view prompt-memory version
+npm view prompt-coach version
 # E404 Not Found
 ```
 
@@ -39,17 +39,17 @@ Recommended version:
 Why `--tag beta`:
 
 - users must intentionally install the beta tag
-- `npm install -g prompt-memory@beta` gets the prerelease
+- `npm install -g prompt-coach@beta` gets the prerelease
 - the `latest` tag remains unused until the package is stable enough
 
 ## Install Commands After Publish
 
 ```sh
-npm install -g prompt-memory@beta
-prompt-memory setup
-prompt-memory doctor claude-code
-prompt-memory doctor codex
-prompt-memory server
+npm install -g prompt-coach@beta
+prompt-coach setup
+prompt-coach doctor claude-code
+prompt-coach doctor codex
+prompt-coach server
 ```
 
 ## Required Local Gate Before Publishing
@@ -77,9 +77,9 @@ TARBALL="$(npm pack --json | node -e 'process.stdin.on("data",d=>{const j=JSON.p
 TMP_HOME="$(mktemp -d)"
 TMP_PREFIX="$(mktemp -d)"
 HOME="$TMP_HOME" npm install -g --prefix "$TMP_PREFIX" "./$TARBALL"
-"$TMP_PREFIX/bin/prompt-memory" --help
-"$TMP_PREFIX/bin/pm-claude" --pm-help
-"$TMP_PREFIX/bin/pm-codex" --pm-help
+"$TMP_PREFIX/bin/prompt-coach" --help
+"$TMP_PREFIX/bin/pc-claude" --pc-help
+"$TMP_PREFIX/bin/pc-codex" --pc-help
 ```
 
 ## Publish Checklist
@@ -91,9 +91,9 @@ HOME="$TMP_HOME" npm install -g --prefix "$TMP_PREFIX" "./$TARBALL"
 - [ ] README is available in English and Korean and matches the actual feature set
 - [ ] package contents contain built CLI/server/web assets
 - [ ] all three bin entries exist after build:
-  - `bin.prompt-memory` → `dist/cli/index.js`
-  - `bin.pm-claude` → `dist/cli/pm-claude.js`
-  - `bin.pm-codex` → `dist/cli/pm-codex.js`
+  - `bin.prompt-coach` → `dist/cli/index.js`
+  - `bin.pc-claude` → `dist/cli/pc-claude.js`
+  - `bin.pc-codex` → `dist/cli/pc-codex.js`
 - [ ] each bin file is executable after build (`scripts/fix-bin-mode.mjs`
       runs as part of `pnpm build:server` and chmods all three)
 - [ ] `pnpm pack:dry-run` excludes `dist/**/*.map` (source maps stay local)
@@ -107,7 +107,7 @@ HOME="$TMP_HOME" npm install -g --prefix "$TMP_PREFIX" "./$TARBALL"
 
 - `pnpm smoke:release` fails
 - `pnpm pack:dry-run` does not include `dist/cli`, `dist/server`, or `dist/web`
-- npm reports that `prompt-memory` is already taken by another owner
+- npm reports that `prompt-coach` is already taken by another owner
 - the npm account cannot complete 2FA/OTP
 - README still claims a feature that is not implemented
 
@@ -115,9 +115,9 @@ HOME="$TMP_HOME" npm install -g --prefix "$TMP_PREFIX" "./$TARBALL"
 
 ```sh
 npm whoami
-npm view prompt-memory version
+npm view prompt-coach version
 npm access list packages stark97 --json
 npm publish --tag beta
-npm dist-tag ls prompt-memory
-npm view prompt-memory versions --json
+npm dist-tag ls prompt-coach
+npm view prompt-coach versions --json
 ```

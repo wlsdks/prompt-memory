@@ -1,9 +1,9 @@
 import { homedir, platform } from "node:os";
 import { isAbsolute, resolve, sep } from "node:path";
 
-export const DEFAULT_DATA_DIR = "~/.prompt-memory";
+export const DEFAULT_DATA_DIR = "~/.prompt-coach";
 
-export type PromptMemoryPaths = {
+export type PromptCoachPaths = {
   dataDir: string;
   configPath: string;
   hookAuthPath: string;
@@ -27,16 +27,16 @@ export function resolveHomePath(input: string, home = homedir()): string {
   return resolve(input);
 }
 
-export function getPromptMemoryPaths(
+export function getPromptCoachPaths(
   dataDir = DEFAULT_DATA_DIR,
-): PromptMemoryPaths {
+): PromptCoachPaths {
   const root = resolveHomePath(dataDir);
 
   return {
     dataDir: root,
     configPath: resolve(root, "config.json"),
     hookAuthPath: resolve(root, "hook-auth.json"),
-    databasePath: resolve(root, "prompt-memory.sqlite"),
+    databasePath: resolve(root, "prompt-coach.sqlite"),
     promptsDir: resolve(root, "prompts"),
     logsDir: resolve(root, "logs"),
     diagnosticLogPath: resolve(root, "logs", "diagnostic.log"),

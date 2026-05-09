@@ -1,7 +1,7 @@
 {
   "session_id": "claude-session-123",
-  "transcript_path": "/Users/example/.claude/projects/prompt-memory/session.jsonl",
-  "cwd": "/Users/example/side-project/prompt-memory",
+  "transcript_path": "/Users/example/.claude/projects/prompt-coach/session.jsonl",
+  "cwd": "/Users/example/side-project/prompt-coach",
   "permission_mode": "default",
   "hook_event_name": "UserPromptSubmit",
   "prompt": "Implement the next P0 task and run the acceptance checks."

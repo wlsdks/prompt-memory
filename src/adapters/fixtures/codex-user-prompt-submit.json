@@ -1,8 +1,8 @@
 {
   "session_id": "codex-session-123",
   "turn_id": "turn-456",
-  "transcript_path": "/Users/example/.codex/sessions/prompt-memory.jsonl",
-  "cwd": "/Users/example/side-project/prompt-memory",
+  "transcript_path": "/Users/example/.codex/sessions/prompt-coach.jsonl",
+  "cwd": "/Users/example/side-project/prompt-coach",
   "hook_event_name": "UserPromptSubmit",
   "model": "gpt-5.5",
   "prompt": "Review the implementation plan and identify the next coding step."

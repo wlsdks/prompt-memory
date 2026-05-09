@@ -1,5 +1,5 @@
 ---
-description: Open the local prompt-memory archive
+description: Open the local prompt-coach archive
 allowed-tools: Bash
 ---
 
@@ -8,8 +8,8 @@ allowed-tools: Bash
 Check whether the local server is already configured:
 
 ```bash
-prompt-memory service status || true
-prompt-memory statusline claude-code || true
+prompt-coach service status || true
+prompt-coach statusline claude-code || true
 ```
 
 Open the local archive:
@@ -22,12 +22,12 @@ If the status line says the server is down, ask the user whether to start the
 service:
 
 ```bash
-prompt-memory service start
+prompt-coach service start
 ```
 
 If service startup is unsupported on this platform, tell the user to run this in
 a separate terminal because it stays in the foreground:
 
 ```bash
-prompt-memory server
+prompt-coach server
 ```

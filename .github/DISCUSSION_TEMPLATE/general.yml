@@ -4,7 +4,7 @@ body:
   - type: markdown
     attributes:
       value: |
-        Thanks for discussing prompt-memory. Do not include real prompts, private paths, credentials, session tokens, or proprietary code.
+        Thanks for discussing prompt-coach. Do not include real prompts, private paths, credentials, session tokens, or proprietary code.
   - type: textarea
     id: topic
     attributes:

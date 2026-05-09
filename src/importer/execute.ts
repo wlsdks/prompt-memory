@@ -52,7 +52,7 @@ export async function executeImport(
 
   if (options.resumeJobId && !existingJob) {
     throw new Error(
-      `Import job not found: ${options.resumeJobId}. Run prompt-memory import-job <id> to confirm the saved job, or rerun --dry-run --save-job to start a new one.`,
+      `Import job not found: ${options.resumeJobId}. Run prompt-coach import-job <id> to confirm the saved job, or rerun --dry-run --save-job to start a new one.`,
     );
   }
   if (

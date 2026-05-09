@@ -5,7 +5,7 @@ import { randomUUID } from "node:crypto";
 import { afterEach, describe, expect, it } from "vitest";
 
 import { normalizeClaudeCodePayload } from "../../adapters/claude-code.js";
-import { initializePromptMemory } from "../../config/config.js";
+import { initializePromptCoach } from "../../config/config.js";
 import { redactPrompt } from "../../redaction/redact.js";
 import { createSqlitePromptStorage } from "../../storage/sqlite.js";
 import {
@@ -71,7 +71,7 @@ describe("prompt CLI commands", () => {
 
   it("explains an empty list result instead of printing a blank line", () => {
     const dataDir = createTempDir();
-    initializePromptMemory({ dataDir });
+    initializePromptCoach({ dataDir });
 
     expect(listPromptsForCli({ dataDir })).toBe("no prompts captured yet.");
     expect(
@@ -81,7 +81,7 @@ describe("prompt CLI commands", () => {
 
   it("echoes the search query when nothing matches", () => {
     const dataDir = createTempDir();
-    initializePromptMemory({ dataDir });
+    initializePromptCoach({ dataDir });
 
     expect(searchPromptsForCli("definitely-no-match", { dataDir })).toBe(
       'no prompts matching "definitely-no-match".',
@@ -110,7 +110,7 @@ describe("prompt CLI commands", () => {
   it("shows drafts:N suffix on list rows that have saved improvement drafts", async () => {
     const dataDir = createTempDir();
     const ids = await createCliFixture(dataDir);
-    const init = initializePromptMemory({ dataDir });
+    const init = initializePromptCoach({ dataDir });
     const storage = createSqlitePromptStorage({
       dataDir,
       hmacSecret: init.hookAuth.web_session_secret,
@@ -145,7 +145,7 @@ describe("prompt CLI commands", () => {
   it("appends saved drafts with friendly analyzer labels to --explain output", async () => {
     const dataDir = createTempDir();
     const ids = await createCliFixture(dataDir);
-    const init = initializePromptMemory({ dataDir });
+    const init = initializePromptCoach({ dataDir });
     const storage = createSqlitePromptStorage({
       dataDir,
       hmacSecret: init.hookAuth.web_session_secret,
@@ -180,7 +180,7 @@ describe("prompt CLI commands", () => {
 
   it("refuses to print an open URL for an unknown prompt id", () => {
     const dataDir = createTempDir();
-    initializePromptMemory({ dataDir });
+    initializePromptCoach({ dataDir });
 
     expect(() => openPromptForCli("prmt_does_not_exist", { dataDir })).toThrow(
       "Prompt not found",
@@ -207,16 +207,16 @@ describe("prompt CLI commands", () => {
 
   it("hints at a runnable list command in Prompt not found errors", () => {
     const dataDir = createTempDir();
-    initializePromptMemory({ dataDir });
+    initializePromptCoach({ dataDir });
 
     expect(() => showPromptForCli("prmt_missing", { dataDir })).toThrow(
-      /prompt-memory list/,
+      /prompt-coach list/,
     );
     expect(() => deletePromptForCli("prmt_missing", { dataDir })).toThrow(
-      /prompt-memory list/,
+      /prompt-coach list/,
     );
     expect(() => openPromptForCli("prmt_missing", { dataDir })).toThrow(
-      /prompt-memory list/,
+      /prompt-coach list/,
     );
   });
 
@@ -254,7 +254,7 @@ describe("prompt CLI commands", () => {
 });
 
 async function createCliFixture(dataDir: string) {
-  const init = initializePromptMemory({ dataDir });
+  const init = initializePromptCoach({ dataDir });
   const storage = createSqlitePromptStorage({
     dataDir,
     hmacSecret: init.hookAuth.web_session_secret,
@@ -316,7 +316,7 @@ async function storeClaudePrompt(
 }
 
 function createTempDir(): string {
-  const dir = join(tmpdir(), `prompt-memory-cli-${randomUUID()}`);
+  const dir = join(tmpdir(), `prompt-coach-cli-${randomUUID()}`);
   mkdirSync(dir, { recursive: true });
   tempDirs.push(dir);
   return dir;

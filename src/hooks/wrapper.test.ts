@@ -4,7 +4,7 @@ import { join } from "node:path";
 import { randomUUID } from "node:crypto";
 import { afterEach, describe, expect, it } from "vitest";
 
-import { initializePromptMemory } from "../config/config.js";
+import { initializePromptCoach } from "../config/config.js";
 import { readLastHookStatus } from "./hook-status.js";
 import { runClaudeCodeHook, runCodexHook } from "./wrapper.js";
 
@@ -22,7 +22,7 @@ afterEach(() => {
 describe("runClaudeCodeHook", () => {
   it("reads stdin, token file, and posts to local ingest without stdout/stderr", async () => {
     const dataDir = createTempDir();
-    const init = initializePromptMemory({ dataDir });
+    const init = initializePromptCoach({ dataDir });
     const posted: unknown[] = [];
 
     const result = await runClaudeCodeHook({
@@ -64,7 +64,7 @@ describe("runClaudeCodeHook", () => {
 
   it("records a failed last_ingest_status when the post throws so doctor can surface it", async () => {
     const dataDir = createTempDir();
-    initializePromptMemory({ dataDir });
+    initializePromptCoach({ dataDir });
 
     await runClaudeCodeHook({
       stdin: JSON.stringify({
@@ -86,7 +86,7 @@ describe("runClaudeCodeHook", () => {
 
   it("can block and copy a weak prompt when rewrite guard is enabled", async () => {
     const dataDir = createTempDir();
-    initializePromptMemory({ dataDir });
+    initializePromptCoach({ dataDir });
     const copied: string[] = [];
 
     const result = await runClaudeCodeHook({
@@ -122,7 +122,7 @@ describe("runClaudeCodeHook", () => {
 
   it("does not block when ingest returns a non-ok response", async () => {
     const dataDir = createTempDir();
-    initializePromptMemory({ dataDir });
+    initializePromptCoach({ dataDir });
 
     const result = await runClaudeCodeHook({
       stdin: JSON.stringify({
@@ -146,7 +146,7 @@ describe("runClaudeCodeHook", () => {
 describe("runCodexHook", () => {
   it("posts Codex hook payload to the Codex ingest route", async () => {
     const dataDir = createTempDir();
-    const init = initializePromptMemory({ dataDir });
+    const init = initializePromptCoach({ dataDir });
     const posted: unknown[] = [];
 
     const result = await runCodexHook({
@@ -185,7 +185,7 @@ describe("runCodexHook", () => {
 
   it("emits suppressOutput=true on Codex rewrite-guard context output so the body stays out of the user-visible chat", async () => {
     const dataDir = createTempDir();
-    initializePromptMemory({ dataDir });
+    initializePromptCoach({ dataDir });
 
     const result = await runCodexHook({
       stdin: JSON.stringify({
@@ -211,7 +211,7 @@ describe("runCodexHook", () => {
 
   it("does not set suppressOutput on Claude Code rewrite-guard output (existing behavior)", async () => {
     const dataDir = createTempDir();
-    initializePromptMemory({ dataDir });
+    initializePromptCoach({ dataDir });
 
     const result = await runClaudeCodeHook({
       stdin: JSON.stringify({
@@ -232,7 +232,7 @@ describe("runCodexHook", () => {
 });
 
 function createTempDir(): string {
-  const dir = join(tmpdir(), `prompt-memory-hook-${randomUUID()}`);
+  const dir = join(tmpdir(), `prompt-coach-hook-${randomUUID()}`);
   mkdirSync(dir, { recursive: true });
   tempDirs.push(dir);
   return dir;

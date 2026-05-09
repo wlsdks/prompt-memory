@@ -1,7 +1,7 @@
 import type { Command } from "commander";
 
 import {
-  PUBLISHED_PROMPT_MEMORY_ENTRY,
+  PUBLISHED_PROMPT_COACH_ENTRY,
   doctorCommand,
   mcpRegistrationCommand,
   type AgentTool,
@@ -61,20 +61,20 @@ export function buildStartGuide(options: StartOptions = {}): StartGuide {
             ? "Installs local storage, hooks, service startup, low-friction rewrite guidance, agent MCP commands, and opens the web workspace automatically on new agent sessions."
             : "Installs local storage, hooks, service startup, low-friction rewrite guidance, and agent MCP commands.",
         commands: [
-          `prompt-memory setup --profile coach --register-mcp${options.openWeb === true ? " --open-web" : ""}`,
+          `prompt-coach setup --profile coach --register-mcp${options.openWeb === true ? " --open-web" : ""}`,
         ],
       },
       {
         title: "Send one real coding prompt",
         detail:
-          "Use Claude Code or Codex normally. The prompt should be a real coding request, not a test string. Inside Claude Code, follow it with /prompt-memory:improve-last to see prompt-memory rewrite that prompt.",
+          "Use Claude Code or Codex normally. The prompt should be a real coding request, not a test string. Inside Claude Code, follow it with /prompt-coach:improve-last to see prompt-coach rewrite that prompt.",
         commands: [],
       },
       {
         title: "See the first score",
         detail:
           "Shows the latest score, weakest habit, and the next prompt improvement to try.",
-        commands: ["prompt-memory coach"],
+        commands: ["prompt-coach coach"],
       },
       {
         title: "If capture does not appear",
@@ -87,14 +87,14 @@ export function buildStartGuide(options: StartOptions = {}): StartGuide {
         detail:
           "Use these only if setup reports MCP registration failed or you skipped --register-mcp.",
         commands: tools.map((tool) =>
-          mcpRegistrationCommand(tool, PUBLISHED_PROMPT_MEMORY_ENTRY),
+          mcpRegistrationCommand(tool, PUBLISHED_PROMPT_COACH_ENTRY),
         ),
       },
       {
         title: "Optional archive review",
         detail:
           "Start the web UI only when you want search, dashboards, export, or visual history review.",
-        commands: ["prompt-memory server"],
+        commands: ["prompt-coach server"],
       },
     ],
   };
@@ -102,7 +102,7 @@ export function buildStartGuide(options: StartOptions = {}): StartGuide {
 
 export function formatStartGuide(guide: StartGuide): string {
   const lines = [
-    "prompt-memory start",
+    "prompt-coach start",
     `Goal: ${guide.goal}`,
     `Tools: ${guide.tools.join(", ")}`,
     "",
