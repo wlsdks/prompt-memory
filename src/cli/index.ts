@@ -16,6 +16,7 @@ import { registerInitCommand } from "./commands/init.js";
 import { registerMcpCommand } from "./commands/mcp.js";
 import { registerProjectCommand } from "./commands/project.js";
 import { registerPromptCommands } from "./commands/prompts.js";
+import { registerReviewProjectInstructionsCommand } from "./commands/review-project-instructions.js";
 import { registerScoreCommand } from "./commands/score.js";
 import { registerServerCommand } from "./commands/server.js";
 import { registerServiceCommand } from "./commands/service.js";
@@ -50,6 +51,7 @@ export function createProgram(): Command {
   registerStatusLineCommand(program);
   registerProjectCommand(program);
   registerPromptCommands(program);
+  registerReviewProjectInstructionsCommand(program);
   registerScoreCommand(program);
 
   return program;
