@@ -42,7 +42,17 @@ const DETECTORS: Detector[] = [
   },
   { type: "webhook_url", pattern: /https:\/\/hooks\.[^\s]+/gi },
   { type: "email", pattern: /\b[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}\b/gi },
-  { type: "phone", pattern: /\+?\d[\d\s().-]{7,}\d/g },
+  // Phone numbers require explicit separator structure so we don't redact
+  // IPv4 addresses (`127.0.0.1`), version strings (`0.1.0-beta.0`), ISO
+  // timestamps (`2026-05-09`), or plain digit IDs as "phone". Real phone
+  // numbers always have either a `+` country code, parentheses around an
+  // area code, or three groups of digits joined by `-` / space / `.` with
+  // the last group being at least four digits long.
+  {
+    type: "phone",
+    pattern:
+      /(?:\+\d{1,3}[\s.-]?)?(?:\(\d{1,4}\)\s*[-.]?\s*\d{2,4}[-\s.]\d{4}|\d{2,4}[-\s.]\d{2,4}[-\s.]\d{4})/g,
+  },
 ];
 
 export function detectSensitiveValues(text: string): RedactionFinding[] {
