@@ -17,6 +17,13 @@ import {
   scorePromptTool,
   type ScorePromptToolResult,
 } from "../../mcp/score-tool.js";
+import {
+  computeArchiveTrend,
+  directionGlyph,
+  type ArchiveTrend,
+} from "../../analysis/archive-trend.js";
+import { loadHookAuth, loadPromptMemoryConfig } from "../../config/config.js";
+import { createSqlitePromptStorage } from "../../storage/sqlite.js";
 import { doctorClaudeCode } from "./doctor.js";
 import type { ClaudeSettings } from "./install-hook.js";
 
@@ -24,6 +31,7 @@ export type StatusLineOptions = {
   dataDir?: string;
   settingsPath?: string;
   checkServer?: () => Promise<boolean>;
+  now?: () => Date;
 };
 
 export type StatusLineInstallOptions = {
@@ -199,6 +207,7 @@ export async function renderClaudeCodeStatusLine(
         { latest: true, include_suggestions: false },
         { dataDir: options.dataDir },
       ),
+      readArchiveTrend(options),
     );
   }
 
@@ -243,6 +252,7 @@ export function renderChainedClaudeCodeStatusLine(
 
 function formatLatestScoreForStatusLine(
   result: ScorePromptToolResult,
+  trend: ArchiveTrend | undefined,
 ): string | undefined {
   if ("is_error" in result) {
     return undefined;
@@ -251,11 +261,35 @@ function formatLatestScoreForStatusLine(
   const gap = result.checklist.find(
     (item) => item.status === "missing" || item.status === "weak",
   );
-  const score = `${STATUSLINE_PREFIX} score ${result.quality_score.value}/${result.quality_score.max} ${result.quality_score.band}`;
+  const trendSuffix = trend ? ` ${directionGlyph(trend.direction)}` : "";
+  const score = `${STATUSLINE_PREFIX} score ${result.quality_score.value}/${result.quality_score.max} ${result.quality_score.band}${trendSuffix}`;
 
   return gap
     ? `${score} | weakest: ${gap.label} | run: /prompt-memory:improve-last`
     : score;
+}
+
+function readArchiveTrend(
+  options: StatusLineOptions,
+): ArchiveTrend | undefined {
+  try {
+    const config = loadPromptMemoryConfig(options.dataDir);
+    const auth = loadHookAuth(options.dataDir);
+    const storage = createSqlitePromptStorage({
+      dataDir: config.data_dir,
+      hmacSecret: auth.web_session_secret,
+    });
+    try {
+      return computeArchiveTrend({
+        storage,
+        now: options.now ? options.now() : new Date(),
+      });
+    } finally {
+      storage.close();
+    }
+  } catch {
+    return undefined;
+  }
 }
 
 export function installClaudeCodeStatusLine(

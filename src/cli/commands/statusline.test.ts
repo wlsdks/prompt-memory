@@ -128,6 +128,115 @@ describe("renderClaudeCodeStatusLine", () => {
     expect(rows[1]).toMatch(/^prompt: score \d+\/\d+ /);
   });
 
+  it("appends a 7-day trend glyph after the band when the archive has enough data", async () => {
+    const dir = createTempDir();
+    const dataDir = join(dir, "data");
+    const settingsPath = join(dir, "settings.json");
+    const init = initializePromptMemory({ dataDir });
+    installClaudeCodeHook({ dataDir, settingsPath });
+    const now = new Date("2026-05-09T08:00:00.000Z");
+    const storage = createSqlitePromptStorage({
+      dataDir,
+      hmacSecret: init.hookAuth.web_session_secret,
+      now: () => now,
+    });
+    const previousAt = new Date(now.getTime() - 10 * 24 * 60 * 60 * 1000);
+    const recentAt = new Date(now.getTime() - 3 * 24 * 60 * 60 * 1000);
+    for (let index = 0; index < 5; index += 1) {
+      const event = normalizeClaudeCodePayload(
+        {
+          session_id: `session-trend-prev-${index}`,
+          transcript_path: "/tmp/x/transcript.jsonl",
+          cwd: "/tmp/x",
+          permission_mode: "default",
+          hook_event_name: "UserPromptSubmit",
+          prompt: "Old short prompt.",
+        },
+        previousAt,
+      );
+      await storage.storePrompt({
+        event,
+        redaction: redactPrompt(event.prompt, "mask"),
+      });
+    }
+    for (let index = 0; index < 5; index += 1) {
+      const event = normalizeClaudeCodePayload(
+        {
+          session_id: `session-trend-recent-${index}`,
+          transcript_path: "/tmp/x/transcript.jsonl",
+          cwd: "/tmp/x",
+          permission_mode: "default",
+          hook_event_name: "UserPromptSubmit",
+          prompt:
+            "Goal: refactor the login flow. Context: src/auth/. Output: a unified diff. Verification: pnpm test.",
+        },
+        recentAt,
+      );
+      await storage.storePrompt({
+        event,
+        redaction: redactPrompt(event.prompt, "mask"),
+      });
+    }
+    storage.close();
+    writeLastHookStatus(dataDir, {
+      ok: true,
+      status: 200,
+      checked_at: "2026-05-02T00:00:00.000Z",
+    });
+
+    const line = await renderClaudeCodeStatusLine({
+      dataDir,
+      settingsPath,
+      checkServer: async () => true,
+      now: () => now,
+    });
+
+    expect(line.split("\n").length).toBe(1);
+    expect(line).toMatch(/^prompt: score \d+\/\d+ \w+ [↑→↓] \| weakest: /);
+  });
+
+  it("omits the trend glyph when the archive does not have enough recent prompts", async () => {
+    const dir = createTempDir();
+    const dataDir = join(dir, "data");
+    const settingsPath = join(dir, "settings.json");
+    const init = initializePromptMemory({ dataDir });
+    installClaudeCodeHook({ dataDir, settingsPath });
+    const storage = createSqlitePromptStorage({
+      dataDir,
+      hmacSecret: init.hookAuth.web_session_secret,
+      now: () => new Date("2026-05-03T18:00:00.000Z"),
+    });
+    const event = normalizeClaudeCodePayload(
+      {
+        session_id: "session-trend-low",
+        transcript_path: "/tmp/x/transcript.jsonl",
+        cwd: "/tmp/x",
+        permission_mode: "default",
+        hook_event_name: "UserPromptSubmit",
+        prompt: "Make it better.",
+      },
+      new Date("2026-05-03T17:59:00.000Z"),
+    );
+    await storage.storePrompt({
+      event,
+      redaction: redactPrompt(event.prompt, "mask"),
+    });
+    storage.close();
+    writeLastHookStatus(dataDir, {
+      ok: true,
+      status: 200,
+      checked_at: "2026-05-02T00:00:00.000Z",
+    });
+
+    const line = await renderClaudeCodeStatusLine({
+      dataDir,
+      settingsPath,
+      checkServer: async () => true,
+    });
+
+    expect(line).not.toMatch(/[↑→↓]/);
+  });
+
   it("renders setup hints in a single line when capture is not ready", async () => {
     const dir = createTempDir();
 
