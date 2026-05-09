@@ -127,6 +127,63 @@ describe("improve CLI", () => {
     expect(json).not.toContain("sk-proj-1234567890abcdef");
     expect(json).not.toContain("/Users/example");
   });
+
+  it("applies user --answer values verbatim into the improved draft (ASK-FIRST round-trip)", () => {
+    const json = improvePromptForCli({
+      json: true,
+      text: "fix the bug",
+      answer: [
+        "goal=Fix the 500 in DELETE /api/v1/prompts/:id route handler.",
+        "context=Delete returns 500 because FTS sync is missing after the row deletes.",
+      ],
+    });
+    const result = JSON.parse(json) as {
+      improved_prompt: string;
+      changed_sections: string[];
+      clarifying_questions: Array<{ axis: string }>;
+    };
+
+    expect(result.improved_prompt).toContain("DELETE /api/v1/prompts/:id");
+    expect(result.improved_prompt).toContain(
+      "Delete returns 500 because FTS sync",
+    );
+    expect(result.clarifying_questions.map((q) => q.axis)).not.toContain(
+      "goal_clarity",
+    );
+    expect(result.clarifying_questions.map((q) => q.axis)).not.toContain(
+      "background_context",
+    );
+  });
+
+  it("accepts --answer with axis aliases and Korean answer text", () => {
+    const text = improvePromptForCli({
+      text: "버그 고쳐줘",
+      language: "ko",
+      answer: [
+        "goal=src/server/routes/prompts.ts 의 DELETE 핸들러 500 에러를 고쳐주세요.",
+        "background=삭제 후 FTS 동기화가 빠져 500이 떨어지고 있습니다.",
+      ],
+    });
+
+    expect(text).toContain("## 목표");
+    expect(text).toContain("DELETE 핸들러 500");
+    expect(text).toContain("## 맥락");
+    expect(text).toContain("FTS 동기화가 빠져");
+  });
+
+  it("rejects --answer with unknown axis or empty value", () => {
+    expect(() =>
+      improvePromptForCli({ text: "fix", answer: ["unknown=hi"] }),
+    ).toThrow(/axis "unknown" is not recognized/);
+
+    expect(() =>
+      improvePromptForCli({ text: "fix", answer: ["goal="] }),
+    ).toThrow(/--answer for "goal" is empty/);
+
+    expect(() =>
+      improvePromptForCli({ text: "fix", answer: ["just-a-bare-string"] }),
+    ).toThrow(/--answer expects "axis=text"/);
+  });
 });
 
 function createTempDir(): string {

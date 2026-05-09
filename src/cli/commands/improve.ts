@@ -2,7 +2,9 @@ import { readFileSync } from "node:fs";
 import type { Command } from "commander";
 
 import {
+  applyClarifications,
   improvePrompt,
+  type ClarifyingAnswer,
   type PromptImprovement,
 } from "../../analysis/improve.js";
 import {
@@ -10,6 +12,7 @@ import {
   type ImprovePromptToolResult,
 } from "../../mcp/score-tool.js";
 import { UserError } from "../user-error.js";
+import type { PromptQualityCriterion } from "../../shared/schema.js";
 
 type ImproveCliOptions = {
   dataDir?: string;
@@ -18,6 +21,30 @@ type ImproveCliOptions = {
   promptId?: string;
   stdin?: boolean;
   text?: string;
+  answer?: string[];
+  language?: string;
+};
+
+const VALID_AXES = new Set<PromptQualityCriterion>([
+  "goal_clarity",
+  "background_context",
+  "scope_limits",
+  "output_format",
+  "verification_criteria",
+]);
+
+const AXIS_ALIASES: Record<string, PromptQualityCriterion> = {
+  goal: "goal_clarity",
+  goal_clarity: "goal_clarity",
+  context: "background_context",
+  background: "background_context",
+  background_context: "background_context",
+  scope: "scope_limits",
+  scope_limits: "scope_limits",
+  output: "output_format",
+  output_format: "output_format",
+  verification: "verification_criteria",
+  verification_criteria: "verification_criteria",
 };
 
 export function registerImproveCommand(program: Command): void {
@@ -31,6 +58,16 @@ export function registerImproveCommand(program: Command): void {
     .option(
       "--prompt-id <id>",
       "Improve one stored prompt without printing the original prompt body.",
+    )
+    .option(
+      "--answer <axis=text>",
+      "Verbatim answer to a clarifying question (repeatable, axis ∈ goal | context | scope | output | verification).",
+      (value: string, accumulated: string[] = []) => [...accumulated, value],
+      [] as string[],
+    )
+    .option(
+      "--language <lang>",
+      "Improvement draft language: en or ko. Auto-detected when omitted.",
     )
     .option("--json", "Print JSON.")
     .action((options: ImproveCliOptions) => {
@@ -53,14 +90,68 @@ export function improvePromptForCli(options: ImproveCliOptions): string {
   }
 
   const prompt = readPromptInput(options);
-  const result = improvePrompt({
-    prompt,
-    createdAt: new Date().toISOString(),
-  });
+  const language = parseLanguage(options.language);
+  const answers = parseAnswers(options.answer);
+  const result =
+    answers.length > 0
+      ? applyClarifications({
+          prompt,
+          createdAt: new Date().toISOString(),
+          language,
+          answers,
+        })
+      : improvePrompt({
+          prompt,
+          createdAt: new Date().toISOString(),
+          language,
+        });
 
   return options.json
     ? JSON.stringify(result, null, 2)
     : formatImprovement(result);
+}
+
+function parseLanguage(value: string | undefined): "en" | "ko" | undefined {
+  if (value === undefined) return undefined;
+  if (value === "en" || value === "ko") return value;
+  // Stay consistent with the rest of the CLI: --language is documented to
+  // silently fall back to auto-detection rather than rejecting unknown
+  // values (lock-tested project policy).
+  return undefined;
+}
+
+function parseAnswers(values: string[] | undefined): ClarifyingAnswer[] {
+  if (!values || values.length === 0) return [];
+
+  const answers: ClarifyingAnswer[] = [];
+  for (const raw of values) {
+    const equalsIndex = raw.indexOf("=");
+    if (equalsIndex <= 0) {
+      throw new UserError(
+        `--answer expects "axis=text" but got "${raw}". Try: --answer goal="fix the delete API 500"`,
+      );
+    }
+    const rawAxis = raw.slice(0, equalsIndex).trim();
+    const text = raw.slice(equalsIndex + 1);
+    const axis = AXIS_ALIASES[rawAxis];
+    if (!axis || !VALID_AXES.has(axis)) {
+      throw new UserError(
+        `--answer axis "${rawAxis}" is not recognized. Valid axes: goal, context, scope, output, verification.`,
+      );
+    }
+    if (!text.trim()) {
+      throw new UserError(
+        `--answer for "${rawAxis}" is empty. Pass a non-empty answer text after =.`,
+      );
+    }
+    answers.push({
+      question_id: `q_${axis}`,
+      axis,
+      answer: text,
+      origin: "user",
+    });
+  }
+  return answers;
 }
 
 function formatStoredImprovement(result: ImprovePromptToolResult): string {
