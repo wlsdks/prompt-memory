@@ -254,7 +254,7 @@ function formatLatestScoreForStatusLine(
   const score = `${STATUSLINE_PREFIX} score ${result.quality_score.value}/${result.quality_score.max} ${result.quality_score.band}`;
 
   return gap
-    ? `${score} | weakest: ${gap.label} | next: /prompt-memory:improve-last`
+    ? `${score} | weakest: ${gap.label} | run: /prompt-memory:improve-last`
     : score;
 }
 
