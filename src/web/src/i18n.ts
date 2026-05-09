@@ -354,7 +354,16 @@ const UI_TRANSLATIONS: Record<string, string> = {
   "Contains sensitive data": "민감정보 포함",
   "No sensitive data": "민감정보 없음",
   "Focus filter": "포커스 필터",
-  "All focus": "전체 Focus",
+  "All focus": "전체 포커스",
+  "Clear filters to return to the full archive.":
+    "필터를 모두 지우면 전체 아카이브로 돌아갑니다.",
+  "Coach feedback": "코치 피드백",
+  "No ratings yet. Open a prompt and use the Helpful / Not helpful / Wrong buttons next to a coach draft to start tracking which improvements worked.":
+    "아직 평가가 없습니다. 프롬프트를 열고 코치 draft 옆의 도움됨 / 도움 안 됨 / 잘못됨 버튼으로 어떤 개선안이 효과 있었는지 기록을 시작하세요.",
+  Helpful: "도움됨",
+  "Not helpful": "도움 안 됨",
+  Wrong: "잘못됨",
+  "Was this useful?": "이 코치가 유용했나요?",
   Saved: "저장됨",
   Reused: "재사용됨",
   "Duplicate candidates": "중복 후보",
