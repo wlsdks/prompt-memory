@@ -1,4 +1,10 @@
-import { existsSync, mkdirSync, readFileSync, rmSync } from "node:fs";
+import {
+  existsSync,
+  mkdirSync,
+  readFileSync,
+  rmSync,
+  writeFileSync,
+} from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { randomUUID } from "node:crypto";
@@ -348,6 +354,70 @@ describe("runSetup", () => {
       output.indexOf("/prompt-memory:improve-last"),
     );
     expect(output).toContain("Use --json for automation.");
+  });
+
+  it("installs the prompt-memory slash commands under <claudeCommandsDir>/prompt-memory", () => {
+    const dir = createTempDir();
+    const dataDir = join(dir, "data");
+    const settingsPath = join(dir, ".claude", "settings.json");
+    const claudeCommandsDir = join(dir, ".claude", "commands");
+    const slashCommandsSourceDir = join(dir, "fake-pm-source");
+    mkdirSync(slashCommandsSourceDir, { recursive: true });
+    writeFileSync(
+      join(slashCommandsSourceDir, "guard.md"),
+      "# guard fixture\n",
+    );
+    writeFileSync(
+      join(slashCommandsSourceDir, "improve-last.md"),
+      "# improve-last fixture\n",
+    );
+
+    const result = runSetup({
+      profile: "coach",
+      dataDir,
+      settingsPath,
+      noService: true,
+      detectedTools: ["claude-code"],
+      claudeCommandsDir,
+      slashCommandsSourceDir,
+    });
+
+    expect(result.slashCommands.claudeCode?.installedCount).toBe(2);
+    expect(result.slashCommands.claudeCode?.namespaceDir).toBe(
+      join(claudeCommandsDir, "prompt-memory"),
+    );
+    expect(
+      readFileSync(
+        join(claudeCommandsDir, "prompt-memory", "guard.md"),
+        "utf8",
+      ),
+    ).toBe("# guard fixture\n");
+    expect(formatSetupResult(result)).toContain(
+      "Claude Code slash commands: 2 installed",
+    );
+  });
+
+  it("respects --skip-slash-commands and reports the slash status as skipped", () => {
+    const dir = createTempDir();
+    const dataDir = join(dir, "data");
+    const settingsPath = join(dir, ".claude", "settings.json");
+    const claudeCommandsDir = join(dir, ".claude", "commands");
+
+    const result = runSetup({
+      profile: "coach",
+      dataDir,
+      settingsPath,
+      noService: true,
+      detectedTools: ["claude-code"],
+      claudeCommandsDir,
+      skipSlashCommands: true,
+    });
+
+    expect(result.slashCommands.claudeCode).toBeUndefined();
+    expect(formatSetupResult(result)).toContain(
+      "Claude Code slash commands: skipped",
+    );
+    expect(existsSync(join(claudeCommandsDir, "prompt-memory"))).toBe(false);
   });
 });
 

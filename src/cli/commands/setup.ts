@@ -9,6 +9,12 @@ import {
   type CodexHookInstallResult,
   type HookInstallResult,
 } from "./install-hook.js";
+import {
+  defaultClaudeCommandsDir,
+  defaultPromptMemorySlashCommandsSource,
+  installPromptMemorySlashCommands,
+  type SlashCommandInstallResult,
+} from "./install-slash-commands.js";
 import { installService, type ServiceInstallResult } from "./service.js";
 import {
   installClaudeCodeStatusLine,
@@ -41,6 +47,9 @@ export type SetupOptions = {
   startService?: boolean;
   noStatusLine?: boolean;
   skipStatusline?: boolean;
+  skipSlashCommands?: boolean;
+  claudeCommandsDir?: string;
+  slashCommandsSourceDir?: string;
   openWeb?: boolean;
   platform?: NodeJS.Platform;
   detectedTools?: SetupTool[];
@@ -93,6 +102,15 @@ export type SetupResult = {
       dryRun: boolean;
       settingsPath: string;
       backupPath?: string;
+    };
+  };
+  slashCommands: {
+    claudeCode?: {
+      changed: boolean;
+      dryRun: boolean;
+      namespaceDir: string;
+      installedCount: number;
+      skippedCount: number;
     };
   };
   service: {
@@ -159,6 +177,10 @@ export function registerSetupCommand(program: Command): void {
     .option("--no-start-service", "Install service but do not start it now.")
     .option("--skip-statusline", "Do not install the Claude Code status line.")
     .option(
+      "--skip-slash-commands",
+      "Do not install /prompt-memory:* slash commands into Claude Code.",
+    )
+    .option(
       "--open-web",
       "Open the local web UI automatically when Claude Code/Codex starts a session.",
     )
@@ -206,6 +228,7 @@ export function formatSetupResult(result: SetupResult): string {
     `- Claude Code hook: ${formatBoolean(result.hooks.claudeCode?.installed)}`,
     `- Codex hook: ${formatBoolean(result.hooks.codex?.installed)}`,
     `- Claude Code status line: ${formatBoolean(result.statusLine.claudeCode?.installed)}`,
+    `- Claude Code slash commands: ${formatSlashCommandsStatus(result.slashCommands.claudeCode)}`,
     `- Local service: ${formatServiceStatus(result.service)}`,
     `- Auto web open: ${result.autoOpenWeb.enabled ? "installed on SessionStart" : "off"}`,
   ];
@@ -253,6 +276,22 @@ export function formatSetupResult(result: SetupResult): string {
 
 function formatBoolean(value: boolean | undefined): string {
   return value ? "installed" : "not installed";
+}
+
+function formatSlashCommandsStatus(
+  slash: SetupResult["slashCommands"]["claudeCode"],
+): string {
+  if (!slash) {
+    return "skipped";
+  }
+  const total = slash.installedCount + slash.skippedCount;
+  if (total === 0) {
+    return "no commands found";
+  }
+  if (slash.installedCount === 0) {
+    return `up to date (${slash.skippedCount} commands)`;
+  }
+  return `${slash.installedCount} installed, ${slash.skippedCount} unchanged at ${slash.namespaceDir}`;
 }
 
 function formatServiceStatus(service: SetupResult["service"]): string {
@@ -341,6 +380,16 @@ export function runSetup(options: SetupOptions = {}): SetupResult {
           dryRun: options.dryRun,
         })
       : undefined;
+  const slashCommandsResult =
+    !options.skipSlashCommands && detectedTools.includes("claude-code")
+      ? installPromptMemorySlashCommands({
+          sourceDir:
+            options.slashCommandsSourceDir ??
+            defaultPromptMemorySlashCommandsSource(),
+          targetDir: options.claudeCommandsDir ?? defaultClaudeCommandsDir(),
+          dryRun: options.dryRun,
+        })
+      : undefined;
   const serviceResult = options.noService
     ? undefined
     : installService({
@@ -368,6 +417,11 @@ export function runSetup(options: SetupOptions = {}): SetupResult {
     statusLine: {
       claudeCode: statusLineResult
         ? formatStatusLine(statusLineResult)
+        : undefined,
+    },
+    slashCommands: {
+      claudeCode: slashCommandsResult
+        ? formatSlashCommands(slashCommandsResult)
         : undefined,
     },
     autoOpenWeb: {
@@ -512,6 +566,18 @@ function formatStatusLine(
     dryRun: result.dryRun,
     settingsPath: result.settingsPath,
     backupPath: result.backupPath,
+  };
+}
+
+function formatSlashCommands(
+  result: SlashCommandInstallResult,
+): NonNullable<SetupResult["slashCommands"]["claudeCode"]> {
+  return {
+    changed: result.changed,
+    dryRun: result.dryRun,
+    namespaceDir: result.namespaceDir,
+    installedCount: result.installed.length,
+    skippedCount: result.skipped.length,
   };
 }
 
