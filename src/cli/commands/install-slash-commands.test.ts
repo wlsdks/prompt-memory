@@ -116,6 +116,47 @@ describe("installPromptMemorySlashCommands", () => {
     expect(result.changed).toBe(false);
   });
 
+  it("removes stale prompt-memory commands that no longer exist in the source", () => {
+    const { sourceDir, targetDir } = makeFixture();
+    seedSource(sourceDir, [["guard.md", "# guard\n"]]);
+    const namespaceDir = join(targetDir, "prompt-memory");
+    mkdirSync(namespaceDir, { recursive: true });
+    writeFileSync(join(namespaceDir, "guard.md"), "# guard\n");
+    writeFileSync(join(namespaceDir, "score-last.md"), "# stale score-last\n");
+    writeFileSync(join(namespaceDir, "rules.md"), "# stale rules\n");
+
+    const result = installPromptMemorySlashCommands({
+      sourceDir,
+      targetDir,
+    });
+
+    expect(result.removed?.sort()).toEqual(["rules.md", "score-last.md"]);
+    expect(result.changed).toBe(true);
+    expect(readdirSync(namespaceDir).sort()).toEqual(["guard.md"]);
+  });
+
+  it("dry-run reports stale removals without touching disk", () => {
+    const { sourceDir, targetDir } = makeFixture();
+    seedSource(sourceDir, [["guard.md", "# guard\n"]]);
+    const namespaceDir = join(targetDir, "prompt-memory");
+    mkdirSync(namespaceDir, { recursive: true });
+    writeFileSync(join(namespaceDir, "guard.md"), "# guard\n");
+    writeFileSync(join(namespaceDir, "score-last.md"), "# stale\n");
+
+    const result = installPromptMemorySlashCommands({
+      sourceDir,
+      targetDir,
+      dryRun: true,
+    });
+
+    expect(result.dryRun).toBe(true);
+    expect(result.removed).toEqual(["score-last.md"]);
+    expect(readdirSync(namespaceDir).sort()).toEqual([
+      "guard.md",
+      "score-last.md",
+    ]);
+  });
+
   it("ignores non-markdown files in the source dir", () => {
     const { sourceDir, targetDir } = makeFixture();
     seedSource(sourceDir, [

@@ -3,6 +3,7 @@ import {
   mkdirSync,
   readFileSync,
   readdirSync,
+  rmSync,
   writeFileSync,
 } from "node:fs";
 import { homedir } from "node:os";
@@ -23,6 +24,7 @@ export type SlashCommandInstallResult = {
   namespaceDir: string;
   installed: string[];
   skipped: string[];
+  removed: string[];
 };
 
 export function installPromptMemorySlashCommands(
@@ -32,6 +34,7 @@ export function installPromptMemorySlashCommands(
   const dryRun = Boolean(options.dryRun);
   const installed: string[] = [];
   const skipped: string[] = [];
+  const removed: string[] = [];
 
   if (!existsSync(options.sourceDir)) {
     return {
@@ -40,12 +43,14 @@ export function installPromptMemorySlashCommands(
       namespaceDir,
       installed,
       skipped,
+      removed,
     };
   }
 
   const candidates = readdirSync(options.sourceDir).filter((name) =>
     name.endsWith(".md"),
   );
+  const sourceNames = new Set(candidates);
 
   for (const name of candidates) {
     const sourcePath = join(options.sourceDir, name);
@@ -67,12 +72,28 @@ export function installPromptMemorySlashCommands(
     installed.push(name);
   }
 
+  if (existsSync(namespaceDir)) {
+    const existingTargets = readdirSync(namespaceDir).filter((name) =>
+      name.endsWith(".md"),
+    );
+    for (const name of existingTargets) {
+      if (sourceNames.has(name)) {
+        continue;
+      }
+      removed.push(name);
+      if (!dryRun) {
+        rmSync(join(namespaceDir, name), { force: true });
+      }
+    }
+  }
+
   return {
-    changed: installed.length > 0,
+    changed: installed.length > 0 || removed.length > 0,
     dryRun,
     namespaceDir,
     installed,
     skipped,
+    removed,
   };
 }
 

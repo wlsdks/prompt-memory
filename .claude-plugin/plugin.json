@@ -14,12 +14,8 @@
     "./commands/coach.md",
     "./commands/score.md",
     "./commands/judge.md",
-    "./commands/score-last.md",
     "./commands/improve-last.md",
-    "./commands/agent-improve-last.md",
     "./commands/habits.md",
-    "./commands/rules.md",
-    "./commands/coach-next.md",
     "./commands/open.md"
   ],
   "homepage": "https://github.com/wlsdks/prompt-memory",
