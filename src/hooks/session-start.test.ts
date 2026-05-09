@@ -19,11 +19,32 @@ afterEach(() => {
 });
 
 describe("runSessionStartHook", () => {
-  it("starts the local server and opens the web UI when opt-in is enabled", async () => {
+  it("opens the web UI when the local server is already reachable", async () => {
     const dir = createTempDir();
     const dataDir = join(dir, "data");
     initializePromptMemory({ dataDir });
-    const spawnedServers: string[] = [];
+    const openedUrls: string[] = [];
+
+    const result = await runSessionStartHook({
+      stdin: JSON.stringify({
+        hook_event_name: "SessionStart",
+        session_id: "session-1",
+        source: "startup",
+      }),
+      dataDir,
+      openWeb: true,
+      isServerReachable: async () => true,
+      openUrl: (url) => openedUrls.push(url),
+    });
+
+    expect(result).toEqual({ exitCode: 0, stdout: "", stderr: "" });
+    expect(openedUrls).toEqual(["http://127.0.0.1:17373"]);
+  });
+
+  it("skips opening the web UI when the local server is not reachable, and does not spawn one", async () => {
+    const dir = createTempDir();
+    const dataDir = join(dir, "data");
+    initializePromptMemory({ dataDir });
     const openedUrls: string[] = [];
 
     const result = await runSessionStartHook({
@@ -35,14 +56,11 @@ describe("runSessionStartHook", () => {
       dataDir,
       openWeb: true,
       isServerReachable: async () => false,
-      spawnServer: (args) => spawnedServers.push(args.dataDir),
       openUrl: (url) => openedUrls.push(url),
-      startupWaitMs: 0,
     });
 
     expect(result).toEqual({ exitCode: 0, stdout: "", stderr: "" });
-    expect(spawnedServers).toEqual([dataDir]);
-    expect(openedUrls).toEqual(["http://127.0.0.1:17373"]);
+    expect(openedUrls).toEqual([]);
   });
 
   it("does not open the browser twice for the same session id", async () => {
@@ -61,7 +79,6 @@ describe("runSessionStartHook", () => {
       dataDir,
       openWeb: true,
       isServerReachable: async () => true,
-      spawnServer: () => undefined,
       openUrl: (url) => openedUrls.push(url),
     });
     await runSessionStartHook({
@@ -69,7 +86,6 @@ describe("runSessionStartHook", () => {
       dataDir,
       openWeb: true,
       isServerReachable: async () => true,
-      spawnServer: () => undefined,
       openUrl: (url) => openedUrls.push(url),
     });
 
@@ -87,7 +103,6 @@ describe("runSessionStartHook", () => {
       dataDir,
       openWeb: false,
       isServerReachable: async () => true,
-      spawnServer: () => undefined,
       openUrl: (url) => openedUrls.push(url),
     });
 

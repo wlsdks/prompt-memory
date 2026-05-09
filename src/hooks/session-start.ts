@@ -2,7 +2,6 @@ import { spawn } from "node:child_process";
 import { existsSync, mkdirSync, readFileSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
 
-import { resolveCliEntryPath } from "../cli/entry-path.js";
 import { loadPromptMemoryConfig } from "../config/config.js";
 import type { HookRunResult } from "./wrapper.js";
 
@@ -17,9 +16,7 @@ export type RunSessionStartHookOptions = {
   dataDir?: string;
   openWeb?: boolean;
   isServerReachable?: (url: string) => Promise<boolean>;
-  spawnServer?: (options: { dataDir: string }) => void;
   openUrl?: (url: string) => void;
-  startupWaitMs?: number;
 };
 
 export async function runSessionStartHook(
@@ -46,14 +43,13 @@ export async function runSessionStartHook(
     const url = `http://${config.server.host}:${config.server.port}`;
     const healthUrl = `${url}/api/v1/health`;
     const isReachable = options.isServerReachable ?? defaultIsServerReachable;
-    const serverReady = await isReachable(healthUrl);
-    if (!serverReady) {
-      (options.spawnServer ?? defaultSpawnServer)({ dataDir: config.data_dir });
-      await waitForServer(
-        healthUrl,
-        isReachable,
-        options.startupWaitMs ?? 1200,
-      );
+    if (!(await isReachable(healthUrl))) {
+      // Do not spawn a server here. Server lifecycle is owned by
+      // `prompt-memory service`; spawning from a SessionStart hook risks a
+      // detached child binding 17373 with the wrong data dir and is what
+      // produced the 2026-05-09 401 incident. Fail-open silently — the user
+      // will see no web pop-up, which matches the spirit of an opt-in hook.
+      return emptyResult();
     }
 
     (options.openUrl ?? defaultOpenUrl)(url);
@@ -123,33 +119,6 @@ async function defaultIsServerReachable(url: string): Promise<boolean> {
   }
 }
 
-async function waitForServer(
-  url: string,
-  isReachable: (url: string) => Promise<boolean>,
-  maxWaitMs: number,
-): Promise<void> {
-  const startedAt = Date.now();
-  while (Date.now() - startedAt < maxWaitMs) {
-    if (await isReachable(url)) {
-      return;
-    }
-    await new Promise((resolve) => setTimeout(resolve, 150));
-  }
-}
-
-function defaultSpawnServer(options: { dataDir: string }): void {
-  const child = spawn(
-    process.execPath,
-    [cliEntryPath(), "server", "--data-dir", options.dataDir],
-    {
-      detached: true,
-      stdio: "ignore",
-      windowsHide: true,
-    },
-  );
-  child.unref();
-}
-
 function defaultOpenUrl(url: string): void {
   const platform = process.platform;
   const command =
@@ -161,10 +130,6 @@ function defaultOpenUrl(url: string): void {
     windowsHide: true,
   });
   child.unref();
-}
-
-function cliEntryPath(): string {
-  return resolveCliEntryPath(import.meta.url, "../cli/index.js");
 }
 
 function emptyResult(): HookRunResult {
