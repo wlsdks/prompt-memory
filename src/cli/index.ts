@@ -15,6 +15,7 @@ import { registerInstallHookCommands } from "./commands/install-hook.js";
 import { registerInitCommand } from "./commands/init.js";
 import { registerMcpCommand } from "./commands/mcp.js";
 import { registerPromptCommands } from "./commands/prompts.js";
+import { registerReviewProjectInstructionsCommand } from "./commands/review-project-instructions.js";
 import { registerScoreCommand } from "./commands/score.js";
 import { registerServerCommand } from "./commands/server.js";
 import { registerServiceCommand } from "./commands/service.js";
@@ -48,6 +49,7 @@ export function createProgram(): Command {
   registerServiceCommand(program);
   registerStatusLineCommand(program);
   registerPromptCommands(program);
+  registerReviewProjectInstructionsCommand(program);
   registerScoreCommand(program);
 
   return program;
