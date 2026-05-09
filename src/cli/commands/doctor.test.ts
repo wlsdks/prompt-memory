@@ -106,7 +106,7 @@ describe("doctorClaudeCode", () => {
     expect(output).toContain("Use --json for automation.");
   });
 
-  it("recommends reinstalling the hook when last ingest returned 401", async () => {
+  it("recommends reinstalling the hook when last ingest returned 401 and no other cause is detected", async () => {
     const dir = createTempDir();
     const dataDir = join(dir, "data");
     const settingsPath = join(dir, "settings.json");
@@ -118,14 +118,15 @@ describe("doctorClaudeCode", () => {
       checked_at: "2026-05-04T00:00:00.000Z",
     });
 
-    const result = await doctorClaudeCode({
+    const options = {
       dataDir,
       settingsPath,
       mcpConfigPath: join(dir, "claude.json"),
       checkServer: async () => true,
-    });
+    };
+    const result = await doctorClaudeCode(options);
 
-    const output = formatDoctorResult("claude-code", result);
+    const output = formatDoctorResult("claude-code", result, options);
 
     expect(output).toContain("Last ingest: failed (401)");
     expect(output).toContain(
@@ -145,14 +146,15 @@ describe("doctorClaudeCode", () => {
       checked_at: "2026-05-04T00:00:00.000Z",
     });
 
-    const result = await doctorClaudeCode({
+    const options = {
       dataDir,
       settingsPath,
       mcpConfigPath: join(dir, "claude.json"),
       checkServer: async () => true,
-    });
+    };
+    const result = await doctorClaudeCode(options);
 
-    const output = formatDoctorResult("claude-code", result);
+    const output = formatDoctorResult("claude-code", result, options);
 
     expect(output).toContain("Last ingest: failed (503)");
     expect(output).toContain(

@@ -5,6 +5,7 @@ import { join } from "node:path";
 import type { Command } from "commander";
 
 import { loadHookAuth, loadPromptMemoryConfig } from "../../config/config.js";
+import { diagnoseIngestFailure } from "./doctor-diagnose-ingest.js";
 import {
   readLastHookStatus,
   type LastHookStatus,
@@ -109,7 +110,7 @@ export function registerDoctorCommand(program: Command): void {
           console.log(
             options.json
               ? JSON.stringify(result, null, 2)
-              : formatDoctorResult("codex", result),
+              : formatDoctorResult("codex", result, options),
           );
 
           if (!result.server.ok || !result.token.ok || !result.settings.ok) {
@@ -128,7 +129,7 @@ export function registerDoctorCommand(program: Command): void {
         console.log(
           options.json
             ? JSON.stringify(result, null, 2)
-            : formatDoctorResult("claude-code", result),
+            : formatDoctorResult("claude-code", result, options),
         );
 
         if (!result.server.ok || !result.token.ok || !result.settings.ok) {
@@ -141,6 +142,7 @@ export function registerDoctorCommand(program: Command): void {
 export function formatDoctorResult(
   tool: "claude-code" | "codex",
   result: DoctorClaudeCodeResult | DoctorCodexResult,
+  options?: DoctorClaudeCodeOptions | DoctorCodexOptions,
 ): string {
   const settings =
     tool === "codex"
@@ -164,7 +166,7 @@ export function formatDoctorResult(
     );
   }
 
-  const next = doctorNextSteps(tool, result);
+  const next = doctorNextSteps(tool, result, options);
   if (next.length > 0) {
     lines.push("", "Next:");
     for (const step of next) {
@@ -196,6 +198,7 @@ function formatCodexSettings(result: DoctorCodexResult): string {
 function doctorNextSteps(
   tool: "claude-code" | "codex",
   result: DoctorClaudeCodeResult | DoctorCodexResult,
+  options?: DoctorClaudeCodeOptions | DoctorCodexOptions,
 ): string[] {
   const steps: string[] = [];
   if (!result.server.ok) {
@@ -212,9 +215,7 @@ function doctorNextSteps(
     steps.push(`Run prompt-memory install-hook ${tool}.`);
   }
   if (!result.mcp.registered) {
-    steps.push(
-      `Register MCP: ${mcpRegistrationCommand(tool)}.`,
-    );
+    steps.push(`Register MCP: ${mcpRegistrationCommand(tool)}.`);
   } else {
     steps.push(
       "Note: ask_clarifying_questions drives MCP elicitation only when the client advertises capabilities.elicitation (Claude Code 2.1.76+). Older clients fall back to clarifying_questions metadata that the agent must route through its own ask UI before calling apply_clarifications.",
@@ -229,17 +230,32 @@ function doctorNextSteps(
     );
   }
   if (result.lastIngestStatus && !result.lastIngestStatus.ok) {
-    if (result.lastIngestStatus.status === 401) {
-      steps.push(
-        `Reinstall the hook to refresh the local ingest token: prompt-memory install-hook ${tool}.`,
-      );
-    } else {
-      steps.push(
-        "Run prompt-memory buddy --once to inspect the most recent failed hook ingest.",
-      );
-    }
+    const dataDir = configuredDataDirFor(options);
+    const commandRunner = options
+      ? (options.commandRunner ?? defaultCommandRunner)
+      : undefined;
+    const diagnosis = diagnoseIngestFailure({
+      tool,
+      status: result.lastIngestStatus.status,
+      configuredDataDir: dataDir,
+      commandRunner,
+      serverErrLogPath: dataDir
+        ? join(dataDir, "logs", "server.err.log")
+        : undefined,
+    });
+    steps.push(diagnosis.hint);
   }
   return steps;
+}
+
+function configuredDataDirFor(
+  options: DoctorClaudeCodeOptions | DoctorCodexOptions | undefined,
+): string {
+  try {
+    return loadPromptMemoryConfig(options?.dataDir).data_dir;
+  } catch {
+    return options?.dataDir ?? "";
+  }
 }
 
 export async function doctorClaudeCode(
