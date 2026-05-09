@@ -160,6 +160,11 @@ export function App() {
 
   useEffect(() => {
     persistLanguage(language);
+    // Mirror the active language onto <html lang="..."> so CSS can target
+    // CJK-aware overrides (e.g. drop letter-spacing on Korean eyebrow text).
+    if (typeof document !== "undefined") {
+      document.documentElement.setAttribute("lang", language);
+    }
   }, [language]);
 
   useEffect(() => {
@@ -1121,15 +1126,19 @@ function PromptList({
 
   if (prompts.length === 0) {
     const commands = emptyPromptCommands(focus, qualityGap);
+    const secondary = emptyPromptSecondaryHint(focus, qualityGap);
     return (
       <div className="panel empty">
         <h2>{emptyPromptTitle(focus, qualityGap)}</h2>
         <p>{emptyPromptHint(focus, qualityGap)}</p>
-        <div className="empty-command-list" aria-label="First run commands">
-          {commands.map((command) => (
-            <code key={command}>{command}</code>
-          ))}
-        </div>
+        {secondary ? <p className="empty-secondary-hint">{secondary}</p> : null}
+        {commands.length > 0 ? (
+          <div className="empty-command-list" aria-label="First run commands">
+            {commands.map((command) => (
+              <code key={command}>{command}</code>
+            ))}
+          </div>
+        ) : null}
       </div>
     );
   }
@@ -2602,12 +2611,22 @@ function emptyPromptHint(
   return "Run coach setup, send one real Claude Code or Codex request, then check the first score and improvement suggestion.";
 }
 
+function emptyPromptSecondaryHint(
+  focus?: PromptFilters["focus"],
+  qualityGap?: PromptQualityGap,
+): string | undefined {
+  if (focus || qualityGap) {
+    return "Clear filters to return to the full archive.";
+  }
+  return undefined;
+}
+
 function emptyPromptCommands(
   focus?: PromptFilters["focus"],
   qualityGap?: PromptQualityGap,
 ): string[] {
   if (focus || qualityGap) {
-    return ["Clear filters to return to the full archive."];
+    return [];
   }
 
   return [

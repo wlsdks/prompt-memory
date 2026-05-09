@@ -327,6 +327,16 @@ pre {
   text-transform: uppercase;
 }
 
+/* CJK glyphs (Hangul / Hanja / Kana) do not benefit from positive
+ * letter-spacing — the syllable blocks already carry their own metrics, so
+ * extra tracking just stretches them apart unnaturally. Override the eyebrow
+ * tracking when the document language is Korean so KO eyebrow / kicker
+ * captions read naturally. Apple HIG / Toss / Linear all skip CJK tracking. */
+:lang(ko) .eyebrow,
+[lang="ko"] .eyebrow {
+  letter-spacing: 0;
+}
+
 h1 {
   font-size: 28px;
   line-height: 32px;
