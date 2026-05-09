@@ -169,7 +169,12 @@ export function executeAnonymizedExport(
       anonymous_id: `anon_${createPromptHash(detail.id, options.hmacSecret).slice(3, 19)}`,
       tool: detail.tool,
       coarse_date: detail.received_at.slice(0, 10),
-      project_alias: projectAlias(storage, detail.cwd, options.hmacSecret),
+      project_alias: projectAlias(
+        storage,
+        detail.cwd,
+        options.hmacSecret,
+        job.preset,
+      ),
       prompt: anonymizePromptText(detail.markdown),
       tags: detail.tags,
       quality_gaps: detail.quality_gaps,
@@ -335,8 +340,20 @@ function projectAlias(
   storage: AnonymizedExportStorage,
   cwd: string,
   hmacSecret: string,
+  preset: ExportPreset,
 ): string {
   const projectId = createProjectKey(cwd, hmacSecret);
+
+  // Anonymized presets are designed for sharing the export outside the local
+  // machine (review, issue report). The project's human-readable label can
+  // itself be sensitive (e.g. `client-acme-credentials`), so swap it for the
+  // already-hashed project identifier instead of leaking the cwd's last
+  // segment. The personal_backup preset is the self-restore copy where the
+  // user already knows their own project labels, so we keep the human label.
+  if (preset !== "personal_backup") {
+    return projectId;
+  }
+
   const project = storage
     .listProjects?.()
     .items.find((item) => item.project_id === projectId);

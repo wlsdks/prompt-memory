@@ -88,7 +88,7 @@ describe("anonymized export", () => {
           anonymous_id: expect.stringMatching(/^anon_/),
           tool: "claude-code",
           coarse_date: "2026-05-02",
-          project_alias: "private-project",
+          project_alias: expect.stringMatching(/^proj_[a-f0-9]+$/),
         },
       ],
     });
@@ -98,6 +98,65 @@ describe("anonymized export", () => {
     expect(JSON.stringify(exported)).not.toContain(rawSecret);
     expect(JSON.stringify(exported)).not.toContain(rawPath);
     expect(JSON.stringify(exported)).not.toContain("/Users/example");
+    // Anonymized presets must mask the human-readable project label.
+    // Otherwise a folder named e.g. "client-acme-credentials" would leak its
+    // name into shared exports despite the "anonymized" preset promise.
+    expect(JSON.stringify(exported)).not.toContain("private-project");
+  });
+
+  it("preserves the human project label for the personal_backup preset", async () => {
+    const dataDir = createTempDir();
+    initializePromptMemory({ dataDir });
+    const storage = createSqlitePromptStorage({
+      dataDir,
+      hmacSecret: "test-secret",
+      now: nextDate(["2026-05-02T14:00:00.000Z", "2026-05-02T14:01:00.000Z"]),
+    });
+    await storeClaudePrompt(storage, {
+      prompt: "Plain personal backup prompt — keeps cwd label.",
+      receivedAt: "2026-05-02T14:00:00.000Z",
+      cwd: "/Users/example/my-personal-project",
+    });
+
+    const preview = createAnonymizedExportPreview(storage, {
+      hmacSecret: "test-secret",
+      preset: "personal_backup",
+      now: new Date("2026-05-02T14:01:00.000Z"),
+    });
+    const exported = executeAnonymizedExport(storage, preview.id, {
+      hmacSecret: "test-secret",
+      now: new Date("2026-05-02T14:02:00.000Z"),
+    });
+
+    expect(exported.items[0]?.project_alias).toBe("my-personal-project");
+  });
+
+  it("masks the project label as proj_<hash> for the issue_report_attachment preset", async () => {
+    const dataDir = createTempDir();
+    initializePromptMemory({ dataDir });
+    const storage = createSqlitePromptStorage({
+      dataDir,
+      hmacSecret: "test-secret",
+      now: nextDate(["2026-05-02T15:00:00.000Z", "2026-05-02T15:01:00.000Z"]),
+    });
+    await storeClaudePrompt(storage, {
+      prompt: "Bug report prompt for issue tracker.",
+      receivedAt: "2026-05-02T15:00:00.000Z",
+      cwd: "/Users/example/client-acme-credentials",
+    });
+
+    const preview = createAnonymizedExportPreview(storage, {
+      hmacSecret: "test-secret",
+      preset: "issue_report_attachment",
+      now: new Date("2026-05-02T15:01:00.000Z"),
+    });
+    const exported = executeAnonymizedExport(storage, preview.id, {
+      hmacSecret: "test-secret",
+      now: new Date("2026-05-02T15:02:00.000Z"),
+    });
+
+    expect(exported.items[0]?.project_alias).toMatch(/^proj_[a-f0-9]+$/);
+    expect(JSON.stringify(exported)).not.toContain("client-acme-credentials");
   });
 
   it("invalidates execution when a previewed prompt is deleted", async () => {
